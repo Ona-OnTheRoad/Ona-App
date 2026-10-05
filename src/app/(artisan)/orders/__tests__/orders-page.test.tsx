@@ -40,7 +40,7 @@ vi.mock("@/components/call/in-app-call", () => ({
   CallButton: () => null,
 }));
 
-import ProOrdersPage from "@/app/orders/page";
+import ProOrdersPage from "@/app/(artisan)/orders/page";
 
 describe("Orders desk", () => {
   it("shows the server's message when a transition is rejected", async () => {
