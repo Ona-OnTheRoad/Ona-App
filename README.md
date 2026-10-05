@@ -24,11 +24,18 @@ This README is how to run the app. **Product and UI law live in docs — do not 
 
 ```bash
 npm install
-cp .env.example .env.local   # example is incomplete — see docs/HANDOFF.md
+cp .env.example .env.local   # fill in values; the template lists every variable the code reads
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000). Admin: `npm run dev:admin` → [http://localhost:4500/admin](http://localhost:4500/admin).
+
+Without `.env.local` the app has no database and stays on its loading screen.
+
+## Project layout
+
+- Pages are in route groups under `src/app` — `(onboarding)`, `(customer)`, `(artisan)`, `(shared)` — which do not change URLs; `admin/` and `api/` are top level.
+- Source files are kept at or under 300 lines: a large module is a thin file plus a folder of the same name. See [`docs/CODEMAP.md`](docs/CODEMAP.md).
 
 ## Scripts
 
@@ -37,4 +44,4 @@ Open [http://localhost:3000](http://localhost:3000). Admin: `npm run dev:admin` 
 - `npm run lint && npm run typecheck && npm run test` — **pre-merge gate**
 - `npm run build` / `npm run start`
 
-Never commit API keys. `.env.local` is gitignored. Ops notes: `docs/HANDOFF_KEYS.md`.
+Never commit API keys. `.env.local` is gitignored (`.env.example` is the tracked template). Ops notes: `docs/HANDOFF_KEYS.md`; deploy: `docs/VERCEL_DEPLOY.md`.
