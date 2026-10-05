@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useRef, type ReactNode } from "react";
+import { OfflineBanner } from "@/components/layout/offline-banner";
 import { DeletionBanner } from "@/components/profile/deletion-banner";
 import { useOverlayGatesReady } from "@/lib/use-overlay-gates-ready";
 import { cn } from "@/lib/utils";
@@ -262,6 +263,7 @@ export function PhoneShell({
           className="relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden"
           style={{ backgroundColor: phoneInterior }}
         >
+          <OfflineBanner />
           <DeletionBanner />
           {children}
           {gatesReady ? (

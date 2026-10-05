@@ -3,6 +3,7 @@ import { Inter, Geist_Mono } from "next/font/google";
 import { AppConfigProvider } from "@/components/app-config-provider";
 import { AppFrame } from "@/components/layout/app-frame";
 import { JsonLd } from "@/components/seo/json-ld";
+import { ServiceWorkerRegistrar } from "@/components/pwa/service-worker-registrar";
 import { NoScriptNotice } from "@/components/seo/no-script-notice";
 import { ONA_BUILD_ID } from "@/lib/build-id";
 import {
@@ -115,6 +116,7 @@ export default function RootLayout({
         <JsonLd data={organizationJsonLd()} />
         <JsonLd data={webApplicationJsonLd()} />
         <NoScriptNotice />
+        <ServiceWorkerRegistrar />
         <AppConfigProvider>
           <AppProvider>
             <I18nProvider>
