@@ -71,7 +71,8 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: "/((?!_next/static|_next/image|media|brand|technicians|favicon.ico|api).*)",
+        source:
+          "/((?!_next/static|_next/image|media|brand|technicians|icons|images|shop/automedics|favicon.ico|api).*)",
         headers: [
           {
             key: "Cache-Control",
@@ -99,6 +100,35 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/technicians/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
+          },
+        ],
+      },
+      // Static public images: not hashed, so a day plus background refresh keeps repeat visits
+      // off the network without pinning a stale file for long (product photos are ~200KB each).
+      {
+        source: "/icons/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
+          },
+        ],
+      },
+      {
+        source: "/images/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
+          },
+        ],
+      },
+      {
+        source: "/shop/automedics/:path*",
         headers: [
           {
             key: "Cache-Control",
