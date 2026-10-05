@@ -2,7 +2,7 @@ import { Upload } from "lucide-react";
 import { UploadInlinePreview } from "@/components/media/upload-inline-preview";
 import { IMAGE_MAX_BYTES } from "@/lib/artisan/types";
 import { cn } from "@/lib/utils";
-import { fileToDataUrl, formatMb, govIdNeedsBack, uid } from "./helpers";
+import { imageFileToDataUrl, formatMb, govIdNeedsBack, uid } from "./helpers";
 import type { FlashSetters, StepBaseProps } from "./types";
 
 type Props = StepBaseProps & Pick<FlashSetters, "setErr" | "setBusy">;
@@ -84,7 +84,7 @@ export function GovIdUploadSlots({
                 }
                 setBusy(true);
                 try {
-                  const url = await fileToDataUrl(f);
+                  const url = await imageFileToDataUrl(f);
                   const media = {
                     id: uid(),
                     url,

@@ -8,7 +8,7 @@ import {
   lockMessageForSection,
 } from "@/lib/artisan/verification-order";
 import { cn } from "@/lib/utils";
-import { fileToDataUrl, formatMb, uid } from "./helpers";
+import { imageFileToDataUrl, formatMb, uid } from "./helpers";
 import { LockedTier } from "./locked-tier";
 import { skillSubmitDisabled, skillSubmitLabel } from "./tier-labels";
 import type { FlashSetters, StepBaseProps } from "./types";
@@ -113,7 +113,7 @@ export function SkillTier({
               }
               setBusy(true);
               try {
-                const url = await fileToDataUrl(f);
+                const url = await imageFileToDataUrl(f);
                 // Draft only submit button sends for review
                 patch({
                   skillProof: {

@@ -6,7 +6,7 @@ import {
   PORTFOLIO_MIN,
 } from "@/lib/artisan/types";
 import { cn } from "@/lib/utils";
-import { fileToDataUrl, formatMb, uid } from "./helpers";
+import { imageFileToDataUrl, formatMb, uid } from "./helpers";
 import { ReqStar } from "./req-star";
 import type { FlashSetters, StepBaseProps } from "./types";
 
@@ -38,7 +38,7 @@ export function PortfolioStep({
           );
           continue;
         }
-        const url = await fileToDataUrl(f);
+        const url = await imageFileToDataUrl(f);
         next.push({
           id: uid(),
           url,

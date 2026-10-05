@@ -1,9 +1,16 @@
 import type { GovIdType } from "@/lib/artisan/types";
+import { compressDocumentFile } from "@/lib/image-compress";
 
 export function uid() {
   return `m_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/** Image/document photo -> data URL, compressed in the browser. Use fileToDataUrl for video. */
+export function imageFileToDataUrl(file: File): Promise<string> {
+  return compressDocumentFile(file);
+}
+
+/** Raw file -> data URL (no compression; use for video). */
 export async function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const r = new FileReader();

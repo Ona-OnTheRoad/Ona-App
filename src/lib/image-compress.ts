@@ -1,5 +1,8 @@
 /**
- * Client-side image compress for avatar / vehicle uploads.
+ * Client-side image compress for avatar / vehicle uploads, and for document photos
+ * (government ID, skill documents, portfolio). A phone photo is often 3-6 MB; on a slow or
+ * metered connection that is minutes of upload and the ID route drops anything over ~1.5 MB,
+ * so photos are shrunk in the browser before they are sent.
  */
 
 export async function compressImageFile(
@@ -27,7 +30,7 @@ export async function compressImageFile(
   return canvas.toDataURL("image/jpeg", quality);
 }
 
-function readFileAsDataUrl(file: File): Promise<string> {
+export function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
     r.onload = () => resolve(String(r.result || ""));
@@ -43,4 +46,39 @@ function loadImage(src: string): Promise<HTMLImageElement> {
     img.onerror = () => reject(new Error("Invalid image"));
     img.src = src;
   });
+}
+
+/** Document photos keep more detail than avatars so IDs stay legible. */
+const DOC_MAX_EDGE = 1600;
+const DOC_QUALITY = 0.8;
+/** Below this size re-encoding saves little and only adds artefacts. */
+const DOC_SKIP_BELOW_BYTES = 250 * 1024;
+const DOC_TIMEOUT_MS = 15_000;
+
+/**
+ * Data URL for a document / ID / portfolio photo, compressed when that helps.
+ * Non-images (PDF), animated or vector images, small files and any failure fall back to the
+ * original file, so a photo is never lost to compression.
+ */
+export async function compressDocumentFile(file: File): Promise<string> {
+  const type = (file.type || "").toLowerCase();
+  const compressible =
+    type.startsWith("image/") &&
+    type !== "image/gif" &&
+    type !== "image/svg+xml" &&
+    file.size > DOC_SKIP_BELOW_BYTES;
+  if (!compressible) return readFileAsDataUrl(file);
+
+  try {
+    const shrunk = await Promise.race([
+      compressImageFile(file, { maxEdge: DOC_MAX_EDGE, quality: DOC_QUALITY }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("compress_timeout")), DOC_TIMEOUT_MS),
+      ),
+    ]);
+    // Keep the original if compression somehow made it bigger (rare, tiny PNG screenshots).
+    return shrunk && shrunk.length > 0 ? shrunk : readFileAsDataUrl(file);
+  } catch {
+    return readFileAsDataUrl(file);
+  }
 }

@@ -1,12 +1,9 @@
+import { compressDocumentFile } from "@/lib/image-compress";
 import { remainingFreeActions } from "@/lib/verification-gate";
 
+/** ID photo -> data URL, compressed in the browser (see lib/image-compress). */
 export const readFile = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(String(r.result || ""));
-    r.onerror = () => reject(new Error("read_failed"));
-    r.readAsDataURL(file);
-  });
+  compressDocumentFile(file);
 
 export function trialNote(
   profile:
