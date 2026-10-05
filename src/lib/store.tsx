@@ -50,6 +50,7 @@ import { resetNavStack } from "@/lib/navigation";
 import { playAppSound } from "@/lib/sound-tone";
 import { evaluateServiceGate } from "@/lib/verification-gate";
 import { skillLockBlock, verificationGate } from "@/lib/accept-guards";
+import { backendSaveIdentityVerification } from "@/lib/supabase/identity-submit";
 import { advanceDeskRequest, deskRoleFor } from "@/lib/jobs/desk-transition";
 import {
   backendCreateJob,
@@ -64,7 +65,6 @@ import {
   backendSendMessage,
   backendSetProOnline,
   backendDualRoleFlags,
-  backendSaveIdentityVerification,
   backendUpdateProfile,
   backendSendOtp,
   backendSendPhoneOtp,
@@ -1888,13 +1888,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             /* */
           }
           const err = await backendSaveIdentityVerification({
-            userId: backendUserId,
             accountType: userProfile.accountType,
             primaryId: primary,
             bankId: bank || undefined,
-            nin: iso === "NG" ? primary.replace(/\D/g, "") : undefined,
-            bvn: iso === "NG" && bank ? bank.replace(/\D/g, "") : undefined,
-            identityVerified: false,
             countryIso: iso,
             govIdKind: input.govIdKind || userProfile.govIdKind,
             govIdFrontUrl: input.govIdFrontUrl || userProfile.govIdFrontUrl,
