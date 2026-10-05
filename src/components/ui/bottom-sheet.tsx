@@ -21,6 +21,9 @@ import {
 import { createPortal } from "react-dom";
 import { useApp } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { SPRING, SWIPE_DOWN_DY } from "./bottom-sheet/constants";
+import { useOnaPhoneMount } from "./bottom-sheet/use-ona-phone-mount";
+import { useSheetPointerWheelClose } from "./bottom-sheet/use-sheet-pointer-wheel-close";
 
 export type BottomSheetProps = {
   open: boolean;
@@ -38,10 +41,6 @@ export type BottomSheetProps = {
   growToPercent?: number;
 };
 
-const SPRING = "transform 0.48s cubic-bezier(0.32, 0.72, 0, 1)";
-/** Same spirit as customer Home sheet short swipe down closes */
-const SWIPE_DOWN_DY = 14;
-
 export function BottomSheet({
   open,
   onClose,
@@ -56,7 +55,7 @@ export function BottomSheet({
   const autoId = useId();
   const labelledBy = titleId || `${autoId}-sheet`;
 
-  const [mount, setMount] = useState<HTMLElement | null>(null);
+  const mount = useOnaPhoneMount();
   const [present, setPresent] = useState(false);
 
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -65,19 +64,6 @@ export function BottomSheet({
   const closingRef = useRef(false);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
-
-  useEffect(() => {
-    const resolve = () => {
-      const el = document.getElementById("ona-phone");
-      if (el) setMount(el);
-      return el;
-    };
-    if (resolve()) return;
-    const t = window.setInterval(() => {
-      if (resolve()) window.clearInterval(t);
-    }, 50);
-    return () => window.clearInterval(t);
-  }, []);
 
   const finishClose = useCallback(() => {
     if (closingRef.current) return;
@@ -156,79 +142,7 @@ export function BottomSheet({
     gestureY.current = null;
   };
 
-  // Pointer + trackpad: swipe DOWN only
-  useEffect(() => {
-    if (!present) return;
-    const sheet = sheetRef.current;
-    if (!sheet) return;
-
-    let startY: number | null = null;
-    let downAccum = 0;
-    let wheelReset: ReturnType<typeof setTimeout> | null = null;
-
-    const onDown = (e: PointerEvent) => {
-      if (closingRef.current) return;
-      if (e.pointerType === "mouse" && e.button !== 0) return;
-      const t = e.target as Element | null;
-      if (t?.closest("a[href]")) return;
-      startY = e.clientY;
-    };
-
-    const onMove = (e: PointerEvent) => {
-      if (startY == null || closingRef.current) return;
-      const dy = e.clientY - startY;
-      // Pointer moved DOWN
-      if (dy > SWIPE_DOWN_DY) {
-        startY = null;
-        finishClose();
-      }
-      // dy < 0 = up → ignore
-    };
-
-    const onUp = () => {
-      startY = null;
-    };
-
-    /**
-     * Trackpad two-finger SWIPE DOWN (natural scrolling):
-     * fingers move down → content would scroll up → deltaY is negative.
-     * We intentionally ignore deltaY > 0 (that is swipe UP).
-     */
-    const onWheel = (e: WheelEvent) => {
-      if (closingRef.current) return;
-      if (e.deltaY < 0) {
-        // Swipe / roll DOWN
-        downAccum += -e.deltaY;
-        if (wheelReset) clearTimeout(wheelReset);
-        wheelReset = setTimeout(() => {
-          downAccum = 0;
-        }, 180);
-        if (downAccum > 24 || e.deltaY < -18) {
-          downAccum = 0;
-          e.preventDefault();
-          finishClose();
-        }
-      } else {
-        // Swipe up do nothing
-        downAccum = 0;
-      }
-    };
-
-    const opts: AddEventListenerOptions = { passive: false };
-    sheet.addEventListener("pointerdown", onDown);
-    sheet.addEventListener("pointermove", onMove);
-    sheet.addEventListener("pointerup", onUp);
-    sheet.addEventListener("pointercancel", onUp);
-    sheet.addEventListener("wheel", onWheel, opts);
-    return () => {
-      sheet.removeEventListener("pointerdown", onDown);
-      sheet.removeEventListener("pointermove", onMove);
-      sheet.removeEventListener("pointerup", onUp);
-      sheet.removeEventListener("pointercancel", onUp);
-      sheet.removeEventListener("wheel", onWheel);
-      if (wheelReset) clearTimeout(wheelReset);
-    };
-  }, [present, finishClose]);
+  useSheetPointerWheelClose(present, sheetRef, closingRef, finishClose);
 
   if (!present || !mount) return null;
 
