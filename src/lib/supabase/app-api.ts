@@ -31,6 +31,7 @@ import type {
   MessageThread,
 } from "@/lib/types";
 import { isProService } from "@/lib/pro-service-id";
+import { buildProLivePatch } from "@/lib/supabase/pro-live-patch";
 import { isSyntheticAccount } from "@/lib/server/synthetic-accounts";
 import {
   apiVerifyIdemOp,
@@ -1230,21 +1231,9 @@ export async function backendSetProOnline(
     if (!sb) return "Backend offline";
     // Ensure session for RLS fallback
     await ensureAppSession().catch(() => null);
-    const patch: Record<string, unknown> = {
-      is_online: online,
-      updated_at: new Date().toISOString(),
-    };
-    if (online) {
-      // Heartbeat stamp even without new GPS so Live stays marketplace-visible
-      patch.location_updated_at = new Date().toISOString();
-      if (coords) {
-        patch.lat = coords.lat;
-        patch.lng = coords.lng;
-      }
-    }
     const { error } = await sb
       .from("repair_pro_profiles")
-      .update(patch)
+      .update(buildProLivePatch(online, coords))
       .eq("user_id", userId);
     if (error) {
       if (/JWT|session|auth/i.test(error.message)) {
