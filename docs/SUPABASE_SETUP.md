@@ -40,7 +40,7 @@ Paste into `.env.local` (never commit).
 ## 5. Seed Super Admin
 
 ```bash
-cd "/Users/mac/Desktop/Code/Ona"
+cd <path-to-your-Ona-checkout>
 npm run db:seed-admin
 ```
 

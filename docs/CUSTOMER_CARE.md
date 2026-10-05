@@ -1,10 +1,8 @@
 # Ona Customer Care guide
 
-> **Engineering split is 87.5% pro / 5% platform / 7.5% VAT** (`docs/RULES.md`). Any 95/5 figure in this ops guide is stale.
-
 **Who this is for:** Customer Care, Support, Super Admin  
 **Where:** https://ona-backend.vercel.app/admin or https://ona-mi.vercel.app/admin (local: http://localhost:4500/admin)  
-**Temporary sensitive password:** `336699`  
+**Sensitive-unlock password:** set per deployment (`ADMIN_SENSITIVE_PASSWORD`); ask your Super Admin. It is never written in this guide.  
 
 If the site says **“This deployment is temporarily paused”**, that is a Vercel account/usage block — not a bad Care login. Use local admin or fix Vercel usage (see `docs/VERCEL_DEPLOY.md`).
 
@@ -15,12 +13,12 @@ If the site says **“This deployment is temporarily paused”**, that is a Verc
 1. Log in at `/admin/login` with your staff email + password.
 2. You land on **Care desk** (`/admin`).
 3. **Unlock sensitive mode** when you need money/freeze/PII:
-   - Enter **`336699`** → Unlock
-   - Stays open ~**10 minutes**, then locks again
+   - Enter the sensitive-unlock password → Unlock
+   - Stays open about **3 minutes** (`SENSITIVE_UNLOCK_TTL_MS`), then locks again
 4. **Search** phone, name, job ID, or plate number.
 5. **Open** a job from search or the live board.
 6. Use one-click buttons:
-   - **Release escrow** → pay Repair Pro (95%) + platform (5%)
+   - **Release escrow** → pay Repair Pro (87.5%) + platform (5%) + VAT (7.5%) of the total
    - **Refund motorist** → full refund path
    - **Dispute → pay pro / refund** → final dispute decision
    - **Freeze / Unfreeze** motorist or pro
@@ -28,7 +26,7 @@ If the site says **“This deployment is temporarily paused”**, that is a Verc
 
 ---
 
-## Sensitive actions (always need `336699`)
+## Sensitive actions (always need the unlock password)
 
 | Action | Why locked |
 |--------|------------|
@@ -63,7 +61,7 @@ Negotiating → Agreed → Paid/Booked → En Route → Arrived
 ```
 
 - Money is **held in escrow** after **Paid/Booked**.
-- On **Released**: **95% Repair Pro · 5% platform**.
+- On **Released**: **87.5% Repair Pro · 5% platform · 7.5% VAT**, calculated on the job total (labour + call-out). See `docs/RULES.md`.
 - **Dispute / Appeal** keeps funds locked until Care decides.
 
 ---
@@ -81,9 +79,9 @@ Negotiating → Agreed → Paid/Booked → En Route → Arrived
 
 1. Staff login (Supabase auth)  
 2. Role permissions  
-3. Temporary password **336699** for sensitive ops  
-4. 10-minute unlock window  
-5. 30-minute **idle** admin session timeout  
+3. Sensitive-unlock password for money / freeze / PII actions  
+4. Short unlock window (about 3 minutes)  
+5. **Idle** admin session timeout (currently 4 hours, `ADMIN_IDLE_TIMEOUT_MS` in `src/lib/server/modules/security.ts`)  
 6. Rate limits on unlock + sensitive routes  
 7. **Audit log** with action, staff ID, IP, job/user target  
 
@@ -93,7 +91,7 @@ Negotiating → Agreed → Paid/Booked → En Route → Arrived
 
 | Message | What to do |
 |---------|------------|
-| Sensitive action locked | Enter `336699` on Care desk |
+| Sensitive action locked | Enter the unlock password on the Care desk |
 | Permission denied | Your role is Support — escalate to Care/Super Admin |
 | Too many attempts | Wait 1–5 minutes; don’t share password |
 | Job not found | Confirm UUID; try name/phone search |
@@ -106,4 +104,4 @@ Negotiating → Agreed → Paid/Booked → En Route → Arrived
 - Fraud / abuse → **Freeze** user + note in audit reason  
 - Unfair dispute → open **Disputes** page, review evidence, resolve with password  
 
-**Never** share `336699` in chat groups or with customers.
+**Never** share the unlock password in chat groups or with customers.

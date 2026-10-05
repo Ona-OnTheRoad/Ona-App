@@ -6,7 +6,7 @@
 | **Author** | Ona engineering |
 | **Date** | 2026-08-21 |
 | **Status** | **v2 DRAFT — not approved. Do not implement.** Collides with as-built v1 (`ona_cash_*` in `cashout-engine.ts`). Express already used migration `076`. Freeze v1 vs v2 before any wallet PR. |
-| **Repo** | `/Users/mac/Desktop/Code/Ona` |
+| **Repo** | this repository |
 | **Audience** | Senior engineers implementing PRs against existing ledger, payout, and admin surfaces |
 
 ---
@@ -1116,7 +1116,7 @@ Each PR is independently reviewable and mergeable. Pre-merge gate on all: `npm r
 
 - **Title:** `feat(wallet): vest referral credits on referred user's first paid_booked`
 - **Depends on:** PR 1
-- **Files:** `src/lib/server/modules/wallet/vest.ts` (`maybeVestReferralForMotorist`, `maybeUnvestReferralForMotorist`); `src/lib/server/jobs/job-store.ts` (`applyEvent` `PAYMENT_SUCCESS` → vest; `markJobPaidFromReference` **alreadyBooked path** → vest; `refundJobEscrow` → unvest); `src/app/api/payments/refund/route.ts`; `src/app/api/admin/payments/route.ts`; `src/lib/server/modules/care-service.ts` (`refund_escrow`); `src/lib/server/modules/wallet/__tests__/vest.test.ts`
+- **Files:** `src/lib/server/modules/wallet/vest.ts` (`maybeVestReferralForMotorist`, `maybeUnvestReferralForMotorist`); `src/lib/server/jobs/job-store/` (`applyEvent` `PAYMENT_SUCCESS` → vest; `markJobPaidFromReference` **alreadyBooked path** → vest; `refundJobEscrow` → unvest); `src/app/api/payments/refund/route.ts`; `src/app/api/admin/payments/route.ts`; `src/lib/server/modules/care-service.ts` (`refund_escrow`); `src/lib/server/modules/wallet/__tests__/vest.test.ts`
 - **Description:** **Do not deploy PR 1 to production without 1b.** Independently reviewable, same release train. Vest from **both** `applyEvent(PAYMENT_SUCCESS)` and `markJobPaidFromReference` when `alreadyBooked` (verify retry). Unvest from **one helper** used by `refundJobEscrow`, `/api/payments/refund`, `/api/admin/payments`, and care-service refund. Idempotent vest (unique tx). Unvests if cashable still covers the reward; else freeze + `credit_abuse`. Tests: book then vest-fail then verify retry still vests; admin payments refund unvests.
 
 ### PR 2 — Feature flags and API gate

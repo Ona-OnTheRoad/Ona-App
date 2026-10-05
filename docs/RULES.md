@@ -181,9 +181,9 @@ src/lib/callout/payable.ts
 src/lib/callout/__tests__/engine.test.ts
 src/lib/callout/__tests__/payable.test.ts
 src/lib/pricing.ts
-src/lib/pricing.test.ts
+src/lib/__tests__/pricing.test.ts
 src/lib/server/payments/payout-settlement.ts
-src/lib/server/jobs/job-store.ts
+src/lib/server/jobs/job-store/ (folder: index.ts and one file per concern)
 src/lib/jobs/constants.ts
 src/components/jobs/callout-fee-lines.tsx
 src/components/jobs/motorist-release-pay-gate.tsx

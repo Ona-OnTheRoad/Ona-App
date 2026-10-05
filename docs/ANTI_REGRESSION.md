@@ -97,8 +97,8 @@ Portals for menus/call sheets must mount on `#ona-phone`, not `document.body` al
 | In-app call | Prefer WebRTC via Supabase signaling; `tel:` only via `openTelDialer` never `location.href` |
 
 ### In-app voice (WebRTC)
-- Signaling: Realtime broadcast on `call-inbox:{userId}` + `call-session:{callId}`
-- STUN only (Google public) — no paid TURN required for many networks
+- Signaling: rows in the `call_signals` table written through `POST /api/call/signal`; the callee listens for `INSERT` on `call_signals` (Supabase Realtime `postgres_changes`, filtered by `to_user_id`, channel `call-db:{userId}-…`) with a polling fallback (`src/components/call/in-app-call/use-call-inbox.ts`)
+- ICE servers (`ICE_SERVERS` in `src/components/call/in-app-call/helpers.ts`): public STUN (Google, Cloudflare) plus a **free public TURN relay** (`openrelay.metered.ca`, shared credentials, best-effort). There is no dedicated/paid TURN; call audio that needs a relay goes through that third-party server, so consider a dedicated TURN before relying on calls at scale
 - Job Call passes `userId` (peer) + optional `phone` fallback
 - Incoming: Accept / Decline UI on the other device when app is open
 
