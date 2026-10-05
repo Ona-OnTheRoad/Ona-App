@@ -10,7 +10,7 @@ Read `docs/ANTI_REGRESSION.md` before touching call/jobs/navigation.
 ---
 
 ### 1. Front-End (30 min — max 40 lines) — :3000 + verify :4500
-**Files:** `src/components/call/in-app-call.tsx:1` or `src/app/jobs/[id]/page.tsx`
+**Files:** `src/components/call/in-app-call.tsx:1` or `src/app/(shared)/jobs/[id]/page.tsx`
 - Fix phone shell `#ona-phone` — keep `h-full min-h-0` flex chain, portal overlays inside shell.
 - Wire Call/Chat via `openTelDialer()` (hard ban: no `tel:` href), respect `navigateBack` + `om-page-exit`.
 - Verify `:4500/admin` still loads (no layout break). No Figma changes.

@@ -4,7 +4,7 @@
  * "Pay now to book not clicking" is a silent failure: the button renders but
  * `startPay` bounces to the "expired" screen, or the Pay button is disabled by
  * a gate the user never sees. Each gate below logs which one tripped so we can
- * pin the exact branch (see src/app/payments/checkout/page.tsx).
+ * pin the exact branch (see src/app/(customer)/payments/checkout/page.tsx).
  *
  * Fire-and-forget: never throws, never blocks the UI.
  */

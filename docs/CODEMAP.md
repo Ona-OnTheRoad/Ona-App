@@ -7,6 +7,25 @@
 
 ---
 
+## Route groups (`src/app`)
+
+Pages live in Next.js **route groups**: folders named `(group)` that organise files and are **not part of the URL**, so `src/app/(customer)/shop/page.tsx` still serves `/shop`.
+
+| Group | What lives there |
+|-------|------------------|
+| `(onboarding)` | `login`, `signup`, `verify`, `logout`, `artisan` (Repair Pro onboarding / verification) |
+| `(customer)` | `requests`, `history`, `search`, `bookings`, `express`, `shop`, `technician`, `payments` |
+| `(artisan)` | `orders`, `dashboard` (Repair Pro home) |
+| `(shared)` | `jobs`, `messages`, `wallet`, `profile`, `settings`, and the home page `/` — used by both roles (one account switches role) |
+
+`admin/` and `api/` stay at the top level of `src/app`.
+
+- Put a new page in the group for the role that owns it; if both roles use it, use `(shared)`.
+- Two groups must not serve the same URL (Next errors). Do not add a `layout.tsx` to a group without reading `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/route-groups.md`; the single phone shell comes from `src/app/layout.tsx`.
+- Imports use `@/...` aliases, so moving a page between groups does not break imports. Update any test that imports `@/app/(group)/...`.
+
+---
+
 ## Domain Map
 
 ```
@@ -133,7 +152,7 @@ src/
 | **API Client** | `src/lib/shop/client.ts` |
 | **Taxonomy** | `src/lib/shop/taxonomy.ts`, `trade-attributes.ts` |
 | **Catalog Status** | `src/lib/shop/catalog-status.ts` |
-| **UI** | `src/app/shop/page.tsx`, `src/components/shop/` |
+| **UI** | `src/app/(customer)/shop/page.tsx`, `src/components/shop/` |
 | **API** | `src/app/api/shop/` (home, search, products, cart, checkout) |
 
 ---
@@ -183,7 +202,7 @@ src/
 | **Demo Catalog** | `src/lib/shop/demo-catalog.ts` (isolated, not prod) |
 | **Taxonomy** | `src/lib/shop/taxonomy.ts`, `trade-attributes.ts` |
 | **Client** | `src/lib/shop/client.ts` |
-| **UI** | `src/app/shop/page.tsx`, `src/components/shop/` |
+| **UI** | `src/app/(customer)/shop/page.tsx`, `src/components/shop/` |
 
 ---
 
@@ -241,7 +260,7 @@ src/lib/jobs/constants.ts
 src/components/jobs/callout-fee-lines.tsx
 src/components/jobs/motorist-release-pay-gate.tsx
 src/components/jobs/job-flow-screen.tsx (display logic only)
-src/app/dashboard/page.tsx
+src/app/(artisan)/dashboard/page.tsx
 src/components/jobs/callout-fee-lines.tsx
 src/lib/app-config.ts
 src/lib/jobs/types.ts

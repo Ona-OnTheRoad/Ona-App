@@ -45,7 +45,7 @@ Job money is a third, separate ledger:
 
 Wallet-adjacent product already in tree:
 
-- Phone UI: `src/app/wallet/page.tsx` (title is still “Refer & Earn”; cashout posts amount only, no bank)
+- Phone UI: `src/app/(shared)/wallet/page.tsx` (title is still “Refer & Earn”; cashout posts amount only, no bank)
 - Menu: both `CLIENT_NAV` and `PRO_NAV` in `src/components/layout/app-menu.tsx` link `/wallet` as “Referral & Earn”
 - Pro job money hub: `/settings/payments` (overview / bank / activity) — **this stays the job-earnings surface**
 - Admin: `src/app/admin/credit-control/page.tsx` + `/api/admin/security`
@@ -751,7 +751,7 @@ Ship behind `wallet_service_spend`. Default false until cashout has soaked.
 
 ### 12. Phone-shell UI
 
-Keep `#ona-phone`. PR 6 must set the wallet root to `flex h-full min-h-0 flex-col overflow-hidden` (`docs/ANTI_REGRESSION.md` §1) — today `src/app/wallet/page.tsx` is `flex h-full flex-col` without `min-h-0`. `PageHeader` + `navigateBack`.
+Keep `#ona-phone`. PR 6 must set the wallet root to `flex h-full min-h-0 flex-col overflow-hidden` (`docs/ANTI_REGRESSION.md` §1) — today `src/app/(shared)/wallet/page.tsx` is `flex h-full flex-col` without `min-h-0`. `PageHeader` + `navigateBack`.
 
 `/wallet` is a shared path (`isSharedAppPath` already includes it). **The route always returns HTTP 200.** If `feature_flags.wallet` is off, render the in-shell “coming soon” empty state (do not 404). APIs return 403 `wallet_disabled`.
 
@@ -1123,7 +1123,7 @@ Each PR is independently reviewable and mergeable. Pre-merge gate on all: `npm r
 
 - **Title:** `feat(wallet): gate wallet APIs on feature_flags.wallet`
 - **Depends on:** PR 1 + 1b
-- **Files:** `src/app/api/security/wallet/route.ts`; `src/app/api/security/cashout/route.ts`; `src/app/wallet/page.tsx` (coming-soon empty state inside phone shell, HTTP 200); seed `wallet_cashout` / `wallet_service_spend` in `20260821_076` or a tiny follow-up seed; do not overload `src/app/admin/features/page.tsx` app-config flags
+- **Files:** `src/app/api/security/wallet/route.ts`; `src/app/api/security/cashout/route.ts`; `src/app/(shared)/wallet/page.tsx` (coming-soon empty state inside phone shell, HTTP 200); seed `wallet_cashout` / `wallet_service_spend` in `20260821_076` or a tiny follow-up seed; do not overload `src/app/admin/features/page.tsx` app-config flags
 - **Description:** GET wallet **403 `wallet_disabled`** when flag off (minimal payload `{ wallet, transactions }` when on). POST cashout requires both flags. Page always 200. No transfer, no limits/destination/kyc yet.
 
 ### PR 3 — Cashout request: bank, KYC, limits, idempotency
@@ -1151,7 +1151,7 @@ Each PR is independently reviewable and mergeable. Pre-merge gate on all: `npm r
 
 - **Title:** `feat(wallet): phone-shell balance, cashout, history`
 - **Depends on:** PR 3 (can merge after 3 with execute behind flag; ideally after 4)
-- **Files:** `src/app/wallet/page.tsx` (`flex h-full min-h-0 flex-col overflow-hidden`; `Idempotency-Key`; **no hardcoded ₦2000** — use `limits.min`); `src/components/layout/app-menu.tsx` (`labelKey` `nav.wallet`); `src/lib/i18n/catalog/en.ts` first, then every other catalog; `src/app/settings/payments/page.tsx` (optional credits row)
+- **Files:** `src/app/(shared)/wallet/page.tsx` (`flex h-full min-h-0 flex-col overflow-hidden`; `Idempotency-Key`; **no hardcoded ₦2000** — use `limits.min`); `src/components/layout/app-menu.tsx` (`labelKey` `nav.wallet`); `src/lib/i18n/catalog/en.ts` first, then every other catalog; `src/app/(shared)/settings/payments/page.tsx` (optional credits row)
 - **Description:** Real wallet page: balances, fee preview, bank last4, status, history. Coming-soon if flags off (HTTP 200). ANTI_REGRESSION smoke: back, shell height, no `tel:`.
 
 ### PR 7 — Service-spend discount at job init (flagged)

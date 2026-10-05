@@ -188,7 +188,7 @@ src/lib/jobs/constants.ts
 src/components/jobs/callout-fee-lines.tsx
 src/components/jobs/motorist-release-pay-gate.tsx
 src/components/jobs/job-flow-screen.tsx (display logic only)
-src/app/dashboard/page.tsx
+src/app/(artisan)/dashboard/page.tsx
 src/components/jobs/callout-fee-lines.tsx
 src/lib/app-config.ts
 src/lib/jobs/types.ts
