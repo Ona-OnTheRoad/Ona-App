@@ -1,37 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { SlidersHorizontal } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import type {
+  FacetFilters,
+  FilterDef,
+} from "@/components/shop/facet-bar/facet-bar-types";
+import { useFacetDefs } from "@/components/shop/facet-bar/use-facet-defs";
 
-export type FacetFilters = {
-  categorySlug?: string | null;
-  availability?: "in_stock" | "all";
-  minPriceMinor?: number | null;
-  maxPriceMinor?: number | null;
-  attributes: Record<string, string | number | boolean>;
-};
-
-type FilterDef =
-  | { kind: "category"; key: string; label: string }
-  | { kind: "price"; key: string; label: string }
-  | { kind: "availability"; key: string; label: string }
-  | {
-      kind: "attribute";
-      key: string;
-      label: string;
-      type: string;
-      unit?: string;
-      options?: string[];
-    };
-
-type Category = {
-  id: string;
-  slug: string;
-  name: string;
-  productCount: number;
-};
+export type { FacetFilters };
 
 type Props = {
   tradeKey: string;
@@ -42,53 +21,10 @@ type Props = {
 export function ShopFacetBar({ tradeKey, filters, onChange }: Props) {
   const { theme } = useApp();
   const isLight = theme === "light";
-  const [defs, setDefs] = useState<FilterDef[]>([]);
-  const [cats, setCats] = useState<Category[]>([]);
+  const { defs, cats } = useFacetDefs(tradeKey);
   const [open, setOpen] = useState(false);
   const [minInput, setMinInput] = useState("");
   const [maxInput, setMaxInput] = useState("");
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const [fRes, cRes] = await Promise.all([
-          fetch(`/api/shop/filters?trade=${encodeURIComponent(tradeKey)}`),
-          fetch(
-            `/api/shop/categories?trade=${encodeURIComponent(tradeKey)}&roots=1`,
-          ),
-        ]);
-        const fJson = (await fRes.json()) as {
-          ok?: boolean;
-          data?: { filters?: FilterDef[] | { filters?: FilterDef[] } };
-        };
-        const cJson = (await cRes.json()) as {
-          ok?: boolean;
-          data?: { categories?: Category[] };
-        };
-        if (!cancelled) {
-          const raw = fJson.data?.filters;
-          const list = Array.isArray(raw)
-            ? raw
-            : raw && typeof raw === "object" && Array.isArray(raw.filters)
-              ? raw.filters
-              : [];
-          setDefs(list);
-          setCats(
-            Array.isArray(cJson.data?.categories) ? cJson.data.categories : [],
-          );
-        }
-      } catch {
-        if (!cancelled) {
-          setDefs([]);
-          setCats([]);
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [tradeKey]);
 
   const activeCount =
     (filters.availability === "in_stock" ? 1 : 0) +
