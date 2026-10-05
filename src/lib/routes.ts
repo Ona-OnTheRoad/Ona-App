@@ -5,7 +5,15 @@ import type { AccountType } from "@/lib/types";
  * Pros stay on pro pages unless they registered as Customer.
  */
 
-const PUBLIC_PREFIXES = ["/login", "/signup", "/logout", "/admin"];
+const PUBLIC_PREFIXES = [
+  "/login",
+  "/signup",
+  "/logout",
+  "/admin",
+  // Privacy Policy and Terms must be readable without an account (stores, payment
+  // providers and search engines all require a public URL).
+  "/settings/legal",
+];
 // /login/reset-password and /signup/error are public
 
 /** Paths motorists use for discovery / requests */

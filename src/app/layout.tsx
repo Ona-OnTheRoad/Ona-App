@@ -2,8 +2,22 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import { AppConfigProvider } from "@/components/app-config-provider";
 import { AppFrame } from "@/components/layout/app-frame";
+import { JsonLd } from "@/components/seo/json-ld";
+import { NoScriptNotice } from "@/components/seo/no-script-notice";
 import { ONA_BUILD_ID } from "@/lib/build-id";
+import {
+  OG_IMAGE,
+  SITE_DESCRIPTION,
+  SITE_LOCALE,
+  SITE_NAME,
+  SITE_TITLE,
+  siteUrl,
+} from "@/lib/site";
 import { I18nProvider } from "@/lib/i18n";
+import {
+  organizationJsonLd,
+  webApplicationJsonLd,
+} from "@/lib/seo/structured-data";
 import { AppProvider } from "@/lib/store";
 import "./globals.css";
 
@@ -26,14 +40,34 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ona: Find mechanics, vulcanizers and tow near you",
-  description:
-    "Find and call mechanics, vulcanizers and tow trucks near you, within about 5 km.",
-  applicationName: "Ona",
+  metadataBase: new URL(siteUrl()),
+  title: { default: SITE_TITLE, template: `%s | ${SITE_NAME}` },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: "/",
+    locale: SITE_LOCALE,
+    images: [OG_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [OG_IMAGE.url],
+  },
+  icons: {
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Ona",
+    title: SITE_NAME,
   },
   formatDetection: {
     telephone: false,
@@ -78,6 +112,9 @@ export default function RootLayout({
           margin: 0,
         }}
       >
+        <JsonLd data={organizationJsonLd()} />
+        <JsonLd data={webApplicationJsonLd()} />
+        <NoScriptNotice />
         <AppConfigProvider>
           <AppProvider>
             <I18nProvider>

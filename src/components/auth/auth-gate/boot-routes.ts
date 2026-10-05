@@ -51,8 +51,13 @@ export function isDualRoleSignupPath(
   return false;
 }
 
+/** Public content pages (legal): readable immediately, and present in the server HTML for crawlers. */
+export function isPublicContentRoute(pathname: string) {
+  return pathname.startsWith("/settings/legal");
+}
+
 export function initialPhase(pathname: string): BootPhase {
   // Deep-link into forms: never trap on splash
-  if (isAuthFormRoute(pathname)) return "ready";
+  if (isAuthFormRoute(pathname) || isPublicContentRoute(pathname)) return "ready";
   return "loading";
 }
