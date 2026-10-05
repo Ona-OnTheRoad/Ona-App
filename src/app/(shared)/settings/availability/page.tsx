@@ -137,6 +137,7 @@ export default function SettingsAvailabilityPage() {
           <button
             type="button"
             role="switch"
+            aria-label="Vacation mode"
             aria-checked={vacation}
             onClick={() => setVacation((v) => !v)}
             className={cn(

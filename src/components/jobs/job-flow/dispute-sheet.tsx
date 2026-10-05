@@ -48,10 +48,14 @@ export function DisputeSheet({
         >
           Money stays locked until admin resolves (within 24h).
         </p>
-        <label className="mt-4 block text-[11px] font-bold uppercase tracking-wide text-[#FF6B35]">
+        <label
+          htmlFor="dispute-reason"
+          className="mt-4 block text-[11px] font-bold uppercase tracking-wide text-[#FF6B35]"
+        >
           Reason
         </label>
         <select
+          id="dispute-reason"
           value={reason}
           onChange={(e) => setReason(e.target.value as DisputeReason)}
           className={cn(

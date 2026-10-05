@@ -56,6 +56,7 @@ export function PayoutCacSections({
           <p className={cn("text-[12px]", t.muted)}>No document uploaded.</p>
         )}
         <label className="mt-2 block">
+          <span className="sr-only">Upload CAC document</span>
           <input
             type="file"
             accept="image/*,.pdf"

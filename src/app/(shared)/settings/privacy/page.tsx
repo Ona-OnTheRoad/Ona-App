@@ -67,6 +67,7 @@ function PrivacyToggle({
       <button
         type="button"
         role="switch"
+        aria-label={label}
         aria-checked={on}
         onClick={() => onChange(!on)}
         className={cn(

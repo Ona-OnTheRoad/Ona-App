@@ -82,10 +82,14 @@ export function NeedHelpStepBody({
 
       {step === "help" ? (
         <div className={cn("shrink-0 rounded-xl px-3 py-2", card)}>
-          <label className={cn("block text-[13px] font-bold", ink)}>
+          <label
+            htmlFor="need-help-problem"
+            className={cn("block text-[13px] font-bold", ink)}
+          >
             What do you need help with?
           </label>
           <textarea
+            id="need-help-problem"
             value={problem}
             onChange={(e) => {
               setProblem(e.target.value);

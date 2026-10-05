@@ -71,10 +71,14 @@ export function PhoneTierCard({
           {/* gap: om-cta-dark-gray forces margin:0 */}
           <div className="mt-2.5 flex flex-col gap-2">
             <div>
-              <label className={cn(authLabelClass, "!mb-1 text-[11px]")}>
+              <label
+                htmlFor="verify-otp-code"
+                className={cn(authLabelClass, "!mb-1 text-[11px]")}
+              >
                 OTP code
               </label>
               <input
+                id="verify-otp-code"
                 className={cn(authFieldClass, "h-9 text-[12px]")}
                 value={otp}
                 onChange={(e) =>

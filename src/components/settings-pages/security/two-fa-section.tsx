@@ -72,6 +72,7 @@ export function TwoFaSection({
         <button
           type="button"
           role="switch"
+          aria-label="Two-factor authentication"
           aria-checked={twoFaOn || setupStep !== "idle"}
           onClick={onToggle}
           className={cn(

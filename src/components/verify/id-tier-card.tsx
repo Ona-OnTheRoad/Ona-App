@@ -81,10 +81,14 @@ export function IdTierCard({
       ) : (
         <div className="mt-2.5 flex flex-col gap-2.5">
           <div>
-            <label className={cn(authLabelClass, "!mb-1 text-[11px]")}>
+            <label
+              htmlFor="verify-id-type"
+              className={cn(authLabelClass, "!mb-1 text-[11px]")}
+            >
               ID type
             </label>
             <select
+              id="verify-id-type"
               className={cn(authFieldClass, "h-9 text-[12px]")}
               value={idType}
               onChange={(e) => changeIdType(e.target.value)}

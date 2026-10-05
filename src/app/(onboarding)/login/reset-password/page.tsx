@@ -109,9 +109,10 @@ export default function ResetPasswordPage() {
         </p>
 
         <form onSubmit={onSubmit} className="mt-6 flex flex-1 flex-col gap-3.5">
-          <label className="block">
+          <label htmlFor="reset-new-password" className="block">
             <span className={authLabelClass}>New password</span>
             <PasswordField
+              id="reset-new-password"
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -120,9 +121,10 @@ export default function ResetPasswordPage() {
               disabled={!ready}
             />
           </label>
-          <label className="block">
+          <label htmlFor="reset-confirm-password" className="block">
             <span className={authLabelClass}>Confirm password</span>
             <PasswordField
+              id="reset-confirm-password"
               autoComplete="new-password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}

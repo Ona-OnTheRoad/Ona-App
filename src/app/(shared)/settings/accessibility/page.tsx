@@ -129,6 +129,7 @@ export default function SettingsAccessibilityPage() {
           <button
             type="button"
             role="switch"
+            aria-label="Stronger contrast"
             aria-checked={highContrast}
             onClick={() => applyHc(!highContrast)}
             className={cn(

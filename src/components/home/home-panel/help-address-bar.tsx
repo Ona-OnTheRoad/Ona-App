@@ -133,7 +133,7 @@ export function HelpAddressBar({
               role="listbox"
             >
               {knownHits.map((p) => (
-                <li key={p.id} role="option">
+                <li key={p.id} role="option" aria-selected="false">
                   <button
                     type="button"
                     className={cn(
