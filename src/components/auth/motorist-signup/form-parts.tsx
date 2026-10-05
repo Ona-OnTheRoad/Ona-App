@@ -53,7 +53,7 @@ export function PasswordRules({ password }: { password: string }) {
           className={cn(
             "text-[9px] font-medium",
             password.length === 0
-              ? "text-[#64748b]"
+              ? "text-[#475569]"
               : row.ok
                 ? "text-emerald-600"
                 : "text-red-600",

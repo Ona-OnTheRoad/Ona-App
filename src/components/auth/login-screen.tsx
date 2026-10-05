@@ -95,7 +95,7 @@ export function LoginScreen() {
             />
           </div>
 
-          <p className="mt-4 px-0.5 text-center text-[11px] leading-relaxed text-[#64748b]">
+          <p className="mt-4 px-0.5 text-center text-[11px] leading-relaxed text-[#475569]">
             {!accountType
               ? t("auth.tapRole")
               : accountType === "professional"
@@ -141,12 +141,12 @@ export function LoginScreen() {
                 strokeWidth={2.4}
               />
             </button>
-            <p className="mt-2.5 text-center text-[12px] text-[#64748b]">
+            <p className="mt-2.5 text-center text-[12px] text-[#475569]">
               Already have an account?{" "}
               <button
                 type="button"
-                className="border-0 bg-transparent p-0 font-semibold"
-                style={{ color: ACCENT }}
+                className="border-0 bg-transparent p-0 font-semibold underline underline-offset-2"
+                style={{ color: "#8f2f0c" }}
                 onClick={() => go("/login/signin")}
               >
                 Log In
@@ -190,7 +190,7 @@ function RoleCard({
       <Icon
         className={cn(
           "mt-0.5 h-[18px] w-[18px] shrink-0",
-          active ? "text-[#FF6B35]" : "text-[#64748b]",
+          active ? "text-[#FF6B35]" : "text-[#475569]",
         )}
         strokeWidth={2.1}
       />
@@ -215,7 +215,7 @@ function RoleCard({
         <p
           className={cn(
             "mt-0.5 text-[12.5px] font-medium leading-snug",
-            active ? "text-[#334155]" : "text-[#64748b]",
+            active ? "text-[#334155]" : "text-[#475569]",
           )}
         >
           {subtitle}

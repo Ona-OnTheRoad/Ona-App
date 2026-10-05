@@ -53,7 +53,10 @@ export default function SettingsLegalPage() {
           Questions:{" "}
           <a
             href="mailto:witcowavers@gmail.com"
-            className="font-bold text-[#FF6B35] no-underline"
+            className={cn(
+              "font-bold underline underline-offset-2",
+              isLight ? "text-[#8f2f0c]" : "text-[#FF6B35]",
+            )}
           >
             witcowavers@gmail.com
           </a>

@@ -77,7 +77,7 @@ function SignupErrorBody() {
           </button>
           <button
             type="button"
-            className="mt-3 text-[12px] font-semibold text-[#64748b] underline"
+            className="mt-3 text-[12px] font-semibold text-[#475569] underline"
             onClick={() => router.replace("/login")}
           >
             Back

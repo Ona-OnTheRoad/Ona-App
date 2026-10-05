@@ -35,7 +35,13 @@ export default function TermsPage() {
         <p className="mb-2">
           We may suspend accounts that fail verification, abuse the marketplace,
           or violate safety rules. Contact{" "}
-          <a href="mailto:witcowavers@gmail.com" className="text-[#FF6B35]">
+          <a
+            href="mailto:witcowavers@gmail.com"
+            className={cn(
+              "underline underline-offset-2",
+              isLight ? "text-[#8f2f0c]" : "text-[#FF6B35]",
+            )}
+          >
             witcowavers@gmail.com
           </a>{" "}
           for full legal copies or disputes.

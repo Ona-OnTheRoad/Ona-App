@@ -55,7 +55,7 @@ export function AppleProRow({
         <p
           className={cn(
             "mb-1 text-[11px] font-semibold",
-            isLight ? "text-slate-500" : "text-white/45",
+            isLight ? "text-slate-700" : "text-white/70",
           )}
         >
           {label}

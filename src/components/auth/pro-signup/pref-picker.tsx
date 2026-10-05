@@ -107,7 +107,7 @@ export function PrefPicker({
       >
         <p className="shrink-0 border-b border-black/10 px-2 py-1.5 text-center text-[11px] font-bold uppercase tracking-wide text-[#475569]">
           {brand}
-          <span className="mt-0.5 block text-[10px] font-medium normal-case tracking-normal text-[#64748b]">
+          <span className="mt-0.5 block text-[10px] font-medium normal-case tracking-normal text-[#475569]">
             {chosen.filter((m) => m !== "Any").length || chosen.includes("Any")
               ? `${chosen.length} selected`
               : "Tap models"}
@@ -120,7 +120,7 @@ export function PrefPicker({
             ),
           )}
           {opts.length === 0 && (
-            <li className="py-4 text-center text-[11px] text-[#64748b]">
+            <li className="py-4 text-center text-[11px] text-[#475569]">
               No matches
             </li>
           )}
@@ -172,6 +172,7 @@ export function PrefPicker({
             value={pickerQuery}
             onChange={(e) => setPickerQuery(e.target.value)}
             placeholder="Search"
+            aria-label="Search"
             className={styles.fieldClass}
             style={styles.fieldStyle}
             autoFocus
@@ -215,7 +216,7 @@ export function PrefPicker({
               );
             })}
             {singleOptions.length === 0 && (
-              <li className="py-8 text-center text-[12px] text-[#64748b]">
+              <li className="py-8 text-center text-[12px] text-[#475569]">
                 {isModel && vehicleBrands.length === 0
                   ? "Pick car brands first"
                   : "No matches"}

@@ -50,7 +50,7 @@ export function AccountIdFields({ f }: { f: MotoristFields }) {
             inputMode={primaryDoc.charset === "digits" ? "numeric" : "text"}
             maxLength={primaryDoc.maxLen}
           />
-          <p className="mt-0.5 text-[10px] font-medium text-[#64748b]">
+          <p className="mt-0.5 text-[10px] font-medium text-[#475569]">
             {idPack.countryName}: {primaryDoc.hint} You can finish this later in
             Verify.
           </p>
@@ -83,7 +83,7 @@ export function AccountIdFields({ f }: { f: MotoristFields }) {
             inputMode={bankDoc.charset === "digits" ? "numeric" : "text"}
             maxLength={bankDoc.maxLen}
           />
-          <p className="mt-0.5 text-[10px] font-medium text-[#64748b]">
+          <p className="mt-0.5 text-[10px] font-medium text-[#475569]">
             {bankDoc.hint}
           </p>
           <FieldHint message={fieldErrors.bvn} />

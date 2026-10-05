@@ -25,7 +25,7 @@ export function AboutGuarantorSection({
   return (
     <section className="flex flex-col gap-3">
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#64748b]">
+        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#475569]">
           Guarantor
           <RequiredMark />
         </p>

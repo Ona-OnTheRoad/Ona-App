@@ -48,6 +48,7 @@ export function VehicleCascadePicker({
             value={fix.vehiclePickerQuery}
             onChange={(e) => fix.setVehiclePickerQuery(e.target.value)}
             placeholder="Search"
+            aria-label="Search"
             className={styles.fieldClass}
             style={styles.fieldStyle}
             autoFocus

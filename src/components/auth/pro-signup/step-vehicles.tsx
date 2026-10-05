@@ -73,7 +73,7 @@ export function StepVehicles({ fix }: { fix: VehiclesCanFix }) {
               {row.label}
             </span>
             <span className="inline-flex min-w-0 max-w-[55%] items-center gap-1">
-              <span className="truncate text-[13px] font-medium uppercase tracking-[0.02em] text-[#64748b]">
+              <span className="truncate text-[13px] font-medium uppercase tracking-[0.02em] text-[#475569]">
                 {displayVal(row.value)}
               </span>
               <ChevronRight

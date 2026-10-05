@@ -48,7 +48,7 @@ export function AccountPasswordFields({
               autoComplete="current-password"
             />
           </div>
-          <p className="mt-1 text-[10px] leading-snug text-[#64748b]">
+          <p className="mt-1 text-[10px] leading-snug text-[#475569]">
             No new password use the one you already signed up with.
           </p>
           <FieldHint message={fieldErrors.password} />

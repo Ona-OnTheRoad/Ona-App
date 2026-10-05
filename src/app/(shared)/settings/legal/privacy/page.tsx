@@ -34,7 +34,13 @@ export default function PrivacyPolicyPage() {
         <p className="mb-2">
           You may request export or deletion of your account from Settings.
           Questions:{" "}
-          <a href="mailto:witcowavers@gmail.com" className="text-[#FF6B35]">
+          <a
+            href="mailto:witcowavers@gmail.com"
+            className={cn(
+              "underline underline-offset-2",
+              isLight ? "text-[#8f2f0c]" : "text-[#FF6B35]",
+            )}
+          >
             witcowavers@gmail.com
           </a>
           .

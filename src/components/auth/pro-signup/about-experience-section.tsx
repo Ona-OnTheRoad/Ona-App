@@ -17,7 +17,7 @@ export function AboutExperienceSection({
     <>
       <section className="flex flex-col gap-2.5">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#64748b]">
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#475569]">
             Years of service
             <RequiredMark />
           </p>
@@ -50,7 +50,7 @@ export function AboutExperienceSection({
                     <span
                       className={cn(
                         "mt-0.5 text-[9px] font-medium",
-                        on ? "text-white/75" : "text-[#64748b]",
+                        on ? "text-white/75" : "text-[#475569]",
                       )}
                     >
                       yrs
@@ -62,7 +62,7 @@ export function AboutExperienceSection({
                     <span
                       className={cn(
                         "text-[10px] font-medium",
-                        on ? "text-white/75" : "text-[#64748b]",
+                        on ? "text-white/75" : "text-[#475569]",
                       )}
                     >
                       {year === "1" ? "yr" : "yrs"}
@@ -78,7 +78,7 @@ export function AboutExperienceSection({
       <section className="flex flex-col gap-2.5">
         <div className="flex items-end justify-between gap-2">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#64748b]">
+            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#475569]">
               Short bio
               <RequiredMark />
             </p>

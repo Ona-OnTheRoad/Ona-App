@@ -50,7 +50,7 @@ export function StepTrade({
                       <span
                         className={cn(
                           "mt-0.5 block text-[12px] font-medium",
-                          isLight ? "text-slate-500" : "text-white/45",
+                          isLight ? "text-slate-700" : "text-white/70",
                         )}
                       >
                         {hint}
@@ -79,10 +79,18 @@ export function StepTrade({
       <p
         className={cn(
           "mt-2 shrink-0 text-center text-[12px] font-medium",
-          isLight ? "text-slate-500" : "text-white/45",
+          isLight ? "text-slate-700" : "text-white/70",
         )}
       >
-        Choose only <span className="font-semibold text-[#FF6B35]">one</span>{" "}
+        Choose only{" "}
+        <span
+          className={cn(
+            "font-semibold",
+            isLight ? "text-[#8f2f0c]" : "text-[#FF6B35]",
+          )}
+        >
+          one
+        </span>{" "}
         trade, then pick your focus
       </p>
     </>

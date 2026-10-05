@@ -18,7 +18,7 @@ export function StepAccount({
   return (
     <div className="flex min-h-0 flex-1 flex-col justify-between gap-1">
       <div className="flex flex-col gap-1.5 overflow-y-auto scrollbar-hide">
-        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#64748b]">
+        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#475569]">
           Your details
         </p>
 
@@ -44,7 +44,7 @@ export function StepAccount({
         )}
       </div>
 
-      <p className="shrink-0 text-center text-[10px] leading-snug text-[#64748b]">
+      <p className="shrink-0 text-center text-[10px] leading-snug text-[#475569]">
         {dualSignup
           ? "Empty NIN/BVN stay editable · opens as Customer"
           : IDENTITY_RULE_COPY}

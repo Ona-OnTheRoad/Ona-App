@@ -72,7 +72,7 @@ export function SignInForm() {
         <h1 className="text-[22px] font-bold tracking-tight text-[#1e293b]">
           {t("auth.logIn")}
         </h1>
-        <p className="mt-1 text-[12px] font-medium text-[#64748b]">
+        <p className="mt-1 text-[12px] font-medium text-[#475569]">
           Use the exact phone number you registered at signup
         </p>
 
