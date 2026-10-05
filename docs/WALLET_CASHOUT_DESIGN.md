@@ -1170,7 +1170,7 @@ Each PR is independently reviewable and mergeable. Pre-merge gate on all: `npm r
 - `docs/BACKEND_ARCHITECTURE.md` — escrow split, service-role, wallet stub note
 - `docs/PAYOUT_SYNC_RELEASE.md` — `ona_rel_…`, UNIQUE transfer_ref, 10 min / 24 h, ₦120 min S
 - `docs/ANTI_REGRESSION.md` — phone shell, back nav, timers (do not regress)
-- `docs/BACKEND_MIGRATION_PLAN.md` — dual roles
+- Dual roles: see `src/lib/server/` and `docs/HANDOFF.md` (the original Phase A migration plan was removed; it is in git history)
 - `src/lib/server/payments/payout-settlement.ts` — `attemptProPayout`, `loadProBank`, `stableProTransferReference`
 - `src/lib/server/payments/payout-ledger.ts` — `claimTransferRef`, `hasSuccessfulPayout`, `recentDuplicatePayout`
 - `src/lib/server/payments/providers.ts` — `releaseToPro`, `resolveProvider`, FLW ₦100 min
