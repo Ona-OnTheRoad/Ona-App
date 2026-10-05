@@ -5,7 +5,7 @@ import { MapContainer, Marker, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { Building2, Crosshair, MapPin, Navigation } from "lucide-react";
 import { reverseGeocodeLatLng } from "@/lib/google-maps";
-import { DEFAULT_USER_LOCATION } from "@/lib/data/technicians";
+import { DEFAULT_USER_LOCATION } from "@/lib/data/user-location";
 import {
   knownPlaceToPick,
   matchKnownPlaces,

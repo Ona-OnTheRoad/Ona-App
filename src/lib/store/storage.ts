@@ -1,4 +1,4 @@
-import { DEFAULT_USER_LOCATION, LAST_GPS_KEY } from "@/lib/data/technicians";
+import { DEFAULT_USER_LOCATION, LAST_GPS_KEY } from "@/lib/data/user-location";
 import { isProService } from "@/lib/pro-service-id";
 import type {
   AccountType,

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type RefObject } from "react";
 import { reverseGeocodeLatLng } from "@/lib/google-maps";
-import { DEFAULT_USER_LOCATION } from "@/lib/data/technicians";
+import { DEFAULT_USER_LOCATION } from "@/lib/data/user-location";
 import { knownPlaceToPick, type KnownPlace } from "@/lib/known-places";
 import { parseGeocodeResult } from "./parse-geocode-result";
 import type { PickedLocation } from "./types";

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { DEFAULT_USER_LOCATION, LAST_GPS_KEY } from "@/lib/data/technicians";
+import { DEFAULT_USER_LOCATION, LAST_GPS_KEY } from "@/lib/data/user-location";
 import {
   GPS_BOOT_TIMEOUT_MS,
   GPS_RETRY_TIMEOUT_MS,

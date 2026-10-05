@@ -1,4 +1,4 @@
-import { DEFAULT_USER_LOCATION } from "@/lib/data/technicians";
+import { DEFAULT_USER_LOCATION } from "@/lib/data/user-location";
 import { DEFAULT_RADIUS_KM } from "@/lib/matching";
 import { isProService, PRO_SERVICE_LABELS } from "@/lib/pro-service-id";
 import type { Technician, UserProfile } from "@/lib/types";

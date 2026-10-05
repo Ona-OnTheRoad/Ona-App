@@ -16,7 +16,7 @@ import type {
   ProServiceDb,
 } from "@/lib/supabase/types";
 import { PRO_SERVICE_LABELS } from "@/lib/services";
-import { DEFAULT_USER_LOCATION } from "@/lib/data/technicians";
+import { DEFAULT_USER_LOCATION } from "@/lib/data/user-location";
 import { getArtisanProfile } from "@/lib/artisan/local-store";
 import {
   clampVisibilityTier,

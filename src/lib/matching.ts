@@ -1,4 +1,4 @@
-import { PROBLEM_MATCHES } from "@/lib/data/technicians";
+import { PROBLEM_MATCHES } from "@/lib/data/technicians/problem-matches";
 import type { AppFilters, ServiceCategory, Technician } from "@/lib/types";
 
 /** Max techs returned in any search (keep load reasonable) */
