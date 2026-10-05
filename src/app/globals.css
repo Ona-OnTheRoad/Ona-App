@@ -1619,3 +1619,16 @@ button.om-cta-dark-gray:disabled,
   pointer-events: none;
   z-index: 1;
 }
+
+/*
+ * Keyboard focus indicator (accessibility).
+ * Shown only for keyboard / switch users (:focus-visible), so mouse and touch look unchanged.
+ * Two-tone ring (white inside, brand copper outside) stays visible on light, dark and copper
+ * surfaces. Form fields keep their own focus styling; this covers links, buttons and custom
+ * controls, many of which set `outline-none`.
+ */
+:where(a[href], button, summary, [role="button"], [role="switch"], [role="tab"], [role="menuitem"], [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 0;
+  box-shadow: 0 0 0 4px #ff6b35;
+}

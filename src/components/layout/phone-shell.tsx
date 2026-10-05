@@ -238,6 +238,12 @@ export function PhoneShell({
         isLight ? "bg-[#060d0a]" : "bg-[#0a0605]",
       )}
     >
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[2000] focus:rounded-md focus:bg-black focus:px-4 focus:py-3 focus:text-[14px] focus:font-bold focus:text-white"
+      >
+        Skip to main content
+      </a>
       <div
         id="ona-phone"
         data-theme={theme}
@@ -259,8 +265,10 @@ export function PhoneShell({
           backgroundColor: phoneInterior,
         }}
       >
-        <div
-          className="relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden"
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden outline-none"
           style={{ backgroundColor: phoneInterior }}
         >
           <OfflineBanner />
@@ -275,7 +283,7 @@ export function PhoneShell({
               <MotoristReleasePayGate />
             </>
           ) : null}
-        </div>
+        </main>
       </div>
     </div>
   );
