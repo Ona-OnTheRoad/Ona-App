@@ -1,0 +1,260 @@
+import type { MechanicScreen } from "./types";
+import { YES_NO } from "./constants";
+
+export const MECHANIC_SCREENS_B: Record<string, MechanicScreen> = {
+  g_type: {
+    id: "g_type",
+    question: "Manual or Automatic transmission?",
+    kind: "choice",
+    options: [
+      { id: "manual", label: "Manual" },
+      { id: "automatic", label: "Automatic" },
+      { id: "hybrid", label: "Hybrid" },
+      { id: "electric", label: "Electric" },
+    ],
+  },
+  g_ev: {
+    id: "g_ev",
+    question: "Which EV drivetrain symptom?",
+    kind: "choice",
+    options: [
+      { id: "no_drive", label: "No drive / won't move" },
+      { id: "loss_power", label: "Loss of power while driving" },
+      { id: "noise", label: "Whining or unusual noise" },
+      { id: "warning", label: "Motor or powertrain warning light" },
+    ],
+  },
+  g_what: {
+    id: "g_what",
+    question: "What exactly is happening?",
+    kind: "choice",
+    options: [
+      { id: "hard", label: "Hard to change gear" },
+      { id: "slipping", label: "Slipping" },
+      { id: "no_drive", label: "No drive" },
+      { id: "noise", label: "Noise when changing gear" },
+    ],
+  },
+  h_light: {
+    id: "h_light",
+    question: "Which light(s) are on?",
+    kind: "choice",
+    options: [
+      { id: "battery", label: "Battery / charging light" },
+      { id: "check_engine", label: "Check engine light" },
+      { id: "multiple", label: "Multiple lights" },
+      { id: "other", label: "Other" },
+      { id: "not_sure", label: "I'm not sure" },
+    ],
+  },
+  h_parts: {
+    id: "h_parts",
+    question:
+      "Are any electrical parts not working (windows, radio, lights, etc.)?",
+    kind: "choice",
+    options: YES_NO,
+  },
+  i_accident: {
+    id: "i_accident",
+    question: "Was there an accident or collision?",
+    kind: "choice",
+    options: YES_NO,
+  },
+  i_parts: {
+    id: "i_parts",
+    question: "Which parts are damaged?",
+    kind: "text",
+    placeholder: "Which parts are damaged?",
+  },
+  i_driveable: {
+    id: "i_driveable",
+    question: "Is the vehicle still driveable?",
+    kind: "choice",
+    options: YES_NO,
+  },
+  i_paint: {
+    id: "i_paint",
+    question: "Is painting also needed?",
+    kind: "choice",
+    options: YES_NO,
+  },
+  j_kind: {
+    id: "j_kind",
+    question: "Flat, burst, slow puncture, or damaged rim?",
+    kind: "choice",
+    options: [
+      { id: "flat", label: "Flat" },
+      { id: "burst", label: "Burst" },
+      { id: "puncture", label: "Slow puncture" },
+      { id: "rim", label: "Damaged rim" },
+    ],
+  },
+  j_which: {
+    id: "j_which",
+    question: "Which tyre(s)?",
+    kind: "text",
+    placeholder: "Which tyre(s)?",
+  },
+  j_spare: {
+    id: "j_spare",
+    question: "Do you have a good spare?",
+    kind: "choice",
+    options: YES_NO,
+  },
+  j_multi: {
+    id: "j_multi",
+    question: "Multiple tyres or unsafe location?",
+    kind: "choice",
+    options: YES_NO,
+  },
+  k_vehicle: {
+    id: "k_vehicle",
+    question: "Is it vehicle A/C?",
+    kind: "choice",
+    options: YES_NO,
+  },
+  k_issue: {
+    id: "k_issue",
+    question: "No cold air / weak cooling / noise / bad smell?",
+    kind: "choice",
+    options: [
+      { id: "no_cold", label: "No cold air" },
+      { id: "weak", label: "Weak cooling" },
+      { id: "noise", label: "Noise" },
+      { id: "smell", label: "Bad smell" },
+    ],
+  },
+  l_describe: {
+    id: "l_describe",
+    question: "Please describe in your own words what is happening.",
+    kind: "text",
+    placeholder: "Please describe in your own words what is happening.",
+  },
+  l_related: {
+    id: "l_related",
+    question: "Is it related to:",
+    kind: "choice",
+    options: [
+      { id: "power", label: "Power generation at home/shop" },
+      { id: "house", label: "House/office repair" },
+      { id: "clothing", label: "Clothing / fabric work" },
+      { id: "vehicle", label: "Still vehicle related" },
+    ],
+  },
+  l_power: {
+    id: "l_power",
+    question: "Power generation at home/shop",
+    kind: "choice",
+    options: [
+      { id: "generator", label: "Generator" },
+      { id: "solar", label: "Solar" },
+    ],
+  },
+  l_house: {
+    id: "l_house",
+    question: "House/office repair",
+    kind: "choice",
+    options: [
+      { id: "carpenter", label: "Carpenter" },
+      { id: "plumber", label: "Plumber" },
+      { id: "painter", label: "Painter" },
+    ],
+  },
+  ev_issue: {
+    id: "ev_issue",
+    question: "Which EV issue?",
+    kind: "choice",
+    options: [
+      { id: "charging", label: "Charging problem / won't charge" },
+      { id: "battery", label: "Battery / range problem" },
+      { id: "motor_no_drive", label: "No drive / motor problem" },
+      { id: "won_t_start", label: "Won't start (silent or weak)" },
+      { id: "other", label: "Other EV issue" },
+    ],
+  },
+  ev_other: {
+    id: "ev_other",
+    question: "Please describe the EV problem in your own words.",
+    kind: "text",
+    placeholder: "Please describe the EV problem in your own words.",
+  },
+  part_pick: {
+    id: "part_pick",
+    question: "Which of these is it?",
+    kind: "choice",
+    options: [],
+  },
+  eng_sym: {
+    id: "eng_sym",
+    question: "What is the engine doing?",
+    kind: "choice",
+    options: [
+      { id: "no_start", label: "Will not start" },
+      { id: "cut", label: "Cuts or dies while driving" },
+      { id: "knock", label: "Knocking or hitting sound" },
+      { id: "misfire", label: "Jerking / misfire (like it's coughing)" },
+      { id: "weak", label: "No power / weak pull" },
+      { id: "overheat", label: "Overheating" },
+    ],
+  },
+  eng_when: {
+    id: "eng_when",
+    question: "When does it happen?",
+    kind: "choice",
+    options: [
+      { id: "cold", label: "Cold start (morning / first start)" },
+      { id: "driving", label: "While driving" },
+      { id: "idle", label: "When parked / idling" },
+      { id: "always", label: "Always" },
+    ],
+  },
+  eng_light: {
+    id: "eng_light",
+    question: "Any engine or oil light on?",
+    kind: "choice",
+    options: [
+      { id: "check", label: "Check engine light" },
+      { id: "oil", label: "Oil light" },
+      { id: "both", label: "Both" },
+      { id: "none", label: "None" },
+    ],
+  },
+  eng_plug: {
+    id: "eng_plug",
+    question: "Any recent work on plug, coil, or injector?",
+    kind: "choice",
+    options: YES_NO,
+  },
+  gear_when: {
+    id: "gear_when",
+    question: "When is the gear acting up?",
+    kind: "choice",
+    options: [
+      { id: "changing", label: "When changing gear" },
+      { id: "drive", label: "While driving in gear" },
+      { id: "takeoff", label: "When taking off / first gear" },
+      { id: "always", label: "Always" },
+    ],
+  },
+  gear_fluid: {
+    id: "gear_fluid",
+    question: "Any red oil leak or burnt smell from the gearbox?",
+    kind: "choice",
+    options: [
+      { id: "leak", label: "Red oil leaking" },
+      { id: "burnt", label: "Burnt smell" },
+      { id: "both", label: "Leak and burnt smell" },
+      { id: "none", label: "None" },
+    ],
+  },
+  gear_light: {
+    id: "gear_light",
+    question: "Gear or engine light on the dash?",
+    kind: "choice",
+    options: [
+      { id: "gear", label: "Gear / transmission light" },
+      { id: "engine", label: "Check engine light" },
+      { id: "none", label: "None" },
+    ],
+  },
+};
