@@ -8,8 +8,13 @@ import {
   backendSendOtp,
   backendProfileVerifyOtp,
 } from "@/lib/supabase/app-api";
-import { PasswordInput } from "@/components/ui/password-input";
-import { ConfirmCancelSheet } from "@/components/ui/confirm-cancel-sheet";
+import { ChangeFlowHeader } from "./shared/change-flow-header";
+import { DiscardChangesSheet } from "./shared/discard-sheet";
+import { changeFlowFieldClass } from "./shared/field-class";
+import { FlowBanner } from "./shared/flow-banner";
+import { OtpCodeStep } from "./shared/otp-code-step";
+import { useIdentityVerification } from "./shared/use-identity-verification";
+import { VerifyIdentityStep } from "./shared/verify-identity-step";
 
 interface EmailChangeFlowProps {
   isLight: boolean;
@@ -47,11 +52,19 @@ export function EmailChangeFlow({
   const [confirmCancel, setConfirmCancel] = useState(false);
   const t = profileTheme(isLight);
 
+  const hasGuarantor = !!guarantorName;
+
   // Identity verification fields
-  const [password, setPassword] = useState("");
-  const [emailCode, setEmailCode] = useState("");
-  const [gName, setGName] = useState("");
-  const [emailCodeSent, setEmailCodeSent] = useState(false);
+  const identity = useIdentityVerification({
+    currentEmail,
+    accessToken,
+    hasGuarantor,
+    verifiedMessage: "Identity verified. Enter your new email address.",
+    setBusy,
+    setErr,
+    setMsg,
+    onVerified: () => setStep("enter_new"),
+  });
 
   if (!open) {
     return (
@@ -65,81 +78,11 @@ export function EmailChangeFlow({
           setStep("verify_identity");
           setMsg(null);
           setErr(null);
-          setPassword("");
-          setEmailCode("");
-          setGName("");
-          setEmailCodeSent(false);
+          identity.resetIdentity();
         }}
       />
     );
   }
-
-  const sendEmailOtp = async () => {
-    setBusy(true);
-    setErr(null);
-    const res = await backendSendOtp({
-      channel: "email",
-      target: currentEmail,
-    });
-    setBusy(false);
-    if (res.error) {
-      setErr(res.error);
-      return;
-    }
-    setEmailCodeSent(true);
-    setMsg("Code sent to your email.");
-  };
-
-  const hasGuarantor = !!guarantorName;
-
-  const verifyIdentity = async () => {
-    if (!password) {
-      setErr("Enter your current password.");
-      return;
-    }
-    if (!emailCode) {
-      setErr("Enter the code sent to your email.");
-      return;
-    }
-    if (hasGuarantor && !gName.trim()) {
-      setErr("Enter your guarantor's full name.");
-      return;
-    }
-
-    setBusy(true);
-    setErr(null);
-    try {
-      const res = await (
-        await import("@/lib/api-auth-headers")
-      ).authFetch("/api/security/verify-identity", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          accessToken,
-          password,
-          emailCode,
-          ...(hasGuarantor && { guarantorName: gName.trim() }),
-        }),
-      });
-      const json = (await res.json()) as {
-        ok?: boolean;
-        error?: { message?: string };
-      };
-      if (!json?.ok) {
-        setErr(json?.error?.message || "Identity verification failed.");
-        return;
-      }
-      setStep("enter_new");
-      setMsg("Identity verified. Enter your new email address.");
-      setPassword("");
-      setEmailCode("");
-      setGName("");
-    } catch {
-      setErr("Network error during verification.");
-    } finally {
-      setBusy(false);
-    }
-  };
 
   const sendNewOtp = async () => {
     const email = newEmail.trim().toLowerCase();
@@ -221,133 +164,42 @@ export function EmailChangeFlow({
     setStep("idle");
     setNewEmail("");
     setNewCode("");
-    setPassword("");
-    setEmailCode("");
-    setGName("");
-    setEmailCodeSent(false);
+    identity.resetIdentity();
     setMsg(null);
     setErr(null);
   };
 
-  const fieldClass = isLight
-    ? "h-10 w-full border-0 border-b border-black/15 bg-transparent px-0 text-[13px] font-medium text-slate-900 outline-none"
-    : "h-10 w-full rounded-xl border-0 bg-[#2c2c2e] px-3 text-[13px] font-medium text-white outline-none";
+  const fieldClass = changeFlowFieldClass(isLight);
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <p className={cn("text-[11px] font-semibold", t.muted)}>Email</p>
-          <p className={cn("truncate text-[13px] font-semibold", t.ink)}>
-            {step === "done" ? newEmail : currentEmail}
-          </p>
-        </div>
-        {step === "done" ? (
-          <button
-            type="button"
-            onClick={reset}
-            className="shrink-0 rounded-lg border-0 px-3 py-1.5 text-[11px] font-bold text-brand"
-          >
-            Done
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setConfirmCancel(true)}
-            className="shrink-0 rounded-lg border-0 px-3 py-1.5 text-[11px] font-bold text-red-400"
-          >
-            Cancel
-          </button>
-        )}
-      </div>
+      <ChangeFlowHeader
+        isLight={isLight}
+        label="Email"
+        value={step === "done" ? newEmail : currentEmail}
+        done={step === "done"}
+        onDone={reset}
+        onCancel={() => setConfirmCancel(true)}
+      />
 
-      {(msg || err) && (
-        <p
-          className={cn(
-            "rounded-xl px-3 py-2 text-[12px] font-semibold",
-            err
-              ? "bg-red-500/15 text-red-400"
-              : "bg-emerald-500/15 text-emerald-500",
-          )}
-        >
-          {err || msg}
-        </p>
-      )}
+      <FlowBanner msg={msg} err={err} />
 
       {step === "verify_identity" && (
-        <div className="space-y-3">
-          <p className={cn("text-[13px] font-bold", t.ink)}>
-            Verify your identity
-          </p>
-          <p className={cn("text-[12px]", t.muted)}>
-            {hasGuarantor
-              ? "All three are required"
-              : "Two-factor authentication required"}{" "}
-            to change your email address.
-          </p>
-
-          <div>
-            <p className={cn("mb-1 text-[11px] font-semibold", t.muted)}>
-              1. Current password
-            </p>
-            <PasswordInput
-              className={fieldClass}
-              placeholder="Enter your password"
-              value={password}
-              onChange={setPassword}
-              isLight={isLight}
-            />
-          </div>
-
-          <div>
-            <p className={cn("mb-1 text-[11px] font-semibold", t.muted)}>
-              2. Email verification code
-            </p>
-            {!emailCodeSent ? (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={sendEmailOtp}
-                className="h-10 w-full rounded-xl border-0 bg-brand text-[13px] font-bold text-white disabled:opacity-50"
-              >
-                {busy ? "Sending…" : "Send code to email"}
-              </button>
-            ) : (
-              <input
-                className={fieldClass}
-                placeholder="000000"
-                value={emailCode}
-                onChange={(e) =>
-                  setEmailCode(e.target.value.replace(/\D/g, "").slice(0, 6))
-                }
-                maxLength={6}
-              />
-            )}
-          </div>
-
-          {hasGuarantor && (
-            <div>
-              <p className={cn("mb-1 text-[11px] font-semibold", t.muted)}>
-                3. Guarantor name
-              </p>
-              <input
-                className={fieldClass}
-                placeholder="Enter your guarantor's full name"
-                value={gName}
-                onChange={(e) => setGName(e.target.value)}
-              />
-            </div>
-          )}
-
-          <button
-            type="button"
-            disabled={busy}
-            onClick={verifyIdentity}
-            className="h-10 w-full rounded-xl border-0 bg-brand text-[13px] font-bold text-white disabled:opacity-50"
-          >
-            {busy ? "Verifying…" : "Verify identity"}
-          </button>
-        </div>
+        <VerifyIdentityStep
+          isLight={isLight}
+          changeWhat="email address"
+          hasGuarantor={hasGuarantor}
+          busy={busy}
+          password={identity.password}
+          onPassword={identity.setPassword}
+          emailCode={identity.emailCode}
+          onEmailCode={identity.setEmailCode}
+          emailCodeSent={identity.emailCodeSent}
+          onSendEmailOtp={identity.sendEmailOtp}
+          gName={identity.gName}
+          onGName={identity.setGName}
+          onVerify={identity.verifyIdentity}
+        />
       )}
 
       {step === "enter_new" && (
@@ -373,28 +225,14 @@ export function EmailChangeFlow({
       )}
 
       {step === "verify_new" && (
-        <div className="space-y-2">
-          <p className={cn("text-[12px]", t.muted)}>
-            Enter the 6-digit code sent to your new email.
-          </p>
-          <input
-            className={fieldClass}
-            placeholder="000000"
-            value={newCode}
-            onChange={(e) =>
-              setNewCode(e.target.value.replace(/\D/g, "").slice(0, 6))
-            }
-            maxLength={6}
-          />
-          <button
-            type="button"
-            disabled={busy || newCode.length < 4}
-            onClick={verifyNew}
-            className="h-10 w-full rounded-xl border-0 bg-brand text-[13px] font-bold text-white disabled:opacity-50"
-          >
-            {busy ? "Verifying…" : "Verify code"}
-          </button>
-        </div>
+        <OtpCodeStep
+          isLight={isLight}
+          prompt="Enter the 6-digit code sent to your new email."
+          value={newCode}
+          onChange={setNewCode}
+          busy={busy}
+          onVerify={verifyNew}
+        />
       )}
 
       {step === "confirming" && (
@@ -408,11 +246,9 @@ export function EmailChangeFlow({
           Your email address has been updated.
         </p>
       )}
-      <ConfirmCancelSheet
+      <DiscardChangesSheet
         open={confirmCancel}
         isLight={isLight}
-        title="Discard changes?"
-        message="Any changes you've made will be lost."
         onClose={() => setConfirmCancel(false)}
         onConfirm={() => {
           setConfirmCancel(false);

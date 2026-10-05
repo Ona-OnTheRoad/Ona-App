@@ -8,28 +8,12 @@ import {
   backendSendOtp,
   backendProfileVerifyOtp,
 } from "@/lib/supabase/app-api";
-import { ConfirmCancelSheet } from "@/components/ui/confirm-cancel-sheet";
-
-interface BankChangeFlowProps {
-  isLight: boolean;
-  currentBank?: {
-    bankName?: string | null;
-    bankAccountName?: string | null;
-    bankAccountNumber?: string | null;
-    bankCode?: string | null;
-  };
-  userPhone: string;
-  accessToken: string;
-  onBankChanged: (bank: {
-    bankName: string;
-    bankAccountName: string;
-    bankAccountNumber: string;
-    bankCode: string;
-  }) => void;
-}
-
-type Step =
-  "idle" | "send_otp" | "verify_otp" | "form" | "confirming" | "done" | "error";
+import { ChangeFlowHeader } from "./shared/change-flow-header";
+import { DiscardChangesSheet } from "./shared/discard-sheet";
+import { changeFlowFieldClass } from "./shared/field-class";
+import { FlowBanner } from "./shared/flow-banner";
+import { OtpCodeStep } from "./shared/otp-code-step";
+import type { BankChangeFlowProps, Step } from "./bank-change-types";
 
 export function BankChangeFlow({
   isLight,
@@ -180,54 +164,24 @@ export function BankChangeFlow({
     setErr(null);
   };
 
-  const fieldClass = isLight
-    ? "h-10 w-full border-0 border-b border-black/15 bg-transparent px-0 text-[13px] font-medium text-slate-900 outline-none"
-    : "h-10 w-full rounded-xl border-0 bg-[#2c2c2e] px-3 text-[13px] font-medium text-white outline-none";
+  const fieldClass = changeFlowFieldClass(isLight);
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <p className={cn("text-[11px] font-semibold", t.muted)}>
-            Payout bank account
-          </p>
-          <p className={cn("truncate text-[13px] font-semibold", t.ink)}>
-            {step === "done"
-              ? `${bankName} · ••••${accNumber.slice(-4)}`
-              : displayValue}
-          </p>
-        </div>
-        {step === "done" ? (
-          <button
-            type="button"
-            onClick={reset}
-            className="shrink-0 rounded-lg border-0 px-3 py-1.5 text-[11px] font-bold text-brand"
-          >
-            Done
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setConfirmCancel(true)}
-            className="shrink-0 rounded-lg border-0 px-3 py-1.5 text-[11px] font-bold text-red-400"
-          >
-            Cancel
-          </button>
-        )}
-      </div>
+      <ChangeFlowHeader
+        isLight={isLight}
+        label="Payout bank account"
+        value={
+          step === "done"
+            ? `${bankName} · ••••${accNumber.slice(-4)}`
+            : displayValue
+        }
+        done={step === "done"}
+        onDone={reset}
+        onCancel={() => setConfirmCancel(true)}
+      />
 
-      {(msg || err) && (
-        <p
-          className={cn(
-            "rounded-xl px-3 py-2 text-[12px] font-semibold",
-            err
-              ? "bg-red-500/15 text-red-400"
-              : "bg-emerald-500/15 text-emerald-500",
-          )}
-        >
-          {err || msg}
-        </p>
-      )}
+      <FlowBanner msg={msg} err={err} />
 
       {step === "send_otp" && (
         <div className="space-y-2">
@@ -249,28 +203,14 @@ export function BankChangeFlow({
       )}
 
       {step === "verify_otp" && (
-        <div className="space-y-2">
-          <p className={cn("text-[12px]", t.muted)}>
-            Enter the 6-digit code sent to your phone.
-          </p>
-          <input
-            className={fieldClass}
-            placeholder="000000"
-            value={code}
-            onChange={(e) =>
-              setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
-            }
-            maxLength={6}
-          />
-          <button
-            type="button"
-            disabled={busy || code.length < 4}
-            onClick={verifyOtp}
-            className="h-10 w-full rounded-xl border-0 bg-brand text-[13px] font-bold text-white disabled:opacity-50"
-          >
-            {busy ? "Verifying…" : "Verify code"}
-          </button>
-        </div>
+        <OtpCodeStep
+          isLight={isLight}
+          prompt="Enter the 6-digit code sent to your phone."
+          value={code}
+          onChange={setCode}
+          busy={busy}
+          onVerify={verifyOtp}
+        />
       )}
 
       {step === "form" && (
@@ -328,11 +268,9 @@ export function BankChangeFlow({
           Bank account updated. A security notification has been sent.
         </p>
       )}
-      <ConfirmCancelSheet
+      <DiscardChangesSheet
         open={confirmCancel}
         isLight={isLight}
-        title="Discard changes?"
-        message="Any changes you've made will be lost."
         onClose={() => setConfirmCancel(false)}
         onConfirm={() => {
           setConfirmCancel(false);
