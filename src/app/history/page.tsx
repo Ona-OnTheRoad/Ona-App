@@ -7,33 +7,32 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronRight, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
-import { ExpiredDialog } from "@/components/ui/expired-dialog";
-import { JobChargeLines } from "@/components/jobs/callout-fee-lines";
-import { JOB_CLOSED_MESSAGE } from "@/lib/chat-expired";
+import {
+  ClosedJobDialog,
+  useClosedJobDialog,
+} from "@/components/requests/closed-job-dialog";
+import { formatWhenWithYear } from "@/components/requests/format-when";
+import { JobRow } from "@/components/requests/job-row";
+import {
+  PAST_STATUSES,
+  jobRowName,
+  jobRowSkill,
+  jobRowStatusLabel,
+  sortByRecent,
+} from "@/components/requests/job-row-helpers";
+import {
+  JobListError,
+  JobListLoading,
+} from "@/components/requests/job-list-states";
 import { apiListJobs } from "@/lib/jobs/client";
 import { canOpenDisputeNow } from "@/lib/jobs/constants";
 import type { JobFlowStatus, JobRecord } from "@/lib/jobs/types";
-import { jobEscrowAmountMinor } from "@/lib/callout/payable";
-import { isAutomotiveTrade } from "@/lib/artisan/catalog";
-import { PRO_SERVICE_LABELS } from "@/lib/services";
 import { useApp } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 type HistoryFilter =
   "completed" | "cancelled" | "expired" | "refunded" | "disputed";
-
-const PAST: JobFlowStatus[] = [
-  "completed",
-  "satisfied",
-  "released",
-  "cancelled",
-  "expired",
-  "disputed",
-  "under_appeal",
-  "refunded",
-];
 
 const FILTERS: { id: HistoryFilter; label: string }[] = [
   { id: "completed", label: "Completed" },
@@ -42,28 +41,6 @@ const FILTERS: { id: HistoryFilter; label: string }[] = [
   { id: "refunded", label: "Refunded" },
   { id: "disputed", label: "Disputed" },
 ];
-
-function statusLabel(s: JobFlowStatus, isPro: boolean): string {
-  switch (s) {
-    case "completed":
-      return "Completed";
-    case "satisfied":
-    case "released":
-      return "Finished";
-    case "cancelled":
-      return "Cancelled";
-    case "expired":
-      return "Expired";
-    case "disputed":
-      return "Disputed";
-    case "under_appeal":
-      return "Under appeal";
-    case "refunded":
-      return "Refunded";
-    default:
-      return String(s).replace(/_/g, " ");
-  }
-}
 
 function matchesFilter(
   status: JobFlowStatus,
@@ -82,22 +59,6 @@ function matchesFilter(
   return false;
 }
 
-function formatWhen(iso: string): string {
-  const t = Date.parse(iso);
-  if (!Number.isFinite(t)) return "";
-  try {
-    return new Date(t).toLocaleString(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return "";
-  }
-}
-
 export default function HistoryPage() {
   const router = useRouter();
   const { theme, accountType, backendUserId } = useApp();
@@ -109,8 +70,8 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<HistoryFilter | null>(null);
-  const [closedOpen, setClosedOpen] = useState(false);
-  const [viewHref, setViewHref] = useState<string | null>(null);
+  const closedDialog = useClosedJobDialog();
+  const { setClosedOpen, setViewHref } = closedDialog;
 
   const ink = isLight ? "text-slate-900" : "text-white";
   const muted = isLight ? "text-slate-700" : "text-white/75";
@@ -128,21 +89,17 @@ export default function HistoryPage() {
       setLoading(false);
       return;
     }
-    const list = res.data.jobs
-      .filter((j) => {
+    const list = sortByRecent(
+      res.data.jobs.filter((j) => {
         if (!j.problem?.trim()) return false;
-        if (!PAST.includes(j.status)) return false;
+        if (!PAST_STATUSES.includes(j.status)) return false;
         if (viewer === "repair_pro" && j.repairProId !== backendUserId)
           return false;
         if (viewer === "motorist" && j.motoristId !== backendUserId)
           return false;
         return true;
-      })
-      .sort(
-        (a, b) =>
-          new Date(b.updatedAt || b.createdAt).getTime() -
-          new Date(a.updatedAt || a.createdAt).getTime(),
-      );
+      }),
+    );
     setJobs(list);
     setErr(null);
     setLoading(false);
@@ -198,16 +155,8 @@ export default function HistoryPage() {
           You can still dispute a closed job within 48 hours after job Finished.
         </p>
 
-        {loading && (
-          <div className="flex justify-center py-16">
-            <Loader2 className="h-6 w-6 animate-spin text-[#FF6B35]" />
-          </div>
-        )}
-        {err && (
-          <p className="py-4 text-center text-[12px] font-semibold text-red-500">
-            {err}
-          </p>
-        )}
+        {loading && <JobListLoading />}
+        {err && <JobListError message={err} />}
         {!loading && filtered.length === 0 && (
           <div className="py-14 text-center">
             <p className={cn("text-[15px] font-semibold", ink)}>
@@ -222,113 +171,41 @@ export default function HistoryPage() {
         )}
 
         {!loading &&
-          filtered.map((j) => {
-            const name = isPro
-              ? isAutomotiveTrade(j.serviceType) && j.motoristVehicle?.trim()
-                ? j.motoristVehicle.trim()
-                : j.motoristName?.split(/\s+/)[0] ||
-                  PRO_SERVICE_LABELS[j.serviceType] ||
-                  "Service Request"
-              : j.repairProName;
-            const skill = PRO_SERVICE_LABELS[j.serviceType] ?? j.serviceType;
-            const when = formatWhen(j.updatedAt || j.createdAt);
-            return (
-              <button
-                key={j.id}
-                type="button"
-                onClick={() => {
-                  // Within 48h of satisfied: open live job for dispute; else read-only
-                  if (canOpenDisputeNow(j)) {
-                    router.push(`/jobs/${j.id}`);
-                    return;
-                  }
-                  setViewHref(`/requests/${j.id}`);
-                  setClosedOpen(true);
-                }}
-                className="flex w-full items-start gap-3 border-0 bg-transparent py-3.5 text-left"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span
-                      className={cn(
-                        "rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide",
-                        isLight
-                          ? "text-slate-800 ring-1 ring-black/15"
-                          : "text-white/90 ring-1 ring-white/25",
-                      )}
-                    >
-                      {statusLabel(j.status, isPro)}
-                    </span>
-                    <span className={cn("text-[10px] font-medium", muted)}>
-                      {skill}
-                    </span>
-                  </div>
-                  <p
-                    className={cn(
-                      "mt-1.5 truncate text-[15px] font-semibold",
-                      ink,
-                    )}
-                  >
-                    {name}
-                  </p>
-                  <p
-                    className={cn(
-                      "mt-0.5 line-clamp-2 text-[13px] font-medium leading-snug",
-                      muted,
-                    )}
-                  >
-                    {j.problem}
-                  </p>
-                  <p className={cn("mt-1 text-[11px] font-medium", muted)}>
-                    {when}
-                    {canOpenDisputeNow(j)
-                      ? " · Dispute available (48h)"
-                      : " · View only"}
-                  </p>
-                  {j.agreedMajor != null ? (
-                    <div className="mt-1.5">
-                      <JobChargeLines
-                        agreedMajor={j.agreedMajor}
-                        amountMinor={jobEscrowAmountMinor(j)}
-                        quote={j.calloutQuote}
-                        fallbackQuote={j.calloutQuote}
-                        currency={j.currency}
-                        ink={ink}
-                        muted={muted}
-                        compact
-                        isLight={isLight}
-                      />
-                    </div>
-                  ) : null}
-                </div>
-                <ChevronRight
-                  className={cn("mt-1 h-4 w-4 shrink-0", muted)}
-                  aria-hidden
-                />
-              </button>
-            );
-          })}
+          filtered.map((j) => (
+            <JobRow
+              key={j.id}
+              j={j}
+              name={jobRowName(j, isPro)}
+              skill={jobRowSkill(j)}
+              when={formatWhenWithYear(j.updatedAt || j.createdAt)}
+              suffix={
+                canOpenDisputeNow(j)
+                  ? " · Dispute available (48h)"
+                  : " · View only"
+              }
+              badgeClass={
+                isLight
+                  ? "text-slate-800 ring-1 ring-black/15"
+                  : "text-white/90 ring-1 ring-white/25"
+              }
+              statusText={jobRowStatusLabel(j.status, isPro)}
+              isLight={isLight}
+              ink={ink}
+              muted={muted}
+              onClick={() => {
+                // Within 48h of satisfied: open live job for dispute; else read-only
+                if (canOpenDisputeNow(j)) {
+                  router.push(`/jobs/${j.id}`);
+                  return;
+                }
+                setViewHref(`/requests/${j.id}`);
+                setClosedOpen(true);
+              }}
+            />
+          ))}
       </div>
 
-      <ExpiredDialog
-        open={closedOpen}
-        isLight={isLight}
-        message={JOB_CLOSED_MESSAGE}
-        onClose={() => {
-          setClosedOpen(false);
-          setViewHref(null);
-        }}
-        onView={
-          viewHref
-            ? () => {
-                const href = viewHref;
-                setClosedOpen(false);
-                setViewHref(null);
-                router.push(href);
-              }
-            : undefined
-        }
-      />
+      <ClosedJobDialog {...closedDialog} isLight={isLight} />
     </div>
   );
 }
