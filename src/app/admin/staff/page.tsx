@@ -5,71 +5,12 @@ import { AdminShell } from "@/components/admin/admin-shell";
 import { useAdminGate } from "@/components/admin/use-admin-gate";
 import { AdminGuideBanner } from "@/components/admin/admin-guide-banner";
 import { withSensitivePassword } from "@/components/admin/sensitive-unlock";
-
-type StaffRow = {
-  id: string;
-  fullName: string | null;
-  email: string | null;
-  adminRole: string;
-  roleLabel: string;
-  isActive: boolean;
-};
-
-/** Full L1-L5 ladder always visible so operators can see every level */
-const LEVEL_GUIDE: {
-  value: string;
-  level: number;
-  label: string;
-  blurb: string;
-  color: string;
-  soft: string;
-}[] = [
-  {
-    value: "customer_care",
-    level: 1,
-    label: "Customer Care",
-    blurb: "Jobs, users, verification, simple issues",
-    color: "#0f766e",
-    soft: "#ccfbf1",
-  },
-  {
-    value: "senior_support",
-    level: 2,
-    label: "Senior Support",
-    blurb: "Disputes, freezes, payment status",
-    color: "#1d4ed8",
-    soft: "#dbeafe",
-  },
-  {
-    value: "operations",
-    level: 3,
-    label: "Operations / Finance",
-    blurb: "Escrow release/refund, full payments, banks",
-    color: "#b45309",
-    soft: "#fef3c7",
-  },
-  {
-    value: "manager",
-    level: 4,
-    label: "Manager",
-    blurb: "Content + assign L1-L3 staff",
-    color: "#6d28d9",
-    soft: "#ede9fe",
-  },
-  {
-    value: "super_admin",
-    level: 5,
-    label: "Super Admin",
-    blurb: "Owner · all settings · assign L1-L5",
-    color: "#1a1b1e",
-    soft: "#e5e7eb",
-  },
-];
-
-const LEVEL_OPTIONS = LEVEL_GUIDE.map((l) => ({
-  value: l.value,
-  label: `L${l.level} · ${l.label}`,
-}));
+import {
+  LEVEL_GUIDE,
+  LEVEL_OPTIONS,
+  type StaffRow,
+} from "@/components/admin/staff/levels";
+import { LevelCards } from "@/components/admin/staff/level-cards";
 
 export default function AdminStaffPage() {
   const { adminName, adminRole, ready, api } = useAdminGate();
@@ -156,78 +97,8 @@ export default function AdminStaffPage() {
 
       {error ? <div className="om-admin-error">{error}</div> : null}
       {msg ? <div className="om-admin-success">{msg}</div> : null}
-
       {/* Always-visible Level 1 → 5 guide */}
-      <div
-        className="om-admin-panel"
-        style={{ marginBottom: 16 }}
-        aria-label="Access levels Level 1 to Level 5"
-      >
-        <h2 className="om-admin-h2" style={{ marginTop: 0 }}>
-          Levels 1, 5
-        </h2>
-        <p className="om-admin-muted" style={{ marginBottom: 12 }}>
-          These are the only access levels. Your account must be L4 or L5 to
-          open this page and assign roles.
-        </p>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
-            gap: 10,
-          }}
-        >
-          {counts.map((l) => (
-            <div
-              key={l.value}
-              style={{
-                borderRadius: 12,
-                padding: "12px 12px 10px",
-                background: l.soft,
-                border: `1px solid ${l.color}33`,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 11,
-                  fontWeight: 800,
-                  letterSpacing: "0.04em",
-                  textTransform: "uppercase",
-                  color: l.color,
-                }}
-              >
-                Level {l.level}
-              </div>
-              <div
-                style={{
-                  marginTop: 4,
-                  fontSize: 14,
-                  fontWeight: 800,
-                  color: l.color,
-                }}
-              >
-                {l.label}
-              </div>
-              <div
-                className="om-admin-muted"
-                style={{ marginTop: 6, fontSize: 11, lineHeight: 1.35 }}
-              >
-                {l.blurb}
-              </div>
-              <div
-                style={{
-                  marginTop: 8,
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: l.color,
-                }}
-              >
-                {l.count} staff
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <LevelCards counts={counts} />
 
       <div className="om-admin-panel">
         <h2 className="om-admin-h2" style={{ marginTop: 0 }}>
