@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { VEHICLE_TYPES } from "@/lib/vehicle-focus";
+import { VEHICLE_TYPES } from "@/lib/vehicle-focus/vehicle-types";
 import type { MotoristVehicle } from "@/lib/types";
 
 /** Optional vehicles customer can skip (other services need no car) */

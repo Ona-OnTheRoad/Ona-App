@@ -6,7 +6,7 @@ import {
   getModelsForMake,
   getYearsForMakeModel,
 } from "@/lib/vehicle-catalog";
-import { VEHICLE_TYPES } from "@/lib/vehicle-focus";
+import { VEHICLE_TYPES } from "@/lib/vehicle-focus/vehicle-types";
 import { isAny, type VehiclePickerKey } from "./constants";
 
 /** Vehicles this pro can fix (Customer-style cascade list) */

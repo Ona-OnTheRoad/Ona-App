@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import {
   formatVehicleLabel,
   profileVehiclesOf,
-} from "@/components/home/job-vehicle-step";
+} from "@/components/home/job-vehicle-helpers";
 import type { MotoristVehicle } from "@/lib/types";
 import { useApp } from "@/lib/store";
 import { useGarageVehicles } from "./use-garage-vehicles";

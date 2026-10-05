@@ -1,5 +1,5 @@
 import { ChevronRight } from "lucide-react";
-import { formatVehicleLabel } from "@/components/home/job-vehicle-step";
+import { formatVehicleLabel } from "@/components/home/job-vehicle-helpers";
 import { VehicleCascadeFields } from "@/components/vehicles/vehicle-cascade-fields";
 import { cn } from "@/lib/utils";
 import { actionFlat, PINNED_BOTTOM, PRIMARY_BTN } from "./helpers";

@@ -11,7 +11,7 @@ import {
   getModelsForMake,
   getYearsForMakeModel,
 } from "@/lib/vehicle-catalog";
-import { VEHICLE_TYPES } from "@/lib/vehicle-focus";
+import { VEHICLE_TYPES } from "@/lib/vehicle-focus/vehicle-types";
 import { cn } from "@/lib/utils";
 
 type Props = {

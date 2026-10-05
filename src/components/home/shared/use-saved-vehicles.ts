@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import {
   formatVehicleLabel,
   profileVehiclesOf,
-} from "@/components/home/job-vehicle-step";
+} from "@/components/home/job-vehicle-helpers";
 import { useApp } from "@/lib/store";
 import type { MotoristVehicle } from "@/lib/types";
 
