@@ -102,6 +102,11 @@ Question trees: `src/lib/<trade>/question-tree.ts` (mechanic, battery, vulcanize
 ### Maps, i18n, config
 `src/components/map/`, `src/lib/i18n/` (11 languages; see `src/lib/i18n/TRANSLATION.md`), `src/lib/app-config.ts` (central runtime config).
 
+### Search, offline and low-data support
+`src/lib/site.ts`, `src/app/robots.ts`, `sitemap.ts`, `manifest.ts`, `src/lib/seo/`, `src/components/seo/`,
+`public/sw.js`, `public/offline.html`, `src/components/pwa/`, `src/lib/network/`, `src/lib/image-compress.ts`,
+`scripts/generate-brand-icons.mjs`, `scripts/verify/`. Rules and measurements: `docs/PERFORMANCE_AND_ACCESSIBILITY.md`.
+
 ## 4. Database
 
 `supabase/migrations/` holds the numbered SQL migrations. Apply with `npm run db:apply`; seed and sync scripts are in `scripts/` and listed in `package.json`. Do not edit an applied migration; add a new one.

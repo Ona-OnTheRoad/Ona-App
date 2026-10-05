@@ -19,6 +19,8 @@ This file is the index. Read it once, then follow the frozen docs and the code.
 
 Then `docs/CODEMAP.md` to find files (route groups, folder conventions, domain map). CODEMAP is a map, not a spec.
 
+Search, offline and accessibility rules and measurements: `docs/PERFORMANCE_AND_ACCESSIBILITY.md`.
+
 Setup guides: `docs/SUPABASE_SETUP.md`, `docs/GOOGLE_MAPS_SETUP.md`, `docs/VERCEL_DEPLOY.md`, `docs/HANDOFF_KEYS.md` (payment keys, payout proxy), `docs/CLEAN_START_TESTING.md` (reset test data). Ops: `docs/CUSTOMER_CARE.md`.
 
 ---
@@ -87,6 +89,15 @@ Do not invent a third ledger. Stub tables `wallet_accounts` stay unused.
 - Settings: Export personal data, Blocked users still “coming soon”
 - `/wallet` chrome still titled Referral & Earn; cashout UI is amount-only
 - Notification settings still says “Server sync coming soon”
+
+**Search / performance / accessibility follow-ups** (see `docs/PERFORMANCE_AND_ACCESSIBILITY.md` §6)
+
+- About 310 KB (gzipped) of shared JS remains per page; defer the Supabase client off the sign-in path and lazy-load Google Maps
+- `/signup/pro` and `/artisan/onboarding` still ship the places data eagerly
+- The Privacy Policy and Terms are short summaries with a personal Gmail contact; they need real legal text
+- Brand icons and the share image are cropped from the hero photo; replace with a proper logo mark
+- Signed-in screens are only covered by `jsx-a11y` lint; test with a keyboard and a screen reader
+- `public/sw.js` caches pages and images only; a real offline action queue was deliberately not built (money and job actions must be explicit)
 
 **Do not** redo incoming-request panel geometry, copper accent, 6px radius, or light `#c8c9cd` / dark black chrome.
 
