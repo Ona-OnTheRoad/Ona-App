@@ -1,0 +1,62 @@
+import type { VulcanizerProduct } from "@/lib/shop/vulcanizer-catalog/types";
+
+export const PATCHES_REPAIR_PRODUCTS: VulcanizerProduct[] = [
+  // ------------------------------ PATCHES / REPAIR ------------------------------
+  {
+    id: "vulc-patch-hot-cure-kit",
+    tradeKey: "vulcanizer",
+    categorySlug: "patches",
+    subcategorySlug: "hot-patches",
+    brand: { slug: "ona-pro", name: "Ona Pro" },
+    name: "Ona Pro Hot-Cure Repair Patches (box of 25)",
+    subtitle: "Vulcanizing hot patches · assorted sizes",
+    description:
+      "Box of 25 hot-cure (vulcanizing) patches in assorted sizes for repairing radial tyre sections and tubes.",
+    sku: "ONA-VULC-PTH-HOT-025",
+    mpn: "PATCH-HOT-25",
+    priceMinor: 420000,
+    qty: 120,
+    status: "active",
+    attributes: { material: "Rubber" },
+    keywords: ["patch", "hot patch", "vulcanizing", "repair"],
+    verificationStatus: "source_verified",
+  },
+  {
+    id: "vulc-plug-tyre-strings-100",
+    tradeKey: "vulcanizer",
+    categorySlug: "tire-repair",
+    subcategorySlug: "puncture-repair-kits",
+    brand: { slug: "ona-pro", name: "Ona Pro" },
+    name: "Ona Pro Tubeless Tyre Plug Kit (100 strings)",
+    subtitle: "Tubeless puncture plugs · 100 strings + tools",
+    description:
+      "Self-vulcanizing tubeless tyre plug strings with insertion tool. For rapid roadside puncture repairs.",
+    sku: "ONA-VULC-PLG-100-001",
+    mpn: "PLUG-KIT-100",
+    priceMinor: 320000,
+    qty: 0,
+    status: "inactive",
+    attributes: { tubeType: "Tubeless", material: "Rubber" },
+    keywords: ["plug", "puncture", "tubeless", "repair kit"],
+    verificationStatus: "source_verified",
+  },
+  {
+    id: "vulc-patch-cold-selfvulc-100",
+    tradeKey: "vulcanizer",
+    categorySlug: "tire-repair",
+    subcategorySlug: "puncture-repair-kits",
+    brand: { slug: "ona-pro", name: "Ona Pro" },
+    name: "Ona Pro Cold Vulcanizing Patch Kit (100 pcs)",
+    subtitle: "Cold patches · assorted sizes · 100 pcs",
+    description:
+      "Cold-vulcanizing patches with rubber cement for tube and tyre repair.",
+    sku: "ONA-VULC-PTH-COLD-100",
+    mpn: "PATCH-COLD-100",
+    priceMinor: 380000,
+    qty: 85,
+    status: "active",
+    attributes: { material: "Rubber" },
+    keywords: ["patch", "cold patch", "repair", "vulcanizing"],
+    verificationStatus: "source_verified",
+  },
+];
