@@ -108,4 +108,11 @@ await sharp({ create: { width: W, height: H, channels: 3, background: COPPER } }
   .png({ compressionLevel: 9, palette: true })
   .toFile(resolve(root, "public/brand/og-image.png"));
 
-console.log("Wrote public/icons/* and public/brand/og-image.png");
+/**
+ * Hero photo in modern formats. The 184KB JPEG is a smooth gradient, so AVIF (~16KB) and WebP (~15KB)
+ * are visually identical (mean difference under 2/255) at ~8% of the size. The JPEG stays as the fallback.
+ */
+await sharp(SRC).avif({ quality: 60, effort: 6 }).toFile(resolve(root, "public/brand/auth-bg-v31.avif"));
+await sharp(SRC).webp({ quality: 78, effort: 6 }).toFile(resolve(root, "public/brand/auth-bg-v31.webp"));
+
+console.log("Wrote public/icons/*, public/brand/og-image.png and public/brand/auth-bg-v31.{avif,webp}");
