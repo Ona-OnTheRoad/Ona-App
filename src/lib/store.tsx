@@ -49,6 +49,8 @@ import { getRuntimeAppConfig } from "@/lib/app-config";
 import { resetNavStack } from "@/lib/navigation";
 import { playAppSound } from "@/lib/sound-tone";
 import { evaluateServiceGate } from "@/lib/verification-gate";
+import { skillLockBlock, verificationGate } from "@/lib/accept-guards";
+import { advanceDeskRequest, deskRoleFor } from "@/lib/jobs/desk-transition";
 import {
   backendCreateJob,
   backendEnsureConversation,
@@ -76,7 +78,6 @@ import {
   backendSubscribeJobs,
   backendSubscribePros,
   backendSubscribeUserMessageInserts,
-  backendUpdateJobStatus,
   isAppBackendOnline,
 } from "@/lib/supabase/app-api";
 import { isSpecialtyPickerTrade } from "@/lib/artisan/catalog";
@@ -105,10 +106,19 @@ export type ServiceActionResult =
   | {
       ok: false;
       code:
-        "verification_required" | "not_found" | "invalid" | "skill_mismatch";
+        | "verification_required"
+        | "not_found"
+        | "invalid"
+        | "skill_mismatch"
+        | "use_job_flow"
+        | "transition_failed";
       message: string;
       actionCount: number;
     };
+
+/** The Orders desk cannot accept: that is Open/Confirm on the incoming panel. */
+const ACCEPT_VIA_JOB_FLOW_MESSAGE =
+  "Open this request from the incoming request panel to accept it.";
 
 export type AppTheme = "light" | "dark";
 
@@ -474,7 +484,7 @@ interface AppState {
   updateRequestStatus: (
     id: string,
     status: ServiceRequest["status"],
-  ) => ServiceActionResult;
+  ) => Promise<ServiceActionResult>;
   ensureChatForRequest: (req: ServiceRequest) => string;
   /**
    * Ensure cloud conversation exists and return the real conversation UUID
@@ -3087,99 +3097,65 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const updateRequestStatus = useCallback(
-    (id: string, status: ServiceRequest["status"]): ServiceActionResult => {
+    async (
+      id: string,
+      status: ServiceRequest["status"],
+    ): Promise<ServiceActionResult> => {
+      const count = userProfile?.serviceActionCount ?? 0;
+      const fail = (
+        code: Extract<ServiceActionResult, { ok: false }>["code"],
+        message: string,
+      ): ServiceActionResult => ({
+        ok: false,
+        code,
+        message,
+        actionCount: count,
+      });
+
       const existing = requests.find((r) => r.id === id);
-      if (!existing) {
-        return {
-          ok: false,
-          code: "not_found",
-          message: "Request not found.",
-          actionCount: userProfile?.serviceActionCount ?? 0,
-        };
+      if (!existing) return fail("not_found", "Request not found.");
+
+      const isProfessional = accountType === "professional";
+      const online = Boolean(backendUserId) && isAppBackendOnline();
+      const isAccept = status === "accepted" && existing.status === "pending";
+      let warning: string | null = null;
+
+      if (isAccept) {
+        const lock = isProfessional
+          ? skillLockBlock({ request: existing, registeredAs, proServices })
+          : null;
+        if (lock) return fail(lock.code, lock.message);
+        const gate = verificationGate({ profile: userProfile, isProfessional });
+        if (!gate.allowed) return fail("verification_required", gate.message);
+        // Accepting is the SSPE Open/Confirm flow, not a status write.
+        if (online) return fail("use_job_flow", ACCEPT_VIA_JOB_FLOW_MESSAGE);
+        warning = gate.warning;
       }
 
-      // Skill lock: mechanic cannot take vulcanizer jobs, etc.
-      if (
-        status === "accepted" &&
-        existing.status === "pending" &&
-        accountType === "professional"
-      ) {
-        const mySkill: ProService | null = isProService(registeredAs)
-          ? registeredAs
-          : (proServices[0] ?? null);
-        if (mySkill && existing.serviceType !== mySkill) {
-          return {
-            ok: false,
-            code: "skill_mismatch",
-            message: `This job is for ${existing.serviceType}. Your skill is ${mySkill} only you cannot take another trade's job.`,
-            actionCount: userProfile?.serviceActionCount ?? 0,
-          };
-        }
-      }
-
-      // Only "accept" is gated decline / progress stays free
-      if (status === "accepted" && existing.status === "pending") {
-        const cfg = getRuntimeAppConfig();
-        const gate = cfg.features.identityVerifyEnabled
-          ? evaluateServiceGate(
-              userProfile,
-              accountType === "professional"
-                ? "professional"
-                : userProfile?.accountType,
-              {
-                trialDays: cfg.verification.trialDays ?? 30,
-                warnFrom: cfg.verification.warnFrom,
-                blockAt: cfg.verification.blockAt,
-              },
-            )
-          : {
-              allowed: true as const,
-              warning: null,
-              nextIndex: 0,
-              remaining: Infinity,
-            };
-        const count = userProfile?.serviceActionCount ?? 0;
-        if (!gate.allowed) {
-          return {
-            ok: false,
-            code: "verification_required",
-            message: gate.message,
-            actionCount: count,
-          };
-        }
-        setRequests((prev) =>
-          prev.map((r) => (r.id === id ? { ...r, status } : r)),
-        );
-        // Chat only when user opens Message no auto thread / system toast
-        if (backendUserId && isAppBackendOnline()) {
-          void backendUpdateJobStatus(id, status, backendUserId);
-        }
-        if (userProfile) {
-          const nowIso = new Date().toISOString();
-          persistProfile({
-            ...userProfile,
-            serviceActionCount: count + 1,
-            firstServiceAt: userProfile.firstServiceAt || nowIso,
-          });
-        }
-        return {
-          ok: true,
-          warning: gate.warning,
-          actionCount: count + 1,
-        };
+      // Server first: never show a status the server has not accepted.
+      if (online && backendUserId) {
+        const res = await advanceDeskRequest({
+          jobId: id,
+          userId: backendUserId,
+          role: deskRoleFor(existing, backendUserId),
+          from: existing.status,
+          to: status,
+        });
+        if (!res.ok) return fail("transition_failed", res.message);
       }
 
       setRequests((prev) =>
         prev.map((r) => (r.id === id ? { ...r, status } : r)),
       );
-      if (backendUserId && isAppBackendOnline()) {
-        void backendUpdateJobStatus(id, status, backendUserId);
+      if (isAccept && userProfile) {
+        persistProfile({
+          ...userProfile,
+          serviceActionCount: count + 1,
+          firstServiceAt:
+            userProfile.firstServiceAt || new Date().toISOString(),
+        });
       }
-      return {
-        ok: true,
-        warning: null,
-        actionCount: userProfile?.serviceActionCount ?? 0,
-      };
+      return { ok: true, warning, actionCount: isAccept ? count + 1 : count };
     },
     [
       requests,

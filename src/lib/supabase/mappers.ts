@@ -61,26 +61,6 @@ export function jobStatusToApp(s: JobStatus): RequestStatus {
   }
 }
 
-export function appStatusToJob(s: RequestStatus): JobStatus {
-  switch (s) {
-    case "pending":
-      return "requested";
-    case "accepted":
-      return "accepted";
-    case "en_route":
-      return "en_route";
-    case "arrived":
-    case "in_progress":
-      return "in_progress";
-    case "completed":
-      return "completed";
-    case "cancelled":
-      return "cancelled";
-    default:
-      return "requested";
-  }
-}
-
 /**
  * Pull discovery specialties from every shape used at signup / settings:
  * - skills.specialties[] (skill multiselect)

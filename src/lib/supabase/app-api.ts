@@ -9,7 +9,6 @@ import { hasRecentLiveHeartbeat, MAX_RADIUS_KM } from "@/lib/matching";
 import { DOCS_PENDING_MAX_RADIUS_KM } from "@/lib/skill-questions";
 import { getAppSupabase, isAppBackendOnline } from "@/lib/supabase/app-client";
 import {
-  appStatusToJob,
   mapConversationToThread,
   mapProToTechnician,
   mapRequestRow,
@@ -30,7 +29,6 @@ import type {
   Technician,
   UserProfile,
   MessageThread,
-  RequestStatus,
 } from "@/lib/types";
 import { isProService } from "@/lib/pro-service-id";
 import { isSyntheticAccount } from "@/lib/server/synthetic-accounts";
@@ -1476,36 +1474,6 @@ export async function backendCreateJob(input: {
       error: e instanceof Error ? e.message : "Could not create job",
     };
   }
-}
-
-export async function backendUpdateJobStatus(
-  requestId: string,
-  status: RequestStatus,
-  actorId: string,
-): Promise<string | null> {
-  const sb = getAppSupabase();
-  if (!sb) return "Backend offline";
-  const jobStatus = appStatusToJob(status);
-  const patch: Record<string, unknown> = { status: jobStatus };
-  if (jobStatus === "accepted") {
-    patch.accepted_at = new Date().toISOString();
-    patch.repair_pro_id = actorId;
-  }
-  if (jobStatus === "completed") patch.completed_at = new Date().toISOString();
-  if (jobStatus === "cancelled") patch.cancelled_at = new Date().toISOString();
-
-  const { error } = await sb
-    .from("service_requests")
-    .update(patch)
-    .eq("id", requestId);
-  if (error) return error.message;
-
-  await sb.from("job_status_events").insert({
-    request_id: requestId,
-    status: jobStatus,
-    actor_id: actorId,
-  });
-  return null;
 }
 
 export async function backendFetchJobsForUser(
