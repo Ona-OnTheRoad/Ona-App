@@ -1,0 +1,282 @@
+import { useMemo } from "react";
+import type { AppState } from "./app-state";
+import type { SessionStateResult } from "./use-session-state";
+import type { MarketStateResult } from "./use-market-state";
+import type { ThemeAndProSheetResult } from "./use-theme-and-pro-sheet";
+import type { ApplySessionResult } from "./use-apply-session";
+import type { SwitchAccountResult } from "./use-switch-account";
+import type { SignInResult } from "./use-sign-in";
+import type { LoginOtpResult } from "./use-login-otp";
+import type { ProfilePersistenceResult } from "./use-profile-persistence";
+import type { UpdateProfileResult } from "./use-update-profile";
+import type { SignupResult } from "./use-signup";
+import type { AccountActionsResult } from "./use-account-actions";
+import type { TechniciansResult } from "./use-technicians";
+import type { FiltersResult } from "./use-filters";
+import type { ChatsResult } from "./use-chats";
+import type { RequestsResult } from "./use-requests";
+import type { RequestStatusResult } from "./use-request-status";
+import type { CloudDataResult } from "./use-cloud-data";
+import type { LocationAndRadiusResult } from "./use-location";
+
+export function useAppValue(
+  session: SessionStateResult,
+  market: MarketStateResult,
+  themeApi: ThemeAndProSheetResult,
+  applyApi: ApplySessionResult,
+  switchApi: SwitchAccountResult,
+  signInApi: SignInResult,
+  loginOtpApi: LoginOtpResult,
+  profileApi: ProfilePersistenceResult,
+  updateApi: UpdateProfileResult,
+  signupApi: SignupResult,
+  accountApi: AccountActionsResult,
+  techApi: TechniciansResult,
+  filterApi: FiltersResult,
+  chatApi: ChatsResult,
+  requestApi: RequestsResult,
+  statusApi: RequestStatusResult,
+  cloudApi: CloudDataResult,
+  locationApi: LocationAndRadiusResult,
+) {
+  const {
+    theme,
+    roleReady,
+    authReady,
+    isAuthenticated,
+    displayName,
+    accountType,
+    primaryAccountType,
+    switchingRole,
+    userProfile,
+    registeredAs,
+    userMode,
+    proServices,
+    hasMotoristAccount,
+    hasProAccount,
+    proLive,
+    postSwitchPhoneOtpRequired,
+    proOnboardingSheetRequired,
+    helpingSomeoneElse,
+    helpingSomeoneLabel,
+    backendUserId,
+    setProOnboardingSheetRequired,
+    serverSessionReady,
+  } = session;
+  const {
+    location,
+    radiusKm,
+    category,
+    specialtyFilter,
+    specialtyPickerOpen,
+    query,
+    setQuery,
+    filters,
+    selectedTechId,
+    setSelectedTechId,
+    requests,
+    bookings,
+    messages,
+    locationError,
+    isLocating,
+  } = market;
+  const { setTheme, toggleTheme } = themeApi;
+  const { setRegisteredAs } = applyApi;
+  const { switchAccount, setUserMode } = switchApi;
+  const {
+    signInWithPassword,
+    sendPhoneOtp,
+    sendPostSwitchPhoneOtp,
+    completePostSwitchPhoneOtp,
+  } = signInApi;
+  const { sendLoginOtp, signInWithLoginOtp, signInWithPhoneOtp } = loginOtpApi;
+  const { verifyCustomerPhoneOtp, completeIdentityVerification } = profileApi;
+  const { updateUserProfile } = updateApi;
+  const { completeSignup, login } = signupApi;
+  const {
+    setProLive,
+    setHelpingSomeoneElse,
+    logout,
+    addProService,
+    removeProService,
+  } = accountApi;
+  const { technicians, visibleTechnicians } = techApi;
+  const { toggleFilter, setCategory, setSpecialtyFilter, openSpecialtyPicker } =
+    filterApi;
+  const {
+    ensureChatForRequestAsync,
+    ensureChatForRequest,
+    sendChatMessage,
+    markThreadRead,
+    visibleMessageThreads,
+  } = chatApi;
+  const { createRequest, bookRequest } = requestApi;
+  const { updateRequestStatus } = statusApi;
+  const { refreshNearbyPros, refreshCloudChats } = cloudApi;
+  const { retryLocation, setManualLocation, setRadiusKm } = locationApi;
+
+  const value = useMemo<AppState>(
+    () => ({
+      theme,
+      toggleTheme,
+      setTheme,
+      roleReady,
+      authReady,
+      isAuthenticated,
+      backendUserId,
+      serverSessionReady,
+      displayName,
+      accountType,
+      primaryAccountType,
+      userProfile,
+      registeredAs,
+      userMode,
+      proServices,
+      setRegisteredAs,
+      setUserMode,
+      hasMotoristAccount,
+      hasProAccount,
+      proLive,
+      setProLive,
+      helpingSomeoneElse,
+      helpingSomeoneLabel,
+      setHelpingSomeoneElse,
+      switchAccount,
+      switchingRole,
+      postSwitchPhoneOtpRequired,
+      sendPostSwitchPhoneOtp,
+      completePostSwitchPhoneOtp,
+      proOnboardingSheetRequired,
+      setProOnboardingSheetRequired,
+      signInWithPassword,
+      sendPhoneOtp,
+      sendLoginOtp,
+      signInWithPhoneOtp,
+      signInWithLoginOtp,
+      addProService,
+      removeProService,
+      completeSignup,
+      completeIdentityVerification,
+      verifyCustomerPhoneOtp,
+      updateUserProfile,
+      login,
+      logout,
+      location,
+      radiusKm,
+      category,
+      specialtyFilter,
+      specialtyPickerOpen,
+      query,
+      filters,
+      selectedTechId,
+      technicians,
+      visibleTechnicians,
+      requests,
+      bookings,
+      messages,
+      visibleMessageThreads,
+      locationError,
+      isLocating,
+      refreshNearbyPros,
+      setRadiusKm,
+      setCategory,
+      setSpecialtyFilter,
+      openSpecialtyPicker,
+      setQuery,
+      toggleFilter,
+      setSelectedTechId,
+      bookRequest,
+      createRequest,
+      updateRequestStatus,
+      ensureChatForRequest,
+      ensureChatForRequestAsync,
+      refreshCloudChats,
+      sendChatMessage,
+      markThreadRead,
+      retryLocation,
+      setManualLocation,
+    }),
+    [
+      theme,
+      toggleTheme,
+      setTheme,
+      roleReady,
+      authReady,
+      isAuthenticated,
+      backendUserId,
+      serverSessionReady,
+      displayName,
+      accountType,
+      primaryAccountType,
+      userProfile,
+      registeredAs,
+      userMode,
+      proServices,
+      setRegisteredAs,
+      setUserMode,
+      setRadiusKm,
+      hasMotoristAccount,
+      hasProAccount,
+      proLive,
+      setProLive,
+      helpingSomeoneElse,
+      helpingSomeoneLabel,
+      setHelpingSomeoneElse,
+      switchAccount,
+      switchingRole,
+      postSwitchPhoneOtpRequired,
+      sendPostSwitchPhoneOtp,
+      completePostSwitchPhoneOtp,
+      proOnboardingSheetRequired,
+      setProOnboardingSheetRequired,
+      signInWithPassword,
+      sendPhoneOtp,
+      sendLoginOtp,
+      signInWithPhoneOtp,
+      signInWithLoginOtp,
+      addProService,
+      removeProService,
+      completeSignup,
+      completeIdentityVerification,
+      verifyCustomerPhoneOtp,
+      updateUserProfile,
+      login,
+      logout,
+      location,
+      radiusKm,
+      category,
+      specialtyFilter,
+      specialtyPickerOpen,
+      query,
+      filters,
+      selectedTechId,
+      technicians,
+      visibleTechnicians,
+      requests,
+      visibleMessageThreads,
+      ensureChatForRequest,
+      ensureChatForRequestAsync,
+      refreshCloudChats,
+      sendChatMessage,
+      markThreadRead,
+      bookings,
+      messages,
+      locationError,
+      isLocating,
+      refreshNearbyPros,
+      toggleFilter,
+      setCategory,
+      setSpecialtyFilter,
+      openSpecialtyPicker,
+      bookRequest,
+      createRequest,
+      updateRequestStatus,
+      retryLocation,
+      setManualLocation,
+      setQuery,
+      setSelectedTechId,
+    ],
+  );
+
+  return value;
+}
