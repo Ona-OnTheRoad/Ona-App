@@ -1,0 +1,110 @@
+import type { TradeAttributeSchema } from "./types";
+
+export const ENERGY_SCHEMAS: TradeAttributeSchema[] = [
+  {
+    tradeKey: "solar",
+    vehicleForbidden: true,
+    vehicleFitmentKeys: [],
+    attributes: [
+      {
+        key: "wattage",
+        label: "Wattage",
+        type: "number",
+        unit: "W",
+        filterable: true,
+        required: true,
+      },
+      {
+        key: "voltage",
+        label: "Voltage",
+        type: "number",
+        unit: "V",
+        filterable: true,
+      },
+      {
+        key: "panelType",
+        label: "Panel type",
+        type: "enum",
+        filterable: true,
+        options: [
+          "Monocrystalline",
+          "Polycrystalline",
+          "Thin-film",
+          "PERC",
+          "Bifacial",
+        ],
+      },
+      {
+        key: "inverterType",
+        label: "Inverter type",
+        type: "enum",
+        filterable: true,
+        options: ["Hybrid", "Off-grid", "On-grid", "String", "Micro"],
+      },
+      {
+        key: "capacity",
+        label: "Capacity",
+        type: "number",
+        unit: "kVA",
+        filterable: true,
+      },
+      {
+        key: "efficiency",
+        label: "Efficiency",
+        type: "number",
+        unit: "%",
+        filterable: true,
+      },
+    ],
+  },
+  {
+    tradeKey: "generator",
+    vehicleForbidden: true,
+    vehicleFitmentKeys: [],
+    attributes: [
+      {
+        key: "kva",
+        label: "Power",
+        type: "number",
+        unit: "kVA",
+        filterable: true,
+        required: true,
+      },
+      {
+        key: "fuelType",
+        label: "Fuel type",
+        type: "enum",
+        filterable: true,
+        options: ["Petrol", "Diesel", "Gas", "Solar hybrid"],
+      },
+      {
+        key: "phase",
+        label: "Phase",
+        type: "enum",
+        filterable: true,
+        options: ["Single", "Three"],
+      },
+      {
+        key: "runTime",
+        label: "Run time",
+        type: "number",
+        unit: "hr",
+        filterable: true,
+      },
+      {
+        key: "tankCapacity",
+        label: "Tank capacity",
+        type: "number",
+        unit: "L",
+        filterable: true,
+      },
+      {
+        key: "startType",
+        label: "Start type",
+        type: "enum",
+        filterable: true,
+        options: ["Recoil", "Electric", "Remote", "Auto"],
+      },
+    ],
+  },
+];
