@@ -11,6 +11,7 @@
  *   DATABASE_URL='postgresql://...' npm run db:apply
  */
 import pg from "pg";
+import { createClient } from "@supabase/supabase-js";
 import { config } from "dotenv";
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
@@ -26,13 +27,59 @@ const REF =
     .replace("https://", "")
     .replace(".supabase.co", "")
     .split("/")[0] ||
-  "akasyjovvyhtmzpkliay";
+  "";
 
-const email =
-  process.env.ADMIN_SEED_EMAIL || "Oluwatosinabdullahime@gmail.com";
-const fullName = process.env.ADMIN_SEED_NAME || "Oluwatosin Abdullah";
-const adminAuthId =
-  process.env.ADMIN_AUTH_USER_ID || "d2e5f02b-2d60-4c6c-944d-ea3898336660";
+/** Super Admin identity comes from .env.local (never hard-coded; see .env.example). */
+const email = (process.env.ADMIN_SEED_EMAIL || "").trim();
+const fullName = (process.env.ADMIN_SEED_NAME || "Super Admin").trim();
+
+/**
+ * The profiles table references Supabase Auth users (profiles_id_fkey), so the admin's Auth user must
+ * exist BEFORE the admin profile is inserted. Use ADMIN_AUTH_USER_ID if you already have one; otherwise
+ * find (or create) the Auth user for ADMIN_SEED_EMAIL through the Admin API and use its id.
+ */
+async function resolveAdminAuthId() {
+  if (process.env.ADMIN_AUTH_USER_ID) return process.env.ADMIN_AUTH_USER_ID.trim();
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const serviceKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+  const password = process.env.ADMIN_SEED_PASSWORD || "";
+  if (!email || !password || !url || !serviceKey) {
+    console.error(`
+[apply-schema] Cannot set up the admin account.
+
+Set these in .env.local (see .env.example):
+  ADMIN_SEED_EMAIL, ADMIN_SEED_PASSWORD   the Super Admin you will log in with
+  NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY   to create that Auth user
+or set ADMIN_AUTH_USER_ID to the id of an existing Auth user.
+`);
+    process.exit(1);
+  }
+
+  const supabase = createClient(url, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 200 });
+    if (error) throw error;
+    const hit = data.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+    if (hit) {
+      console.log("[apply-schema] Using existing admin Auth user", hit.id);
+      return hit.id;
+    }
+    if (data.users.length < 200) break;
+  }
+  const { data, error } = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { full_name: fullName, role: "motorist" },
+  });
+  if (error) throw error;
+  console.log("[apply-schema] Created admin Auth user", data.user.id);
+  return data.user.id;
+}
 
 function buildDatabaseUrl() {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
@@ -45,6 +92,11 @@ function buildDatabaseUrl() {
 }
 
 async function main() {
+  const adminAuthId = await resolveAdminAuthId();
+  if (!email) {
+    console.error("[apply-schema] Set ADMIN_SEED_EMAIL in .env.local (see .env.example).");
+    process.exit(1);
+  }
   const sqlPath = resolve(
     root,
     "supabase/migrations/20260714_002_bootstrap_idempotent.sql"
@@ -136,15 +188,34 @@ Or set DATABASE_URL to the full Postgres connection string.
   if (!client) {
     console.error("[apply-schema] Could not connect to Postgres.");
     console.error(lastErr?.message || lastErr);
-    console.error(
-      "Check SUPABASE_DB_PASSWORD (the DB password from project creation / Settings → Database), not the API secret key."
-    );
+    if (/ENOTFOUND|ENETUNREACH|EAI_AGAIN/.test(String(lastErr?.message || lastErr))) {
+      console.error(
+        "The host name did not resolve. Supabase's direct database host (db.<ref>.supabase.co) is IPv6-only, so networks\n" +
+          "without IPv6 cannot reach it. In the Supabase dashboard open Connect and use the Session pooler connection\n" +
+          "string as DATABASE_URL (user postgres.<ref>, host aws-*.pooler.supabase.com, port 5432)."
+      );
+    } else {
+      console.error(
+        "Check the database password (Settings → Database), not the API secret key."
+      );
+    }
     process.exit(1);
   }
 
   try {
     console.log("[apply-schema] Applying schema + admin seed…");
     await client.query(sql);
+    // Record it so `db:sync` does not re-run this file raw (it carries the previous project's admin id).
+    await client.query(`
+      create table if not exists public.schema_migrations (
+        filename text primary key,
+        applied_at timestamptz not null default now()
+      )
+    `);
+    await client.query(
+      `insert into public.schema_migrations (filename) values ($1) on conflict (filename) do nothing`,
+      ["20260714_002_bootstrap_idempotent.sql"]
+    );
     const { rows } = await client.query(
       `select id, role, email, is_active, full_name
        from public.profiles

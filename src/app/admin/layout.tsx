@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import "./admin.css";
 
 export const metadata: Metadata = {
-  title: "Ona Control Centre",
+  title: { absolute: "Ona Control Centre" },
+  robots: { index: false, follow: false },
   description:
     "Super Admin full control of Customer, Repair Pro, jobs, payments, content & features",
 };

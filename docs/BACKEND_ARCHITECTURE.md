@@ -170,7 +170,7 @@ disputed ──RESOLVE_DISPUTE──> released | refunded
 - Ona: 5% (absorbs Flutterwave fees)
 - VAT: 7.5% stays on Flutterwave
 
-**Payout retry:** Every 10 min for 24h (max 144 retries) if Flutterwave balance insufficient.
+**Payout retry:** if Flutterwave balance is insufficient, a payout is retried with a minimum spacing of 10 minutes (`PAYOUT_RETRY_INTERVAL_MS`) inside a 24-hour window (`PAYOUT_AUTO_RETRY_WINDOW_MS`), then suspended for admin manual pay (`src/lib/server/payments/payout-settlement.ts`). Retries run when `/api/payments/payout-retry` is called; its Vercel cron in `vercel.json` is **daily** (Hobby plan), so attempts are as frequent as the trigger, not every 10 minutes unless something calls the route more often.
 
 ---
 
@@ -180,11 +180,11 @@ disputed ──RESOLVE_DISPUTE──> released | refunded
 - `profiles` — User accounts (motorist + repair_pro dual role)
 - `motorist_profiles` — Motorist-specific data
 - `repair_pro_profiles` — Pro-specific data (services, bank, location, verification)
-- `jobs` — Job records with full lifecycle
+- `service_requests` — the job record (there is no `jobs` table). Offers (`offers`) and dispute data (`dispute`) are JSON columns on this row; the live status is `flow_status`
+- `job_status_events`, `job_events` — job history timeline
 - `payments` — Escrow payment records
-- `job_offers` — Negotiation offers
-- `job_media` — Photos/voice notes
-- `job_disputes` — Dispute records
+- `call_signals` — WebRTC call signaling rows
+- `credit_wallets`, `credit_transactions`, `cashout_requests` — live wallet and cashout ledger (`wallet_accounts` / `wallet_transactions` are unused stubs)
 - `payout_transfer_ledger` — Pro payout transfer audit (UNIQUE transfer_ref prevents double-pay)
 
 ### RLS Strategy
@@ -193,7 +193,7 @@ disputed ──RESOLVE_DISPUTE──> released | refunded
 - RLS is defense-in-depth for direct DB access
 
 ### Migrations
-34+ numbered migrations in `supabase/migrations/` with ISO date prefixes. Apply via `npm run db:apply`.
+80 numbered migrations in `supabase/migrations/` with date prefixes (numbering is not strictly sequential; check apply order before adding one). Apply via `npm run db:apply`.
 
 ---
 

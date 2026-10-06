@@ -20,10 +20,25 @@ Every user-visible string in Ona goes through `t("key")` so all **11 languages**
 
 Default: **English**. Preference is stored in `localStorage` (`ona-app-locale`).
 
+## How the catalogs are laid out
+
+Each language is a thin file (`catalog/<lang>.ts`) that spreads **section files** from a folder of the same name:
+
+```
+catalog/en.ts          # EN master: spreads the sections below
+catalog/en/nav.ts      # export const EN_NAV = { "nav.home": "Home", ... } as const
+catalog/fr.ts          # FR: spreads the FR_* sections in its own order
+catalog/fr/nav.ts      # export const FR_NAV: Record<keyof typeof EN_NAV, string> = { ... }
+```
+
+Every language has the same nine sections: `nav`, `navShop`, `core`, `settings`, `home`, `tradeShop`, `jobs`, `account`, `shop`. Section boundaries are by key, so the same key lives in the same section file in every language and a translator can diff them side by side.
+
+Locale sections are typed against the English section (`Record<keyof typeof EN_<SECTION>, string>`), so a **missing or extra key is a compile error** (`npm run typecheck`).
+
 ## How to add a string
 
-1. Add the key to `catalog/en.ts` (English only, clear wording).
-2. Add the same key to **every** locale file under `catalog/*.ts` (`yo`, `ig`, `ha`, …).
+1. Add the key to the right section in `catalog/en/<section>.ts` (English only, clear wording).
+2. Add the **same key to the same section in every other language** (`catalog/yo/<section>.ts`, `ig`, `ha`, `fr`, `pt`, `ar`, `es`, `sw`, `pcm`, `zh`). Typecheck fails until all 11 have it.
 3. Use it in UI: `const t = useT(); return t("my.key");`
 4. Optional vars: `t("settings.themeSaved", { name: "Ada" })` → `{name}` placeholders.
 
@@ -39,8 +54,10 @@ Default: **English**. Preference is stored in `localStorage` (`ona-app-locale`).
 
 ```ts
 import { assertCatalogParity } from "@/lib/i18n/catalog";
-console.log(assertCatalogParity()); // [] when perfect
+console.log(await assertCatalogParity()); // [] when perfect (async: it loads every locale first)
 ```
+
+The compile-time typing above catches missing keys earlier; this runtime check also flags empty strings.
 
 ## Coverage today
 
@@ -51,7 +68,7 @@ console.log(assertCatalogParity()); // [] when perfect
 - Search empty states (home + `/search`)  
 - Catalog keys for Jobs, Messages, Profile, Verify, Signup, Dashboard, Menu  
 
-**11 locales keep full key parity** with English master (`assertCatalogParity()` → `[]`).
+**11 locales keep full key parity** with the English master (enforced by the types; `await assertCatalogParity()` → `[]`).
 
 ## Wiring more screens
 
@@ -66,4 +83,4 @@ export function MyScreen() {
 }
 ```
 
-Expand `catalog/en.ts` first whenever you add new UI copy, then add the same key to every locale file.
+Add new UI copy to the matching `catalog/en/<section>.ts` first, then to the same section in every other language.

@@ -1,15 +1,52 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useRef, type ReactNode } from "react";
-import { PostSwitchPhoneOtpGate } from "@/components/auth/post-switch-phone-otp-gate";
-import { AcceptTripPopup } from "@/components/home/accept-trip-popup";
-import { IncomingJobPopup } from "@/components/home/incoming-job-popup";
-import { MotoristReleasePayGate } from "@/components/jobs/motorist-release-pay-gate";
-import { ProOnboardingSheet } from "@/components/pro/pro-onboarding-sheet";
+import { OfflineBanner } from "@/components/layout/offline-banner";
 import { DeletionBanner } from "@/components/profile/deletion-banner";
 import { useOverlayGatesReady } from "@/lib/use-overlay-gates-ready";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/lib/store";
+
+/**
+ * Overlays only mount after the page has loaded and settled (see useOverlayGatesReady), and most
+ * apply to one role or state, so they are loaded on demand instead of being part of every page's
+ * first-load JavaScript. This keeps the shared bundle small on slow connections (the onboarding
+ * sheet alone pulls in the whole Repair Pro onboarding wizard and the Nigerian places data).
+ */
+const ProOnboardingSheet = dynamic(
+  () =>
+    import("@/components/pro/pro-onboarding-sheet").then(
+      (m) => m.ProOnboardingSheet,
+    ),
+  { ssr: false },
+);
+const PostSwitchPhoneOtpGate = dynamic(
+  () =>
+    import("@/components/auth/post-switch-phone-otp-gate").then(
+      (m) => m.PostSwitchPhoneOtpGate,
+    ),
+  { ssr: false },
+);
+const AcceptTripPopup = dynamic(
+  () =>
+    import("@/components/home/accept-trip-popup").then((m) => m.AcceptTripPopup),
+  { ssr: false },
+);
+const IncomingJobPopup = dynamic(
+  () =>
+    import("@/components/home/incoming-job-popup").then(
+      (m) => m.IncomingJobPopup,
+    ),
+  { ssr: false },
+);
+const MotoristReleasePayGate = dynamic(
+  () =>
+    import("@/components/jobs/motorist-release-pay-gate").then(
+      (m) => m.MotoristReleasePayGate,
+    ),
+  { ssr: false },
+);
 
 /** Real controls / cards never toggle theme when these are the target. */
 const CONTROL_SELECTOR = [
@@ -201,6 +238,12 @@ export function PhoneShell({
         isLight ? "bg-[#060d0a]" : "bg-[#0a0605]",
       )}
     >
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[2000] focus:rounded-md focus:bg-black focus:px-4 focus:py-3 focus:text-[14px] focus:font-bold focus:text-white"
+      >
+        Skip to main content
+      </a>
       <div
         id="ona-phone"
         data-theme={theme}
@@ -222,10 +265,13 @@ export function PhoneShell({
           backgroundColor: phoneInterior,
         }}
       >
-        <div
-          className="relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden"
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden outline-none"
           style={{ backgroundColor: phoneInterior }}
         >
+          <OfflineBanner />
           <DeletionBanner />
           {children}
           {gatesReady ? (
@@ -237,7 +283,7 @@ export function PhoneShell({
               <MotoristReleasePayGate />
             </>
           ) : null}
-        </div>
+        </main>
       </div>
     </div>
   );

@@ -52,7 +52,7 @@ export function PasswordField({
         disabled={disabled}
         onClick={() => setVisible((v) => !v)}
         className={cn(
-          "absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md border-0 bg-transparent text-[#64748b] transition hover:bg-black/[0.06] hover:text-[#0f172a] disabled:opacity-40",
+          "absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md border-0 bg-transparent text-[#475569] transition hover:bg-black/[0.06] hover:text-[#0f172a] disabled:opacity-40",
         )}
         aria-label={visible ? "Hide password" : "Show password"}
         aria-pressed={visible}

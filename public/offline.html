@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#c8c9cd" />
+    <title>You're offline | Ona</title>
+    <style>
+      html, body { height: 100%; margin: 0; }
+      body {
+        display: flex; align-items: center; justify-content: center;
+        background: #af6533; color: #fff; padding: 24px; box-sizing: border-box;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      }
+      main { max-width: 360px; text-align: center; }
+      h1 { font-size: 26px; margin: 0 0 10px; }
+      p { font-size: 16px; line-height: 1.5; margin: 0 0 18px; }
+      button {
+        font: inherit; font-weight: 800; color: #fff; background: #ff6b35;
+        border: 2px solid #fff; border-radius: 6px; padding: 12px 22px; min-height: 48px; cursor: pointer;
+      }
+      button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+      small { display: block; margin-top: 18px; opacity: 0.9; font-size: 14px; }
+    </style>
+  </head>
+  <body>
+    <main role="main">
+      <h1>You're offline</h1>
+      <p>Ona can't reach the internet right now. Check your network or mobile data, then try again.</p>
+      <button type="button" id="retry">Try again</button>
+      <small>Screens you opened before are still available. Nothing you did is lost.</small>
+    </main>
+    <script>
+      document.getElementById("retry").addEventListener("click", function () {
+        location.reload();
+      });
+      window.addEventListener("online", function () {
+        location.reload();
+      });
+    </script>
+  </body>
+</html>

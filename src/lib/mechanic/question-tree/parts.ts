@@ -1,0 +1,88 @@
+export const START_NEXT: Record<string, string> = {
+  A: "a_what",
+  B: "b_how",
+  C: "c_where",
+  D: "d_red",
+  E: "e_color",
+  F: "f_color",
+  G: "g_type",
+  H: "ev_issue",
+  I: "l_describe",
+};
+
+export const MECHANIC_PART_IDS = [
+  "engine",
+  "gear",
+  "steering",
+  "brain",
+  "brakes",
+  "suspension",
+  "radiator",
+  "fuel",
+  "exhaust",
+  "battery",
+] as const;
+
+export type MechanicPartId = (typeof MECHANIC_PART_IDS)[number];
+
+export const MECHANIC_PART_LABELS: Record<MechanicPartId, string> = {
+  engine: "Engine",
+  gear: "Gear",
+  steering: "Power steering",
+  brain: "Brain box",
+  brakes: "Brakes",
+  suspension: "Suspension / shocks",
+  radiator: "Radiator",
+  fuel: "Fuel system",
+  exhaust: "Exhaust / silencer",
+  battery: "Battery / charging",
+};
+
+export const PART_FIRST: Record<MechanicPartId, string> = {
+  engine: "eng_sym",
+  gear: "gear_when",
+  steering: "str_feel",
+  brain: "brn_light",
+  brakes: "brk_feel",
+  suspension: "sus_feel",
+  radiator: "rad_steam",
+  fuel: "fuel_sym",
+  exhaust: "exh_sym",
+  battery: "bat_sym",
+};
+
+export const PART_CHAIN: Record<string, string | "end"> = {
+  eng_sym: "eng_when",
+  eng_when: "eng_light",
+  eng_light: "eng_plug",
+  eng_plug: "end",
+  gear_when: "gear_fluid",
+  gear_fluid: "gear_light",
+  gear_light: "end",
+  str_feel: "str_when",
+  str_when: "str_fluid",
+  str_lock: "end",
+  str_fluid: "str_lock",
+  brn_light: "brn_cut",
+  brn_cut: "brn_work",
+  brn_work: "brn_scan",
+  brn_scan: "end",
+  brk_feel: "brk_pull",
+  brk_pull: "brk_light",
+  brk_light: "end",
+  sus_feel: "sus_where",
+  sus_where: "sus_leak",
+  sus_leak: "end",
+  rad_steam: "rad_level",
+  rad_level: "rad_when",
+  rad_when: "end",
+  fuel_sym: "fuel_tank",
+  fuel_tank: "fuel_work",
+  fuel_work: "end",
+  exh_sym: "exh_smoke",
+  exh_smoke: "exh_where",
+  exh_where: "end",
+  bat_sym: "bat_jump",
+  bat_jump: "bat_age",
+  bat_age: "end",
+};

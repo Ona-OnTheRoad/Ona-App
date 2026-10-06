@@ -61,7 +61,7 @@ export function TechCard({
             : "border-brand bg-white/[0.1]"
           : "border-transparent bg-transparent",
       )}
-      aria-selected={selected}
+      aria-current={selected ? "true" : undefined}
     >
       <Link
         href={`/technician/${tech.id}`}

@@ -1,0 +1,62 @@
+import type { VulcanizerProduct } from "@/lib/shop/vulcanizer-catalog/types";
+
+export const TUBES_PRODUCTS: VulcanizerProduct[] = [
+  // ------------------------------ TUBES ------------------------------
+  {
+    id: "vulc-tube-r13-tubeless-compat",
+    tradeKey: "vulcanizer",
+    categorySlug: "tubes",
+    subcategorySlug: "passenger-tubes",
+    brand: { slug: "ona-pro", name: "Ona Pro" },
+    name: "Ona Pro Inner Tube 175/70 R13",
+    subtitle: "Passenger inner tube · fits 175/70 R13",
+    description:
+      "Butyl rubber inner tube for 175/70 R13 tubeless-compatible rims. New tube must be used with a new tube-type tyre.",
+    sku: "ONA-VULC-TUB-R13-001",
+    mpn: "TUBE-17570R13",
+    priceMinor: 850000,
+    qty: 90,
+    status: "active",
+    attributes: { rimSize: 13, tubeType: "Tube", material: "Butyl rubber" },
+    keywords: ["tube", "inner tube", "r13", "175/70 r13"],
+    verificationStatus: "source_verified",
+  },
+  {
+    id: "vulc-tube-r14-passenger",
+    tradeKey: "vulcanizer",
+    categorySlug: "tubes",
+    subcategorySlug: "passenger-tubes",
+    brand: { slug: "ona-pro", name: "Ona Pro" },
+    name: "Ona Pro Inner Tube 185/65 R14",
+    subtitle: "Passenger inner tube · fits 185/65 R14",
+    description:
+      "Butyl rubber inner tube for 185/65 R14 tubeless-compatible rims.",
+    sku: "ONA-VULC-TUB-R14-001",
+    mpn: "TUBE-18565R14",
+    priceMinor: 950000,
+    qty: 80,
+    status: "active",
+    attributes: { rimSize: 14, tubeType: "Tube", material: "Butyl rubber" },
+    keywords: ["tube", "inner tube", "r14", "185/65 r14"],
+    verificationStatus: "source_verified",
+  },
+  {
+    id: "vulc-tube-r16-truck",
+    tradeKey: "vulcanizer",
+    categorySlug: "tubes",
+    subcategorySlug: "truck-tubes",
+    brand: { slug: "ona-pro", name: "Ona Pro" },
+    name: "Ona Pro Heavy Truck Tube 7.50-16",
+    subtitle: "Truck inner tube · 7.50-16",
+    description:
+      "Butyl heavy-duty inner tube for 7.50-16 truck tyres. Common on Nigerian bush taxis and pickups.",
+    sku: "ONA-VULC-TUB-TRK-75016-001",
+    mpn: "TUBE-7.50-16",
+    priceMinor: 1650000,
+    qty: 25,
+    status: "active",
+    attributes: { rimSize: 16, tubeType: "Tube", material: "Butyl rubber" },
+    keywords: ["tube", "inner tube", "truck", "7.50-16"],
+    verificationStatus: "source_verified",
+  },
+];

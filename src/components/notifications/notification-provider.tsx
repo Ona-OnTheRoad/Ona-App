@@ -19,101 +19,18 @@ import type {
   AppNotification,
   NotificationFilter,
 } from "@/lib/notifications/types";
-import {
-  shouldListNotification,
-  shouldToastNotification,
-} from "@/lib/notifications/types";
-import { shouldShowToast } from "@/lib/notifications/quiet-hours";
-import {
-  isNonStackNotification,
-  TOAST_MAX_NON_STACK,
-} from "@/lib/notifications/stack-rules";
-import {
-  TOAST_MAX_STACK,
-  TOAST_VISIBLE_MS,
-  canAutoShowToast,
-} from "@/lib/notifications/toast-timing";
+import { shouldListNotification } from "@/lib/notifications/types";
 import { useApp } from "@/lib/store";
 import { createBrowserSupabase } from "@/lib/supabase/client";
-import { playAppSound } from "@/lib/sound-tone";
+import { mapRow } from "./provider/map-row";
+import { redirectToReleasePayIfNeeded } from "./provider/release-pay-redirect";
+import { persistSeenNotifIds, readSeenNotifIds } from "./provider/seen-ids";
+import type { Ctx, ToastItem } from "./provider/types";
+import { useNotificationToasts } from "./provider/use-notification-toasts";
 
-/**
- * Seen-notification ids survive reload + role-switch: seed known/toasted sets
- * from sessionStorage so Realtime replay of already-acknowledged rows is a
- * no-op (old rows can never re-toast after a fresh page or a role flip).
- */
-const SEEN_NOTIF_KEY = "ona-notif-seen-ids";
-
-function readSeenNotifIds(): Set<string> {
-  try {
-    const raw = window.sessionStorage.getItem(SEEN_NOTIF_KEY);
-    return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
-  } catch {
-    return new Set();
-  }
-}
-
-function persistSeenNotifIds(ids: Set<string>): void {
-  try {
-    window.sessionStorage.setItem(SEEN_NOTIF_KEY, JSON.stringify([...ids]));
-  } catch {
-    /* private mode */
-  }
-}
-
-export type ToastItem = {
-  id: string;
-  notification: AppNotification;
-  expiresAt: number;
-};
-
-type Ctx = {
-  notifications: AppNotification[];
-  unreadCount: number;
-  loading: boolean;
-  centerOpen: boolean;
-  openCenter: () => void;
-  closeCenter: () => void;
-  filter: NotificationFilter;
-  setFilter: (f: NotificationFilter) => void;
-  search: string;
-  setSearch: (q: string) => void;
-  toasts: ToastItem[];
-  dismissToast: (id: string) => void;
-  markRead: (ids: string[]) => Promise<void>;
-  markAllRead: () => Promise<void>;
-  refresh: () => Promise<void>;
-  filtered: AppNotification[];
-  /** Demo: push a local notification (dev / QA) */
-  pushLocal: (
-    n: Omit<AppNotification, "id" | "userId" | "createdAt"> & {
-      id?: string;
-      createdAt?: string;
-    },
-  ) => void;
-};
+export type { ToastItem };
 
 const NotificationContext = createContext<Ctx | null>(null);
-
-function mapRow(row: Record<string, unknown>): AppNotification {
-  return {
-    id: String(row.id),
-    userId: String(row.user_id),
-    category: row.category as AppNotification["category"],
-    priority: (row.priority as AppNotification["priority"]) || "normal",
-    title: String(row.title || ""),
-    body: String(row.body || ""),
-    href: (row.href as string) || null,
-    actionType: row.action_type as AppNotification["actionType"],
-    actionPayload: (row.action_payload as Record<string, unknown>) || {},
-    groupKey: (row.group_key as string) || null,
-    jobId: (row.job_id as string) || null,
-    jobStatus: (row.job_status as string) || null,
-    messageText: (row.message_text as string) || null,
-    readAt: (row.read_at as string) || null,
-    createdAt: String(row.created_at || new Date().toISOString()),
-  };
-}
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const { backendUserId, accountType, isAuthenticated } = useApp();
@@ -122,84 +39,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const [centerOpen, setCenterOpen] = useState(false);
   const [filter, setFilter] = useState<NotificationFilter>("all");
   const [search, setSearch] = useState("");
-  const [toasts, setToasts] = useState<ToastItem[]>([]);
   const primed = useRef(false);
   const knownIds = useRef<Set<string>>(readSeenNotifIds());
-  /** Start of current/last auto-toast wave (throttle + pile window). */
-  const lastToastWaveAt = useRef(0);
-  /** Avoid double-toast for same notification id. */
-  const toastedIds = useRef<Set<string>>(readSeenNotifIds());
-  /** Rows created long before the first toast moment are history never toast
-   * them again on reload or role switch. Only live inserts toast, once.
-   * (Lazily stamped on first use: Date.now() is not render-safe.) */
-  const mountedAtRef = useRef(0);
+  const { toasts, pushToast, dismissToast, resetToasts } =
+    useNotificationToasts();
 
   const role = accountType === "professional" ? "professional" : "motorist";
-
-  const pushToast = useCallback((n: AppNotification) => {
-    if (!shouldToastNotification(n)) return;
-    if (!shouldShowToast(n.priority)) return;
-    // History is silent: a row created long before the first toast moment (or
-    // with a missing/unparseable timestamp) must never toast on a reload or
-    // role switch. 15s grace absorbs clock skew without letting old rows
-    // resurface.
-    if (mountedAtRef.current === 0) mountedAtRef.current = Date.now();
-    const createdMs = n.createdAt ? Date.parse(n.createdAt) : NaN;
-    if (
-      !Number.isFinite(createdMs) ||
-      createdMs < mountedAtRef.current - 15_000
-    )
-      return;
-    // Never re-toast the same notification row
-    if (toastedIds.current.has(n.id)) return;
-
-    const now = Date.now();
-    const nonStack = isNonStackNotification(n);
-
-    // Chat / call / payment / accept always surface as full rows under the
-    // pile never blocked by stack throttle.
-    if (!nonStack) {
-      const gate = canAutoShowToast(lastToastWaveAt.current, now);
-      if (!gate.allow) {
-        // Still land in center list no popup spam for stackable types
-        return;
-      }
-      if (gate.reason === "new_wave") {
-        lastToastWaveAt.current = now;
-      }
-    }
-
-    toastedIds.current.add(n.id);
-    void persistSeenNotifIds(toastedIds.current);
-    const isMessage = n.category === "messages" || n.actionType === "open_chat";
-    const id = `toast-${n.id}-${now}`;
-    // Full-row (non-stack) timers are independent; stacked cards share wave end
-    const expiresAt = nonStack
-      ? now + TOAST_VISIBLE_MS
-      : (lastToastWaveAt.current > 0 ? lastToastWaveAt.current : now) +
-        TOAST_VISIBLE_MS;
-
-    setToasts((prev) => {
-      const next = [{ id, notification: n, expiresAt }, ...prev];
-      const stack: typeof next = [];
-      const full: typeof next = [];
-      for (const t of next) {
-        if (isNonStackNotification(t.notification)) full.push(t);
-        else stack.push(t);
-      }
-      return [
-        ...full.slice(0, TOAST_MAX_NON_STACK),
-        ...stack.slice(0, TOAST_MAX_STACK),
-      ];
-    });
-    if (isMessage) {
-      playAppSound("success_soft");
-    } else if (n.priority === "critical" || n.priority === "high") {
-      playAppSound("request_new");
-    } else {
-      playAppSound("success_soft");
-    }
-  }, []);
 
   const refresh = useCallback(async () => {
     if (!backendUserId || !isAuthenticated) {
@@ -242,9 +87,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     // Re-seed from storage first so a role flip can never re-toast rows this
     // browser already saw (Realtime replays missed inserts into fresh sets).
     knownIds.current = readSeenNotifIds();
-    toastedIds.current = readSeenNotifIds();
-    lastToastWaveAt.current = 0;
-    setToasts([]);
+    resetToasts();
     void refresh();
     // Depend on session identity only not `refresh` fn identity (avoids fetch storms)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -293,28 +136,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
             setNotifications((prev) => [n, ...prev]);
           }
           pushToast(n);
-          // Force customer onto release-pay job page (not toast-only)
-          try {
-            const st = String(n.jobStatus || "").toLowerCase();
-            const href = n.href || (n.jobId ? `/jobs/${n.jobId}` : "");
-            const releasePay =
-              st === "completed" &&
-              href.includes("/jobs/") &&
-              (n.actionType === "open_job" ||
-                n.actionType === "view_payment" ||
-                n.category === "payments");
-            if (
-              releasePay &&
-              typeof window !== "undefined" &&
-              !window.location.pathname.includes(
-                `/jobs/${n.jobId || href.split("/jobs/")[1]?.split("?")[0] || ""}`,
-              )
-            ) {
-              window.location.assign(href.startsWith("/") ? href : `/${href}`);
-            }
-          } catch {
-            /* soft navigate optional */
-          }
+          redirectToReleasePayIfNeeded(n);
         },
       )
       .subscribe();
@@ -322,22 +144,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       void sb.removeChannel(channel);
     };
   }, [backendUserId, isAuthenticated, pushToast]);
-
-  // Auto-dismiss after 3s 1s tick is enough (was 250ms → needless React work)
-  useEffect(() => {
-    const t = window.setInterval(() => {
-      const now = Date.now();
-      setToasts((prev) => {
-        const next = prev.filter((x) => x.expiresAt > now);
-        return next.length === prev.length ? prev : next;
-      });
-    }, 1000);
-    return () => window.clearInterval(t);
-  }, []);
-
-  const dismissToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
 
   const markRead = useCallback(
     async (ids: string[]) => {

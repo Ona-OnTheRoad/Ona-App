@@ -1,0 +1,41 @@
+import type { VulcanizerProduct } from "@/lib/shop/vulcanizer-catalog/types";
+
+export const INFLATION_GAUGES_PRODUCTS: VulcanizerProduct[] = [
+  // ------------------------------ INFLATION & GAUGES ------------------------------
+  {
+    id: "vulc-gauge-digital-inflator",
+    tradeKey: "vulcanizer",
+    categorySlug: "tire-inflation",
+    subcategorySlug: "digital-inflators",
+    brand: { slug: "ona-pro", name: "Ona Pro" },
+    name: "Ona Pro Digital Tyre Inflator Gauge",
+    subtitle: "Digital gauge + inflator · up to 150 PSI",
+    description: "Digital tyre inflator gauge with chuck, reads 0-150 PSI.",
+    sku: "ONA-VULC-GAUGE-DIG-150",
+    mpn: "GAUGE-DIG-150",
+    priceMinor: 280000,
+    qty: 55,
+    status: "active",
+    attributes: { pressure: 150, material: "Plastic" },
+    keywords: ["gauge", "inflator", "pressure", "digital"],
+    verificationStatus: "source_verified",
+  },
+  {
+    id: "vulc-gauge-pencil-mech",
+    tradeKey: "vulcanizer",
+    categorySlug: "tire-inflation",
+    subcategorySlug: "tyre-pressure-gauges",
+    brand: { slug: "ona-pro", name: "Ona Pro" },
+    name: "Ona Pro Pencil Tyre Pressure Gauge",
+    subtitle: "Mechanical pencil gauge · 0-80 PSI",
+    description: "Mechanical pencil-type tyre pressure gauge, 0-80 PSI.",
+    sku: "ONA-VULC-GAUGE-PENCIL-080",
+    mpn: "GAUGE-PEN-80",
+    priceMinor: 120000,
+    qty: 110,
+    status: "active",
+    attributes: { pressure: 80, material: "Metal" },
+    keywords: ["gauge", "pressure", "pencil"],
+    verificationStatus: "source_verified",
+  },
+];

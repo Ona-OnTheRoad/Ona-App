@@ -1,206 +1,25 @@
 "use client";
 
 import { Fragment, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { cleanAddressLabel } from "@/lib/google-maps";
-import { getLikelyProblem } from "@/lib/jobs/diagnosis";
+import { ChevronDivider } from "./job-problem-qa/chevron-divider";
+import {
+  filterHiddenVehicleRows,
+  stripCoordinateLocations,
+} from "./job-problem-qa/filters";
+import { parseJobProblem } from "./job-problem-qa/parse";
 
-/**
- * Parses the composed `job.problem` blob into readable Q&A rows.
- *
- * Two formats are produced by the question-flow composers:
- * 1. "Inline" (solar / generator / painter / carpenter):
- * `Solar work: {start label} ({start question})` then `{question} {answer}`
- * on one line, plus `Location: X` / `Extra: X` labeled lines.
- * 2. "Alternating" (mechanic / vulcanizer / tow / battery / ac / body /
- * electrical / diagnostics / fashion / plumber): every question line is
- * immediately followed by its answer on the next line.
- *
- * Both render as a highlighted Q&A list that both the Repair Pro and customer
- * can scan quickly.
- */
-
-export interface JobProblemRow {
-  label: string;
-  answer: string;
-}
-
-/** When the card title already shows the vehicle (lower panel), drop both the
- * `Vehicle:` label row and the "Which vehicle?" question so the vehicle is
- * never repeated. */
-export function filterHiddenVehicleRows(
-  rows: JobProblemRow[],
-  hideVehicleRow: boolean,
-): JobProblemRow[] {
-  if (!hideVehicleRow) return rows;
-  return rows.filter(
-    (r) => r.label !== "Vehicle" && !/which vehicle\??$/i.test(r.label.trim()),
-  );
-}
-
-/** A bare coordinate string like "6.42810, 3.42190" reverse geocoding failed
- * and the app fell back to raw lat/lng. Never show that to a pro. */
-export const COORDINATES_ONLY_RE = /^-?\d{1,2}(\.\d+)?,\s*-?\d{1,2}(\.\d+)?$/;
-
-/** Location answers should be an address only drop the row when its only
- * content is raw latitude/longitude, and strip plus-codes from the rest. */
-export function stripCoordinateLocations(
-  rows: JobProblemRow[],
-): JobProblemRow[] {
-  return rows
-    .map((r) => {
-      if (!isLocationRow(r)) return r;
-      return { ...r, answer: cleanAddressLabel(r.answer) };
-    })
-    .filter((r) => {
-      if (!isLocationRow(r)) return true;
-      return Boolean(r.answer) && !COORDINATES_ONLY_RE.test(r.answer);
-    });
-}
-
-function isLocationRow(r: JobProblemRow): boolean {
-  const label = r.label.toLowerCase();
-  return label.includes("location") || label.includes("landmark");
-}
-
-export function customerWaitingHighlights(
-  problem: string,
-  locationLabel?: string | null,
-  serviceType?: string | null,
-): JobProblemRow[] {
-  const rows: JobProblemRow[] = [];
-  if (problem?.trim()) {
-    // Shared source with Pro panel: parse raw Q/A first so both sides see the same base.
-    const parsed = parseJobProblem(problem);
-    const cleanedRows = stripCoordinateLocations(
-      filterHiddenVehicleRows(parsed.rows, false),
-    );
-    const bestRawAnswer =
-      parsed.summary ||
-      cleanedRows.find((r) => r.answer && r.answer.trim())?.answer ||
-      "";
-    // Synthesis is trade-locked only (see diagnosis.ts) — pro's raw stays fallback.
-    const diagnosis = getLikelyProblem({ serviceType, problem, locationLabel });
-    // Use diagnosis only when it adds value beyond the raw answer; otherwise keep raw for accuracy.
-    const likelyAnswer =
-      diagnosis && diagnosis !== bestRawAnswer ? diagnosis : bestRawAnswer;
-    if (likelyAnswer) {
-      rows.push({ label: "likely Problem", answer: likelyAnswer.slice(0, 80) });
-    }
-  }
-  if (locationLabel?.trim()) {
-    const loc = cleanAddressLabel(String(locationLabel).trim());
-    if (loc && !COORDINATES_ONLY_RE.test(loc)) {
-      rows.push({ label: "Location", answer: loc });
-    }
-  }
-  return rows.slice(0, 2);
-}
-
-export interface ParsedJobProblem {
-  summary: string | null;
-  rows: JobProblemRow[];
-  notes: string[];
-}
-
-const F2_SUMMARY = /^(?:[A-Za-z /]+ work|Work needed):\s*(.+?)\s*\((.*)\)$/i;
-const LABELED_LINE =
-  /^(Location \/ landmark|Location|Extra detail|Extra|Service|Vehicle):\s*(.+)$/i;
-
-function isQuestionLine(line: string): boolean {
-  return line.endsWith("?");
-}
-
-function pairAlternatingLines(lines: string[]): {
-  rows: JobProblemRow[];
-  notes: string[];
-} {
-  const rows: JobProblemRow[] = [];
-  const notes: string[] = [];
-  let i = 0;
-  while (i < lines.length) {
-    const line = lines[i];
-    const labeled = line.match(LABELED_LINE);
-    if (labeled) {
-      rows.push({ label: labeled[1], answer: labeled[2].trim() });
-      i += 1;
-      continue;
-    }
-    const qi = line.lastIndexOf("?");
-    if (qi >= 0 && qi < line.length - 1) {
-      rows.push({
-        label: line.slice(0, qi + 1).trim(),
-        answer: line.slice(qi + 1).trim(),
-      });
-      i += 1;
-      continue;
-    }
-    const next = lines[i + 1];
-    const nextIsAnswer =
-      Boolean(next) && !isQuestionLine(next) && !LABELED_LINE.test(next);
-    if (nextIsAnswer) {
-      rows.push({ label: line, answer: next });
-      i += 2;
-      continue;
-    }
-    notes.push(line);
-    i += 1;
-  }
-  return { rows, notes };
-}
-
-export function parseJobProblem(problem: string): ParsedJobProblem {
-  const lines = (problem || "")
-    .split("\n")
-    .map((l) => l.trim())
-    .filter(Boolean);
-
-  let summary: string | null = null;
-  if (lines.some((l) => F2_SUMMARY.test(l))) {
-    // Inline format: leading summary + one-line "question answer" rows.
-    const rows: JobProblemRow[] = [];
-    const notes: string[] = [];
-    let pending: string | null = null;
-    for (const line of lines) {
-      const m = line.match(F2_SUMMARY);
-      if (m) {
-        summary = m[1].trim();
-        continue;
-      }
-      const labeled = line.match(LABELED_LINE);
-      if (labeled) {
-        rows.push({ label: labeled[1], answer: labeled[2].trim() });
-        pending = null;
-        continue;
-      }
-      const qi = line.lastIndexOf("?");
-      if (qi >= 0) {
-        const question = line.slice(0, qi + 1).trim();
-        const answer = line.slice(qi + 1).trim();
-        if (answer) {
-          rows.push({ label: question, answer });
-          pending = null;
-        } else {
-          pending = question;
-        }
-      } else if (pending) {
-        rows.push({ label: pending, answer: line });
-        pending = null;
-      } else {
-        notes.push(line);
-      }
-    }
-    if (pending) notes.push(pending);
-    return { summary, rows, notes };
-  }
-
-  // Alternating format: labeled lines stand alone; each question pairs
-  // with the following answer. A leading "Vehicle: …" must not shift
-  // every pair one line off.
-  const paired = pairAlternatingLines(lines);
-  return { summary, rows: paired.rows, notes: paired.notes };
-}
+export {
+  COORDINATES_ONLY_RE,
+  customerWaitingHighlights,
+  filterHiddenVehicleRows,
+  stripCoordinateLocations,
+} from "./job-problem-qa/filters";
+export {
+  parseJobProblem,
+  type JobProblemRow,
+  type ParsedJobProblem,
+} from "./job-problem-qa/parse";
 
 export function JobProblemQA({
   problem,
@@ -269,54 +88,13 @@ export function JobProblemQA({
   );
 
   const chevronDivider = (
-    <div className="flex w-full items-center justify-between py-1">
-      <div className="shrink-0">
-        {offset > 0 ? (
-          <button
-            type="button"
-            onClick={retreat}
-            aria-label="Show previous questions"
-            className="border-0 bg-transparent p-0"
-          >
-            <span
-              className={cn(
-                "om-bounce-arrow-back flex h-7 w-7 items-center justify-center rounded-full",
-                isLight
-                  ? "bg-[#c8c9cd] text-slate-900 shadow-sm"
-                  : "bg-black text-white shadow-sm",
-              )}
-            >
-              <ChevronLeft className="h-3.5 w-3.5" strokeWidth={2.75} />
-            </span>
-          </button>
-        ) : (
-          <span className="block h-7 w-7" aria-hidden="true" />
-        )}
-      </div>
-      <div className="shrink-0">
-        {hasMore ? (
-          <button
-            type="button"
-            onClick={advance}
-            aria-label="Show more questions"
-            className="border-0 bg-transparent p-0"
-          >
-            <span
-              className={cn(
-                "om-bounce-arrow flex h-7 w-7 items-center justify-center rounded-full",
-                isLight
-                  ? "bg-[#c8c9cd] text-slate-900 shadow-sm"
-                  : "bg-black text-white shadow-sm",
-              )}
-            >
-              <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.75} />
-            </span>
-          </button>
-        ) : (
-          <span className="block h-7 w-7" aria-hidden="true" />
-        )}
-      </div>
-    </div>
+    <ChevronDivider
+      offset={offset}
+      hasMore={hasMore}
+      retreat={retreat}
+      advance={advance}
+      isLight={isLight}
+    />
   );
 
   return (
@@ -354,11 +132,11 @@ export function JobProblemQA({
             <p className={questionCls}>{row.label}</p>
             <p className={answerCls}>{row.answer}</p>
           </div>
-          {!compact && i < items.length - 1 ? (
-            i === items.length - 2 && (hasMore || offset > 0) ? (
-              chevronDivider
-            ) : null
-          ) : null}
+          {!compact && i < items.length - 1
+            ? i === items.length - 2 && (hasMore || offset > 0)
+              ? chevronDivider
+              : null
+            : null}
         </Fragment>
       ))}
       {!compact && items.length === 1 && (hasMore || offset > 0)

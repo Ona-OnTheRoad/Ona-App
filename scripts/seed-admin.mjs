@@ -17,10 +17,16 @@ config({ path: resolve(root, ".env") });
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
 const serviceKey =
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
-const email =
-  process.env.ADMIN_SEED_EMAIL || "Oluwatosinabdullahime@gmail.com";
-const password = process.env.ADMIN_SEED_PASSWORD || "Alliswell123$";
-const fullName = process.env.ADMIN_SEED_NAME || "Oluwatosin Abdullah";
+const email = (process.env.ADMIN_SEED_EMAIL || "").trim();
+const password = process.env.ADMIN_SEED_PASSWORD || "";
+const fullName = (process.env.ADMIN_SEED_NAME || "Super Admin").trim();
+
+if (!email || !password) {
+  console.error(
+    "[seed-admin] Set ADMIN_SEED_EMAIL and ADMIN_SEED_PASSWORD in .env.local (see .env.example)"
+  );
+  process.exit(1);
+}
 
 if (!url || !serviceKey) {
   console.error(

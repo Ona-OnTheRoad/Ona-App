@@ -1,12 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
-import L from "leaflet";
+import { MapContainer, Marker, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { Building2, Crosshair, MapPin, Navigation } from "lucide-react";
 import { reverseGeocodeLatLng } from "@/lib/google-maps";
-import { DEFAULT_USER_LOCATION } from "@/lib/data/technicians";
+import { DEFAULT_USER_LOCATION } from "@/lib/data/user-location";
 import {
   knownPlaceToPick,
   matchKnownPlaces,
@@ -17,28 +16,7 @@ import { mapThemeForApp } from "@/lib/map-theme";
 import { useApp } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import type { PickedLocation } from "./location-picker-map";
-
-function pinIcon() {
-  return L.divIcon({
-    className: "",
-    html: `<div style="width:28px;height:28px;margin-left:-14px;margin-top:-28px;border-radius:9999px 9999px 0 9999px;transform:rotate(45deg);background:#ef4444;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.35)"></div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 28],
-  });
-}
-
-function ClickHandler({
-  onPick,
-}: {
-  onPick: (lat: number, lng: number) => void;
-}) {
-  useMapEvents({
-    click(e) {
-      onPick(e.latlng.lat, e.latlng.lng);
-    },
-  });
-  return null;
-}
+import { ClickHandler, pinIcon } from "./osm-location-picker/osm-map-helpers";
 
 /**
  * OpenStreetMap picker when Google Maps key is rejected or missing.

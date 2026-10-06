@@ -4,7 +4,7 @@
  * If the words point to other trades, we dispatch those.
  */
 
-import { PROBLEM_MATCHES } from "@/lib/data/technicians";
+import { PROBLEM_MATCHES } from "@/lib/data/technicians/problem-matches";
 import { isProService } from "@/lib/pro-service-id";
 import type { ProService } from "@/lib/types";
 

@@ -127,6 +127,7 @@ export function MotoristVehicleWizard({
         <input
           className={field}
           placeholder="Plate number"
+          aria-label="Plate number"
           value={plate}
           onChange={(e) => setPlate(e.target.value)}
           autoFocus

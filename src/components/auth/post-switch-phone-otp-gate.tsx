@@ -163,7 +163,7 @@ export function PostSwitchPhoneOtpGate() {
               <p
                 className={cn(
                   "py-1 text-center text-[12px] font-medium",
-                  isLight ? "text-slate-500" : "text-white/45",
+                  isLight ? "text-slate-500" : "text-white/55",
                 )}
               >
                 Resend verification code in {resendIn}s

@@ -1,272 +1,139 @@
-# Ona Code Map — "Fees Live Here, Express Lives Here, Shop Lives Here"
+# Ona Code Map — where things live
 
-> **Map only, not a spec.** Product law is `docs/RULES.md` + `docs/ANTI_REGRESSION.md`. Visual law is `docs/UI.md`. Start at `docs/HANDOFF.md`.
->
-> Express fees live in `src/lib/express/pricing.ts` (not `pricing.ts:61`).
-> Duplicate trees / repeated section numbers below are historical; use the tables.
+> **A map, not a spec.** Product law is `docs/RULES.md` + `docs/ANTI_REGRESSION.md`. Visual law is `docs/UI.md`. Start at `docs/HANDOFF.md`.
+> Paths here are checked by a link checker; line numbers are deliberately not used because they rot.
 
 ---
 
-## Domain Map
+## 1. Route groups (`src/app`)
+
+Pages live in Next.js **route groups**: folders named `(group)` that organise files and are **not part of the URL**, so `src/app/(customer)/shop/page.tsx` still serves `/shop`.
+
+| Group | What lives there |
+|-------|------------------|
+| `(onboarding)` | `login`, `signup`, `verify`, `logout`, `artisan` (Repair Pro onboarding / verification) |
+| `(customer)` | `requests`, `history`, `search`, `bookings`, `express`, `shop`, `technician`, `payments` |
+| `(artisan)` | `orders`, `dashboard` (Repair Pro home) |
+| `(shared)` | `jobs`, `messages`, `wallet`, `profile`, `settings`, and the home page `/` — used by both roles (one account switches role) |
+
+`admin/` and `api/` stay at the top level of `src/app`.
+
+- Put a new page in the group for the role that owns it; if both roles use it, use `(shared)`.
+- Two groups must not serve the same URL (Next errors). Do not add a `layout.tsx` to a group without reading `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/route-groups.md`; the single phone shell comes from `src/app/layout.tsx`.
+- Imports use `@/...` aliases, so moving a page between groups does not break imports. Update any test that imports `@/app/(group)/...`.
+- Route files (`page.tsx`) stay thin: they compose components from `src/components/<feature>/`. Do not put feature modules inside `src/app`.
+
+## 2. Code layout conventions
+
+Files are kept **at or under 300 lines**. A big module becomes a **barrel plus a folder** with the same base name:
 
 ```
-src/
-├── lib/
-│   ├── callout/           # CALL-OUT ENGINE (server-owned)
-│   │   ├── constants.ts   # Fees, multipliers, rules (FROZEN)
-│   │   ├── engine.ts      # Pure pricing + eligibility (server)
-│   │   ├── payable.ts     # payableCalloutMajor(), jobTotalMajor(), getDisplayTotalMajor()
-│   │   ├── urgency.ts     # Multiplier resolution
-│   │   └── __tests__/     # Engine + payable tests
-│   ├── pricing.ts         # SPLIT LOGIC (FROZEN)
-│   │   ├── splitServiceChargeMinor()   -- 87.5/5/7.5 on TOTAL
-│   │   ├── buildCustomerChargeMajor()  -- labour + callout = total
-│   │   └── splitServiceChargeMinor()   -- core split
-│   ├── pricing.test.ts    # Split contract tests
-│   ├── server/
-│   │   ├── payments/
-│   │   │   ├── payout-settlement.ts   -- attemptProPayout(), split95_5(total)
-│   │   │   ├── escrow-store.ts
-│   │   │   └── providers.ts
-│   │   └── jobs/
-│   │       └── job-store.ts           -- splitMinor(total) for escrow
-│   ├── jobs/
-│   │   ├── constants.ts    -- All timing, fees, statuses (FROZEN)
-│   │   ├── client.ts       -- API client
-│   │   ├── state-machine.ts
-│   │   └── types.ts        -- JobRecord, CalloutQuote (snake_case aliases)
-│   ├── shop/
-│   │   ├── automedics-catalog.ts   -- Real SKUs (18 categories)
-│   │   ├── demo-catalog.ts         -- Demo only (not prod)
-│   │   └── client.ts               -- API client
-│   ├── pricing.ts          -- CENTRAL SPLIT LOGIC
-│   ├── callout/            -- Call-out engine
-│   ├── jobs/               -- Job flow, constants, types
-│   ├── shop/               -- Shop catalog + client
-│   ├── server/
-│   │   ├── payments/       -- Escrow, payout, providers
-│   │   └── jobs/           -- Job store, idempotency
-│   ├── app-config.ts       -- Central env config (single source)
-│   └── store.tsx           -- Client state (React context)
-├── components/
-│   ├── jobs/
-│   │   ├── job-flow-screen.tsx     -- Main job UI (uses getDisplayTotalMajor)
-│   │   ├── callout-fee-lines.tsx   -- Fee breakdown display
-│   │   └── motorist-release-pay-gate.tsx  -- Release UI (uses getDisplayTotalMajor)
-│   ├── shop/
-│   │   ├── product-card.tsx
-│   │   ├── product-sheet.tsx
-│   │   └── shop-vehicle-bar.tsx
-│   └── ui/                    -- shadcn/ui primitives
-├── app/
-│   ├── dashboard/             -- Pro dashboard (Payment processing section)
-│   ├── jobs/                  -- Job flow pages
-│   ├── payments/              -- Checkout, verify, release
-│   ├── shop/                  -- Shop pages
-│   ├── dashboard/             -- Pro dashboard
-│   ├── api/
-│   │   ├── jobs/              -- Job CRUD, callout, transitions
-│   │   ├── payments/          -- Verify, release, refund
-│   │   ├── shop/              -- Catalog, search, cart
-│   │   └── auth/              -- OTP, login, signup
-│   └── api/
-│       ├── jobs/
-│   │   └── callout/route.ts      -- Server callout quote
-│   │   └── [id]/route.ts         -- Job transitions
-│   └── api/
-│       ├── payments/
-│   │   ├── verify/route.ts       -- Flutterwave verify → held
-│   │   ├── release/route.ts      -- Dual confirm → attemptProPayout
-│   │   └── refund/route.ts
-│   └── shop/...
-├── components/
-│   ├── ui/                 -- shadcn/ui primitives (Button, Card, etc.)
-│   ├── jobs/               -- Job flow UI
-│   ├── shop/               -- Shop UI
-│   └── ui/                 -- Primitives
-└── lib/
-    ├── app-config.ts          -- Central env config (single source)
-    ├── pricing.ts             -- Split logic (FROZEN)
-    ├── callout/               -- Call-out engine
-    ├── jobs/                  -- Job constants, types, client
-    └── shop/                  -- Shop catalog + client
+src/components/auth/pro-signup.tsx      # thin composition + same public exports
+src/components/auth/pro-signup/         # step components, use-*.ts hooks, helpers, types
 ```
 
----
+- The original path keeps exporting the same names, so importers never change. Both `foo.tsx` and `foo/` can coexist; `@/…/foo` resolves to the file.
+- `use-*.ts` = stateful logic, `*-view.tsx` / `*-section.tsx` = presentation, `types.ts` / `constants.ts` / `helpers.ts` = the rest.
+- Large **data** modules (question trees, catalogs, i18n) are split by section and re-assembled in the barrel; the exported value must stay identical.
+- Client app state is `src/lib/store.tsx` (provider, `useApp()`), built from domain hooks in `src/lib/store/`.
+- Types are re-exported from `src/lib/types.ts`; the declarations live in `src/lib/types/`.
 
-## 1. Fees Live Here
+## 3. Domain map
 
-| Concern | File | Function |
-|---------|------|----------|
-| **Total split (87.5/5/7.5)** | `src/lib/pricing.ts:45` | `splitServiceChargeMinor(totalMinor)` |
-| **Total split (alias)** | `src/lib/server/payments/payout-settlement.ts:178` | `split95_5(totalMinor)` |
-| **Checkout display** | `src/lib/pricing.ts:65` | `buildCustomerChargeMajor(labour, callout)` |
-| **Display total** | `src/lib/callout/payable.ts:63` | `getDisplayTotalMajor()` |
-| **Server payout** | `src/lib/server/payments/payout-settlement.ts:286` | `split95_5(total)` |
-| **Release UI** | `src/components/jobs/motorist-release-pay-gate.tsx:437` | `proShare = total * 0.875` |
-| **Job store mock** | `src/lib/server/jobs/job-store.ts:3938` | `splitMinor(total)` |
-| **Constants** | `src/lib/pricing.ts:12` | `PLATFORM_COMMISSION_PERCENT=5`, `VAT_PERCENT_NG=7.5`, `PRO_NET_PAYOUT_PERCENT=87.5` |
+### Fees and pricing
+| Concern | Where |
+|---------|-------|
+| Split 87.5 / 5 / 7.5 on the **total** (labour + call-out) | `src/lib/pricing.ts` — `splitServiceChargeMinor`, `buildCustomerChargeMajor`, `PLATFORM_COMMISSION_PERCENT`, `VAT_PERCENT_NG`, `PRO_NET_PAYOUT_PERCENT` |
+| Display total shown to the customer | `src/lib/callout/payable.ts` — `getDisplayTotalMajor`, `payableCalloutMajor`, `jobTotalMajor` |
+| Server payout | `src/lib/server/payments/payout-settlement.ts` — `attemptProPayout`; `split95_5` is a legacy **name** that still returns 87.5/5/7.5 |
+| **Rule** | Every split uses `total`, never labour alone. Do not "fix" the `split95_5` name into 95/5 math. |
 
-**Rule:** All splits use `total` (labour + callout). Never `labour` alone.
+### Call-out engine
+`src/lib/callout/` — `constants.ts` (fees, multipliers), `engine.ts` (pure pricing + eligibility), `payable.ts`, `urgency.ts`, tests in `__tests__/`.
 
----
+### Jobs, state machine, negotiation
+| Concern | Where |
+|---------|-------|
+| Timing, offers, statuses (single source) | `src/lib/jobs/constants.ts` |
+| Deadlines / countdowns | `src/lib/jobs/deadline.ts`, `countdown-math.ts`, `use-exact-countdown.ts` |
+| State machine | `src/lib/jobs/state-machine.ts` |
+| Types | `src/lib/jobs/types.ts` |
+| Client API | `src/lib/jobs/client.ts` |
+| Server job store (a folder, one file per concern) | `src/lib/server/jobs/job-store/` — `index.ts`, `create`, `reads`, `transitions`, `payments`, `dispatch`, `negotiation`, `disputes`, `expiry`, `recovery`, … |
+| Job UI | `src/components/jobs/` (`job-flow-screen/`, `motorist-release-pay-gate/`, `live-job-track-map/`, …) |
+| Transition API | `src/app/api/jobs/[id]/transition/route.ts` |
 
-## 2. Express Lives Here
+The jobs table is **`service_requests`** (offers and dispute data are JSON columns on it), with `job_status_events` and `job_events` for history.
 
-| Concern | File |
-|---------|------|
-| **Fees** | `src/lib/express/pricing.ts` — Mechanic ₦20k, others ₦15k |
-| **Question Engine** | `src/lib/express/question-engine.ts` |
-| **No SSPE** | `src/lib/express/question-engine.ts` (no SSPE logic) |
-| **Assignment** | `src/app/api/jobs/[id]/transition/route.ts` |
-| **UI** | `src/components/jobs/job-flow-screen.tsx` (Express section) |
-| **Constants** | `src/lib/jobs/constants.ts` — `EXPRESS_*` constants |
+### Pairing (SSPE) and merit
+`src/lib/server/pairing/pairing-engine.ts` (sequential pairing, 144 s window), `src/lib/server/merit/merit-engine.ts`. Cron: `/api/jobs/pairing-sweep` (schedule in `vercel.json`). `docs/SSPE_REFACTOR_PLAN.md` is historical; its numbers are stale.
 
----
+### Payments and escrow
+`src/lib/server/payments/` — `escrow-store.ts`, `payout-settlement.ts`, `payout-ledger.ts`, `providers.ts` (Flutterwave), `self-payment-guard.ts`. API: `src/app/api/payments/`. Customer pages: `src/app/(customer)/payments/`. Payout proxy: `tools/flw-payout-proxy/`.
 
-## 3. Shop Lives Here
+### Wallet and cashout
+Live path: `src/lib/server/security/cashout-engine.ts`, `credit-wallets.ts`, `cashout-requests.ts`. `src/lib/server/modules/wallet/` is a stub (see its README). Design: `docs/DESIGN_wallet_cashout.md` (v1, as built); `docs/WALLET_CASHOUT_DESIGN.md` is the unapproved v2 draft.
 
-| Concern | File |
-|---------|------|
-| **Catalog** | `src/lib/shop/automedics-catalog.ts` — Real SKUs (18 categories) |
-| **Demo** | `src/lib/shop/demo-catalog.ts` — Demo only |
-| **API Client** | `src/lib/shop/client.ts` |
-| **Taxonomy** | `src/lib/shop/taxonomy.ts`, `trade-attributes.ts` |
-| **Catalog Status** | `src/lib/shop/catalog-status.ts` |
-| **UI** | `src/app/shop/page.tsx`, `src/components/shop/` |
-| **API** | `src/app/api/shop/` (home, search, products, cart, checkout) |
+### Express (no SSPE)
+`src/lib/express/pricing.ts`, `src/lib/express/question-engine.ts`, UI in `src/components/express/`, page `src/app/(customer)/express/`.
 
----
+### Shop (retail, not job escrow)
+| Concern | Where |
+|---------|-------|
+| Catalogs | `src/lib/shop/automedics-catalog.ts` (real SKUs), `vulcanizer-catalog.ts`, `demo-catalog.ts` (demo only) |
+| Taxonomy / attributes | `src/lib/shop/taxonomy.ts`, `trade-attributes.ts`, `vulcanizer-taxonomy.ts` |
+| Client / status | `src/lib/shop/client.ts`, `catalog-status.ts` |
+| Server | `src/lib/server/shop/` and `src/app/api/shop/` |
+| UI | `src/app/(customer)/shop/`, `src/components/shop/` |
+| Architecture | `docs/ONA_SHOP_ARCHITECTURE.md`, `docs/ONA_SHOP_PHASE3_REPORT.md`, `docs/MECHANIC_SHOP.md` |
 
-## 3. Call-Out Engine
+### Trades (14) and help flows
+Question trees: `src/lib/<trade>/question-tree.ts` (mechanic, battery, vulcanizer, carpenter, painter, diagnostics, tow, generator, solar, plumber, fashion, ac, body, electrical). Per-trade help-flow configs: `src/components/home/help-flow-configs/`.
 
-| Concern | File |
-|---------|------|
-| **Constants** | `src/lib/callout/constants.ts` (fees, multipliers, rules) |
-| **Engine** | `src/lib/callout/engine.ts` (pure pricing + eligibility) |
-| **Payable** | `src/lib/callout/payable.ts` (payableCalloutMajor, jobTotalMajor, getDisplayTotalMajor) |
-| **Urgency** | `src/lib/callout/urgency.ts` |
-| **Tests** | `src/lib/callout/__tests__/engine.test.ts` |
+### Identity, auth, security
+`src/lib/server/identity/`, `src/lib/auth/` (including `demo-otp.ts`), `src/lib/server/security/`, `src/app/api/auth/`, `src/app/api/verify/`, `src/app/api/security/`.
 
----
+### Notifications, push, calls, chat
+`src/lib/notifications/`, `src/lib/push/`, `src/components/notifications/`; calls in `src/components/call/in-app-call/` (signaling through the `call_signals` table, see `docs/ANTI_REGRESSION.md` §7); chat in `src/app/(shared)/messages/` and `src/components/messages/`.
 
-## 3. Job Flow & State Machine
+### Admin (Care desk)
+`src/app/admin/`, `src/components/admin/`, `src/app/api/admin/`, `src/lib/server/modules/` (RBAC, care service, sensitive unlock).
 
-| Concern | File |
-|---------|------|
-| **Constants** | `src/lib/jobs/constants.ts` (all timing, fees, statuses) |
-| **State Machine** | `src/lib/jobs/state-machine.ts` |
-| **Client API** | `src/lib/jobs/client.ts` |
-| **Types** | `src/lib/jobs/types.ts` (JobRecord, CalloutQuote) |
-| **Server Store** | `src/lib/server/jobs/job-store.ts` |
-| **UI** | `src/components/jobs/job-flow-screen.tsx` |
+### Maps, i18n, config
+`src/components/map/`, `src/lib/i18n/` (11 languages; see `src/lib/i18n/TRANSLATION.md`), `src/lib/app-config.ts` (central runtime config).
 
----
+### Search, offline and low-data support
+`src/lib/site.ts`, `src/app/robots.ts`, `sitemap.ts`, `manifest.ts`, `src/lib/seo/`, `src/components/seo/`,
+`public/sw.js`, `public/offline.html`, `src/components/pwa/`, `src/lib/network/`, `src/lib/image-compress.ts`,
+`scripts/generate-brand-icons.mjs`, `scripts/verify/`. Rules and measurements: `docs/PERFORMANCE_AND_ACCESSIBILITY.md`.
 
-## 4. Payments & Escrow
+## 4. Database
 
-| Concern | File |
-|---------|------|
-| **Escrow Store** | `src/lib/server/payments/escrow-store.ts` |
-| **Payout Settlement** | `src/lib/server/payments/payout-settlement.ts` (attemptProPayout) |
-| **Providers** | `src/lib/server/payments/providers.ts` (Flutterwave/Paystack) |
-| **API Routes** | `src/app/api/payments/` (verify, release, refund) |
-| **Release UI** | `src/components/jobs/motorist-release-pay-gate.tsx` |
+`supabase/migrations/` holds the numbered SQL migrations. Apply with `npm run db:apply`; seed and sync scripts are in `scripts/` and listed in `package.json`. Do not edit an applied migration; add a new one.
 
----
+## 5. Tests
 
-## 4. Shop & Catalog
+| Test | Covers |
+|------|--------|
+| `src/lib/__tests__/pricing.test.ts` | split and customer charge |
+| `src/lib/callout/__tests__/` | call-out engine, payable, urgency |
+| `src/lib/jobs/__tests__/` | state machine, deadlines, incoming-popup timing |
+| `src/lib/notifications/__tests__/` | toast gating and stack rules |
+| `src/app/api/__tests__/` | API routes |
+| `src/lib/shop/__tests__/`, `src/lib/__tests__/shop-ui-scope.test.ts` | shop logic and UI scope |
+| `src/components/**/__tests__/` | component behaviour (call-out fee on card, incoming popup close, inbound banner, orders page) |
 
-| Concern | File |
-|---------|------|
-| **Real Catalog** | `src/lib/shop/automedics-catalog.ts` (18 categories, real SKUs) |
-| **Demo Catalog** | `src/lib/shop/demo-catalog.ts` (isolated, not prod) |
-| **Taxonomy** | `src/lib/shop/taxonomy.ts`, `trade-attributes.ts` |
-| **Client** | `src/lib/shop/client.ts` |
-| **UI** | `src/app/shop/page.tsx`, `src/components/shop/` |
+## 6. Protected files
 
----
+The list of files that must not be regenerated or changed without human review is **`docs/RULES.md` §10**. It is not repeated here so there is one copy to keep current.
 
-## 5. Express (Ona Express)
-
-| Concern | File |
-|---------|------|
-| **Fees** | `src/lib/express/pricing.ts` — Mechanic ₦20k, others ₦15k |
-| **Question Engine** | `src/lib/express/question-engine.ts` |
-| **No SSPE** | `src/lib/express/question-engine.ts` |
-| **Assignment** | `src/app/api/jobs/[id]/transition/route.ts` |
-
----
-
-## 5. Configuration & Types
-
-| Concern | File |
-|---------|------|
-| **Central Config** | `src/lib/app-config.ts` (all env, validated) |
-| **Job Types** | `src/lib/jobs/types.ts` (JobRecord, CalloutQuote) |
-| **Callout Types** | `src/lib/callout/constants.ts` (CalloutQuote) |
-| **Pricing Constants** | `src/lib/pricing.ts` (top of file) |
-| **Job Constants** | `src/lib/jobs/constants.ts` (all timing, fees) |
-
----
-
-## 6. Tests Map
-
-| Test File | Covers |
-|-----------|--------|
-| `src/lib/__tests__/pricing.test.ts` | `splitServiceChargeMinor`, `buildCustomerChargeMajor` |
-| `src/lib/callout/__tests__/engine.test.ts` | `billableDistanceKm`, `calculateCalloutFee`, `isCalloutExcludedTrade`, `resolveCalloutEligibility`, `classifyRequest` |
-| `src/lib/callout/__tests__/payable.test.ts` | `payableCalloutMajor`, `jobTotalMajor`, `composeCustomerPayableMajor` |
-| `src/lib/callout/__tests__/urgency.test.ts` | `calloutUrgencyMultiplier` |
-| `src/lib/jobs/__tests__/*.test.ts` | State machine, pairing, evidence |
-| `src/lib/notifications/__tests__/*.test.ts` | Toast gating, stack rules |
-
----
-
-## 7. Protected Files (AI Must Not Regenerate)
-
-```
-src/lib/callout/constants.ts
-src/lib/callout/engine.ts
-src/lib/callout/payable.ts
-src/lib/pricing.ts
-src/lib/callout/payable.ts
-src/lib/callout/__tests__/engine.test.ts
-src/lib/callout/__tests__/payable.test.ts
-src/lib/pricing.ts
-src/lib/pricing.test.ts
-src/lib/server/payments/payout-settlement.ts
-src/lib/server/jobs/job-store.ts
-src/lib/jobs/constants.ts
-src/components/jobs/callout-fee-lines.tsx
-src/components/jobs/motorist-release-pay-gate.tsx
-src/components/jobs/job-flow-screen.tsx (display logic only)
-src/app/dashboard/page.tsx
-src/components/jobs/callout-fee-lines.tsx
-src/lib/app-config.ts
-src/lib/jobs/types.ts
-src/lib/callout/constants.ts
-supabase/migrations/20260827_021_display_total_fix.sql
-```
-
----
-
-## 7. Quick Commands
+## 7. Commands
 
 ```bash
 npm run dev          # http://localhost:3000
 npm run dev:admin    # http://localhost:4500/admin
-npm run build        # Production build
-npm run lint         # ESLint
-npm run typecheck    # tsc --noEmit
-npm run test         # vitest run
-npm run test:watch   # vitest watch
-npm run db:apply     # Apply migrations
-npm run db:sync      # Sync DB
+npm run build        # production build
+npm run lint && npm run typecheck && npm run test   # pre-merge gate
+npm run db:apply     # apply migrations
+npm run db:sync      # sync DB
 ```
-
----
-
-## 8. Protected Files (AI Must Not Regenerate)
-
-See `docs/RULES.md` — full list of 20+ files that AI must not regenerate without human approval.

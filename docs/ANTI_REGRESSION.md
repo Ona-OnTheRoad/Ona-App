@@ -97,8 +97,8 @@ Portals for menus/call sheets must mount on `#ona-phone`, not `document.body` al
 | In-app call | Prefer WebRTC via Supabase signaling; `tel:` only via `openTelDialer` never `location.href` |
 
 ### In-app voice (WebRTC)
-- Signaling: Realtime broadcast on `call-inbox:{userId}` + `call-session:{callId}`
-- STUN only (Google public) — no paid TURN required for many networks
+- Signaling: rows in the `call_signals` table written through `POST /api/call/signal`; the callee listens for `INSERT` on `call_signals` (Supabase Realtime `postgres_changes`, filtered by `to_user_id`, channel `call-db:{userId}-…`) with a polling fallback (`src/components/call/in-app-call/use-call-inbox.ts`)
+- ICE servers (`ICE_SERVERS` in `src/components/call/in-app-call/helpers.ts`): public STUN (Google, Cloudflare) plus a **free public TURN relay** (`openrelay.metered.ca`, shared credentials, best-effort). There is no dedicated/paid TURN; call audio that needs a relay goes through that third-party server, so consider a dedicated TURN before relying on calls at scale
 - Job Call passes `userId` (peer) + optional `phone` fallback
 - Incoming: Accept / Decline UI on the other device when app is open
 
@@ -166,3 +166,27 @@ If any step fails, **do not ship**.
 **Always:**
 - Use `src/lib/location-gps.ts` for all GPS timeouts and `shouldSurfaceLocationError()` — boot/refresh is silent when a cached location exists; the banner appears only on an explicit Retry tap or when nothing usable is cached
 - Budget GPS failures quietly (longer `maximumAge`, silent refresh) and let the user Retry explicitly
+
+## 13. Search, offline and accessibility: never regress
+
+Details and how to verify: `docs/PERFORMANCE_AND_ACCESSIBILITY.md`.
+
+**Never:**
+- Add a page under a private area without a `noindex` layout (`src/lib/__tests__/seo.test.ts` fails if you do), or
+  add a page to `INDEXABLE_PATHS` that needs a login
+- Cache `/api/*`, `/admin` or other origins in `public/sw.js`, store URLs with query strings, or queue/replay
+  job, payment or verification actions offline
+- Statically import a wizard, the Nigerian places packages (`country-state-city`, `nigeria-state-lga-data`),
+  the technician seed data or any heavy screen from the root layout, `PhoneShell` or the app store; keep the
+  `PhoneShell` overlays lazy (`next/dynamic`)
+- Read a full-size ID/portfolio photo straight into a data URL; use `compressDocumentFile`
+- Serve a new `public/` folder without a cache rule (the catch-all in `next.config.ts` is `no-store`)
+- Use `#64748b` text on the light grey, `text-white/45` secondary text on dark, or `#FF6B35` text on the light grey
+  (all fail WCAG AA contrast); use `#475569`, `white/70` and `#8f2f0c`
+- Ship a `role="switch"`, icon button or search box without an accessible name, or a label that is not linked to its field
+- Remove the `<main id="main-content">` landmark, the skip link, or insert an element before `<main>` inside `#ona-phone`
+
+**Always:**
+- Check the page text is in `view-source` before calling it crawlable
+- Bump `SW_VERSION` in `public/sw.js` when its caching rules change; keep the `?no-sw` kill switch
+- Re-run `scripts/verify` (axe + offline) and `next build` bundle sizes after touching the shell, colours or the service worker

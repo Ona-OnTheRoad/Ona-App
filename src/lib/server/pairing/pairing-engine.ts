@@ -272,7 +272,7 @@ async function findCandidate(
     ? storedTrades
     : resolveDispatchTrades(problemText(row), row.service_type).dispatchTrades;
 
-  let candidates = (
+  const candidates = (
     (pros ?? []) as Array<{
       user_id: string;
       business_name: string | null;

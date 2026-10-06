@@ -16,7 +16,7 @@ import type {
   ProServiceDb,
 } from "@/lib/supabase/types";
 import { PRO_SERVICE_LABELS } from "@/lib/services";
-import { DEFAULT_USER_LOCATION } from "@/lib/data/technicians";
+import { DEFAULT_USER_LOCATION } from "@/lib/data/user-location";
 import { getArtisanProfile } from "@/lib/artisan/local-store";
 import {
   clampVisibilityTier,
@@ -58,26 +58,6 @@ export function jobStatusToApp(s: JobStatus): RequestStatus {
       return "cancelled";
     default:
       return "pending";
-  }
-}
-
-export function appStatusToJob(s: RequestStatus): JobStatus {
-  switch (s) {
-    case "pending":
-      return "requested";
-    case "accepted":
-      return "accepted";
-    case "en_route":
-      return "en_route";
-    case "arrived":
-    case "in_progress":
-      return "in_progress";
-    case "completed":
-      return "completed";
-    case "cancelled":
-      return "cancelled";
-    default:
-      return "requested";
   }
 }
 

@@ -106,7 +106,7 @@ Optional:
 ```bash
 # Example launchd / cron — run once per day at 03:00
 # crontab -e
-0 3 * * * cd "/Users/mac/Desktop/Code/Ona" && /usr/bin/npm run backup:local >> "Local BackUp/snapshots/cron.log" 2>&1
+0 3 * * * cd <path-to-your-Ona-checkout> && /usr/bin/npm run backup:local >> "Local BackUp/snapshots/cron.log" 2>&1
 ```
 
 ---

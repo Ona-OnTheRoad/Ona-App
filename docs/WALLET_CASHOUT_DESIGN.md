@@ -6,7 +6,7 @@
 | **Author** | Ona engineering |
 | **Date** | 2026-08-21 |
 | **Status** | **v2 DRAFT — not approved. Do not implement.** Collides with as-built v1 (`ona_cash_*` in `cashout-engine.ts`). Express already used migration `076`. Freeze v1 vs v2 before any wallet PR. |
-| **Repo** | `/Users/mac/Desktop/Code/Ona` |
+| **Repo** | this repository |
 | **Audience** | Senior engineers implementing PRs against existing ledger, payout, and admin surfaces |
 
 ---
@@ -45,7 +45,7 @@ Job money is a third, separate ledger:
 
 Wallet-adjacent product already in tree:
 
-- Phone UI: `src/app/wallet/page.tsx` (title is still “Refer & Earn”; cashout posts amount only, no bank)
+- Phone UI: `src/app/(shared)/wallet/page.tsx` (title is still “Refer & Earn”; cashout posts amount only, no bank)
 - Menu: both `CLIENT_NAV` and `PRO_NAV` in `src/components/layout/app-menu.tsx` link `/wallet` as “Referral & Earn”
 - Pro job money hub: `/settings/payments` (overview / bank / activity) — **this stays the job-earnings surface**
 - Admin: `src/app/admin/credit-control/page.tsx` + `/api/admin/security`
@@ -751,7 +751,7 @@ Ship behind `wallet_service_spend`. Default false until cashout has soaked.
 
 ### 12. Phone-shell UI
 
-Keep `#ona-phone`. PR 6 must set the wallet root to `flex h-full min-h-0 flex-col overflow-hidden` (`docs/ANTI_REGRESSION.md` §1) — today `src/app/wallet/page.tsx` is `flex h-full flex-col` without `min-h-0`. `PageHeader` + `navigateBack`.
+Keep `#ona-phone`. PR 6 must set the wallet root to `flex h-full min-h-0 flex-col overflow-hidden` (`docs/ANTI_REGRESSION.md` §1) — today `src/app/(shared)/wallet/page.tsx` is `flex h-full flex-col` without `min-h-0`. `PageHeader` + `navigateBack`.
 
 `/wallet` is a shared path (`isSharedAppPath` already includes it). **The route always returns HTTP 200.** If `feature_flags.wallet` is off, render the in-shell “coming soon” empty state (do not 404). APIs return 403 `wallet_disabled`.
 
@@ -1116,14 +1116,14 @@ Each PR is independently reviewable and mergeable. Pre-merge gate on all: `npm r
 
 - **Title:** `feat(wallet): vest referral credits on referred user's first paid_booked`
 - **Depends on:** PR 1
-- **Files:** `src/lib/server/modules/wallet/vest.ts` (`maybeVestReferralForMotorist`, `maybeUnvestReferralForMotorist`); `src/lib/server/jobs/job-store.ts` (`applyEvent` `PAYMENT_SUCCESS` → vest; `markJobPaidFromReference` **alreadyBooked path** → vest; `refundJobEscrow` → unvest); `src/app/api/payments/refund/route.ts`; `src/app/api/admin/payments/route.ts`; `src/lib/server/modules/care-service.ts` (`refund_escrow`); `src/lib/server/modules/wallet/__tests__/vest.test.ts`
+- **Files:** `src/lib/server/modules/wallet/vest.ts` (`maybeVestReferralForMotorist`, `maybeUnvestReferralForMotorist`); `src/lib/server/jobs/job-store/` (`applyEvent` `PAYMENT_SUCCESS` → vest; `markJobPaidFromReference` **alreadyBooked path** → vest; `refundJobEscrow` → unvest); `src/app/api/payments/refund/route.ts`; `src/app/api/admin/payments/route.ts`; `src/lib/server/modules/care-service.ts` (`refund_escrow`); `src/lib/server/modules/wallet/__tests__/vest.test.ts`
 - **Description:** **Do not deploy PR 1 to production without 1b.** Independently reviewable, same release train. Vest from **both** `applyEvent(PAYMENT_SUCCESS)` and `markJobPaidFromReference` when `alreadyBooked` (verify retry). Unvest from **one helper** used by `refundJobEscrow`, `/api/payments/refund`, `/api/admin/payments`, and care-service refund. Idempotent vest (unique tx). Unvests if cashable still covers the reward; else freeze + `credit_abuse`. Tests: book then vest-fail then verify retry still vests; admin payments refund unvests.
 
 ### PR 2 — Feature flags and API gate
 
 - **Title:** `feat(wallet): gate wallet APIs on feature_flags.wallet`
 - **Depends on:** PR 1 + 1b
-- **Files:** `src/app/api/security/wallet/route.ts`; `src/app/api/security/cashout/route.ts`; `src/app/wallet/page.tsx` (coming-soon empty state inside phone shell, HTTP 200); seed `wallet_cashout` / `wallet_service_spend` in `20260821_076` or a tiny follow-up seed; do not overload `src/app/admin/features/page.tsx` app-config flags
+- **Files:** `src/app/api/security/wallet/route.ts`; `src/app/api/security/cashout/route.ts`; `src/app/(shared)/wallet/page.tsx` (coming-soon empty state inside phone shell, HTTP 200); seed `wallet_cashout` / `wallet_service_spend` in `20260821_076` or a tiny follow-up seed; do not overload `src/app/admin/features/page.tsx` app-config flags
 - **Description:** GET wallet **403 `wallet_disabled`** when flag off (minimal payload `{ wallet, transactions }` when on). POST cashout requires both flags. Page always 200. No transfer, no limits/destination/kyc yet.
 
 ### PR 3 — Cashout request: bank, KYC, limits, idempotency
@@ -1151,7 +1151,7 @@ Each PR is independently reviewable and mergeable. Pre-merge gate on all: `npm r
 
 - **Title:** `feat(wallet): phone-shell balance, cashout, history`
 - **Depends on:** PR 3 (can merge after 3 with execute behind flag; ideally after 4)
-- **Files:** `src/app/wallet/page.tsx` (`flex h-full min-h-0 flex-col overflow-hidden`; `Idempotency-Key`; **no hardcoded ₦2000** — use `limits.min`); `src/components/layout/app-menu.tsx` (`labelKey` `nav.wallet`); `src/lib/i18n/catalog/en.ts` first, then every other catalog; `src/app/settings/payments/page.tsx` (optional credits row)
+- **Files:** `src/app/(shared)/wallet/page.tsx` (`flex h-full min-h-0 flex-col overflow-hidden`; `Idempotency-Key`; **no hardcoded ₦2000** — use `limits.min`); `src/components/layout/app-menu.tsx` (`labelKey` `nav.wallet`); `src/lib/i18n/catalog/en.ts` first, then every other catalog; `src/app/(shared)/settings/payments/page.tsx` (optional credits row)
 - **Description:** Real wallet page: balances, fee preview, bank last4, status, history. Coming-soon if flags off (HTTP 200). ANTI_REGRESSION smoke: back, shell height, no `tel:`.
 
 ### PR 7 — Service-spend discount at job init (flagged)
@@ -1170,7 +1170,7 @@ Each PR is independently reviewable and mergeable. Pre-merge gate on all: `npm r
 - `docs/BACKEND_ARCHITECTURE.md` — escrow split, service-role, wallet stub note
 - `docs/PAYOUT_SYNC_RELEASE.md` — `ona_rel_…`, UNIQUE transfer_ref, 10 min / 24 h, ₦120 min S
 - `docs/ANTI_REGRESSION.md` — phone shell, back nav, timers (do not regress)
-- `docs/BACKEND_MIGRATION_PLAN.md` — dual roles
+- Dual roles: see `src/lib/server/` and `docs/HANDOFF.md` (the original Phase A migration plan was removed; it is in git history)
 - `src/lib/server/payments/payout-settlement.ts` — `attemptProPayout`, `loadProBank`, `stableProTransferReference`
 - `src/lib/server/payments/payout-ledger.ts` — `claimTransferRef`, `hasSuccessfulPayout`, `recentDuplicatePayout`
 - `src/lib/server/payments/providers.ts` — `releaseToPro`, `resolveProvider`, FLW ₦100 min

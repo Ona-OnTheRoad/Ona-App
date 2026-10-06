@@ -1,0 +1,113 @@
+import { p } from "@/lib/shop/automedics-catalog/core";
+import type { AutomedicsProduct } from "@/lib/shop/automedics-catalog/core";
+
+export const SHOCK_ABSORBERS_PRODUCTS: AutomedicsProduct[] = [
+  // 12. Shock Absorbers
+  p(
+    "ATM-SH-1214-0195",
+    "1214-0195 Sensen Shock",
+    "shock-absorbers",
+    95000,
+    "General",
+    "Sensen",
+  ),
+  p(
+    "ATM-SH-4213-0470",
+    "4213-0470 Sensen Shocks",
+    "shock-absorbers",
+    95000,
+    "General",
+    "Sensen",
+  ),
+  p(
+    "ATM-SH-SEQUOIA-2008-R",
+    "Back Shock Sequoia 2008",
+    "shock-absorbers",
+    65000,
+    "Toyota Sequoia 2008",
+  ),
+  p(
+    "ATM-SH-CRV-2009-R",
+    "Back Shock CR-V 2009",
+    "shock-absorbers",
+    80000,
+    "Honda CR-V 2009",
+  ),
+  p(
+    "ATM-SH-HIGHLANDER-2008-R",
+    "Back Shock Highlander 2008 4×4",
+    "shock-absorbers",
+    70000,
+    "Toyota Highlander 2008",
+  ),
+  p(
+    "ATM-SH-CAMRY-2012-F-SHORT",
+    "Front Shock Camry 2012 Short",
+    "shock-absorbers",
+    70000,
+    "Toyota Camry 2012",
+  ),
+  p(
+    "ATM-SH-CAMRY-2014-F-LONG",
+    "Front Shock Camry 2014 Long",
+    "shock-absorbers",
+    70000,
+    "Toyota Camry 2014",
+  ),
+  p(
+    "ATM-SH-COROLLA-2003-F",
+    "Front Shock Corolla 2003",
+    "shock-absorbers",
+    70000,
+    "Toyota Corolla 2003",
+  ),
+  p(
+    "ATM-SH-PATHFINDER-2005-F",
+    "Front Shock Pathfinder 2005",
+    "shock-absorbers",
+    70000,
+    "Nissan Pathfinder 2005",
+  ),
+  p(
+    "ATM-SH-PILOT-2003-2007-F",
+    "Front Shock Pilot 2003-2007",
+    "shock-absorbers",
+    65000,
+    "Honda Pilot 2003-2007",
+  ),
+  p(
+    "ATM-SH-RAV4-2005-F",
+    "Front Shock RAV4 2005",
+    "shock-absorbers",
+    70000,
+    "Toyota RAV4 2005",
+  ),
+  p(
+    "ATM-SH-RX350-F",
+    "Front Shock RX350",
+    "shock-absorbers",
+    70000,
+    "Lexus RX350",
+  ),
+  p(
+    "ATM-SH-JMB-ACCORD-2008-R",
+    "JMB Rear Shock Accord 2008",
+    "shock-absorbers",
+    65000,
+    "Honda Accord 2008",
+  ),
+  p(
+    "ATM-SH-MJL-ACCORD-2008-F",
+    "MJL Front Shock Accord 2008",
+    "shock-absorbers",
+    60000,
+    "Honda Accord 2008",
+  ),
+  p(
+    "ATM-SH-XTERRA-R",
+    "Rear Shock Xterra",
+    "shock-absorbers",
+    65000,
+    "Nissan Xterra",
+  ),
+];

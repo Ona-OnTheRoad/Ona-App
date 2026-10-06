@@ -8,156 +8,17 @@
  * Mark read on card click / hover no separate "Mark read" control.
  */
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Info,
-  LayoutGrid,
-  MessageCircle,
-  Phone,
-  Settings2,
-  Star,
-  Wallet,
-  Wrench,
-  type LucideIcon,
-} from "lucide-react";
-import {
-  MESSAGE_ORANGE,
-  blockedActionMessage,
-  isChatClosedForNotification,
-  isJobHistoryClosedStatus,
-  isNavigationBlocked,
-  isReleasePayPendingStatus,
-  type AppNotification,
-  type NotificationCategory,
-  type NotificationFilter,
-} from "@/lib/notifications/types";
-import {
-  isCallNotification,
-  isChatNotification,
-  isPaymentNotification,
-  isRequestAcceptNotification,
-} from "@/lib/notifications/stack-rules";
+import { MESSAGE_ORANGE } from "@/lib/notifications/types";
 import { useNotifications } from "@/components/notifications/notification-provider";
 import { ExpiredDialog } from "@/components/ui/expired-dialog";
-import {
-  CONVERSATION_ENDED_MESSAGE,
-  messageThreadIdFromHref,
-  readOnlyChatHref,
-} from "@/lib/chat-expired";
-import { apiGetJob } from "@/lib/jobs/client";
+import { CONVERSATION_ENDED_MESSAGE } from "@/lib/chat-expired";
 import { useApp } from "@/lib/store";
-
-const FILTERS: {
-  id: NotificationFilter;
-  label: string;
-  icon: LucideIcon;
-}[] = [
-  { id: "all", label: "All", icon: LayoutGrid },
-  { id: "requests", label: "Requests", icon: Wrench },
-  { id: "messages", label: "Messages", icon: MessageCircle },
-  { id: "payments", label: "Payments", icon: Wallet },
-  { id: "system", label: "System", icon: Settings2 },
-];
-
-function formatWhen(iso: string): string {
-  const t = Date.parse(iso);
-  if (!Number.isFinite(t)) return "";
-  try {
-    return new Date(t).toLocaleString(undefined, {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return "";
-  }
-}
-
-/** Compact X-style time label for the list: "Ona · now / 5m / 2h / Jan 3 2:31 PM". */
-function toastWhen(iso: string, now = Date.now()): string {
-  const t = Date.parse(iso);
-  if (!Number.isFinite(t)) return "";
-  const s = Math.floor((now - t) / 1000);
-  if (s < 60) return "now";
-  if (s < 3600) return `${Math.floor(s / 60)}m`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h`;
-  return formatWhen(iso);
-}
-
-/** Same per-category icon the in-app toasts use identical brand language. */
-function categoryIcon(n: AppNotification): LucideIcon {
-  if (isCallNotification(n)) return Phone;
-  if (isChatNotification(n)) return MessageCircle;
-  if (isPaymentNotification(n)) return Wallet;
-  if (isRequestAcceptNotification(n) || n.category === "requests")
-    return Wrench;
-  switch (n.category as NotificationCategory) {
-    case "requests":
-      return Wrench;
-    case "messages":
-      return MessageCircle;
-    case "payments":
-      return Wallet;
-    default:
-      return Info;
-  }
-}
-
-/** Per-action icon + label that replaces the old text chips (X-style icon actions). */
-type ActionSpec = { icon: LucideIcon | null; label: string };
-
-function actionSpec(
-  n: AppNotification,
-  opts: {
-    navBlocked: boolean;
-    accountType?: string | null;
-    releasePay: boolean;
-  },
-): ActionSpec | null {
-  const { navBlocked, accountType, releasePay } = opts;
-  if (n.actionType === "open_chat" || n.category === "messages") {
-    return { icon: MessageCircle, label: navBlocked ? "Open" : "Open chat" };
-  }
-  if (n.actionType === "accept_request") {
-    return {
-      icon: null,
-      label: navBlocked
-        ? "Open"
-        : accountType === "professional"
-          ? "Open request"
-          : "Open",
-    };
-  }
-  if (n.actionType === "view_tracking") {
-    return { icon: null, label: navBlocked ? "Open" : "Track" };
-  }
-  if (
-    n.actionType === "open_job" ||
-    n.category === "requests" ||
-    (n.category === "payments" && releasePay)
-  ) {
-    return {
-      icon: null,
-      label: releasePay
-        ? "Confirm job & release payment"
-        : navBlocked
-          ? "Open"
-          : "Open job",
-    };
-  }
-  if (n.actionType === "view_payment" && !releasePay) {
-    return { icon: Wallet, label: "Payments" };
-  }
-  if (n.actionType === "rate") {
-    return { icon: Star, label: "Rate" };
-  }
-  if (!n.actionType && n.href) {
-    return { icon: null, label: navBlocked ? "Open" : "Open" };
-  }
-  return null;
-}
+import { FILTERS } from "./center/filters";
+import { NotificationRow } from "./center/notification-row";
+import { useHoldToRead } from "./center/use-hold-to-read";
+import { useNotificationAction } from "./center/use-notification-action";
 
 export function NotificationCenter() {
   const {
@@ -175,21 +36,9 @@ export function NotificationCenter() {
   const { theme, accountType } = useApp();
   const router = useRouter();
   const isLight = theme === "light";
-  /** Deliberate-hover timers: id → timeout that will mark the row read */
-  const hoverTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
-    new Map(),
-  );
-  /** Row currently in its 1.5s hold window (drives the pulse cue) */
-  const [hoverHoldId, setHoverHoldId] = useState<string | null>(null);
-  useEffect(
-    () => () => {
-      for (const t of hoverTimers.current.values()) clearTimeout(t);
-      hoverTimers.current.clear();
-    },
-    [],
-  );
-  const [blockMsg, setBlockMsg] = useState<string | null>(null);
-  const [viewHref, setViewHref] = useState<string | null>(null);
+  const { hoverHoldId, onEnter, onLeave } = useHoldToRead(markRead);
+  const { runAction, blockMsg, setBlockMsg, viewHref, setViewHref } =
+    useNotificationAction({ accountType, markRead, closeCenter });
 
   const accent = MESSAGE_ORANGE;
   const stage = isLight ? "#c8c9cd" : "#0a0a0a";
@@ -210,85 +59,6 @@ export function NotificationCenter() {
   );
 
   if (!centerOpen) return null;
-
-  const showBlock = (n: AppNotification, msg: string) => {
-    setBlockMsg(msg || CONVERSATION_ENDED_MESSAGE);
-    const tid = messageThreadIdFromHref(n.href);
-    if (tid) {
-      setViewHref(readOnlyChatHref(String(tid)));
-      return;
-    }
-    const jid = n.jobId || null;
-    if (jid) {
-      setViewHref(`/jobs/${jid}`);
-      return;
-    }
-    setViewHref(null);
-  };
-
-  const runAction = async (n: AppNotification) => {
-    void markRead([n.id]);
-    // Pro pairing request → dashboard + lower panel only
-    if (
-      accountType === "professional" &&
-      (n.actionType === "accept_request" ||
-        (n.category === "requests" &&
-          (n.groupKey || "").startsWith("service-request")))
-    ) {
-      try {
-        const { clearJobShown, requestForceIncomingPanel } =
-          await import("@/lib/jobs/incoming-popup-timing");
-        if (n.jobId) {
-          clearJobShown(n.jobId);
-          requestForceIncomingPanel(n.jobId);
-        }
-      } catch {
-        /* */
-      }
-      closeCenter();
-      router.replace("/dashboard");
-      return;
-    }
-    if (!n.href) return;
-    let liveStatus: string | undefined = n.jobStatus || undefined;
-    if (n.jobId) {
-      try {
-        const res = await apiGetJob(n.jobId);
-        if (res.ok && res.data.job?.status) {
-          liveStatus = res.data.job.status;
-        }
-      } catch {
-        /* use cached */
-      }
-    }
-    if (isReleasePayPendingStatus(liveStatus || n.jobStatus)) {
-      closeCenter();
-      router.push(n.href.includes("/jobs/") ? n.href : `/jobs/${n.jobId}`);
-      return;
-    }
-    if (isNavigationBlocked({ ...n, jobStatus: liveStatus })) {
-      showBlock(n, blockedActionMessage(n, liveStatus));
-      return;
-    }
-    if (
-      isChatClosedForNotification(n) ||
-      isJobHistoryClosedStatus(liveStatus)
-    ) {
-      showBlock(n, blockedActionMessage(n, liveStatus));
-      return;
-    }
-    if (
-      (n.href.includes("/jobs/") ||
-        n.href.includes("/messages/") ||
-        n.href.includes("/requests/")) &&
-      (/demo/i.test(n.href) || (n.jobId && /demo/i.test(n.jobId)))
-    ) {
-      showBlock(n, blockedActionMessage(n, liveStatus));
-      return;
-    }
-    closeCenter();
-    router.push(n.href);
-  };
 
   return (
     <div
@@ -388,138 +158,23 @@ export function NotificationCenter() {
 
           <ul className="list-none">
             {/* Hold-to-read timers: 1.5s deliberate hover marks read */}
-            {sorted.map((n) => {
-              const unread = !n.readAt;
-              const closed = isChatClosedForNotification(n);
-              const historyClosed = isJobHistoryClosedStatus(n.jobStatus);
-              const releasePay = isReleasePayPendingStatus(n.jobStatus);
-              const navBlocked =
-                !releasePay &&
-                (isNavigationBlocked(n) || closed || historyClosed);
-              // A cancelled/closed job's notification is informational only
-              // the request is dead, so the row is inert: no navigation, no
-              // tap affordance (mirrors the pro popup card vanishing on cancel).
-              const inert = closed || historyClosed;
-              const Icon = categoryIcon(n);
-              const spec = actionSpec(n, {
-                navBlocked,
-                accountType,
-                releasePay,
-              });
-              const go = () => {
-                markRead([n.id]);
-                void runAction(n);
-              };
-              return (
-                <li
-                  key={n.id}
-                  style={{ borderBottom: `1px solid ${line}` }}
-                  onMouseEnter={() => {
-                    if (unread) {
-                      setHoverHoldId(n.id);
-                      const t = setTimeout(() => {
-                        void markRead([n.id]);
-                        hoverTimers.current.delete(n.id);
-                        setHoverHoldId(null);
-                      }, 1500);
-                      hoverTimers.current.set(n.id, t);
-                    }
-                  }}
-                  onMouseLeave={() => {
-                    const t = hoverTimers.current.get(n.id);
-                    if (t) {
-                      clearTimeout(t);
-                      hoverTimers.current.delete(n.id);
-                    }
-                    setHoverHoldId(null);
-                  }}
-                >
-                  <button
-                    type="button"
-                    disabled={inert}
-                    aria-disabled={inert}
-                    className={`flex w-full items-start gap-3.5 px-4 py-4 text-left ${
-                      inert
-                        ? "cursor-default opacity-70"
-                        : isLight
-                          ? "active:bg-black/[0.06]"
-                          : "active:bg-white/[0.08]"
-                    }`}
-                    style={{ backgroundColor: "transparent" }}
-                    onClick={go}
-                  >
-                    <Icon
-                      className={`mt-1 h-[18px] w-[18px] shrink-0${
-                        hoverHoldId === n.id ? " animate-pulse" : ""
-                      }`}
-                      style={{
-                        color: unread ? accent : muted,
-                        strokeWidth: unread ? 2.4 : 2,
-                      }}
-                      aria-hidden
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className="truncate text-[13px] font-bold leading-tight tracking-[-0.01em]"
-                          style={{ color: ink }}
-                        >
-                          Ona
-                        </span>
-                        <span
-                          className="shrink-0 text-[11px] font-medium"
-                          style={{ color: muted }}
-                        >
-                          · {toastWhen(n.createdAt)}
-                        </span>
-                      </div>
-                      <p
-                        className="mt-1 text-[13px] font-semibold leading-snug tracking-[-0.01em]"
-                        style={{ color: ink }}
-                      >
-                        {n.title}
-                      </p>
-                      <p
-                        className="mt-1.5 line-clamp-2 text-[12px] font-normal leading-snug"
-                        style={{ color: muted }}
-                      >
-                        {closed && n.messageText ? n.messageText : n.body}
-                      </p>
-                      {closed && n.messageText ? (
-                        <p
-                          className="mt-1 text-[10px] font-semibold"
-                          style={{ color: muted }}
-                        >
-                          Job finished. Full message.
-                        </p>
-                      ) : null}
-                      {historyClosed && !closed && n.category === "requests" ? (
-                        <p
-                          className="mt-1 text-[10px] font-semibold"
-                          style={{ color: muted }}
-                        >
-                          Job {n.jobStatus?.replace(/_/g, " ") || "closed"}.
-                          Link unavailable.
-                        </p>
-                      ) : null}
-                    </div>
-                    {spec && spec.icon && spec.icon !== Icon ? (
-                      <span
-                        className="self-center shrink-0 pl-2"
-                        title={spec.label}
-                        aria-label={spec.label}
-                        style={{ color: unread ? accent : muted }}
-                      >
-                        <spec.icon
-                          className="h-[18px] w-[18px]"
-                          strokeWidth={2}
-                        />
-                      </span>
-                    ) : null}
-                  </button>
-                </li>
-              );
-            })}
+            {sorted.map((n) => (
+              <NotificationRow
+                key={n.id}
+                n={n}
+                isLight={isLight}
+                accountType={accountType}
+                accent={accent}
+                ink={ink}
+                muted={muted}
+                line={line}
+                hoverHoldId={hoverHoldId}
+                onEnter={onEnter}
+                onLeave={onLeave}
+                markRead={markRead}
+                runAction={runAction}
+              />
+            ))}
           </ul>
         </div>
 

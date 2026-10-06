@@ -2,7 +2,7 @@ export { isAppBackendOnline } from "@/lib/supabase/app-api";
 export type { MessageRow } from "@/lib/supabase/app-api";
 export { backendSignUp } from "@/lib/supabase/app-api";
 export { backendUpdateProfile } from "@/lib/supabase/app-api";
-export { backendSaveIdentityVerification } from "@/lib/supabase/app-api";
+export { backendSaveIdentityVerification } from "@/lib/supabase/identity-submit";
 export { backendSignInWithOtp } from "@/lib/supabase/app-api";
 export { backendSignInWithPhoneOtp } from "@/lib/supabase/app-api";
 export type { BackendSendOtpResult } from "@/lib/supabase/app-api";

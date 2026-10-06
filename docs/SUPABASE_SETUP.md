@@ -37,18 +37,31 @@ Paste into `.env.local` (never commit).
 - Enable Email
 - Disable “Confirm email” for faster local testing (optional), **or** keep on and use seed script (`email_confirm: true`)
 
-## 5. Seed Super Admin
+## 5. Set up the database and the Super Admin
 
-```bash
-cd "/Users/mac/Desktop/Code/Ona"
-npm run db:seed-admin
+Put your admin identity and the database connection in `.env.local` (names are in `.env.example`; never commit values):
+
+```
+ADMIN_SEED_EMAIL=you@example.com
+ADMIN_SEED_PASSWORD=<a strong password you choose>
+ADMIN_SEED_NAME=Your Name            # optional
+DATABASE_URL=<Session pooler connection string, see below>
 ```
 
-Credentials (from your approval):
+Then, **once per new Supabase project**:
 
-- Email: `Oluwatosinabdullahime@gmail.com`
-- Password: `Alliswell123$`
-- Role: `admin`
+```bash
+npm run db:setup     # applies the schema, creates the admin Auth user + profile, syncs
+```
+
+`db:setup` creates the admin's Supabase Auth user first (the `profiles` table references Auth users), then the
+admin profile. Re-running it is safe. To seed only the admin later: `npm run db:seed-admin`.
+
+**Database connection:** in the Supabase dashboard open **Connect** and copy the **Session pooler** string
+(`postgresql://postgres.<ref>:<db-password>@aws-*.pooler.supabase.com:5432/postgres`). The direct host
+`db.<ref>.supabase.co` is IPv6-only and fails on networks without IPv6 (`ENOTFOUND`).
+
+The admin signs in at `/admin/login` with `ADMIN_SEED_EMAIL` and `ADMIN_SEED_PASSWORD`. Role: `admin` (super admin).
 
 ## 6. Start admin backend
 

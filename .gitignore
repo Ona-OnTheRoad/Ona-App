@@ -53,3 +53,13 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .opencode-tmp/
+AGENTS.md
+CLAUDE.md
+
+# Secrets / local-only artefacts (never commit)
+/Local BackUp/*.txt
+.vercel-*/
+/tmp-audit/
+
+# Keep the env template tracked (the .env* rule above would otherwise hide it)
+!.env.example
