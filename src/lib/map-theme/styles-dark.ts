@@ -106,12 +106,12 @@ export const MAP_STYLES_DARK: OnaMapStyle[] = [
     stylers: [{ color: "#050000" }, { weight: 2 }],
   },
   {
-    featureType: "landmark",
+    featureType: "poi.attraction",
     elementType: "labels.text.fill",
     stylers: [{ color: "#ffe8d6" }],
   },
   {
-    featureType: "landmark",
+    featureType: "poi.attraction",
     elementType: "labels.text.stroke",
     stylers: [{ color: "#050000" }, { weight: 2 }],
   },
