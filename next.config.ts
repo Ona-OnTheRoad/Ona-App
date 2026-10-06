@@ -28,8 +28,9 @@ const nextConfig: NextConfig = {
   },
   // Separate dist for admin dev server (port 4500) vs public (3000)
   distDir: process.env.NEXT_DIST_DIR || ".next",
-  // Allow both localhost and 127.0.0.1 during local dev (fixes blank UI / blocked HMR)
-  allowedDevOrigins: ["127.0.0.1", "localhost"],
+  // Allow localhost, 127.0.0.1 and the IPv6 loopback [::1] during local dev (fixes blank UI / blocked HMR;
+  // `npm run dev` binds `::`, so browsers often reach it through [::1])
+  allowedDevOrigins: ["127.0.0.1", "localhost", "[::1]"],
   // Avoid picking up a parent-folder lockfile as workspace root
   turbopack: {
     root: projectRoot,
