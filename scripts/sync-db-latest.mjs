@@ -136,6 +136,9 @@ async function main() {
       }
     }
 
+    // Make the REST API (PostgREST) see new tables/columns straight away.
+    await client.query("notify pgrst, 'reload schema'");
+
     const required = [
       ["service_requests", "flow_status"],
       ["service_requests", "motorist_photo"],

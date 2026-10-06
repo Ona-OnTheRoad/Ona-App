@@ -205,6 +205,17 @@ Or set DATABASE_URL to the full Postgres connection string.
   try {
     console.log("[apply-schema] Applying schema + admin seed…");
     await client.query(sql);
+    // Record it so `db:sync` does not re-run this file raw (it carries the previous project's admin id).
+    await client.query(`
+      create table if not exists public.schema_migrations (
+        filename text primary key,
+        applied_at timestamptz not null default now()
+      )
+    `);
+    await client.query(
+      `insert into public.schema_migrations (filename) values ($1) on conflict (filename) do nothing`,
+      ["20260714_002_bootstrap_idempotent.sql"]
+    );
     const { rows } = await client.query(
       `select id, role, email, is_active, full_name
        from public.profiles

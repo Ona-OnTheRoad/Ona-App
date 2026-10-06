@@ -17,7 +17,7 @@
     "typecheck": "tsc --noEmit",
     "db:apply": "node scripts/apply-schema.mjs",
     "db:sync": "node scripts/sync-db-latest.mjs",
-    "db:setup": "node scripts/apply-schema.mjs && node scripts/seed-admin.mjs && node scripts/sync-db-latest.mjs",
+    "db:setup": "node scripts/apply-schema.mjs && node scripts/sync-db-latest.mjs && node scripts/seed-admin.mjs",
     "db:seed-mechanic": "node scripts/seed-mechanic-taxonomy.mjs",
     "db:seed-automedics": "npx tsx scripts/shop-seed-automedics.mts",
     "backup:local": "node \"Local BackUp/scripts/backup-db.mjs\"",
