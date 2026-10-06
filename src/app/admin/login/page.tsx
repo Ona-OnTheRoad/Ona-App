@@ -30,7 +30,7 @@ function AdminLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const expired = searchParams.get("expired") === "1";
-  const [email, setEmail] = useState("Oluwatosinabdullahime@gmail.com");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

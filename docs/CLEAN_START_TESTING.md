@@ -59,7 +59,7 @@ Wrong phone → *“This phone is not registered. Use the exact number from sign
 | App | https://ona-mi.vercel.app |
 | Admin | https://ona-mi.vercel.app/admin/login |
 
-Admin seed: `Oluwatosinabdullahime@gmail.com` (from `npm run db:seed-admin`).
+Admin seed: the account in `ADMIN_SEED_EMAIL` (from `npm run db:seed-admin`).
 
 ## Deploy
 
