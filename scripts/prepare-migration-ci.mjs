@@ -8,6 +8,10 @@ if (!destination) throw new Error("Provide a NEW isolated temporary project dire
 const root = resolve(destination);
 mkdirSync(root, { recursive: false }); // Refuse to overwrite an existing project.
 mkdirSync(resolve(root, "supabase/migrations"), { recursive: true });
+// CLI reads this image override. Keep PostgreSQL 15, with the storage ownership
+// fix documented in supabase/cli#3599; this affects only the disposable CI stack.
+mkdirSync(resolve(root, "supabase/.temp"), { recursive: true });
+writeFileSync(resolve(root, "supabase/.temp/postgres-version"), "15.8.1.099");
 writeFileSync(resolve(root, "supabase/config.toml"),
   readFileSync("supabase/config.toml", "utf8").replace('project_id = "ona-local"', 'project_id = "ona-migration-ci"'));
 const files = readdirSync("supabase/migrations").filter(name => name.endsWith(".sql")).sort();
