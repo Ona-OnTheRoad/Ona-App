@@ -2,6 +2,12 @@
 do $$
 declare name text; signature text;
 begin
+  foreach name in array array['Users upload own avatar', 'Users update own avatar', 'Public read avatars', 'Service role manage avatars', 'Public read shop media', 'Service role manage shop media'] loop
+    if not exists (select 1 from pg_policies where schemaname = 'storage'
+        and tablename = 'objects' and policyname = name) then
+      raise exception 'Missing storage policy %', name;
+    end if;
+  end loop;
   foreach name in array array['target_type', 'target_id', 'action_type', 'admin_name', 'old_value', 'new_value', 'reason', 'result', 'status', 'error_message', 'ip_address', 'device_info'] loop
     if not exists (select 1 from information_schema.columns where table_schema = 'public'
         and table_name = 'admin_actions' and column_name = name) then

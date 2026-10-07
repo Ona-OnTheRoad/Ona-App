@@ -86,6 +86,7 @@ jobs:
       - name: Apply complete history to local Supabase
         run: |
           supabase start --workdir "$RUNNER_TEMP/ona-migration-ci"
+          node scripts/configure-migration-ci.mjs "$RUNNER_TEMP/ona-migration-ci"
           supabase db reset --local --workdir "$RUNNER_TEMP/ona-migration-ci"
       - name: Check migration count, schema and role boundaries
         run: node scripts/verify-migration-ci.mjs "$RUNNER_TEMP/ona-migration-ci"

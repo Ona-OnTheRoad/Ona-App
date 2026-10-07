@@ -12,7 +12,8 @@ writeFileSync(resolve(root, "supabase/config.toml"),
   readFileSync("supabase/config.toml", "utf8")
     .replace('project_id = "ona-local"', 'project_id = "ona-migration-ci"')
     // Use the pinned CLI's current local stack; no hosted database is upgraded.
-    .replace(/major_version = \d+/, "major_version = 17"));
+    .replace(/major_version = \d+/, "major_version = 17")
+    + "\n[db.migrations]\nenabled = false\n");
 const files = readdirSync("supabase/migrations").filter(name => name.endsWith(".sql")).sort();
 if (!files.length) throw new Error("No migrations found");
 const manifest = files.map((source, index) => {
