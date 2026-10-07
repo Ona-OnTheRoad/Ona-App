@@ -204,6 +204,22 @@ CREATE TABLE IF NOT EXISTS public.admin_actions (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- Bootstrap already creates the legacy audit table. CREATE TABLE IF NOT EXISTS
+-- cannot add this migration's fields; preserve legacy columns/rows and expand it.
+ALTER TABLE public.admin_actions
+  ADD COLUMN IF NOT EXISTS admin_name TEXT,
+  ADD COLUMN IF NOT EXISTS target_type TEXT,
+  ADD COLUMN IF NOT EXISTS target_id TEXT,
+  ADD COLUMN IF NOT EXISTS action_type TEXT,
+  ADD COLUMN IF NOT EXISTS old_value JSONB,
+  ADD COLUMN IF NOT EXISTS new_value JSONB,
+  ADD COLUMN IF NOT EXISTS reason TEXT,
+  ADD COLUMN IF NOT EXISTS result TEXT,
+  ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'completed',
+  ADD COLUMN IF NOT EXISTS error_message TEXT,
+  ADD COLUMN IF NOT EXISTS ip_address TEXT,
+  ADD COLUMN IF NOT EXISTS device_info TEXT;
+
 CREATE INDEX IF NOT EXISTS idx_admin_actions_admin ON public.admin_actions(admin_id);
 CREATE INDEX IF NOT EXISTS idx_admin_actions_target ON public.admin_actions(target_type, target_id);
 CREATE INDEX IF NOT EXISTS idx_admin_actions_created ON public.admin_actions(created_at DESC);

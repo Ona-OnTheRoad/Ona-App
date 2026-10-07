@@ -2,6 +2,12 @@
 do $$
 declare name text; signature text;
 begin
+  foreach name in array array['target_type', 'target_id', 'action_type', 'admin_name', 'old_value', 'new_value', 'reason', 'result', 'status', 'error_message', 'ip_address', 'device_info'] loop
+    if not exists (select 1 from information_schema.columns where table_schema = 'public'
+        and table_name = 'admin_actions' and column_name = name) then
+      raise exception 'Missing audit table upgrade column %', name;
+    end if;
+  end loop;
   if not exists (select 1 from information_schema.columns where table_schema = 'public'
       and table_name = 'service_requests' and column_name = 'job_version'
       and is_nullable = 'NO' and data_type = 'bigint') then

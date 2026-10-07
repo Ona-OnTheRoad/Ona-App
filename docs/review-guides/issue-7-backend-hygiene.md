@@ -38,3 +38,5 @@ The first PR CI run failed on bootstrap migration 002: a deployment-specific adm
 The second replay passed bootstrap and failed in migration 020 because the bootstrap notification table lacks group_key. Migration 020 now adds that nullable column before creating its index, matching migration 021. No source migration is skipped.
 
 Replay reached migration 035 and failed installing unused PostGIS due to local role permissions. Audit also found references to nonexistent public.jobs and latitude/longitude columns; application code has no geography-field consumers. Retire that broken draft in favor of indexes on repair_pro_profiles.lat/lng and service_requests.pickup_lat/pickup_lng/pro_lat/pro_lng. The haversine discovery implementation and product radius rules remain unchanged. This corrects fresh source replay; do not replay historical SQL against hosted databases.
+
+Replay then reached migration 036 and found the same CREATE TABLE IF NOT EXISTS upgrade gap in bootstrap admin_actions. Add the newer audit fields explicitly before target indexing, retaining legacy columns and rows. The CI schema assertions now require those fields.
