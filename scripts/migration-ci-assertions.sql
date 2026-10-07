@@ -2,6 +2,9 @@
 do $$
 declare name text; signature text;
 begin
+  if not exists (select 1 from pg_extension where extname = 'pg_trgm') then
+    raise exception 'Missing shop search extension pg_trgm';
+  end if;
   foreach name in array array['Users upload own avatar', 'Users update own avatar', 'Public read avatars', 'Service role manage avatars', 'Public read shop media', 'Service role manage shop media'] loop
     if not exists (select 1 from pg_policies where schemaname = 'storage'
         and tablename = 'objects' and policyname = name) then
