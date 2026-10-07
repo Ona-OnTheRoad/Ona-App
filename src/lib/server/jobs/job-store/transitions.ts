@@ -5,7 +5,6 @@ import {
   type TransitionEvent,
 } from "@/lib/jobs/state-machine";
 import type { JobRecord } from "@/lib/jobs/types";
-import { memory } from "./constants";
 import { nowIso } from "./mappers";
 import { persist } from "./cache";
 import { getJob } from "./reads";
@@ -31,6 +30,10 @@ export async function applyEvent(
   event: TransitionEvent,
   actor: TransitionActor,
 ): Promise<JobRecord> {
+  if (event.type === "EXPIRE_NEGOTIATION" && job.status === "negotiating") {
+    const { expireNegotiationIfOverdue } = await import("../deadlines/negotiation-expiry");
+    return expireNegotiationIfOverdue(job);
+  }
   const nextRaw = assertTransition(job.status, event);
   // Customer (or admin/system) cancelling during negotiation/search fully
   // cancels the job only a Repair Pro decline enters the "searching"

@@ -1,6 +1,7 @@
 "use client";
 
 import { Copy, Loader2 } from "lucide-react";
+import { authFetch } from "@/lib/api-auth-headers";
 import { apiGetJob } from "@/lib/jobs/client";
 import type { JobRecord } from "@/lib/jobs/types";
 import { forceNairaCurrency, formatMoney } from "@/lib/pricing";
@@ -161,7 +162,7 @@ export function BankPayView({
           type="button"
           onClick={() => {
             if (!reference || !jobId) return;
-            void fetch("/api/payments/verify", {
+            void authFetch("/api/payments/verify", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ reference, jobId }),

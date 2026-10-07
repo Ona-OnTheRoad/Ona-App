@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { apiFail, apiOk } from "@/lib/server/api-json";
+import { apiFail, apiFailFromError, apiOk } from "@/lib/server/api-json";
 import { isJobParty, requireUser } from "@/lib/server/auth-utils";
 import { actorMay, type TransitionEvent } from "@/lib/jobs/state-machine";
 import { computeDriveMetrics } from "@/lib/server/google-eta";
@@ -217,6 +217,6 @@ export async function POST(
       serverNow: new Date().toISOString(),
     });
   } catch (e) {
-    return apiFail(e instanceof Error ? e.message : "Transition failed", 500);
+    return apiFailFromError(e, "Transition failed");
   }
 }

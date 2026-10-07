@@ -1,11 +1,7 @@
 import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
-import {
-  getEscrowByRef,
-  updateEscrow,
-} from "@/lib/server/payments/escrow-store";
-import { markJobPaidFromReference } from "@/lib/server/jobs/job-store";
-import { verifyCharge } from "@/lib/server/payments/providers";
+import { requireUser } from "@/lib/server/auth-utils";
+import { confirmJobPayment } from "@/lib/server/payments/confirm-job-payment";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,7 +40,10 @@ export async function POST(req: Request) {
       /* non-fatal */
     }
 
-    const parsed = bodySchema.safeParse(await req.json());
+    const auth = await requireUser(req);
+    if (!auth.ok) return auth.response;
+    const body = await req.json().catch(() => null);
+    const parsed = bodySchema.safeParse(body);
     if (!parsed.success) return apiFail("Invalid body", 400);
 
     const refRaw = (parsed.data.reference || "").trim();
@@ -52,67 +51,27 @@ export async function POST(req: Request) {
       return apiFail("reference or jobId required", 400);
     }
 
-    let payment = refRaw ? await getEscrowByRef(refRaw) : null;
-    // Fallback: latest escrow row for this job (iframe may drop ref)
-    if (!payment && parsed.data.jobId) {
-      const { getEscrowByRequest } =
-        await import("@/lib/server/payments/escrow-store");
-      payment = await getEscrowByRequest(parsed.data.jobId);
-    }
-    if (!payment) return apiFail("Payment not found", 404, "not_found");
-
-    const verifyRef = payment.providerRef || refRaw;
-
-    if (
-      payment.escrowStatus === "held" ||
-      payment.escrowStatus === "released"
-    ) {
-      const booked = await markJobPaidFromReference(verifyRef);
-      return apiOk({
-        payment,
-        alreadySettled: true,
-        job: "job" in booked ? booked.job : null,
-      });
-    }
-
-    const verified = await verifyCharge(
-      verifyRef,
-      parsed.data.provider || payment.provider,
-    );
-
-    // Allow small gateway rounding; mock may return amount 0
-    const amountOk =
-      verified.amountMinor === 0 ||
-      payment.provider === "mock" ||
-      Math.abs(verified.amountMinor - payment.amountMinor) <= 100;
-
-    const ok = verified.success && amountOk;
-
-    if (!ok) {
-      // Do NOT mark escrow failed permanently bank transfer can land later.
-      // Keep pending so release/reconcile can re-check Flutterwave.
-      return apiFail(
-        "Payment not confirmed yet on Flutterwave. If you already transferred, wait and try again.",
-        402,
-        "verify_failed",
-      );
-    }
-
-    const updated = await updateEscrow(payment.id, {
-      status: "paid",
-      escrowStatus: "held",
-      paidAt: verified.paidAt || new Date().toISOString(),
-      providerChannel: verified.channel || null,
+    // Provider and transactionId are legacy callback hints, never authority.
+    const result = await confirmJobPayment({
+      reference: refRaw || undefined, jobId: parsed.data.jobId, motoristId: auth.userId,
     });
-
-    const booked = await markJobPaidFromReference(verifyRef);
+    if (result.outcome === "pending" || result.outcome === "rejected") {
+      if (result.code === "forbidden") return apiFail(result.message, 403, "forbidden");
+      const notFound = result.code === "not_found";
+      return apiFail(result.message, notFound ? 404 : result.retryable ? 503 : 402,
+        notFound ? "not_found" : "verify_failed");
+    }
+    const { payment, job } = result;
+    if (result.outcome === "already_confirmed") {
+      return apiOk({ payment, alreadySettled: true, job });
+    }
 
     return apiOk({
-      payment: updated,
-      job: "job" in booked ? booked.job : null,
-      jobError: "error" in booked ? booked.error : null,
+      payment,
+      job,
+      jobError: null,
       receipt: {
-        reference: payment.providerRef || verifyRef,
+        reference: payment.providerRef,
         amountMinor: payment.amountMinor,
         currency: payment.currency,
         labourOnly: true,

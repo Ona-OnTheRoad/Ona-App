@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { authFetch } from "@/lib/api-auth-headers";
 import { apiGetJob } from "@/lib/jobs/client";
 import { isBookedOrActiveStatus } from "../shared/job-status";
 import type { Phase } from "./types";
@@ -23,7 +24,7 @@ export function useBankPayPoll(
       void (async () => {
         if (reference) {
           try {
-            await fetch("/api/payments/verify", {
+            await authFetch("/api/payments/verify", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({

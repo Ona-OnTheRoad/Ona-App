@@ -7,7 +7,7 @@
  */
 
 // ── Types & constants ──────────────────────────────────────────────
-export { memory, READ_CACHE_MS, FLOW_STATUSES } from "./constants";
+export { FLOW_STATUSES } from "./constants";
 
 // ── Mappers ────────────────────────────────────────────────────────
 export {
@@ -22,7 +22,7 @@ export {
 } from "./mappers";
 
 // ── Cache & persist ────────────────────────────────────────────────
-export { cacheJob, persist, persistIfUnchanged } from "./cache";
+export { persist, persistIfUnchanged } from "./cache";
 
 // ── Hydration ──────────────────────────────────────────────────────
 export {

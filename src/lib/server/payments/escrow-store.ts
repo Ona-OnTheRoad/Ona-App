@@ -52,7 +52,7 @@ function nowIso() {
   return new Date().toISOString();
 }
 
-function rowToEscrow(row: Record<string, unknown>): EscrowPayment {
+export function rowToEscrow(row: Record<string, unknown>): EscrowPayment {
   return {
     id: String(row.id),
     requestId: String(row.request_id),

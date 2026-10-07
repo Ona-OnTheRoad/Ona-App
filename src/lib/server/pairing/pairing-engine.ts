@@ -10,6 +10,7 @@
  * See docs/SSPE_REFACTOR_PLAN.md §6.
  */
 
+import { withSweepLease } from "@/lib/server/jobs/deadlines/sweep-lease";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { NEGOTIATE_WINDOW_MS, SECOND_PRO_DELAY_MS } from "@/lib/jobs/constants";
@@ -27,6 +28,7 @@ export const OPEN_REARM_FLOOR_MS = 10_000;
 /** Max time an offer sits un-surfaced before the sweep arms the pairing
  * deadline itself (fallback when the pro's device never renders the card). */
 export const SURFACE_FALLBACK_GRACE_MS = 8000;
+const EMPTY_SEARCH_HOLD_MS = 4000;
 // Search starts tight (1 km) and expands toward the customer's chosen radius
 // (0-5 km slider), capped at 5 km. The customer's radius caps each request
 // via service_requests.radius_km (see nextRadiusKm's maxKm).
@@ -80,6 +82,7 @@ export type PairingResult =
 
 type PairingRow = {
   id: string;
+  job_version: number;
   motorist_id: string;
   motorist_name: string | null;
   repair_pro_id: string | null;
@@ -103,6 +106,7 @@ type PairingRow = {
   flow_status: string | null;
   status: string | null;
   created_at: string | null;
+  updated_at: string | null;
 };
 
 type ProCandidate = {
@@ -119,12 +123,14 @@ const deadlineIso = () =>
 async function loadPairingRow(
   sb: ReturnType<typeof createServiceSupabase>,
   jobId: string,
+  failOnError = false,
 ): Promise<PairingRow | null> {
-  const { data } = await sb
+  const { data, error } = await sb
     .from("service_requests")
     .select(
       [
         "id",
+        "job_version",
         "motorist_id",
         "motorist_name",
         "repair_pro_id",
@@ -148,12 +154,17 @@ async function loadPairingRow(
         "flow_status",
         "status",
         "created_at",
+        "updated_at",
       ].join(","),
     )
     .eq("id", jobId)
     .maybeSingle();
+  if (error && failOnError) throw new Error("Could not load pairing request");
   if (!data) return null;
-  return data as unknown as PairingRow;
+  return {
+    ...(data as unknown as PairingRow),
+    job_version: Number((data as { job_version?: unknown }).job_version ?? 0),
+  };
 }
 
 function history(row: PairingRow): object[] {
@@ -226,11 +237,12 @@ async function findCandidate(
   row: PairingRow,
   radiusKm: number,
 ): Promise<{ candidate: ProCandidate; remaining: number } | null> {
-  const { data: queue } = await sb
+  const { data: queue, error: queueError } = await sb
     .from("request_pairing_queue")
     .select("pro_id, status, responded_at")
     .eq("request_id", row.id);
 
+  if (queueError) throw new Error("Could not load pairing queue");
   const now = Date.now();
   const blocked = new Set<string>();
   for (const q of queue ?? []) {
@@ -249,7 +261,7 @@ async function findCandidate(
   // Current assignee is never re-dispatched until queue settles them.
   if (row.repair_pro_id) blocked.add(row.repair_pro_id);
 
-  const { data: pros } = await sb
+  const { data: pros, error: prosError } = await sb
     .from("repair_pro_profiles")
     .select(
       "user_id, business_name, primary_service, services, lat, lng, location_updated_at, visibility_tier, is_online, profiles(email, full_name)",
@@ -258,6 +270,7 @@ async function findCandidate(
     .neq("status", "suspended")
     .neq("status", "rejected");
 
+  if (prosError) throw new Error("Could not load pairing candidates");
   const { lat: cLat, lng: cLng } = {
     lat: Number(row.pickup_lat) || 0,
     lng: Number(row.pickup_lng) || 0,
@@ -427,7 +440,7 @@ async function dispatchCandidate(
     return { ok: false, error: qErr.message, status: 500 };
   }
 
-  const { error } = await sb
+  const { data: dispatchRow, error } = await sb
     .from("service_requests")
     .update({
       pairing_stage: "waiting_for_pro",
@@ -456,9 +469,13 @@ async function dispatchCandidate(
       ],
     })
     .eq("id", row.id)
-    .eq("pairing_stage", row.pairing_stage);
+    .eq("job_version", Number(row.job_version ?? 0))
+    .eq("pairing_stage", row.pairing_stage)
+    .select("id")
+    .maybeSingle();
 
   if (error) return { ok: false, error: error.message, status: 500 };
+  if (!dispatchRow) return { ok: true, noop: true, jobId: row.id };
 
   await notifyPro(
     candidate.user_id,
@@ -488,7 +505,7 @@ export async function advancePairing(jobId: string): Promise<PairingResult> {
     return { ok: false, error: "Supabase is not configured", status: 503 };
   }
   const sb = createServiceSupabase();
-  const row = await loadPairingRow(sb, jobId);
+  const row = await loadPairingRow(sb, jobId, true);
   if (!row) return { ok: false, error: "Job not found", status: 404 };
   // Guard: never re-advance an already-assigned / negotiating job.
   if (!PAIRING_STAGES.includes(row.pairing_stage as PairingStage)) {
@@ -523,14 +540,17 @@ export async function advancePairing(jobId: string): Promise<PairingResult> {
   // capped by the current round's max (fresh 2 km → retries 3/4/5 km).
   const nextRadius = nextRadiusKm(radius, roundMaxRadiusKm(row));
   if (nextRadius != null) {
-    const { error } = await sb
+    const { data: radiusRow, error } = await sb
       .from("service_requests")
       .update({ pairing_radius_km: nextRadius, updated_at: nowIso() })
       .eq("id", row.id)
-      .eq("pairing_stage", row.pairing_stage);
-    if (!error) {
-      return advancePairing(jobId);
-    }
+      .eq("job_version", Number(row.job_version ?? 0))
+      .eq("pairing_stage", row.pairing_stage)
+      .select("id")
+      .maybeSingle();
+    if (error) return { ok: false, error: "Could not expand pairing radius", status: 500 };
+    if (!radiusRow) return { ok: true, noop: true, jobId: row.id };
+    return advancePairing(jobId);
   }
 
   // One-click: empty pool at 5km holds only 4s (was 144s) so customer gets
@@ -550,13 +570,18 @@ export async function advancePairing(jobId: string): Promise<PairingResult> {
       };
       if (needsArm)
         holdPatch.pairing_deadline = new Date(
-          Date.now() + 4000,
+          Date.now() + EMPTY_SEARCH_HOLD_MS,
         ).toISOString();
-      await sb
+      const { data: held, error: holdError } = await sb
         .from("service_requests")
         .update(holdPatch)
         .eq("id", row.id)
-        .eq("pairing_stage", row.pairing_stage);
+        .eq("job_version", Number(row.job_version ?? 0))
+        .eq("pairing_stage", row.pairing_stage)
+        .select("id")
+        .maybeSingle();
+      if (holdError) return { ok: false, error: "Could not hold pairing search", status: 500 };
+      if (!held) return { ok: true, noop: true, jobId: row.id };
       return { ok: true, jobId: row.id, currentProId: null, noop: true };
     }
   }
@@ -586,6 +611,7 @@ async function markExhausted(
       ],
     })
     .eq("id", row.id)
+    .eq("job_version", Number(row.job_version ?? 0))
     .eq("pairing_stage", row.pairing_stage)
     .select("id");
   if (error) return { ok: false, error: error.message, status: 500 };
@@ -668,6 +694,7 @@ export async function retrySearch(jobId: string): Promise<PairingResult> {
     .from("service_requests")
     .update(patch)
     .eq("id", row.id)
+    .eq("job_version", Number(row.job_version ?? 0))
     .select("id");
   if (error) return { ok: false, error: error.message, status: 500 };
   if (!updated?.length) {
@@ -768,6 +795,7 @@ export async function openRequest(
     .from("service_requests")
     .update(patch)
     .eq("id", row.id)
+    .eq("job_version", Number(row.job_version ?? 0))
     .eq("pairing_stage", row.pairing_stage)
     .select("id");
   if (error) return { ok: false, error: error.message, status: 500 };
@@ -1052,6 +1080,7 @@ export async function declineRequest(
       ]),
     )
     .eq("id", row.id)
+    .eq("job_version", Number(row.job_version ?? 0))
     .eq("pairing_stage", row.pairing_stage);
   if (error) return { ok: false, error: error.message, status: 500 };
 
@@ -1105,6 +1134,7 @@ export async function deferRequest(
       ]),
     )
     .eq("id", row.id)
+    .eq("job_version", Number(row.job_version ?? 0))
     .eq("pairing_stage", row.pairing_stage);
   if (error) return { ok: false, error: error.message, status: 500 };
 
@@ -1123,7 +1153,7 @@ export async function timeoutRequest(jobId: string): Promise<PairingResult> {
     return { ok: false, error: "Supabase is not configured", status: 503 };
   }
   const sb = createServiceSupabase();
-  const row = await loadPairingRow(sb, jobId);
+  const row = await loadPairingRow(sb, jobId, true);
   if (!row) return { ok: false, error: "Job not found", status: 404 };
   if (
     !PAIRING_STAGES.includes(row.pairing_stage as PairingStage) ||
@@ -1135,7 +1165,7 @@ export async function timeoutRequest(jobId: string): Promise<PairingResult> {
   // Re-check under the freshest read: a pro may have opened (refreshing the
   // deadline) after the sweep selected this row. If so, this timeout is stale
   // and must not settle or advance.
-  const fresh = await loadPairingRow(sb, jobId);
+  const fresh = await loadPairingRow(sb, jobId, true);
   if (!fresh) return { ok: true, noop: true, jobId };
   if (
     !PAIRING_STAGES.includes(fresh.pairing_stage as PairingStage) ||
@@ -1143,6 +1173,7 @@ export async function timeoutRequest(jobId: string): Promise<PairingResult> {
   ) {
     return { ok: true, noop: true, jobId };
   }
+  if (!fresh.pairing_deadline) return { ok: true, noop: true, jobId };
   const deadline = fresh.pairing_deadline
     ? Date.parse(fresh.pairing_deadline)
     : 0;
@@ -1150,35 +1181,18 @@ export async function timeoutRequest(jobId: string): Promise<PairingResult> {
     return { ok: true, noop: true, jobId };
   }
 
-  const ts = nowIso();
-  const settled = await settleCurrentPro(
-    sb,
-    fresh,
-    "timed_out",
-    "pairing deadline exceeded",
-  );
-  if (settled.error) return { ok: false, error: settled.error, status: 500 };
-
-  // CAS the stage to sequential_pairing and only count the timeout + advance
-  // when the row actually matched. If it moved (pro opened/confirmed while we
-  // were settling), leave the job exactly where it is the opener/confirmer
-  // owns it now and the sweep already refreshed its deadline.
-  const { data, error } = await sb
-    .from("service_requests")
-    .update(
-      sequentialUnlinkPatch(fresh, ts, [
-        { status: "sequential_pairing", at: ts, by: "sweep:timeout" },
-      ]),
-    )
-    .eq("id", row.id)
-    .eq("pairing_stage", fresh.pairing_stage)
-    .select("id");
-  if (error) return { ok: false, error: error.message, status: 500 };
-  if (!data || data.length === 0) {
-    return { ok: true, noop: true, jobId };
-  }
+  // Own timeout and settle its database effects atomically. A rearm/confirmation
+  // after the freshest read must not cancel the pro's queue, reservation or quote.
+  const { data: claimed, error } = await sb.rpc("timeout_pairing_request", {
+    p_request_id: fresh.id, p_stage: fresh.pairing_stage,
+    p_deadline: fresh.pairing_deadline, p_pro_id: fresh.repair_pro_id,
+    p_updated_at: fresh.updated_at, p_retry_delay_ms: EMPTY_SEARCH_HOLD_MS,
+  });
+  if (error) return { ok: false, error: "Could not settle pairing timeout", status: 500 };
+  if (claimed !== true) return { ok: true, noop: true, jobId };
 
   const next = await advancePairing(jobId);
+  if (!next.ok) return next;
   return {
     ok: true,
     jobId: row.id,
@@ -1198,17 +1212,26 @@ async function armLinkedScheduledDispatch(
   primaryRequestId: string,
   ts: string,
 ): Promise<void> {
-  await sb
+  const { data: rows, error: readError } = await sb
     .from("service_requests")
-    .update({
+    .select("id, job_version")
+    .eq("linked_request_id", primaryRequestId)
+    .eq("flow_status", "scheduled")
+    .is("scheduled_dispatch_at", null);
+  if (readError) throw new Error("Could not load linked scheduled requests");
+  for (const row of rows || []) {
+    const { error } = await sb.from("service_requests").update({
       scheduled_dispatch_at: new Date(
         Date.now() + SECOND_PRO_DELAY_MS,
       ).toISOString(),
       updated_at: ts,
     })
-    .eq("linked_request_id", primaryRequestId)
+    .eq("id", row.id)
+    .eq("job_version", Number(row.job_version ?? 0))
     .eq("flow_status", "scheduled")
     .is("scheduled_dispatch_at", null);
+    if (error) throw new Error("Could not arm linked scheduled request");
+  }
 }
 
 const SCHEDULED_CANCELLED_STATUSES = [
@@ -1239,7 +1262,7 @@ export async function sweepScheduledDispatches(limit = 50): Promise<{
     const { data: rows } = await sb
       .from("service_requests")
       .select(
-        "id, linked_request_id, scheduled_dispatch_at, dispatch_notified_at, motorist_id, service_type, problem, pickup_address, status_history",
+        "id, job_version, linked_request_id, scheduled_dispatch_at, dispatch_notified_at, motorist_id, service_type, problem, pickup_address, status_history",
       )
       .eq("flow_status", "scheduled")
       .not("linked_request_id", "is", null)
@@ -1283,6 +1306,7 @@ export async function sweepScheduledDispatches(limit = 50): Promise<{
               ],
             })
             .eq("id", secondId)
+            .eq("job_version", Number(row.job_version ?? 0))
             .eq("flow_status", "scheduled");
           if (!updated.error) cancelled += 1;
           continue;
@@ -1304,6 +1328,7 @@ export async function sweepScheduledDispatches(limit = 50): Promise<{
             updated_at: ts,
           })
           .eq("id", secondId)
+          .eq("job_version", Number(row.job_version ?? 0))
           .eq("flow_status", "scheduled")
           .is("dispatch_notified_at", null)
           .select("id");
@@ -1354,20 +1379,26 @@ export async function sweepScheduledDispatches(limit = 50): Promise<{
 }
 
 /** Enforce all expired pairing deadlines (Vercel cron / pg_cron / expire-stale). */
-export async function sweepPairing(limit = 50): Promise<{
+export async function sweepPairing(limit = 50) {
+  return withSweepLease("pairing", () => sweepPairingBatch(limit));
+}
+
+async function sweepPairingBatch(limit: number): Promise<{
   checked: number;
   timedOut: number;
   expired: number;
+  batchFull?: boolean;
+  unarmedBatchFull?: boolean;
 }> {
   let checked = 0;
   let timedOut = 0;
   let expired = 0;
-  if (!isSupabaseAdminConfigured()) return { checked, timedOut, expired };
+  if (!isSupabaseAdminConfigured()) throw new Error("Pairing database is not configured");
 
   try {
     const sb = createServiceSupabase();
 
-    const { data: rows } = await sb
+    const { data: rows, error: scanError } = await sb
       .from("service_requests")
       .select("id, pairing_stage")
       .in("pairing_stage", PAIRING_STAGES)
@@ -1377,9 +1408,10 @@ export async function sweepPairing(limit = 50): Promise<{
       .or("reservation_status.neq.confirmed,reservation_status.is.null")
       .not("pairing_deadline", "is", null)
       .lte("pairing_deadline", nowIso())
-      .order("pairing_deadline", { ascending: true })
+      .order("pairing_deadline", { ascending: true }).order("id", { ascending: true })
       .limit(limit);
 
+    if (scanError) throw new Error("Could not load overdue pairing requests");
     for (const r of rows ?? []) {
       checked++;
       // sequential_pairing holds refresh their own deadline; re-run the search
@@ -1388,6 +1420,7 @@ export async function sweepPairing(limit = 50): Promise<{
         String(r.pairing_stage) === "sequential_pairing"
           ? await advancePairing(String(r.id))
           : await timeoutRequest(String(r.id));
+      if (!res.ok) throw new Error("Pairing transition failed");
       if (res.ok && res.expired) expired++;
       else if (res.ok && !res.noop) timedOut++;
     }
@@ -1401,16 +1434,25 @@ export async function sweepPairing(limit = 50): Promise<{
     const fallbackCutoff = new Date(
       Date.now() - SURFACE_FALLBACK_GRACE_MS,
     ).toISOString();
-    const { error: fbErr } = await sb
-      .from("service_requests")
-      .update({ pairing_deadline: deadlineIso() })
-      .in("pairing_stage", PAIRING_STAGES)
+    const { data: unarmed, error: unarmedError } = await sb.from("service_requests")
+      .select("id, updated_at, job_version").in("pairing_stage", PAIRING_STAGES)
       .or("reservation_status.neq.confirmed,reservation_status.is.null")
-      .is("pairing_deadline", null)
-      .lt("updated_at", fallbackCutoff);
-    if (fbErr) console.error("sweepPairing fallback-arm", fbErr.message);
+      .is("pairing_deadline", null).lt("updated_at", fallbackCutoff)
+      .order("updated_at", { ascending: true }).order("id", { ascending: true }).limit(limit);
+    if (unarmedError) throw new Error("Could not load unarmed pairing requests");
+    for (const unarmedRow of unarmed || []) {
+      const { error: fbErr } = await sb.from("service_requests").update({ pairing_deadline: deadlineIso() })
+        .eq("id", unarmedRow.id).eq("updated_at", unarmedRow.updated_at)
+        .eq("job_version", Number(unarmedRow.job_version ?? 0))
+        .in("pairing_stage", PAIRING_STAGES)
+        .or("reservation_status.neq.confirmed,reservation_status.is.null")
+        .is("pairing_deadline", null);
+      if (fbErr) throw new Error("Could not arm pairing fallback deadline");
+    }
+    return { checked, timedOut, expired, batchFull: rows?.length === limit,
+      unarmedBatchFull: unarmed?.length === limit };
   } catch (e) {
-    console.error("sweepPairing", e);
+    console.error("Pairing sweep failed", { error: e instanceof Error ? e.name : "UnknownError" });
+    throw e;
   }
-  return { checked, timedOut, expired };
 }

@@ -86,14 +86,24 @@ export async function PATCH(req: Request) {
     if (patch.status === "cancelled")
       update.cancelled_at = new Date().toISOString();
 
+    const { data: current, error: readError } = await supabase
+      .from("service_requests")
+      .select("job_version")
+      .eq("id", id)
+      .maybeSingle();
+    if (readError) return apiFail("Could not load current request", 500);
+    if (!current) return apiFail("Request not found", 404);
+
     const { data, error } = await supabase
       .from("service_requests")
       .update(update)
       .eq("id", id)
+      .eq("job_version", current.job_version)
       .select("*")
-      .single();
+      .maybeSingle();
 
     if (error) return apiFail(error.message, 500);
+    if (!data) return apiFail("Request changed; reload and retry", 409);
 
     if (patch.status) {
       await supabase.from("job_status_events").insert({

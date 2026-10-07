@@ -7,7 +7,7 @@ import {
 import type { JobRecord } from "@/lib/jobs/types";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { createServiceSupabase } from "@/lib/supabase/server";
-import { memory } from "./constants";
+import { JobPersistenceUnavailableError } from "./persistence-errors";
 import { rowToJob, nowIso } from "./mappers";
 import { persist } from "./cache";
 
@@ -296,40 +296,8 @@ export async function expireOverdueBookedJobs(limit = 40): Promise<{
     "in_progress",
     "completed",
   ] as const;
-
-  // Memory first
-  for (const j of memory.values()) {
-    if (
-      !isAgreedPastPayToBookDeadline(j) &&
-      !isAgreedPastPaymentDeadline(j) &&
-      !isBookedPastCompletionDeadline(j) &&
-      !isCompletedPastAutoReleaseDeadline(j)
-    ) {
-      continue;
-    }
-    checked += 1;
-    const prev = j.status;
-    const next = await maybeExpire(j);
-    if (
-      next.status === "cancelled" ||
-      next.status === "expired" ||
-      next.escrowStatus === "refunded"
-    ) {
-      cancelled += 1;
-      ids.push(next.id);
-    } else if (
-      (prev === "completed" || prev === "satisfied") &&
-      next.status === "released"
-    ) {
-      released += 1;
-      ids.push(next.id);
-    } else if (prev === "agreed" && next.status === "agreed") {
-      // payment expired in place
-      if (!ids.includes(next.id)) ids.push(next.id);
-    }
-  }
-
-  if (isSupabaseAdminConfigured()) {
+  if (!isSupabaseAdminConfigured()) throw new JobPersistenceUnavailableError();
+  {
     try {
       const sb = createServiceSupabase();
       const { data } = await sb
@@ -370,6 +338,7 @@ export async function expireOverdueBookedJobs(limit = 40): Promise<{
       }
     } catch (e) {
       console.error("expireOverdueBookedJobs", e);
+      throw new JobPersistenceUnavailableError("Could not sweep durable job deadlines");
     }
   }
 

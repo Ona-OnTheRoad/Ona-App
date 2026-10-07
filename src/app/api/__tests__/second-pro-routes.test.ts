@@ -96,17 +96,17 @@ function authOk(userId: string): Awaited<ReturnType<typeof requireUser>> {
   };
 }
 
-function fakeSb(updateError: { message: string } | null = null) {
+function fakeSb(updateError: { message: string } | null = null, matched = true) {
+  const result = { data: updateError || !matched ? null : { id: "tow-1" }, error: updateError };
+  const query = {
+    eq: vi.fn(() => query),
+    select: vi.fn(() => query),
+    maybeSingle: vi.fn(async () => result),
+    then: (resolve: (v: unknown) => void) => Promise.resolve(result).then(resolve),
+  };
   const sb = {
     from: vi.fn((_table: string) => ({
-      update: vi.fn((_patch: unknown) => ({
-        eq: vi.fn((_c: string) => ({
-          eq: vi.fn((_c2: string) => ({
-            then: async (resolve: (v: unknown) => void) =>
-              resolve({ data: null, error: updateError }),
-          })),
-        })),
-      })),
+      update: vi.fn((_patch: unknown) => query),
     })),
   };
   createServiceSupabaseMock.mockReturnValue(sb as never);
@@ -280,6 +280,18 @@ describe("POST /api/jobs/[id]/dispatch-scheduled", () => {
       params(),
     );
     expect(res.status).toBe(500);
+  });
+
+  it("returns 409 when the scheduled job changes before the CAS update", async () => {
+    requireUserMock.mockResolvedValue(authOk("motorist-1"));
+    getJobMock.mockResolvedValueOnce(SCHEDULED_JOB);
+    fakeSb(null, false);
+    const res = await postDispatchScheduled(
+      dispatchReq({ locationLabel: "x", lat: 1, lng: 2 }),
+      params(),
+    );
+    expect(res.status).toBe(409);
+    expect(advancePairingMock).not.toHaveBeenCalled();
   });
 });
 

@@ -163,7 +163,7 @@ export async function assignNearestExpressPro(opts: {
 
   const sb = createServiceSupabase();
   const ts = new Date().toISOString();
-  const { error } = await sb
+  const { data: assigned, error } = await sb
     .from("service_requests")
     .update({
       repair_pro_id: best.proId,
@@ -181,8 +181,13 @@ export async function assignNearestExpressPro(opts: {
       ],
     })
     .eq("id", opts.requestId)
-    .eq("source", "express");
+    .eq("source", "express")
+    .eq("flow_status", "express_pending_payment")
+    .eq("status", "draft")
+    .select("id")
+    .maybeSingle();
   if (error) throw new Error(`express assign: ${error.message}`);
+  if (!assigned) return null;
 
   await sb
     .from("ona_express_pool")

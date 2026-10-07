@@ -35,7 +35,7 @@ export async function POST(
     const sb = createServiceSupabase();
     const { data, error } = await sb
       .from("service_requests")
-      .select("id, pairing_stage, repair_pro_id, pairing_deadline")
+      .select("id, job_version, pairing_stage, repair_pro_id, pairing_deadline")
       .eq("id", id)
       .maybeSingle();
     if (error) return apiFail(error.message, 500);
@@ -43,6 +43,7 @@ export async function POST(
 
     const row = data as {
       id: string;
+      job_version: number;
       pairing_stage: string | null;
       repair_pro_id: string | null;
       pairing_deadline: string | null;
@@ -65,12 +66,17 @@ export async function POST(
 
     if (PAIRING_ACTION_STAGES.has(stage) && !Number.isFinite(existingMs)) {
       deadline = new Date(nowMs + PAIRING_WINDOW_MS).toISOString();
-      const { error: uErr } = await sb
+      const { data: updatedRow, error: uErr } = await sb
         .from("service_requests")
         .update({ pairing_deadline: deadline })
         .eq("id", id)
-        .eq("pairing_stage", stage);
+        .eq("job_version", row.job_version)
+        .eq("pairing_stage", stage)
+        .is("pairing_deadline", null)
+        .select("id")
+        .maybeSingle();
       if (uErr) return apiFail(uErr.message, 500);
+      if (!updatedRow) return apiFail("Request changed; reload and retry", 409);
       armed = true;
     }
 

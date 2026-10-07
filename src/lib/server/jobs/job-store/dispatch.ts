@@ -4,7 +4,7 @@
 
 import type { JobFlowStatus, JobRecord } from "@/lib/jobs/types";
 import type { createServiceSupabase } from "@/lib/supabase/server";
-import { memory, REROUTE_AFTER_MS, REROUTE_WINDOW_MS, DEFER_DURATION_MS } from "./constants";
+import { REROUTE_AFTER_MS, REROUTE_WINDOW_MS, DEFER_DURATION_MS } from "./constants";
 import { rowToJob, flowToLegacyStatus } from "./mappers";
 import { persist } from "./cache";
 import { getJob } from "./reads";
@@ -326,7 +326,7 @@ async function assignNextPro(
   const unarmedEnds = new Date(
     Date.now() + 365 * 24 * 60 * 60 * 1000,
   ).toISOString();
-  await sb
+  const { data: assigned, error: assignError } = await sb
     .from("service_requests")
     .update({
       status: "requested",
@@ -348,26 +348,11 @@ async function assignNextPro(
         },
       ],
     })
-    .eq("id", job.id);
-
-  // Keep the in-memory store in sync so listJobsForUser (which merges memory
-  // first) reflects the reassignment for both the previous and next pro.
-  memory.set(job.id, {
-    ...job,
-    status: "negotiating",
-    repairProId: nextPro.id,
-    repairProName: nextPro.name,
-    ...(nextPro.photo ? { repairProPhoto: nextPro.photo } : {}),
-    offers: [],
-    proBaseMajor: null,
-    agreedMajor: null,
-    negotiateEndsAt: unarmedEnds,
-    updatedAt: ts,
-    statusHistory: [
-      ...job.statusHistory,
-      { status: "negotiating", at: ts, by: `reroute:${nextPro.id}` },
-    ],
-  });
+    .eq("id", job.id)
+    .eq("job_version", job.jobVersion ?? 0)
+    .select("id")
+    .maybeSingle();
+  if (assignError || !assigned) return false;
 
   // Notify the new pro (DB row so app center + realtime stay in sync)
   try {
@@ -440,7 +425,7 @@ async function rerouteUnacceptedJob(
     ...job.statusHistory,
     { status: "searching" as JobFlowStatus, at: ts, by: "reroute_no_pro" },
   ];
-  const { error } = await sb
+  const { data: movedToSearch, error } = await sb
     .from("service_requests")
     .update({
       status: flowToLegacyStatus("searching"),
@@ -448,24 +433,20 @@ async function rerouteUnacceptedJob(
       updated_at: ts,
       status_history: searchingHistory,
     })
-    .eq("id", job.id);
-  if (error) {
+    .eq("id", job.id)
+    .eq("job_version", job.jobVersion ?? 0)
+    .select("id")
+    .maybeSingle();
+  if (error || !movedToSearch) {
     console.error(
       "rerouteUnacceptedJob: searching update failed",
       job.id,
-      error.message,
+      error?.message || "version conflict",
     );
+    return false;
   }
-  // Keep memory in sync so the previous pro's dashboard drops the job from
-  // Incoming (listJobsForUser merges memory first).
-  memory.set(job.id, {
-    ...job,
-    status: "searching",
-    updatedAt: ts,
-    statusHistory: searchingHistory,
-  });
-  return false;
-}
+    return false;
+  }
 
 /**
  * Sweep for negotiating jobs where the pro has not tapped "I can fix this"
@@ -515,7 +496,7 @@ export async function expireUnacceptedJobs(
       if (ageMs < REROUTE_AFTER_MS) continue;
 
       if (ageMs >= REROUTE_WINDOW_MS) {
-        await sb
+        const { data: expiredRow, error: expireError } = await sb
           .from("service_requests")
           .update({
             status: "expired",
@@ -530,7 +511,11 @@ export async function expireUnacceptedJobs(
               },
             ],
           })
-          .eq("id", job.id);
+          .eq("id", job.id)
+          .eq("job_version", job.jobVersion ?? 0)
+          .select("id")
+          .maybeSingle();
+        if (expireError || !expiredRow) continue;
         expired++;
       } else {
         const ok = await rerouteUnacceptedJob(job, sb);
@@ -566,7 +551,7 @@ export async function expireUnacceptedJobs(
 
       if (ageMs >= REROUTE_WINDOW_MS) {
         // 15+ minutes expire
-        await sb
+        const { data: expiredRow, error: expireError } = await sb
           .from("service_requests")
           .update({
             status: "expired",
@@ -581,7 +566,11 @@ export async function expireUnacceptedJobs(
               },
             ],
           })
-          .eq("id", job.id);
+          .eq("id", job.id)
+          .eq("job_version", job.jobVersion ?? 0)
+          .select("id")
+          .maybeSingle();
+        if (expireError || !expiredRow) continue;
         expired++;
       } else {
         // Reroute immediately (no 1-minute delay for actively cancelled jobs).
@@ -659,7 +648,7 @@ export async function rerouteDeclinedJob(
   });
 
   // 1) Persist the searching phase first (customer sees the search screen).
-  const { error: searchErr } = await sb
+  const { data: searchSaved, error: searchErr } = await sb
     .from("service_requests")
     .update({
       status: flowToLegacyStatus("searching"),
@@ -667,7 +656,10 @@ export async function rerouteDeclinedJob(
       updated_at: declineTs,
       status_history: history,
     })
-    .eq("id", job.id);
+    .eq("id", job.id)
+    .eq("job_version", job.jobVersion ?? 0)
+    .select("id")
+    .maybeSingle();
   if (searchErr) {
     console.error(
       "rerouteDeclinedJob: searching update failed",
@@ -676,15 +668,8 @@ export async function rerouteDeclinedJob(
     );
     return { error: "Could not enter searching phase" };
   }
+  if (!searchSaved) return { error: "Job changed; reload before rerouting" };
 
-  // Keep the in-memory store in sync so the declining pro's dashboard no
-  // longer lists this job under Incoming (listJobsForUser merges memory first).
-  memory.set(job.id, {
-    ...job,
-    status: "searching",
-    updatedAt: declineTs,
-    statusHistory: history,
-  });
 
   // 2) Hand off ASAP to the next available pro. When none is available the
   // job stays in "searching" the expireUnacceptedJobs sweep keeps retrying
@@ -721,9 +706,6 @@ export async function rerouteDeclinedJob(
     .eq("id", jobId)
     .single();
   const finalJob = rowToJob((updated || data) as Record<string, unknown>);
-  // Mirror the final state into memory (assignNextPro already does this on a
-  // successful handoff, but reflect the searching fallback here too).
-  memory.set(job.id, finalJob);
   return { ok: true, job: finalJob };
 }
 
@@ -793,13 +775,17 @@ export async function clearJobCooldowns(
     const by = h.by || "";
     return !by.startsWith("deferred:") && !by.startsWith("excluded:");
   });
-  await sb
+  const { data: cleared, error: clearError } = await sb
     .from("service_requests")
     .update({
       status_history: cleaned,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", jobId);
+    .eq("id", jobId)
+    .eq("job_version", job.jobVersion ?? 0)
+    .select("id")
+    .maybeSingle();
+  if (clearError || !cleared) return { error: "Job changed; reload and retry" };
 
   // SSPE: un-terminate the request queue so declined/timed-out pros are
   // eligible again for this request (admin explicitly cleared the cooldowns).
@@ -838,7 +824,7 @@ export async function adminExpireJob(
   const job = rowToJob(data as Record<string, unknown>);
 
   const ts = new Date().toISOString();
-  await sb
+  const { data: expired, error: expireError } = await sb
     .from("service_requests")
     .update({
       status: "expired",
@@ -849,7 +835,11 @@ export async function adminExpireJob(
         { status: "expired", at: ts, by: "admin_expired" },
       ],
     })
-    .eq("id", jobId);
+    .eq("id", jobId)
+    .eq("job_version", job.jobVersion ?? 0)
+    .select("id")
+    .maybeSingle();
+  if (expireError || !expired) return { error: "Job changed; reload and retry" };
 
   const { data: updated } = await sb
     .from("service_requests")
@@ -896,7 +886,7 @@ export async function adminReassignJob(
     by: `admin_reassign:${proId}`,
   });
 
-  await sb
+  const { data: reassigned, error: reassignError } = await sb
     .from("service_requests")
     .update({
       status: "negotiating",
@@ -906,7 +896,11 @@ export async function adminReassignJob(
       updated_at: ts,
       status_history: history,
     })
-    .eq("id", jobId);
+    .eq("id", jobId)
+    .eq("job_version", job.jobVersion ?? 0)
+    .select("id")
+    .maybeSingle();
+  if (reassignError || !reassigned) return { error: "Job changed; reload and retry" };
 
   try {
     const insertNotification = await loadInsertNotification();

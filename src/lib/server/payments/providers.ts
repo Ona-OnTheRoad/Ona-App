@@ -5,6 +5,7 @@
  * When keys are missing, runs in mock mode for local/dev.
  */
 
+import { exactProviderMinorUnits } from "./provider-amount";
 import type { AppCurrency } from "@/lib/pricing";
 
 export type PaymentProviderId = "paystack" | "flutterwave" | "mock";
@@ -87,6 +88,7 @@ export function isFlutterwaveSplitEnabled(): boolean {
 export function isProductionRuntime(): boolean {
   const env = process.env.VERCEL_ENV || process.env.NODE_ENV || "";
   return (
+    process.env.NODE_ENV === "production" ||
     env === "production" ||
     env === "preview" ||
     (process.env.VERCEL === "1" && env !== "development" && env !== "test")
@@ -560,15 +562,29 @@ async function initFlutterwave(
 export async function verifyCharge(
   reference: string,
   preferred?: string | null,
+  options?: { strictProvider?: boolean },
 ): Promise<VerifyChargeResult> {
-  const provider = resolveProvider(preferred);
+  const provider = options?.strictProvider ? preferred : resolveProvider(preferred);
+  if (options?.strictProvider) {
+    if (!["flutterwave", "paystack", "mock"].includes(provider || "")) {
+      throw new Error("Unsupported stored payment provider");
+    }
+    if (provider === "mock" && isProductionRuntime()) {
+      throw new Error("Mock payments are disabled on deployed runtimes");
+    }
+    if ((provider === "flutterwave" && !flutterwaveSecret()) ||
+        (provider === "paystack" && !paystackSecret())) {
+      throw new Error("Stored payment provider is not configured");
+    }
+  }
 
   if (provider === "paystack") {
     const secret = paystackSecret();
     const res = await fetch(
       `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
-      { headers: { Authorization: `Bearer ${secret}` } },
+      { headers: { Authorization: `Bearer ${secret}` }, cache: "no-store", signal: AbortSignal.timeout(15_000) },
     );
+    if (!res.ok) throw new Error("Payment provider verification unavailable");
     const json = (await res.json()) as {
       status?: boolean;
       data?: {
@@ -580,14 +596,14 @@ export async function verifyCharge(
         reference?: string;
       };
     };
-    const ok =
-      Boolean(json.status) &&
-      (json.data?.status === "success" || json.data?.status === "successful");
+    const ok = options?.strictProvider
+      ? json.status === true && json.data?.status === "success"
+      : Boolean(json.status) && (json.data?.status === "success" || json.data?.status === "successful");
     return {
       success: ok,
-      reference: json.data?.reference || reference,
+      reference: json.data?.reference || (options?.strictProvider ? "" : reference),
       amountMinor: json.data?.amount ?? 0,
-      currency: json.data?.currency || "NGN",
+      currency: json.data?.currency || (options?.strictProvider ? "" : "NGN"),
       channel: json.data?.channel,
       paidAt: json.data?.paid_at,
       raw: json,
@@ -598,8 +614,9 @@ export async function verifyCharge(
     const secret = flutterwaveSecret();
     const res = await fetch(
       `https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${encodeURIComponent(reference)}`,
-      { headers: { Authorization: `Bearer ${secret}` } },
+      { headers: { Authorization: `Bearer ${secret}` }, cache: "no-store", signal: AbortSignal.timeout(15_000) },
     );
+    if (!res.ok) throw new Error("Payment provider verification unavailable");
     const json = (await res.json()) as {
       status?: string;
       data?: {
@@ -613,13 +630,13 @@ export async function verifyCharge(
     };
     const ok =
       json.status === "success" &&
-      (json.data?.status === "successful" || json.data?.status === "success");
+      (json.data?.status === "successful" || (!options?.strictProvider && json.data?.status === "success"));
     const amountMajor = Number(json.data?.amount) || 0;
     return {
       success: ok,
-      reference: json.data?.tx_ref || reference,
-      amountMinor: Math.round(amountMajor * 100),
-      currency: json.data?.currency || "NGN",
+      reference: json.data?.tx_ref || (options?.strictProvider ? "" : reference),
+      amountMinor: options?.strictProvider ? exactProviderMinorUnits(json.data?.amount) : Math.round(amountMajor * 100),
+      currency: json.data?.currency || (options?.strictProvider ? "" : "NGN"),
       channel: json.data?.payment_type,
       paidAt: json.data?.created_at,
       raw: json,

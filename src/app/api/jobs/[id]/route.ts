@@ -1,4 +1,4 @@
-import { apiFail, apiOk } from "@/lib/server/api-json";
+import { apiFail, apiFailFromError, apiOk } from "@/lib/server/api-json";
 import { isJobParty, requireUser } from "@/lib/server/auth-utils";
 import { resolveJobCalloutQuote } from "@/lib/server/callout/resolve";
 import { getJob } from "@/lib/server/jobs/job-store";
@@ -41,7 +41,7 @@ export async function GET(
     const q = new URL(req.url).searchParams.get("access_token");
     return await loadJobForUser(req, id, q);
   } catch (e) {
-    return apiFail(e instanceof Error ? e.message : "Failed", 500);
+    return apiFailFromError(e, "Could not load job");
   }
 }
 
@@ -69,6 +69,6 @@ export async function POST(
     }
     return await loadJobForUser(req, id, bodyToken);
   } catch (e) {
-    return apiFail(e instanceof Error ? e.message : "Failed", 500);
+    return apiFailFromError(e, "Could not load job");
   }
 }

@@ -120,6 +120,8 @@ export type EvidenceScores = {
 
 export type JobRecord = {
   id: string;
+  /** Monotonic database concurrency token; local cache entries are never its authority. */
+  jobVersion?: number;
   /** Client idempotency sticker from the creating request (dedupe) */
   clientRequestId?: string | null;
   motoristId: string;

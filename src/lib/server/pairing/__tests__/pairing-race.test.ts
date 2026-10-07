@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/lib/server/jobs/deadlines/sweep-lease", () => ({
+  withSweepLease: async (_scope: string, operation: () => Promise<unknown>) => operation(),
+}));
+
 vi.mock("@/lib/supabase/server", () => ({
   createServiceSupabase: vi.fn(),
 }));
@@ -54,6 +58,7 @@ type Row = {
   flow_status: string | null;
   status: string | null;
   created_at: string | null;
+  updated_at: string | null;
 };
 
 const FULL_ROW: Row = {
@@ -80,6 +85,7 @@ const FULL_ROW: Row = {
   flow_status: "waiting_for_selected",
   status: "requested",
   created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
 };
 
 /** Record of (table, op, args) sent through the fake client. */
@@ -134,6 +140,8 @@ function makeQuery(table: string) {
       record("not", a);
       return q;
     },
+    is: (...a: unknown[]) => { record("is", a); return q; },
+    lt: (...a: unknown[]) => { record("lt", a); return q; },
     lte: (...a: unknown[]) => {
       record("lte", a);
       return q;
@@ -177,9 +185,30 @@ function makeQuery(table: string) {
   return q;
 }
 
+let beforeTimeoutRpc: ((row: Row) => void) | undefined;
+let timeoutRpcFails = false;
+
 function installClient(row: Row | null) {
   const sb = {
     from: vi.fn((table: string) => makeQuery(table)),
+    rpc: vi.fn(async (name: string, args: Record<string, unknown>) => {
+      sent.push({ table: name, op: "rpc", args: [args] });
+      if (row) beforeTimeoutRpc?.(row);
+      if (timeoutRpcFails) return { data: null, error: { message: "atomic settlement failed" } };
+      if (!row || row.pairing_stage !== args.p_stage || row.pairing_deadline !== args.p_deadline ||
+          row.repair_pro_id !== args.p_pro_id || row.updated_at !== args.p_updated_at) return { data: false, error: null };
+      const ts = new Date().toISOString();
+      const patch = { pairing_stage: "sequential_pairing", flow_status: "sequential_pairing",
+        repair_pro_id: null, pairing_deadline: new Date(Date.now() + Number(args.p_retry_delay_ms)).toISOString(),
+        reservation_status: "none", updated_at: ts,
+        status_history: [...(Array.isArray(row.status_history) ? row.status_history : []),
+          { status: "sequential_pairing", at: ts, by: "sweep:timeout" }] };
+      Object.assign(row, patch);
+      // Database effects are represented in the harness; real atomicity is checked by the PostgreSQL fixture.
+      sent.push({ table: "service_requests", op: "update", args: [patch] });
+      sent.push({ table: "request_pairing_queue", op: "update", args: [{ status: "timed_out", result_note: "pairing deadline exceeded" }] });
+      return { data: true, error: null };
+    }),
   };
   createServiceSupabaseMock.mockReturnValue(sb as never);
   if (row) {
@@ -188,6 +217,8 @@ function installClient(row: Row | null) {
     // `maybeSingle` queries (loadPairingRow) want a single row; everything
     // else (the sweep select) wants an array.
     responders["service_requests"] = (calls) => {
+      const isNull = calls.find((c) => c.op === "is" && c.args[1] === null);
+      if (isNull && row[isNull.args[0] as keyof Row] != null) return { data: [], error: null };
       const updateOp = calls.find((c) => c.op === "update");
       if (updateOp) Object.assign(row, updateOp.args[0]);
       if (calls.some((c) => c.op === "maybeSingle")) {
@@ -205,6 +236,7 @@ function callsFor(table: string, op?: string) {
 
 beforeEach(() => {
   sent.length = 0;
+  beforeTimeoutRpc = undefined; timeoutRpcFails = false;
   for (const k of Object.keys(responders)) delete responders[k];
   createServiceSupabaseMock.mockClear();
 });
@@ -516,6 +548,30 @@ describe("timeoutRequest sweep enforcement", () => {
     expect(advancePatch.repair_pro_id).toBe("pro-2");
   });
 
+  it.each(["rearm", "confirm"])("never settles a %s after the final read", async (race) => {
+    const row: Row = { ...FULL_ROW, pairing_stage: "reserved", pairing_deadline: new Date(Date.now() - 1000).toISOString() };
+    installClient(row);
+    beforeTimeoutRpc = (fresh) => {
+      fresh.pairing_deadline = race === "rearm" ? new Date(Date.now() + 10000).toISOString() : null;
+      fresh.pairing_stage = race === "rearm" ? "reserved" : null;
+      fresh.flow_status = race === "rearm" ? "reserved" : "negotiating";
+      fresh.updated_at = "new";
+    };
+    expect(await timeoutRequest("job-1")).toMatchObject({ ok: true, noop: true });
+    expect(callsFor("request_pairing_queue", "update")).toHaveLength(0);
+    expect(callsFor("request_reservations", "update")).toHaveLength(0);
+    expect(callsFor("service_requests", "update")).toHaveLength(0);
+  });
+  it("leaves failed atomic settlement retryable without partial Node writes", async () => {
+    const row: Row = { ...FULL_ROW, pairing_deadline: new Date(Date.now() - 1000).toISOString() };
+    installClient(row); timeoutRpcFails = true;
+    expect(await timeoutRequest("job-1")).toMatchObject({ ok: false, status: 500 });
+    expect(row.pairing_stage).toBe("waiting_for_selected");
+    expect(callsFor("request_pairing_queue", "update")).toHaveLength(0);
+    timeoutRpcFails = false;
+    expect(await timeoutRequest("job-1")).toMatchObject({ ok: true });
+  });
+
   it("is a noop when the deadline was refreshed mid-sweep (pro just opened)", async () => {
     // The sweep selected the row while its deadline had lapsed, but the pro
     // opened (refreshing pairing_deadline) before timeoutRequest ran. The
@@ -706,6 +762,57 @@ describe("sweepPairing recovery loop", () => {
       .filter((p) => p.repair_pro_id && p.pairing_stage === "waiting_for_pro")
       .at(0);
     expect(advancePatch?.repair_pro_id).toBe("pro-2");
+  });
+});
+
+describe("pairing sweep failure reporting", () => {
+  it("does not turn a failed overdue scan into a successful empty sweep", async () => {
+    installClient({ ...FULL_ROW });
+    responders["service_requests"] = () => ({ data: null, error: { message: "db unavailable" } });
+    await expect(sweepPairing()).rejects.toThrow("load overdue");
+  });
+  it.each(["request_pairing_queue", "repair_pro_profiles"])("never expires a search on a failed %s read", async (table) => {
+    installClient({ ...FULL_ROW, pairing_stage: "sequential_pairing" });
+    responders[table] = () => ({ data: null, error: { message: "unavailable" } });
+    await expect(advancePairing("job-1")).rejects.toThrow("load pairing");
+    expect(callsFor("service_requests", "update")).toHaveLength(0);
+  });
+  it("keeps a search retryable when its radius update fails", async () => {
+    const row: Row = { ...FULL_ROW, pairing_stage: "sequential_pairing", pairing_radius_km: 1,
+      radius_km: 5, queue_position: 2, pairing_deadline: new Date(Date.now() - 1000).toISOString() };
+    installClient(row);
+    responders["request_pairing_queue"] = () => ({ data: [], error: null });
+    responders["repair_pro_profiles"] = () => ({ data: [], error: null });
+    responders["service_requests"] = (calls) => calls.some((call) => call.op === "update")
+      ? { data: null, error: { message: "radius write failed" } }
+      : { data: calls.some((call) => call.op === "maybeSingle") ? row : [row], error: null };
+    expect(await advancePairing("job-1")).toMatchObject({ ok: false, status: 500 });
+    await expect(sweepPairing()).rejects.toThrow("transition failed");
+    expect(row.pairing_stage).toBe("sequential_pairing");
+    expect(callsFor("service_requests", "update").some((call) =>
+      (call.args[0] as Record<string, unknown>).flow_status === "expired")).toBe(false);
+  });
+  it("reports fallback deadline arming failures", async () => {
+    installClient({ ...FULL_ROW });
+    responders["service_requests"] = (calls) => calls.some((call) => call.op === "update")
+      ? { data: null, error: { message: "write failed" } }
+      : { data: calls.some((call) => call.op === "is") ? [{ id: "unarmed", updated_at: "old" }] : [], error: null };
+    await expect(sweepPairing()).rejects.toThrow("arm pairing");
+  });
+  it("bounds fallback arming and checks the unchanged snapshot", async () => {
+    installClient({ ...FULL_ROW });
+    responders["service_requests"] = (calls) => ({ data: calls.some((call) => call.op === "is") &&
+      !calls.some((call) => call.op === "update") ? [{ id: "unarmed", updated_at: "old" }] : [], error: null });
+    expect(await sweepPairing(1)).toMatchObject({ checked: 0, unarmedBatchFull: true });
+    expect(callsFor("service_requests", "limit").map((call) => call.args[0])).toEqual([1, 1]);
+    expect(callsFor("service_requests", "eq")).toContainEqual({ table: "service_requests", op: "eq", args: ["updated_at", "old"] });
+    expect(callsFor("service_requests", "is").filter((call) => call.args[0] === "pairing_deadline")).toHaveLength(2);
+  });
+  it("does not timeout an offer before any deadline was armed", async () => {
+    installClient({ ...FULL_ROW, pairing_deadline: null });
+    expect(await timeoutRequest("job-1")).toMatchObject({ ok: true, noop: true });
+    expect(callsFor("request_pairing_queue", "update")).toHaveLength(0);
+    expect(callsFor("service_requests", "update")).toHaveLength(0);
   });
 });
 

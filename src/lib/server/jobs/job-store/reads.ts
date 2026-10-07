@@ -2,55 +2,31 @@ import type { JobRecord } from "@/lib/jobs/types";
 import type { JobMedia } from "@/lib/jobs/types";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { createServiceSupabase } from "@/lib/supabase/server";
-import { memory, READ_CACHE_MS, LEAN_JOB_COLUMNS, PRO_ACTIONABLE_LIST_STATUSES } from "./constants";
-import { rowToJob, flowToLegacyStatus, nowIso } from "./mappers";
-import { cacheJob, persist } from "./cache";
+import { LEAN_JOB_COLUMNS, PRO_ACTIONABLE_LIST_STATUSES } from "./constants";
+import { rowToJob } from "./mappers";
 import { hydrateJobContacts, hydrateJobCallout } from "./hydrate";
+import { JobPersistenceUnavailableError } from "./persistence-errors";
 
 async function getJobRaw(id: string): Promise<JobRecord | null> {
-  const fast = memory.get(id);
-  if (fast) {
-    const at = fast.updatedAt ? new Date(fast.updatedAt).getTime() : Number.NaN;
-    if (Number.isFinite(at) && Date.now() - at < READ_CACHE_MS) {
-      if (fast.agreedMajor != null && !fast.calloutQuote && !fast.callout_quote) {
-        const hydrated = await hydrateJobCallout(fast);
-        if (hydrated !== fast) {
-          memory.set(id, hydrated);
-          return hydrated;
-        }
-      }
-      return fast;
+  if (!isSupabaseAdminConfigured()) throw new JobPersistenceUnavailableError();
+  try {
+    const sb = createServiceSupabase();
+    const { data, error } = await sb
+      .from("service_requests")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) {
+      return null;
     }
-    memory.delete(id);
+    let job = rowToJob(data as Record<string, unknown>);
+    job = await hydrateJobContacts(job);
+    job = await hydrateJobCallout(job);
+    return job;
+  } catch {
+    throw new JobPersistenceUnavailableError("Could not load the durable job record");
   }
-  if (isSupabaseAdminConfigured()) {
-    try {
-      const sb = createServiceSupabase();
-      const { data } = await sb
-        .from("service_requests")
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
-      if (data) {
-        let job = rowToJob(data as Record<string, unknown>);
-        const memHit = memory.get(id);
-        if (!job.motoristVehicle?.trim() && memHit?.motoristVehicle) {
-          job = { ...job, motoristVehicle: memHit.motoristVehicle };
-        }
-        job = await hydrateJobContacts(job);
-        job = await hydrateJobCallout(job);
-        memory.set(id, job);
-        return job;
-      }
-    } catch {
-      /* memory */
-    }
-  }
-  const mem = memory.get(id);
-  if (!mem) return null;
-  let hydrated = await hydrateJobContacts(mem);
-  hydrated = await hydrateJobCallout(hydrated);
-  return hydrated;
 }
 
 export async function getJob(id: string): Promise<JobRecord | null> {
@@ -110,35 +86,31 @@ export async function listJobsForUser(
   role: "motorist" | "repair_pro",
   opts?: { lean?: boolean },
 ): Promise<JobRecord[]> {
+  if (!isSupabaseAdminConfigured()) throw new JobPersistenceUnavailableError();
   if (opts?.lean) {
     return listJobsForUserLean(userId, role);
   }
   const out: JobRecord[] = [];
-  for (const j of memory.values()) {
-    if (role === "motorist" && j.motoristId === userId) out.push(j);
-    if (role === "repair_pro" && j.repairProId === userId) {
-      if (isDeferredByPro(j, userId)) continue;
-      out.push(j);
-    }
-  }
   if (isSupabaseAdminConfigured()) {
     try {
       const sb = createServiceSupabase();
       const col = role === "motorist" ? "motorist_id" : "repair_pro_id";
-      const { data } = await sb
+      const { data, error } = await sb
         .from("service_requests")
         .select(LEAN_JOB_COLUMNS)
         .eq(col, userId)
         .neq("status", "draft")
         .order("created_at", { ascending: false })
         .limit(40);
+      if (error) throw error;
       let rows = data || [];
       if (role === "repair_pro") {
-        const { data: openData } = await sb
+        const { data: openData, error: openError } = await sb
           .from("service_requests")
           .select(LEAN_JOB_COLUMNS)
           .eq("repair_pro_id", userId)
           .in("status", PRO_ACTIONABLE_LIST_STATUSES);
+        if (openError) throw openError;
         const openArr = openData || [];
         if (openArr.length > 0) {
           const idOf = (r: { id?: unknown }) => String(r.id);
@@ -262,7 +234,7 @@ export async function listJobsForUser(
         if (!out.find((x) => x.id === j.id)) out.push(j);
       }
     } catch {
-      /* */
+      throw new JobPersistenceUnavailableError("Could not load the durable job list");
     }
   }
   const KEEP_MEDIA_STATUSES = new Set<string>([
@@ -298,32 +270,28 @@ async function listJobsForUserLean(
   userId: string,
   role: "motorist" | "repair_pro",
 ): Promise<JobRecord[]> {
+  if (!isSupabaseAdminConfigured()) throw new JobPersistenceUnavailableError();
   const out: JobRecord[] = [];
-  for (const j of memory.values()) {
-    if (role === "motorist" && j.motoristId === userId) out.push(j);
-    if (role === "repair_pro" && j.repairProId === userId) {
-      if (isDeferredByPro(j, userId)) continue;
-      out.push(j);
-    }
-  }
   if (isSupabaseAdminConfigured()) {
     try {
       const sb = createServiceSupabase();
       const col = role === "motorist" ? "motorist_id" : "repair_pro_id";
-      const { data } = await sb
+      const { data, error } = await sb
         .from("service_requests")
         .select(LEAN_JOB_COLUMNS)
         .eq(col, userId)
         .neq("status", "draft")
         .order("created_at", { ascending: false })
         .limit(40);
+      if (error) throw error;
       let rows = data || [];
       if (role === "repair_pro") {
-        const { data: openData } = await sb
+        const { data: openData, error: openError } = await sb
           .from("service_requests")
           .select(LEAN_JOB_COLUMNS)
           .eq("repair_pro_id", userId)
           .in("flow_status", PRO_ACTIONABLE_LIST_STATUSES);
+        if (openError) throw openError;
         const openArr = openData || [];
         if (openArr.length > 0) {
           const idOf = (r: { id?: unknown }) => String(r.id);
@@ -344,7 +312,7 @@ async function listJobsForUserLean(
         if (!out.find((x) => x.id === j.id)) out.push(j);
       }
     } catch {
-      /* fall back to memory */
+      throw new JobPersistenceUnavailableError("Could not load the durable job list");
     }
   }
   const leanWithCallout = await attachSettledCalloutQuotes(out);
@@ -352,25 +320,24 @@ async function listJobsForUserLean(
 }
 
 export async function listDisputedJobs(): Promise<JobRecord[]> {
+  if (!isSupabaseAdminConfigured()) throw new JobPersistenceUnavailableError();
   const all: JobRecord[] = [];
-  for (const j of memory.values()) {
-    if (j.status === "disputed" || j.status === "under_appeal") all.push(j);
-  }
   if (isSupabaseAdminConfigured()) {
     try {
       const sb = createServiceSupabase();
-      const { data } = await sb
+      const { data, error } = await sb
         .from("service_requests")
         .select("*")
         .in("flow_status", ["disputed", "under_appeal"])
         .order("updated_at", { ascending: false })
         .limit(100);
+      if (error) throw error;
       for (const row of data || []) {
         const j = rowToJob(row as Record<string, unknown>);
         if (!all.find((x) => x.id === j.id)) all.push(j);
       }
     } catch {
-      /* */
+      throw new JobPersistenceUnavailableError("Could not load disputed jobs");
     }
   }
   return all;

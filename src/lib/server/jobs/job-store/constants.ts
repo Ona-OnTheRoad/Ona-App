@@ -1,9 +1,3 @@
-import type { JobRecord } from "@/lib/jobs/types";
-
-export const memory = new Map<string, JobRecord>();
-
-export const READ_CACHE_MS = 3_000;
-
 export const REROUTE_AFTER_MS = 60_000;
 export const REROUTE_WINDOW_MS = 15 * 60_000;
 export const DEFER_DURATION_MS = 5 * 60_000;
@@ -44,6 +38,7 @@ export const PRO_ACTIONABLE_LIST_STATUSES = [
 
 export const LEAN_JOB_COLUMNS = [
   "id",
+  "job_version",
   "client_request_id",
   "motorist_id",
   "motorist_name",

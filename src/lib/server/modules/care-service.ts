@@ -164,6 +164,28 @@ export async function careLiveBoard() {
   };
 }
 
+async function updateCareJobStatus(
+  supabase: ReturnType<typeof createServiceSupabase>,
+  jobId: string,
+  patch: Record<string, unknown>,
+): Promise<void> {
+  const { data: current, error: readError } = await supabase
+    .from("service_requests")
+    .select("job_version")
+    .eq("id", jobId)
+    .maybeSingle();
+  if (readError || !current) throw new Error("Could not load current job state");
+  const { data, error } = await supabase
+    .from("service_requests")
+    .update(patch)
+    .eq("id", jobId)
+    .eq("job_version", current.job_version)
+    .select("id")
+    .maybeSingle();
+  if (error) throw new Error("Could not save job status");
+  if (!data) throw new Error("Job changed; reload before applying this action");
+}
+
 export async function careJobDetail(jobId: string) {
   const job = await getJob(jobId);
   if (!job) return null;
@@ -326,15 +348,12 @@ export async function executeCareAction(
           releasedAt: new Date().toISOString(),
         });
       }
-      await supabase
-        .from("service_requests")
-        .update({
+      await updateCareJobStatus(supabase, action.jobId, {
           flow_status: "released",
           escrow_status: "released",
           released_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        })
-        .eq("id", action.jobId);
+        });
       await writeAuditLog({
         adminId: ctx.adminId,
         action: "care_release_escrow",
@@ -358,14 +377,11 @@ export async function executeCareAction(
           refundedAt: new Date().toISOString(),
         });
       }
-      await supabase
-        .from("service_requests")
-        .update({
+      await updateCareJobStatus(supabase, action.jobId, {
           flow_status: "refunded",
           escrow_status: "refunded",
           updated_at: new Date().toISOString(),
-        })
-        .eq("id", action.jobId);
+        });
       await writeAuditLog({
         adminId: ctx.adminId,
         action: "care_refund_escrow",
