@@ -41,7 +41,7 @@ Use the paired [JSON checklist](issue-4-job-persistence.json). In particular, ve
 - Issue 6 owns broad structured logging and operational visibility; Issue 4 still needs actionable failure results and must not swallow persistence failures.
 - Issue 7 owns distributed rate limiting and broader server-only guard work.
 - Historical records need a safe initial version value. Any writer that does not advance the version can weaken the guarantee, so the audit must include SQL and direct updates.
-- Hosted migration and deployment checks remain pending until performed in the intended environment.
+- Hosted migration `20261007_079_job_version_cas.sql` was applied to the configured Supabase project on 2026-10-07. Verification found the non-null `job_version` column, enabled version-bump trigger, migration ledger entry, and zero null versions. Isolated-database reapplication and runtime checks remain pending.
 
 ## Reviewer procedure
 

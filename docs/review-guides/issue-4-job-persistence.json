@@ -73,9 +73,9 @@
       "id": "migration",
       "stage": "release",
       "expectation": "The version migration applies safely to existing rows and can be deployed without silently leaving writers outside the concurrency contract.",
-      "verification": "Apply migration to an isolated database, verify existing-row initialization and all relevant SQL functions, then record hosted rollout separately.",
+      "verification": "Verify isolated-database reapplication and existing-row initialization, then record hosted rollout evidence separately.",
       "status": "pending",
-      "evidence": ["Migration is idempotent and transaction-wrapped; hosted and isolated database application have not been verified"]
+      "evidence": ["Applied to configured Supabase project ecmflahofeudjyoepcfk on 2026-10-07; verified job_version is NOT NULL, trigger is enabled, migration is recorded, and null version count is zero", "Isolated-database reapplication and runtime checks remain pending"]
     },
     {
       "id": "checks",
@@ -83,12 +83,12 @@
       "expectation": "Relevant checks and failure/concurrency scenarios pass for the exact reviewed commit.",
       "verification": "Record commands, outcomes, commit SHA, and evidence for stale writes, failed persistence, and database outage behavior.",
       "status": "pending",
-      "evidence": ["npm run typecheck passed", "npm run lint passed with 0 errors and 159 warnings", "npm test -- --reporter=dot passed: 101 files, 1,209 tests; focused test covers scheduled-dispatch CAS loss", "Hosted migration and runtime evidence are pending"]
+      "evidence": ["npm run typecheck passed", "npm run lint passed with 0 errors and 159 warnings", "npm test -- --reporter=dot passed: 101 files, 1,209 tests; focused test covers scheduled-dispatch CAS loss", "Hosted migration applied and schema verified; runtime evidence remains pending"]
     }
   ],
   "implementationBranch": "feat/job-persistence-cas",
   "implementationNotes": "Implementation notes and evidence are in docs/review-guides/issue-4-job-persistence.md.",
-  "implementationState": "Implementation and automated checks complete in working tree; formal code review and migration verification pending",
+  "implementationState": "Merged to dev and hosted migration applied; formal code review, isolated migration verification, and runtime checks pending",
   "independentReview": {
     "status": "Not started",
     "findings": [],
