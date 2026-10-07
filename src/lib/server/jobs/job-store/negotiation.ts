@@ -43,7 +43,7 @@ export async function placeOffer(input: {
   amountMajor: number;
   actorId: string;
   clientOfferId?: string | null;
-}): Promise<{ job: JobRecord } | { error: string }> {
+}): Promise<{ job: JobRecord } | { error: string; status?: number }> {
   // Up to 2 attempts under CAS conflict
   for (let attempt = 0; attempt < 2; attempt++) {
     const job = await getJob(input.jobId);
@@ -107,6 +107,7 @@ export async function placeOffer(input: {
       if (attempt === 0) continue;
       return {
         error: "Price updated by the other party. Refresh and try again.",
+        status: 409,
       };
     }
     await notifyOfferPlaced(saved, offer);
@@ -119,7 +120,7 @@ export async function acceptOffer(input: {
   jobId: string;
   by: "motorist" | "repair_pro";
   actorId: string;
-}): Promise<{ job: JobRecord } | { error: string }> {
+}): Promise<{ job: JobRecord } | { error: string; status?: number }> {
   for (let attempt = 0; attempt < 2; attempt++) {
     const job = await getJob(input.jobId);
     if (!job) return { error: "Job not found" };
@@ -174,6 +175,7 @@ export async function acceptOffer(input: {
       if (attempt === 0) continue;
       return {
         error: "Job changed while accepting. Refresh and try again.",
+        status: 409,
       };
     }
     return { job: saved };

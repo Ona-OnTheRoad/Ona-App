@@ -161,7 +161,7 @@ export async function POST(req: Request) {
       // Agreed (unpaid) jobs are cancelled so customer can re-request with clear status.
       const { data: unbooked } = await sb
         .from("service_requests")
-        .select("id, flow_status, status_history")
+        .select("id, job_version, flow_status, status_history")
         .eq("repair_pro_id", userId)
         .in("flow_status", ["negotiating", "agreed"]);
       if (unbooked && unbooked.length > 0) {
@@ -197,7 +197,9 @@ export async function POST(req: Request) {
                   },
                 ],
               })
-              .eq("id", row.id);
+              .eq("id", row.id)
+              .eq("job_version", row.job_version)
+              .eq("flow_status", "agreed");
           }
         }
       }

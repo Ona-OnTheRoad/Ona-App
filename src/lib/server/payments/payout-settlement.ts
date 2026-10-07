@@ -1332,7 +1332,7 @@ export async function finalizeJobReleasedAfterPayout(
     const { data: job } = await sb
       .from("service_requests")
       .select(
-        "id, motorist_id, repair_pro_id, status, status_history, flow_status, released_at, escrow_status",
+        "id, job_version, motorist_id, repair_pro_id, status, status_history, flow_status, released_at, escrow_status",
       )
       .eq("id", jobId)
       .maybeSingle();
@@ -1350,7 +1350,7 @@ export async function finalizeJobReleasedAfterPayout(
       history.push({ status: "released", at: ts, by: "system" });
     }
 
-    await sb
+    const { data: saved, error: saveError } = await sb
       .from("service_requests")
       .update({
         status: "released",
@@ -1364,7 +1364,12 @@ export async function finalizeJobReleasedAfterPayout(
         status_history: history,
         updated_at: ts,
       })
-      .eq("id", jobId);
+      .eq("id", jobId)
+      .eq("job_version", job.job_version)
+      .select("id")
+      .maybeSingle();
+    if (saveError) throw new Error("Could not persist released job state");
+    if (!saved) return;
 
     // Notifications are deduped by group_key in insertNotification
     const { insertNotification } = await import("@/lib/server/notifications");

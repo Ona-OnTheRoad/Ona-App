@@ -2,10 +2,9 @@ import { MAX_NEGOTIATION_OFFERS } from "@/lib/jobs/constants";
 import type { CreateJobInput, JobRecord } from "@/lib/jobs/types";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { createServiceSupabase } from "@/lib/supabase/server";
-import { memory } from "./constants";
 import { nowIso, uid, rowToJob, jobToDbPatch, clampCustomerRadius } from "./mappers";
-import { cacheJob } from "./cache";
 import { getJobRaw } from "./reads";
+import { JobPersistenceUnavailableError } from "./persistence-errors";
 
 async function startOpenSearchIfNeeded(
   job: JobRecord,
@@ -88,6 +87,7 @@ async function createScheduledLinkedRequestIfNeeded(
     const ends = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
     const second: JobRecord = {
       id,
+      jobVersion: 0,
       clientRequestId: null,
       motoristId: job.motoristId,
       motoristName: job.motoristName,
@@ -151,7 +151,6 @@ async function createScheduledLinkedRequestIfNeeded(
       const mapped = rowToJob(data as Record<string, unknown>);
       mapped.photos = second.photos;
       mapped.voiceNote = second.voiceNote;
-      memory.set(mapped.id, mapped);
     }
     if (error) {
       console.error("[second-pro] create linked request failed", error.message);
@@ -162,6 +161,7 @@ async function createScheduledLinkedRequestIfNeeded(
 }
 
 export async function createJob(input: CreateJobInput): Promise<JobRecord> {
+  if (!isSupabaseAdminConfigured()) throw new JobPersistenceUnavailableError();
   const ts = nowIso();
   // Negotiation clock does NOT start until Repair Pro taps "I can fix this".
   // Far-future sentinel so expire logic / UI know the timer is unarmed.
@@ -186,6 +186,7 @@ export async function createJob(input: CreateJobInput): Promise<JobRecord> {
 
   const job: JobRecord = {
     id,
+    jobVersion: 0,
     clientRequestId: input.clientRequestId || null,
     motoristId: input.motoristId,
     motoristName: input.motoristName,
@@ -251,7 +252,6 @@ export async function createJob(input: CreateJobInput): Promise<JobRecord> {
           .maybeSingle();
         if (existing) {
           const mapped = rowToJob(existing as Record<string, unknown>);
-          memory.set(mapped.id, mapped);
           return attachCalloutQuietly(mapped, input);
         }
       }
@@ -298,7 +298,6 @@ export async function createJob(input: CreateJobInput): Promise<JobRecord> {
         mapped.motoristPhoto = mapped.motoristPhoto || motoristPhoto;
         mapped.motoristVehicle =
           mapped.motoristVehicle || job.motoristVehicle || null;
-        memory.set(mapped.id, mapped);
         // Instantly notify assigned repair pro
         if (input.repairProId) {
           try {
@@ -339,93 +338,14 @@ export async function createJob(input: CreateJobInput): Promise<JobRecord> {
             .maybeSingle();
           if (raced) {
             const mapped = rowToJob(raced as Record<string, unknown>);
-            memory.set(mapped.id, mapped);
             return attachCalloutQuietly(mapped, input);
           }
         }
-        const { motorist_vehicle: _mv, ...rest } = {
-          id: job.id,
-          client_request_id: input.clientRequestId || null,
-          motorist_id: input.motoristId,
-          repair_pro_id: input.repairProId || null,
-          service_type: input.serviceType,
-          status: "requested",
-          description: job.problem,
-          pickup_lat: input.motoristLocation.lat,
-          pickup_lng: input.motoristLocation.lng,
-          pickup_address: input.locationLabel,
-          radius_km: clampCustomerRadius(input.radiusKm),
-          ...jobToDbPatch(job),
-          flow_status: job.pairingStage,
-          pairing_stage: job.pairingStage,
-          pairing_deadline: job.pairingDeadline,
-          queue_position: job.queuePosition,
-          chosen_pro_id: input.repairProId || null,
-          created_at: ts,
-        } as Record<string, unknown>;
-        void _mv;
-        const retry = await sb
-          .from("service_requests")
-          .insert(rest)
-          .select("*")
-          .single();
-        if (!retry.error && retry.data) {
-          if (input.repairProId)
-            await sb.from("request_pairing_queue").insert({
-              request_id: job.id,
-              pro_id: input.repairProId,
-              position: 1,
-              source: "chosen",
-              status: "offered",
-              offered_at: ts,
-            });
-          const mapped = rowToJob(retry.data as Record<string, unknown>);
-          mapped.photos = job.photos;
-          mapped.voiceNote = job.voiceNote;
-          mapped.motoristPhoto = mapped.motoristPhoto || motoristPhoto;
-          mapped.motoristVehicle = job.motoristVehicle || null;
-          // Best-effort store vehicle in problem_text prefix is avoided;
-          // hydrateMotoristVehicle will fill from profile if needed
-          memory.set(mapped.id, mapped);
-          // Try update with vehicle only (if column exists)
-          if (job.motoristVehicle) {
-            try {
-              await sb
-                .from("service_requests")
-                .update({ motorist_vehicle: job.motoristVehicle })
-                .eq("id", mapped.id);
-            } catch {
-              /* column may not exist yet */
-            }
-          }
-          if (input.repairProId) {
-            try {
-              const { insertNotification } =
-                await import("@/lib/server/notifications");
-              await insertNotification({
-                userId: input.repairProId,
-                category: "requests",
-                priority: "high",
-                title: "Service Request",
-                body: `New request from ${job.motoristName} · ${job.problem.slice(0, 80)}`,
-                href: `/jobs/${job.id}`,
-                actionType: "open_job",
-                actionPayload: { jobId: job.id },
-                jobId: job.id,
-                groupKey: `service-request-${job.id}`,
-              });
-            } catch {
-              /* optional */
-            }
-          }
-          return attachCalloutQuietly(mapped, input);
-        }
+        throw new JobPersistenceUnavailableError("Could not durably create the complete job");
       }
     } catch {
-      /* memory */
+      throw new JobPersistenceUnavailableError("Could not durably create the job");
     }
   }
-
-  cacheJob(job);
-  return attachCalloutQuietly(job, input);
+  throw new JobPersistenceUnavailableError("Could not durably create the job");
 }

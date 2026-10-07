@@ -3,8 +3,6 @@ import type { JobRecord } from "@/lib/jobs/types";
 import { assertTransition } from "@/lib/jobs/state-machine";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { createServiceSupabase } from "@/lib/supabase/server";
-import { memory } from "@/lib/server/jobs/job-store/constants";
-import { cacheJob } from "@/lib/server/jobs/job-store/cache";
 import { getJobRaw } from "@/lib/server/jobs/job-store/reads";
 import { flowToLegacyStatus, rowToJob } from "@/lib/server/jobs/job-store/mappers";
 import {
@@ -89,11 +87,7 @@ export async function bookConfirmedJob(job: JobRecord, payment: EscrowPayment) {
     proPayoutMinor: payment.proPayoutMinor, escrowStatus: "held", paidAt: ts, updatedAt: ts,
     statusHistory: [...job.statusHistory, { status: "paid_booked", at: ts, by: "system" }],
   };
-  if (!isSupabaseAdminConfigured()) {
-    const fresh = memory.get(job.id);
-    if (!fresh || fresh.status !== "agreed" || fresh.updatedAt !== job.updatedAt) return fresh || null;
-    return cacheJob(updated);
-  }
+  if (!isSupabaseAdminConfigured()) throw new Error("Job persistence is unavailable");
   const { data, error } = await createServiceSupabase().from("service_requests")
     .update({
       flow_status: updated.status, status: flowToLegacyStatus(updated.status),
@@ -103,11 +97,12 @@ export async function bookConfirmedJob(job: JobRecord, payment: EscrowPayment) {
       escrow_status: "held", paid_at: ts, updated_at: ts,
       status_history: updated.statusHistory, negotiation_status: "paid",
     }).eq("id", job.id).eq("flow_status", "agreed")
+    .eq("job_version", job.jobVersion ?? 0)
     .eq("payment_reference", payment.providerRef!).eq("updated_at", job.updatedAt)
     .select("*").maybeSingle();
   if (error) throw new Error("Could not persist booked job");
   if (!data) return loadConfirmationJob(job.id);
-  const saved = cacheJob(rowToJob(data as Record<string, unknown>));
+  const saved = rowToJob(data as Record<string, unknown>);
   // Only the conditional-write winner emits the event. Booking has no notification side effects.
   try {
     const { error: eventError } = await createServiceSupabase().from("job_events").insert({
@@ -122,16 +117,13 @@ export async function bookConfirmedJob(job: JobRecord, payment: EscrowPayment) {
 
 /** Bind checkout only while the exact agreed job snapshot still owns the session. */
 export async function bindJobCheckout(previous: JobRecord, checkout: JobRecord): Promise<JobRecord | null> {
-  if (!isSupabaseAdminConfigured()) {
-    const fresh = memory.get(previous.id);
-    if (!fresh || fresh.status !== "agreed" || fresh.updatedAt !== previous.updatedAt) return null;
-    return cacheJob(checkout);
-  }
+  if (!isSupabaseAdminConfigured()) throw new Error("Job persistence is unavailable");
   const { data, error } = await createServiceSupabase().from("service_requests").update({
     payment_reference: checkout.paymentReference, payment_id: null,
     pricing_currency: checkout.currency, status_history: checkout.statusHistory, updated_at: checkout.updatedAt,
-  }).eq("id", previous.id).eq("flow_status", "agreed").eq("updated_at", previous.updatedAt)
+  }).eq("id", previous.id).eq("job_version", previous.jobVersion ?? 0)
+    .eq("flow_status", "agreed").eq("updated_at", previous.updatedAt)
     .select("*").maybeSingle();
   if (error) throw new Error("Could not save checkout association");
-  return data ? cacheJob(rowToJob(data as Record<string, unknown>)) : null;
+  return data ? rowToJob(data as Record<string, unknown>) : null;
 }

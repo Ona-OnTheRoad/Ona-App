@@ -95,6 +95,9 @@ export function rowToJob(row: Record<string, unknown>): JobRecord {
   const status = resolveFlowStatus(row);
   return {
     id: String(row.id),
+    jobVersion: Number.isSafeInteger(Number(row.job_version))
+      ? Number(row.job_version)
+      : 0,
     clientRequestId: row.client_request_id
       ? String(row.client_request_id)
       : null,

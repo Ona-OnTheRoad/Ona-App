@@ -386,6 +386,20 @@ export async function PATCH(req: Request) {
         lastReleaseError: `Processing stopped by admin: ${reason}`,
       };
       const now = new Date().toISOString();
+      const jobId = String(
+        (payment as { request_id?: string }).request_id || "",
+      );
+      let jobVersion: number | null = null;
+      if (jobId) {
+        const { data: job, error: jobError } = await supabase
+          .from("service_requests")
+          .select("job_version")
+          .eq("id", jobId)
+          .maybeSingle();
+        if (jobError) return apiFail("Could not load current job", 500);
+        if (!job) return apiFail("Associated job not found", 404);
+        jobVersion = Number(job.job_version);
+      }
       const { data: updated, error } = await supabase
         .from("payments")
         .update({
@@ -398,14 +412,16 @@ export async function PATCH(req: Request) {
         .select("*")
         .maybeSingle();
       if (error) return apiFail(error.message, 500);
-      const jobId = String(
-        (payment as { request_id?: string }).request_id || "",
-      );
-      if (jobId) {
-        await supabase
+      if (jobId && jobVersion != null) {
+        const { data: jobUpdated, error: jobUpdateError } = await supabase
           .from("service_requests")
           .update({ escrow_status: "held", updated_at: now })
-          .eq("id", jobId);
+          .eq("id", jobId)
+          .eq("job_version", jobVersion)
+          .select("id")
+          .maybeSingle();
+        if (jobUpdateError) return apiFail("Payment updated, but job state could not be saved", 500);
+        if (!jobUpdated) return apiFail("Payment updated, but the job changed; reconcile before retrying", 409);
       }
       await logAdminAction(
         session.userId,

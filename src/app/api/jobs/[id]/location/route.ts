@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { apiFail, apiOk } from "@/lib/server/api-json";
+import { apiFail, apiFailFromError, apiOk } from "@/lib/server/api-json";
 import { isJobParty, requireUser } from "@/lib/server/auth-utils";
 import { haversineEtaMinutes } from "@/lib/server/google-eta";
 import { getJob, updateTripPartyLocation } from "@/lib/server/jobs/job-store";
@@ -120,9 +120,6 @@ export async function POST(
       },
     });
   } catch (e) {
-    return apiFail(
-      e instanceof Error ? e.message : "Location update failed",
-      500,
-    );
+    return apiFailFromError(e, "Location update failed");
   }
 }

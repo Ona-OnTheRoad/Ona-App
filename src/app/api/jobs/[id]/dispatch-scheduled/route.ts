@@ -45,7 +45,7 @@ export async function POST(
 
     const sb = createServiceSupabase();
     const ts = new Date().toISOString();
-    const { error } = await sb
+    const { data: dispatched, error } = await sb
       .from("service_requests")
       .update({
         flow_status: "sequential_pairing",
@@ -68,8 +68,12 @@ export async function POST(
         ],
       })
       .eq("id", id)
-      .eq("flow_status", "scheduled");
+      .eq("job_version", job.jobVersion ?? 0)
+      .eq("flow_status", "scheduled")
+      .select("id")
+      .maybeSingle();
     if (error) return apiFail("Could not dispatch request", 500);
+    if (!dispatched) return apiFail("Request changed before dispatch; reload and retry", 409);
 
     // Immediately book the first pro of the requested trade.
     const { advancePairing } =

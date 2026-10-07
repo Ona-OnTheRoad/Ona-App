@@ -24,7 +24,10 @@ function from(table: string) {
     if (patch) { beforeWrite?.(); beforeWrite = undefined; }
     const matches = rows.filter((row) => filters.every((check) => check(row)))
       .sort((a, b) => String(a.negotiate_ends_at).localeCompare(String(b.negotiate_ends_at))).slice(0, limit);
-    if (patch) matches.forEach((row) => Object.assign(row, patch));
+    if (patch) matches.forEach((row) => {
+      Object.assign(row, patch);
+      if (table === "service_requests") row.job_version = Number(row.job_version || 0) + 1;
+    });
     return { data: matches.map((row) => ({ ...row })), error: null };
   };
   const query = {
@@ -43,6 +46,7 @@ function from(table: string) {
 }
 function row(id = "job", deadline = new Date(Date.now() - 1000).toISOString(), status = "negotiating") {
   return { id, flow_status: status, status: "accepted", motorist_id: "customer", repair_pro_id: "pro",
+    job_version: 0,
     status_history: [{ status: "negotiating", by: "negotiation_timer_start", at: "start" }],
     negotiate_ends_at: deadline, updated_at: "old", offers: [], pickup_lat: 6, pickup_lng: 3,
     agreed_major: 2000, pairing_stage: "negotiating", reservation_status: "confirmed" };

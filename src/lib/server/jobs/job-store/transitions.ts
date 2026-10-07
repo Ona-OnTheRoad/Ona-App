@@ -5,7 +5,6 @@ import {
   type TransitionEvent,
 } from "@/lib/jobs/state-machine";
 import type { JobRecord } from "@/lib/jobs/types";
-import { memory } from "./constants";
 import { nowIso } from "./mappers";
 import { persist } from "./cache";
 import { getJob } from "./reads";

@@ -197,8 +197,12 @@ describe("add-another-repair-pro (linked scheduled second request)", () => {
     const before = Date.now();
     const res = await confirmRequest(PRIMARY_ID, "pro-1", "arm-k1");
     expect(res.ok).toBe(true);
+    // Acceptance intentionally launches best-effort follow-up work without
+    // waiting on the user-facing request; let the linked dispatch arming run.
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     const armCalls = findQuery((c) =>
+      c.some((x) => x.op === "update") &&
       c.some((x) => x.op === "is" && x.args[0] === "scheduled_dispatch_at"),
     );
     expect(armCalls).not.toBeNull();
@@ -209,12 +213,17 @@ describe("add-another-repair-pro (linked scheduled second request)", () => {
     expect(armedMs - before).toBeGreaterThanOrEqual(59 * 60_000);
     expect(armedMs - before).toBeLessThanOrEqual(61 * 60_000);
     // CAS guards: only un-armed scheduled requests linked to the primary
+    const linkedRead = findQuery((c) =>
+      c.some((x) => x.op === "select") &&
+      c.some((x) => x.op === "eq" && x.args[0] === "linked_request_id" && x.args[1] === PRIMARY_ID) &&
+      c.some((x) => x.op === "is" && x.args[0] === "scheduled_dispatch_at"),
+    );
+    expect(linkedRead).not.toBeNull();
     expect(
       armCalls!.some(
         (c) =>
           c.op === "eq" &&
-          c.args[0] === "linked_request_id" &&
-          c.args[1] === PRIMARY_ID,
+          c.args[0] === "job_version",
       ),
     ).toBe(true);
     expect(

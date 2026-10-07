@@ -24,7 +24,10 @@ const from = vi.fn((table: string) => {
       if (patch && failWrite) return { data: null, error: { message: "database unavailable" } };
       const row = table === "payments" ? paymentRow : jobRow;
       if (!filters.every(([key, value]) => row[key] === value)) return { data: null, error: null };
-      if (patch) Object.assign(row, patch);
+      if (patch) {
+        Object.assign(row, patch);
+        if (table === "service_requests") row.job_version = Number(row.job_version || 0) + 1;
+      }
       return { data: { ...row }, error: null };
     },
   };
@@ -36,7 +39,7 @@ beforeEach(() => {
     provider: "flutterwave", provider_ref: "ref", amount_kobo: 100000, currency: "NGN",
     escrow_status: "pending_payment", status: "pending", updated_at: "old" };
   jobRow = { id: "job", motorist_id: "customer", repair_pro_id: "pro", flow_status: "agreed",
-    status: "requested", status_history: [], payment_reference: "ref", updated_at: "old" };
+    status: "requested", status_history: [], payment_reference: "ref", updated_at: "old", job_version: 0 };
   events = [];
   failWrite = false;
   failEvent = false;

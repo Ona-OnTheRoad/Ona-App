@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "id": "issue-4-job-persistence",
+  "title": "Issue 4: conditional job writes and durable persistence",
+  "plan": "docs/review-guides/issue-4-job-persistence.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "writer-inventory",
+      "stage": "code",
+      "expectation": "Every service_requests writer is inventoried, including server code, API routes, SQL functions, scheduled operations, and remaining clients.",
+      "verification": "Search all direct insert/update/upsert/delete operations and database functions; map each to its version/concurrency behavior.",
+      "status": "pending",
+      "evidence": ["Direct writers were reviewed in job-store, pairing, negotiation, payment confirmation, payout, admin, care, and job API paths; complete independent inventory sign-off remains pending", "Express assignment/cancellation uses explicit pending/draft-state predicates; Express remains a separate financial lifecycle"]
+    },
+    {
+      "id": "versioning",
+      "stage": "code",
+      "expectation": "Persisted jobs carry a monotonic version that is selected, mapped, and advanced by every successful mutation.",
+      "verification": "Review schema migration, row mapping, projections, RPCs, fixtures, and every writer; confirm old rows receive a safe initial value.",
+      "status": "pending",
+      "evidence": ["supabase/migrations/20261007_079_job_version_cas.sql adds the defaulted version column and update trigger", "JobRecord and row mapping include jobVersion; LEAN_JOB_COLUMNS selects it"]
+    },
+    {
+      "id": "conditional-writes",
+      "stage": "code",
+      "expectation": "Every job write is conditional on the version or an equally strong expected-state predicate, and stale writers cannot overwrite a newer job.",
+      "verification": "Review every writer and race/conflict evidence, including Issue 3 timeout and pairing SQL paths.",
+      "status": "pending",
+      "evidence": ["job-store/cache.ts compares job_version for full-patch persistence; pairing and negotiation paths compare the loaded version", "Direct status writers in API, care, admin, and payout paths use job_version or a narrow expected-state predicate; complete independent call-site review remains pending"]
+    },
+    {
+      "id": "complete-persistence",
+      "stage": "code",
+      "expectation": "Persistence does not retry a failed full patch with smaller patches that silently omit requested fields.",
+      "verification": "Inspect persistence helper and failure paths; verify schema/database errors fail the operation visibly.",
+      "status": "pending",
+      "evidence": ["job-store/cache.ts removes reduced-patch retries and does not issue a second unconditional write", "job-store/create.ts fails instead of retrying an insert after dropping motorist_vehicle"]
+    },
+    {
+      "id": "memory-cache-only",
+      "stage": "code",
+      "expectation": "Process memory is only a disposable cache and never authorizes a job read or critical write when durable storage is unavailable.",
+      "verification": "Inspect DB read failures, missing DB configuration, create/update paths, and cache invalidation or refresh behavior.",
+      "status": "pending",
+      "evidence": ["Process-local job Map and all job-store memory fallback reads/writes were removed; database errors now fail job reads and writes"]
+    },
+    {
+      "id": "conflict-contract",
+      "stage": "code",
+      "expectation": "Version conflicts are distinguishable from storage failures, and each workflow handles conflicts safely without replaying unsafe side effects.",
+      "verification": "Trace callers and verify conflict recovery, reload, or user-facing retry behavior is appropriate to the operation.",
+      "status": "pending",
+      "evidence": ["JobWriteConflictError returns HTTP 409 and JobPersistenceUnavailableError returns HTTP 503 on the main job endpoints", "persistIfUnchanged returns null only for a no-row conflict and propagates storage errors"]
+    },
+    {
+      "id": "business-rules",
+      "stage": "code",
+      "expectation": "Job state-machine, assignment, payment, fee, refund, and deadline rules retain their current behavior.",
+      "verification": "Review diff against protected-flow rules and existing behavior evidence; identify any intentional rule change separately.",
+      "status": "pending",
+      "evidence": ["No fee formulas or timer constants changed; state-machine and protected pricing files are untouched", "Cross-table aggregate transactions remain Issue 5"]
+    },
+    {
+      "id": "transaction-boundary",
+      "stage": "code",
+      "expectation": "The implementation does not claim cross-table atomicity for job, escrow, callout, or event writes unless a transaction/RPC provides it.",
+      "verification": "Inspect side-effect ordering and documentation; carry remaining aggregate gaps to Issue 5.",
+      "status": "pending",
+      "evidence": ["Issue 5 transaction boundary remains explicitly separate; event and multi-table effects can still partially complete"]
+    },
+    {
+      "id": "migration",
+      "stage": "release",
+      "expectation": "The version migration applies safely to existing rows and can be deployed without silently leaving writers outside the concurrency contract.",
+      "verification": "Apply migration to an isolated database, verify existing-row initialization and all relevant SQL functions, then record hosted rollout separately.",
+      "status": "pending",
+      "evidence": ["Migration is idempotent and transaction-wrapped; hosted and isolated database application have not been verified"]
+    },
+    {
+      "id": "checks",
+      "stage": "code",
+      "expectation": "Relevant checks and failure/concurrency scenarios pass for the exact reviewed commit.",
+      "verification": "Record commands, outcomes, commit SHA, and evidence for stale writes, failed persistence, and database outage behavior.",
+      "status": "pending",
+      "evidence": ["npm run typecheck passed", "npm run lint passed with 0 errors and 159 warnings", "npm test -- --reporter=dot passed: 101 files, 1,209 tests; focused test covers scheduled-dispatch CAS loss", "Hosted migration and runtime evidence are pending"]
+    }
+  ],
+  "implementationBranch": "feat/job-persistence-cas",
+  "implementationNotes": "Implementation notes and evidence are in docs/review-guides/issue-4-job-persistence.md.",
+  "implementationState": "Implementation and automated checks complete in working tree; formal code review and migration verification pending",
+  "independentReview": {
+    "status": "Not started",
+    "findings": [],
+    "scope": "To be performed against the implementation commit"
+  }
+}

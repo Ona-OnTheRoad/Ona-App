@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { apiFail, apiOk } from "@/lib/server/api-json";
+import { apiFail, apiFailFromError, apiOk } from "@/lib/server/api-json";
 import { isJobParty, requireUser } from "@/lib/server/auth-utils";
 import { acceptOffer, getJob, placeOffer } from "@/lib/server/jobs/job-store";
 
@@ -59,7 +59,7 @@ export async function POST(
         actorId: auth.userId,
         clientOfferId: b.clientOfferId || null,
       });
-      if ("error" in res) return apiFail(res.error, 400);
+      if ("error" in res) return apiFail(res.error, res.status || 400);
       return apiOk({ job: res.job });
     }
 
@@ -68,9 +68,9 @@ export async function POST(
       by: side,
       actorId: auth.userId,
     });
-    if ("error" in res) return apiFail(res.error, 400);
+    if ("error" in res) return apiFail(res.error, res.status || 400);
     return apiOk({ job: res.job });
   } catch (e) {
-    return apiFail(e instanceof Error ? e.message : "Offer failed", 500);
+    return apiFailFromError(e, "Offer failed");
   }
 }

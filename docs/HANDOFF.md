@@ -70,7 +70,7 @@ Do not invent a third ledger. Stub tables `wallet_accounts` stay unused.
 3. **Admin unlock signing secret has a hard-coded fallback.** The unlock *password* correctly requires `ADMIN_SENSITIVE_PASSWORD` (it throws if unset). But the unlock *cookie signing secret* (`signingSecret()` in `src/lib/server/modules/sensitive-unlock.ts`) uses the first of `ADMIN_UNLOCK_SIGNING_SECRET`, `ADMIN_FIELD_ENCRYPTION_KEY`, `ADMIN_SENSITIVE_PASSWORD`, and falls back to a fixed string when none is set and demo OTP is allowed. Make at least one mandatory in production and drop the fallback. Several code comments (`security.ts`, `sensitive-unlock.ts`, the unlock route) still say the default password is the demo code; that is stale and should be removed.
    - **Idle timeout:** `ADMIN_IDLE_TIMEOUT_MS` is 4 hours but its comment says 30 minutes. Decide the intended value.
 4. **Calls rely on a free public TURN relay** (`openrelay.metered.ca`, shared credentials in `src/components/call/in-app-call/helpers.ts`). Use a dedicated TURN before relying on calls at scale.
-5. In-memory fallbacks in `job-store` `listJobsForUser` and `security-store.ts` are unsafe on multiple serverless instances.
+5. Issue 4 removes the job-store process-memory fallback; serverless memory is no longer job authority. `security-store.ts` still has separate in-memory fallbacks and remains follow-up work.
 
 ---
 

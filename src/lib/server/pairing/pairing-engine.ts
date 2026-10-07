@@ -82,6 +82,7 @@ export type PairingResult =
 
 type PairingRow = {
   id: string;
+  job_version: number;
   motorist_id: string;
   motorist_name: string | null;
   repair_pro_id: string | null;
@@ -129,6 +130,7 @@ async function loadPairingRow(
     .select(
       [
         "id",
+        "job_version",
         "motorist_id",
         "motorist_name",
         "repair_pro_id",
@@ -159,7 +161,10 @@ async function loadPairingRow(
     .maybeSingle();
   if (error && failOnError) throw new Error("Could not load pairing request");
   if (!data) return null;
-  return data as unknown as PairingRow;
+  return {
+    ...(data as unknown as PairingRow),
+    job_version: Number((data as { job_version?: unknown }).job_version ?? 0),
+  };
 }
 
 function history(row: PairingRow): object[] {
@@ -435,7 +440,7 @@ async function dispatchCandidate(
     return { ok: false, error: qErr.message, status: 500 };
   }
 
-  const { error } = await sb
+  const { data: dispatchRow, error } = await sb
     .from("service_requests")
     .update({
       pairing_stage: "waiting_for_pro",
@@ -464,9 +469,13 @@ async function dispatchCandidate(
       ],
     })
     .eq("id", row.id)
-    .eq("pairing_stage", row.pairing_stage);
+    .eq("job_version", Number(row.job_version ?? 0))
+    .eq("pairing_stage", row.pairing_stage)
+    .select("id")
+    .maybeSingle();
 
   if (error) return { ok: false, error: error.message, status: 500 };
+  if (!dispatchRow) return { ok: true, noop: true, jobId: row.id };
 
   await notifyPro(
     candidate.user_id,
@@ -531,12 +540,16 @@ export async function advancePairing(jobId: string): Promise<PairingResult> {
   // capped by the current round's max (fresh 2 km → retries 3/4/5 km).
   const nextRadius = nextRadiusKm(radius, roundMaxRadiusKm(row));
   if (nextRadius != null) {
-    const { error } = await sb
+    const { data: radiusRow, error } = await sb
       .from("service_requests")
       .update({ pairing_radius_km: nextRadius, updated_at: nowIso() })
       .eq("id", row.id)
-      .eq("pairing_stage", row.pairing_stage);
+      .eq("job_version", Number(row.job_version ?? 0))
+      .eq("pairing_stage", row.pairing_stage)
+      .select("id")
+      .maybeSingle();
     if (error) return { ok: false, error: "Could not expand pairing radius", status: 500 };
+    if (!radiusRow) return { ok: true, noop: true, jobId: row.id };
     return advancePairing(jobId);
   }
 
@@ -559,12 +572,16 @@ export async function advancePairing(jobId: string): Promise<PairingResult> {
         holdPatch.pairing_deadline = new Date(
           Date.now() + EMPTY_SEARCH_HOLD_MS,
         ).toISOString();
-      const { error: holdError } = await sb
+      const { data: held, error: holdError } = await sb
         .from("service_requests")
         .update(holdPatch)
         .eq("id", row.id)
-        .eq("pairing_stage", row.pairing_stage);
+        .eq("job_version", Number(row.job_version ?? 0))
+        .eq("pairing_stage", row.pairing_stage)
+        .select("id")
+        .maybeSingle();
       if (holdError) return { ok: false, error: "Could not hold pairing search", status: 500 };
+      if (!held) return { ok: true, noop: true, jobId: row.id };
       return { ok: true, jobId: row.id, currentProId: null, noop: true };
     }
   }
@@ -594,6 +611,7 @@ async function markExhausted(
       ],
     })
     .eq("id", row.id)
+    .eq("job_version", Number(row.job_version ?? 0))
     .eq("pairing_stage", row.pairing_stage)
     .select("id");
   if (error) return { ok: false, error: error.message, status: 500 };
@@ -676,6 +694,7 @@ export async function retrySearch(jobId: string): Promise<PairingResult> {
     .from("service_requests")
     .update(patch)
     .eq("id", row.id)
+    .eq("job_version", Number(row.job_version ?? 0))
     .select("id");
   if (error) return { ok: false, error: error.message, status: 500 };
   if (!updated?.length) {
@@ -776,6 +795,7 @@ export async function openRequest(
     .from("service_requests")
     .update(patch)
     .eq("id", row.id)
+    .eq("job_version", Number(row.job_version ?? 0))
     .eq("pairing_stage", row.pairing_stage)
     .select("id");
   if (error) return { ok: false, error: error.message, status: 500 };
@@ -1060,6 +1080,7 @@ export async function declineRequest(
       ]),
     )
     .eq("id", row.id)
+    .eq("job_version", Number(row.job_version ?? 0))
     .eq("pairing_stage", row.pairing_stage);
   if (error) return { ok: false, error: error.message, status: 500 };
 
@@ -1113,6 +1134,7 @@ export async function deferRequest(
       ]),
     )
     .eq("id", row.id)
+    .eq("job_version", Number(row.job_version ?? 0))
     .eq("pairing_stage", row.pairing_stage);
   if (error) return { ok: false, error: error.message, status: 500 };
 
@@ -1190,17 +1212,26 @@ async function armLinkedScheduledDispatch(
   primaryRequestId: string,
   ts: string,
 ): Promise<void> {
-  await sb
+  const { data: rows, error: readError } = await sb
     .from("service_requests")
-    .update({
+    .select("id, job_version")
+    .eq("linked_request_id", primaryRequestId)
+    .eq("flow_status", "scheduled")
+    .is("scheduled_dispatch_at", null);
+  if (readError) throw new Error("Could not load linked scheduled requests");
+  for (const row of rows || []) {
+    const { error } = await sb.from("service_requests").update({
       scheduled_dispatch_at: new Date(
         Date.now() + SECOND_PRO_DELAY_MS,
       ).toISOString(),
       updated_at: ts,
     })
-    .eq("linked_request_id", primaryRequestId)
+    .eq("id", row.id)
+    .eq("job_version", Number(row.job_version ?? 0))
     .eq("flow_status", "scheduled")
     .is("scheduled_dispatch_at", null);
+    if (error) throw new Error("Could not arm linked scheduled request");
+  }
 }
 
 const SCHEDULED_CANCELLED_STATUSES = [
@@ -1231,7 +1262,7 @@ export async function sweepScheduledDispatches(limit = 50): Promise<{
     const { data: rows } = await sb
       .from("service_requests")
       .select(
-        "id, linked_request_id, scheduled_dispatch_at, dispatch_notified_at, motorist_id, service_type, problem, pickup_address, status_history",
+        "id, job_version, linked_request_id, scheduled_dispatch_at, dispatch_notified_at, motorist_id, service_type, problem, pickup_address, status_history",
       )
       .eq("flow_status", "scheduled")
       .not("linked_request_id", "is", null)
@@ -1275,6 +1306,7 @@ export async function sweepScheduledDispatches(limit = 50): Promise<{
               ],
             })
             .eq("id", secondId)
+            .eq("job_version", Number(row.job_version ?? 0))
             .eq("flow_status", "scheduled");
           if (!updated.error) cancelled += 1;
           continue;
@@ -1296,6 +1328,7 @@ export async function sweepScheduledDispatches(limit = 50): Promise<{
             updated_at: ts,
           })
           .eq("id", secondId)
+          .eq("job_version", Number(row.job_version ?? 0))
           .eq("flow_status", "scheduled")
           .is("dispatch_notified_at", null)
           .select("id");
@@ -1402,7 +1435,7 @@ async function sweepPairingBatch(limit: number): Promise<{
       Date.now() - SURFACE_FALLBACK_GRACE_MS,
     ).toISOString();
     const { data: unarmed, error: unarmedError } = await sb.from("service_requests")
-      .select("id, updated_at").in("pairing_stage", PAIRING_STAGES)
+      .select("id, updated_at, job_version").in("pairing_stage", PAIRING_STAGES)
       .or("reservation_status.neq.confirmed,reservation_status.is.null")
       .is("pairing_deadline", null).lt("updated_at", fallbackCutoff)
       .order("updated_at", { ascending: true }).order("id", { ascending: true }).limit(limit);
@@ -1410,6 +1443,7 @@ async function sweepPairingBatch(limit: number): Promise<{
     for (const unarmedRow of unarmed || []) {
       const { error: fbErr } = await sb.from("service_requests").update({ pairing_deadline: deadlineIso() })
         .eq("id", unarmedRow.id).eq("updated_at", unarmedRow.updated_at)
+        .eq("job_version", Number(unarmedRow.job_version ?? 0))
         .in("pairing_stage", PAIRING_STAGES)
         .or("reservation_status.neq.confirmed,reservation_status.is.null")
         .is("pairing_deadline", null);
