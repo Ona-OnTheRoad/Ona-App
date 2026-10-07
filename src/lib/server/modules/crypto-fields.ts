@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Field-level encryption helpers for NIN, BVN, bank details.
  * Uses AES-256-GCM with ADMIN_FIELD_ENCRYPTION_KEY (32-byte hex or base64)

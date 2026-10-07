@@ -1,3 +1,4 @@
+import "server-only";
 import type { JobRecord } from "@/lib/jobs/types";
 import { nowIso } from "./mappers";
 import { persist } from "./cache";

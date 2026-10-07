@@ -1,3 +1,4 @@
+import "server-only";
 export class JobWriteConflictError extends Error {
   readonly code = "job_write_conflict";
   readonly status = 409;

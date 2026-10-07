@@ -1,3 +1,4 @@
+import "server-only";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import {
   APP_SETTING_KEYS,

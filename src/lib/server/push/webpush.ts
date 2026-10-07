@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Server-side Web Push (VAPID). Routes a cancellation / job update to every
  * registered OS push subscription for a user so the message arrives even when

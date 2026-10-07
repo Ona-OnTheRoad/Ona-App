@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Payment gateway adapters Flutterwave (default) + Paystack.
  * Escrow: capture full labour fee on charge; release/refund via transfer APIs.

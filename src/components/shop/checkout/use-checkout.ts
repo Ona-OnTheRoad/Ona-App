@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { CartView } from "@/lib/server/shop/cart";
+import type { CartView } from "@/lib/types/shop-cart";
 import {
   shopCheckout,
   shopCreateAddress,

@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * ONA Shop delivery engine (Phase 3).
  *

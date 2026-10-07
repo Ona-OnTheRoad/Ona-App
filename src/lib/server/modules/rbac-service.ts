@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Database-backed RBAC with code fallback.
  * Phase A: foundation load permissions from Postgres when available.

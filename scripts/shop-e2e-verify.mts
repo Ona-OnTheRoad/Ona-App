@@ -1,10 +1,11 @@
+// Server module guards require: node --conditions=react-server --import tsx scripts/shop-e2e-verify.mts
 /**
  * Phase 3 E2E integration verification against the real Supabase DB.
  * Creates a throwaway user + address, runs cart → delivery estimate →
  * checkout (idempotent) → payment init → verify (reserve → paid → delivery
  * row → cart closed), then refunds and cleans up its rows.
  *
- * Usage: npx tsx scripts/shop-e2e-verify.mts [--keep]
+ * Usage: node --conditions=react-server --import tsx scripts/shop-e2e-verify.mts [--keep]
  */
 
 import { createServiceSupabase } from "@/lib/supabase/server";

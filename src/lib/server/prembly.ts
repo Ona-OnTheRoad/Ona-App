@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Prembly (IdentityPass) Nigeria NIN + BVN verification.
  * Keys: PREMBLY_API_KEY (x-api-key), optional PREMBLY_APP_ID, optional PREMBLY_BASE_URL.

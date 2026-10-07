@@ -1,3 +1,4 @@
+import "server-only";
 export { getSecurityDashboardStats } from "@/lib/server/security/security-store";
 export { setSystemSetting } from "@/lib/server/security/security-store";
 export { listSystemSettings } from "@/lib/server/security/security-store";

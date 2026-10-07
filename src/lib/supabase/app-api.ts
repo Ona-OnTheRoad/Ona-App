@@ -32,7 +32,7 @@ import type {
 } from "@/lib/types";
 import { isProService } from "@/lib/pro-service-id";
 import { buildProLivePatch } from "@/lib/supabase/pro-live-patch";
-import { isSyntheticAccount } from "@/lib/server/synthetic-accounts";
+import { isSyntheticAccount } from "@/lib/synthetic-accounts";
 import {
   apiVerifyIdemOp,
   clearIdemKey,

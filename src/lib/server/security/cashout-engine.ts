@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Wallet cashout engine, auto Flutterwave transfers for credit cashouts.
  *

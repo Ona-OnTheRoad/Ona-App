@@ -1,3 +1,4 @@
+import "server-only";
 import type { DisputeOutcome, DisputeReason, JobMedia, JobRecord } from "@/lib/jobs/types";
 import { nowIso, uid } from "./mappers";
 import { getJob } from "./reads";

@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Shop pay-now via Flutterwave NEVER uses job escrow store.
  */

@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Shop order engine (Phase 3) inventory reserve on pay, delivery on paid.
  * Separate from job desk /orders.

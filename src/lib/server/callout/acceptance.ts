@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Lock Call-Out at Repair Pro acceptance.
  * Origin = verified GPS at that tap. Never driven kilometres.

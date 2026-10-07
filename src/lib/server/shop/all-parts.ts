@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * ALL PARTS navigation for a selected vehicle + trade.
  * Data-driven from shop_trade_categories + products with fitment (or soft match).

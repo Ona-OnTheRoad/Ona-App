@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Job store — modular split from the original 5,018-line god file.
  * Each module handles a single concern (payments, dispatch, transitions, etc.).

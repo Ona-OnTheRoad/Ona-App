@@ -1,3 +1,4 @@
+import "server-only";
 import type { JobRecord } from "@/lib/jobs/types";
 import { isNegotiationTimerArmed } from "@/lib/jobs/constants";
 import { assertTransition } from "@/lib/jobs/state-machine";

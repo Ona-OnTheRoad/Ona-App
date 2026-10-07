@@ -1,8 +1,7 @@
 # Supabase local/project config for OgaMecho
 # Cloud project is created via dashboard; migrations live in ./migrations
 
-[project]
-id = "oga-mecho"
+project_id = "ona-local"
 
 [api]
 enabled = true
@@ -15,3 +14,6 @@ major_version = 15
 [studio]
 enabled = true
 port = 54323
+
+[db.seed]
+enabled = false

@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Anti self-payment guard.
  * A Repair Pro can never be paid for their own job if the payer (motorist)

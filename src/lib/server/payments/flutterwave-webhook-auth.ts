@@ -1,3 +1,4 @@
+import "server-only";
 import { timingSafeEqual } from "node:crypto";
 
 /** Flutterwave v3 contract: verif-hash equals the dashboard's dedicated secret hash. */

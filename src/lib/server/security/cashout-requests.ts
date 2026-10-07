@@ -1,3 +1,4 @@
+import "server-only";
 export { listCashoutRequests } from "@/lib/server/security/security-store";
 export { createCashoutRequest } from "@/lib/server/security/security-store";
 export { updateCashoutStatus } from "@/lib/server/security/security-store";

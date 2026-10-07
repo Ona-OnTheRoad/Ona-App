@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Admin session + multi-level staff authorization.
  * Builds on modular security (roles, sensitive unlock, idle timeout, audit).
@@ -22,7 +23,7 @@ import {
 } from "@/lib/server/modules/admin-roles";
 import { readUnlockFromCookies } from "@/lib/server/modules/sensitive-unlock";
 import { writeAuditLog } from "@/lib/server/modules/audit";
-import { rateLimit } from "@/lib/server/modules/rate-limit";
+import { rateLimitAsync, RateLimitUnavailableError } from "@/lib/server/modules/rate-limit";
 
 export { ADMIN_SESSION_COOKIE };
 
@@ -239,10 +240,15 @@ export async function requireSensitiveAction(
   const ctx = await requirePermission(perm);
   const ip = clientIp(req);
 
-  const rl = rateLimit({
+  const rl = await rateLimitAsync({
     key: `sensitive:${ctx.session.userId}:${ip}`,
     limit: 30,
     windowMs: 60_000,
+  }).catch((error: unknown) => {
+    if (error instanceof RateLimitUnavailableError) {
+      throw new AdminAuthError(error.message, error.status, error.code);
+    }
+    throw error;
   });
   if (!rl.ok) {
     throw new AdminAuthError(

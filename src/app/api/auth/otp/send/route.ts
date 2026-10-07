@@ -1,3 +1,4 @@
+import { rateLimitAsync, rateLimitUnavailableResponse } from "@/lib/server/modules/rate-limit";
 import { createHash, randomInt } from "crypto";
 import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
@@ -127,30 +128,18 @@ export async function POST(req: Request) {
       opType: `otp.send.${channel}`,
       actorKind: channel,
       actorId: parsed.data.opActorId || dest,
-      run: async () => {
-        // Rate limiting applies only to actually issuing a new code a
-        // replay of an already-issued code must never be blocked.
-        try {
-          const { rateLimit } = await import("@/lib/server/modules/rate-limit");
-          const ip =
-            req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-            req.headers.get("x-real-ip") ||
-            "unknown";
-          const rl = rateLimit({
-            key: `otp-send:${ip}:${channel}:${dest}`,
-            limit: 8,
-            windowMs: 10 * 60_000,
-          });
-          if (!rl.ok) {
-            return {
-              ok: false as const,
-              error: `Too many code requests. Retry in ${rl.retryAfterSec}s.`,
-            };
-          }
-        } catch {
-          /* non-fatal */
+      beforeRun: async () => {
+        const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+          req.headers.get("x-real-ip") || "unknown";
+        const budget = await rateLimitAsync({
+          key: `otp-send:${ip}:${channel}:${dest}`, limit: 8, windowMs: 10 * 60_000,
+        });
+        if (!budget.ok) {
+          throw Object.assign(new Error(`Too many code requests. Retry in ${budget.retryAfterSec}s.`),
+            { status: 429, code: "rate_limited" });
         }
-
+      },
+      run: async () => {
         /**
          * Cooldown only after 4+ failed verify attempts on the latest code.
          * First sends / normal resends are free of the wait message.
@@ -252,6 +241,11 @@ export async function POST(req: Request) {
     }
     return apiOk(result.result);
   } catch (e) {
+    const unavailable = rateLimitUnavailableResponse(e, req);
+    if (unavailable) return unavailable;
+    if (e instanceof Error && "status" in e && e.status === 429) {
+      return apiFail(e.message, 429, "rate_limited");
+    }
     return apiFail(e instanceof Error ? e.message : "Could not send code", 500);
   }
 }

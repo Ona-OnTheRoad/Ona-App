@@ -1,3 +1,4 @@
+import "server-only";
 /** Narrow, fail-closed persistence for confirmation; no live database fallback. */
 import type { JobRecord } from "@/lib/jobs/types";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";

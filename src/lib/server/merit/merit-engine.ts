@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Ona Merit Ranking Engine (MRE).
  *

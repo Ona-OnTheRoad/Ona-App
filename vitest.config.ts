@@ -11,6 +11,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      "server-only": path.resolve(__dirname, "./scripts/test-server-only.mjs"),
       "@": path.resolve(__dirname, "./src"),
     },
   },

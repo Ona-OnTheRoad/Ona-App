@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Server-side idempotent-operation ledger.
  *
@@ -102,15 +103,19 @@ export async function runIdempotent<K>(input: {
   actorId?: string;
   run: () => Promise<{ ok: true; result: K } | { ok: false; error: string }>;
   maxWaitMs?: number;
+  /** Preflight only for new operations; failures are not stored as permanent results. */
+  beforeRun?: () => Promise<void>;
 }): Promise<IdemRunResult<K>> {
   // Legacy callers (no opKey) keep running straight through.
   if (!input.opKey) {
+    await input.beforeRun?.();
     const out = await safeRun(input.run);
     return out.ok
       ? { status: "ok", replay: false, result: out.result }
       : { status: "error", replay: false, error: out.error };
   }
   if (!isSupabaseAdminConfigured()) {
+    await input.beforeRun?.();
     const out = await safeRun(input.run);
     return out.ok
       ? { status: "ok", replay: false, result: out.result }
@@ -133,6 +138,8 @@ export async function runIdempotent<K>(input: {
   if (existing) {
     return outcomeResult(await waitForCompletion(input.opKey, deadline));
   }
+
+  await input.beforeRun?.();
 
   // Claim the op. insert ALSO detects the concurrent-twin race via its
   // unique op_key index, so we never need a separate lock/transaction.

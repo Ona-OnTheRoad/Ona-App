@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Server-side health aggregation for Ona.
  * INTEGRATION: swap storage estimate for real Supabase/Postgres size queries.

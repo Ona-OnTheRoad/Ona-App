@@ -27,7 +27,7 @@ export async function shopGetCart(
     `/api/shop/cart?context=${encodeURIComponent(context)}`,
     { headers },
   );
-  return parseJson<{ cart: import("@/lib/server/shop/cart").CartView }>(res);
+  return parseJson<{ cart: import("@/lib/types/shop-cart").CartView }>(res);
 }
 
 export async function shopAddToCart(opts: {
@@ -41,7 +41,7 @@ export async function shopAddToCart(opts: {
     headers,
     body: JSON.stringify(opts),
   });
-  return parseJson<{ cart: import("@/lib/server/shop/cart").CartView }>(res);
+  return parseJson<{ cart: import("@/lib/types/shop-cart").CartView }>(res);
 }
 
 
@@ -52,7 +52,7 @@ export async function shopRemoveCartItem(itemId: string) {
     headers,
     body: JSON.stringify({ itemId }),
   });
-  return parseJson<{ cart: import("@/lib/server/shop/cart").CartView }>(res);
+  return parseJson<{ cart: import("@/lib/types/shop-cart").CartView }>(res);
 }
 
 export async function shopUpdateCartItem(itemId: string, qty: number) {
@@ -62,7 +62,7 @@ export async function shopUpdateCartItem(itemId: string, qty: number) {
     headers,
     body: JSON.stringify({ itemId, qty }),
   });
-  return parseJson<{ cart: import("@/lib/server/shop/cart").CartView }>(res);
+  return parseJson<{ cart: import("@/lib/types/shop-cart").CartView }>(res);
 }
 
 export async function shopCheckout(opts: {

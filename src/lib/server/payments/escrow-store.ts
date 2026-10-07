@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Server-side escrow payment records (Supabase when available, memory fallback).
  */

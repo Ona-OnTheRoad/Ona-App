@@ -1,0 +1,120 @@
+{
+  "id": "issue-7-backend-hygiene",
+  "title": "Issue 7: backend hygiene",
+  "plan": "docs/review-guides/issue-7-backend-hygiene.md",
+  "reviewedCommit": null,
+  "criteria": [
+    {
+      "id": "migration-replay",
+      "expectation": "Full migration chain applies to a fresh Supabase database",
+      "verification": "CI replay and schema/role assertions",
+      "status": "pending",
+      "evidence": [
+        "CI job and byte-preserving 83-file migration preparation test implemented; complete database replay unrun (no Docker/Supabase CLI locally)"
+      ],
+      "affectedAreas": [
+        ".github/workflows/ci.yml",
+        "supabase/config.toml",
+        "scripts/prepare-migration-ci.mjs",
+        "scripts/verify-migration-ci.mjs",
+        "scripts/migration-ci-assertions.sql"
+      ]
+    },
+    {
+      "id": "shared-limits",
+      "expectation": "Concurrent workers and cold starts share atomic Redis counters and expiry",
+      "verification": "Redis contract/concurrency tests",
+      "status": "pending",
+      "evidence": [
+        "Single Redis EVAL request implemented; simulated concurrent callers and module restart tests pass",
+        "Real Redis Lua execution, concurrency and expiry integration checks pending"
+      ],
+      "affectedAreas": [
+        "src/lib/server/modules/rate-limit.ts",
+        "existing sensitive limiter callers"
+      ]
+    },
+    {
+      "id": "outage-policy",
+      "expectation": "Missing deployed Redis, outage and malformed replies deny work with 503; budgets return 429",
+      "verification": "Limiter and route failure injection",
+      "status": "pass",
+      "evidence": [
+        "Limiter validation/failure tests and payment/OTP 503 and 429 route tests pass; no protected effects on failure"
+      ],
+      "affectedAreas": [
+        "auth/payment/admin limiter callers",
+        "src/lib/server/idempotency.ts"
+      ]
+    },
+    {
+      "id": "server-boundary",
+      "expectation": "Server entry points reject client imports; shared helpers/types remain usable",
+      "verification": "Boundary audit and Next production build",
+      "status": "pass",
+      "evidence": [
+        "AST runtime guard/import graph tests pass",
+        "npm run check:server-boundaries passes using real Next rejection of service-role client import",
+        "npm run build -- --webpack passes"
+      ],
+      "affectedAreas": [
+        "src/lib/server/",
+        "src/lib/supabase/server.ts",
+        "src/lib/types/shop-cart.ts",
+        "src/lib/synthetic-accounts.ts",
+        "scripts/verify-server-only-build.mjs"
+      ]
+    },
+    {
+      "id": "quality",
+      "expectation": "Lint, typecheck, full tests and build pass",
+      "verification": "Repository gates",
+      "status": "pass",
+      "evidence": [
+        "npm run lint: 0 errors, 158 existing warnings",
+        "npm run typecheck: passed",
+        "npm run test: 107 files / 1228 tests passed",
+        "npm run build -- --webpack: passed (standard Turbopack build remains unverified)",
+        "npm run check:server-boundaries: passed",
+        "git diff --check: passed",
+        "Protected job-store and payout files compared to base: import markers only"
+      ],
+      "affectedAreas": [
+        "repository gates"
+      ]
+    },
+    {
+      "id": "hosted",
+      "expectation": "Redis runtime behavior and migration CI verified on intended hosts",
+      "verification": "Hosted evidence and operational review",
+      "status": "pending",
+      "evidence": [],
+      "affectedAreas": [
+        "Redis deployment configuration",
+        "GitHub required checks",
+        "runtime rollout"
+      ]
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Run full fresh Supabase replay and schema/role assertions; resolve any failures exposed by CI",
+      "Execute actual Redis Lua concurrency, restart and TTL integration checks",
+      "Formal review against an implementation commit, including protected import-marker changes",
+      "Default Turbopack production build unverified; webpack production build passes"
+    ],
+    "external": [
+      "Provision isolated Redis credentials per deployment and verify deployed 503/429 behavior, counters and expiry",
+      "Run GitHub CI and configure required checks for dev/staging/main",
+      "Deploy approved changes and record auth/payment/OTP/admin smoke evidence",
+      "Assign Redis outage monitoring and recovery ownership"
+    ]
+  },
+  "baseCommit": "800b785331b610c2aeda5d5c224dab842802c69a",
+  "implementationBranch": "codex/backend-observability-hygiene",
+  "scopeUpdates": [
+    "Move existing invalid jobDetail route export into guarded server module to restore production build",
+    "Server CLI invocations require react-server condition"
+  ],
+  "verifiedAt": "2026-10-07"
+}

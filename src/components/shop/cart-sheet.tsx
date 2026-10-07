@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { detectCurrency, formatMoney, fromMinorUnits } from "@/lib/pricing";
-import type { CartView } from "@/lib/server/shop/cart";
+import type { CartView } from "@/lib/types/shop-cart";
 import {
   shopGetCart,
   shopRemoveCartItem,

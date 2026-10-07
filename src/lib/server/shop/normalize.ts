@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * ONA Shop catalog normalization (Phase 2).
  * Deterministic ids, normalized brand/manufacturer/model/SKU/part-number keys,

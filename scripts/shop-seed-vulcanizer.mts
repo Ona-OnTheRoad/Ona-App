@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Run with node --conditions=react-server --import tsx scripts/shop-seed-vulcanizer.mts
 /**
  * Seed ONA Vulcanizer Shop catalogue (real, ETRTO-grounded).
  * Runs the standard import pipeline with the VulcanizerCatalogConnector so all
@@ -7,7 +8,7 @@
  *
  * Idempotent: SKU-based dedup keys merge on re-run.
  *
- * Usage: npx tsx scripts/shop-seed-vulcanizer.mts
+ * Usage: node --conditions=react-server --import tsx scripts/shop-seed-vulcanizer.mts
  */
 
 import { createClient } from "@supabase/supabase-js";

@@ -1,3 +1,4 @@
+import "server-only";
 import type { JobRecord } from "@/lib/jobs/types";
 import type { JobMedia } from "@/lib/jobs/types";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";

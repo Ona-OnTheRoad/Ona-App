@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Dual-role T2: once Care approves ID on Customer OR Repair Pro,
  * the other side is auto-approved (flags + media if empty).

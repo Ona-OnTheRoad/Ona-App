@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Permanent protection for Care-approved T2 verification.
  *

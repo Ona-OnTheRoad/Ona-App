@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * ONA Shop data-quality validation (Phase 2).
  *

@@ -1,3 +1,4 @@
+import "server-only";
 import { confirmJobPayment, type ConfirmationResult } from "./confirm-job-payment";
 import { rowToEscrow } from "./escrow-store";
 import { createServiceSupabase } from "@/lib/supabase/server";

@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * ONA Shop source connector contract (Phase 2).
  *

@@ -1,3 +1,4 @@
+import { rateLimitUnavailableResponse } from "@/lib/server/modules/rate-limit";
 import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { requireUser } from "@/lib/server/auth-utils";
@@ -21,8 +22,8 @@ export async function POST(req: Request) {
     if (!auth.ok) return auth.response;
 
     try {
-      const { rateLimit } = await import("@/lib/server/modules/rate-limit");
-      const rl = rateLimit({
+      const { rateLimitAsync } = await import("@/lib/server/modules/rate-limit");
+      const rl = await rateLimitAsync({
         key: `resolve-account:${auth.userId}`,
         limit: 20,
         windowMs: 60_000,
@@ -34,8 +35,8 @@ export async function POST(req: Request) {
           "rate_limited",
         );
       }
-    } catch {
-      /* non-fatal */
+    } catch (error) {
+      return rateLimitUnavailableResponse(error, req) || apiFail("Security checks unavailable", 503);
     }
 
     const parsed = bodySchema.safeParse(await req.json());

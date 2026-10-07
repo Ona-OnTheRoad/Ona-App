@@ -1,3 +1,4 @@
+import { rateLimitUnavailableResponse } from "@/lib/server/modules/rate-limit";
 import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { requireUser } from "@/lib/server/auth-utils";
@@ -18,14 +19,14 @@ const bodySchema = z.object({
 /** Verify gateway charge, mark escrow held, job → Booked. */
 export async function POST(req: Request) {
   try {
-    // Soft rate-limit (verify is called from payment callback; gateway is source of truth)
+    // Shared browser verification budget; provider webhooks use a separate path.
     try {
-      const { rateLimit } = await import("@/lib/server/modules/rate-limit");
+      const { rateLimitAsync } = await import("@/lib/server/modules/rate-limit");
       const ip =
         req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
         req.headers.get("x-real-ip") ||
         "unknown";
-      const rl = rateLimit({
+      const rl = await rateLimitAsync({
         key: `pay-verify:${ip}`,
         limit: 30,
         windowMs: 60_000,
@@ -37,8 +38,8 @@ export async function POST(req: Request) {
           "rate_limited",
         );
       }
-    } catch {
-      /* non-fatal */
+    } catch (error) {
+      return rateLimitUnavailableResponse(error, req) || apiFail("Security checks unavailable", 503);
     }
 
     const auth = await requireUser(req);

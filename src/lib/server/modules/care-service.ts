@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Customer Care operations service search, board, one-click actions.
  */

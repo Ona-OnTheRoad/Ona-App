@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Server-side Google Distance Matrix for accurate drive ETA + distance.
  * Falls back to haversine if Maps key missing or API errors.

@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Ona production backend modules (modular monolith)
  * ─────────────────────────────────────────────────
