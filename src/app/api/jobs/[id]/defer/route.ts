@@ -1,6 +1,7 @@
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { requireUser } from "@/lib/server/auth-utils";
 import { deferJob, getJob } from "@/lib/server/jobs/job-store";
+import { serverLogger } from "@/lib/server/structured-logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,7 +33,7 @@ export async function POST(
     if (!job) return apiFail("Job not found", 404);
     return apiOk({ job });
   } catch (e) {
-    console.error("[defer]", id, e);
-    return apiFail(e instanceof Error ? e.message : "Defer failed", 500);
+    serverLogger.error("job.defer.failed", { operation: "defer", jobId: id }, req, e);
+    return apiFail("The job could not be deferred; try again shortly", 500, "job_defer_failed");
   }
 }

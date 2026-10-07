@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { apiFail, apiFailFromError, apiOk } from "@/lib/server/api-json";
+import { serverLogger } from "@/lib/server/structured-logger";
 import { isJobParty, requireUser } from "@/lib/server/auth-utils";
 import { acceptOffer, getJob, placeOffer } from "@/lib/server/jobs/job-store";
 
@@ -71,6 +72,7 @@ export async function POST(
     if ("error" in res) return apiFail(res.error, res.status || 400);
     return apiOk({ job: res.job });
   } catch (e) {
+    serverLogger.error("job.offer.failed", { operation: "offer" }, req, e);
     return apiFailFromError(e, "Offer failed");
   }
 }

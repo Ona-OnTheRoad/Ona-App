@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { serverLogger } from "@/lib/server/structured-logger";
 import { requireUser } from "@/lib/server/auth-utils";
 import {
   cancelOpenPaymentSession,
@@ -77,7 +78,10 @@ async function resolvePayerEmail(
       .maybeSingle();
     const em = String(data?.email || "").trim();
     return em.includes("@") ? em : null;
-  } catch {
+  } catch (error) {
+    serverLogger.warn("job.payment.email_lookup_unavailable", {
+      operation: "resolve_payer_email",
+    }, undefined, error);
     return null;
   }
 }
@@ -207,6 +211,7 @@ export async function POST(
       platformSubaccount: process.env.FLUTTERWAVE_PLATFORM_SUBACCOUNT || null,
     });
   } catch (e) {
-    return apiFail(e instanceof Error ? e.message : "Payment failed", 500);
+    serverLogger.error("job.payment.failed", { operation: "job_payment" }, req, e);
+    return apiFail("Payment could not be completed; retry shortly", 500, "job_payment_failed");
   }
 }

@@ -1,4 +1,5 @@
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { serverLogger } from "@/lib/server/structured-logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -85,7 +86,8 @@ async function fetchFlutterwaveBanks(
       .filter((b) => b.name && b.code)
       .sort((a, b) => a.name.localeCompare(b.name));
     return banks.length ? banks : null;
-  } catch {
+  } catch (error) {
+    serverLogger.warn("payment.bank_list.provider_unavailable", { operation: "bank_list" }, undefined, error);
     return null;
   }
 }
@@ -115,9 +117,7 @@ export async function GET(req: Request) {
       note: "Bank code is set automatically when the user selects a bank. List is geo-fenced to the user's country.",
     });
   } catch (e) {
-    return apiFail(
-      e instanceof Error ? e.message : "Could not load banks",
-      500,
-    );
+    serverLogger.error("payment.bank_list.failed", { operation: "bank_list" }, req, e);
+    return apiFail("Unable to load banks right now", 500, "bank_list_failed");
   }
 }

@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "id": "issue-2-payment-confirmation",
+  "title": "Issue 2: authenticated payment confirmation",
+  "plan": "docs/PAYMENT_CONFIRMATION_PLAN.md",
+  "implementation": "docs/PAYMENT_CONFIRMATION_IMPLEMENTATION.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "live-webhook-payment",
+      "stage": "release",
+      "expectation": "A real test-account payment can be confirmed through authenticated webhook delivery after the browser closes, and duplicate delivery does not duplicate booking.",
+      "verification": "Record test environment, webhook setup, browser-closed payment result, duplicate notification/check-again outcome, and resulting durable payment/job state.",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "hosted-recovery-and-smoke",
+      "stage": "release",
+      "expectation": "Delayed delivery, provider outage/recovery, invalid authentication and authenticated browser flows behave correctly on dev.",
+      "verification": "Record observed endpoint outcomes and browser smoke evidence for bank transfer, callback, Call, Chat, Back and negotiation.",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "historical-held-records",
+      "stage": "release",
+      "expectation": "Historical held payments are reviewed before being treated as newly validated, or an explicit no-backfill decision is recorded.",
+      "verification": "Document review scope, reconciliation outcome and owner; never include customer/payment personal data in the guide.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "No additional Issue 2-only change is currently identified; revalidate after Issues 4, 5 and 7 and assign any newly found gap to its owning issue.",
+      "Define any review needed for historical held payment rows; this change did not audit those records."
+    ],
+    "external": [
+      "Configure the Flutterwave test webhook secret, HTTPS endpoint and retries.",
+      "Complete a real browser-closed test payment and duplicate notification/check-again exercise, confirming one durable booking.",
+      "Verify delayed delivery, invalid authentication, provider outage/recovery, and authenticated browser smoke checks on dev.",
+      "Record hosted evidence; provider mocks and local tests do not establish delivery or production behavior.",
+      "Review historical held payment rows under an agreed operator procedure before treating them as newly validated; record only aggregate/sanitized evidence."
+    ]
+  },
+  "implementationState": "Implemented; live provider and browser verification remain pending"
+}

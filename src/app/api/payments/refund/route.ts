@@ -8,6 +8,7 @@ import {
 import { attemptFlutterwaveRefund } from "@/lib/server/payments/providers";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
+import { serverLogger } from "@/lib/server/structured-logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,7 +36,10 @@ async function loadMotoristBank(motoristId: string) {
       accountNumber: String(data.bank_account_number || "").replace(/\D/g, ""),
       bankCode: String(data.bank_code || "").trim(),
     };
-  } catch {
+  } catch (error) {
+    serverLogger.warn("payment.refund.bank_lookup_unavailable", {
+      operation: "load_refund_bank",
+    }, undefined, error);
     return null;
   }
 }
@@ -140,7 +144,7 @@ export async function POST(req: Request) {
       gatewayMessage,
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Refund failed";
-    return apiFail(msg, 500);
+    serverLogger.error("payment.refund.failed", { operation: "refund" }, req, e);
+    return apiFail("Refund could not be completed; retry or contact support", 500, "refund_failed");
   }
 }

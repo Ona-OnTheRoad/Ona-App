@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { serverLogger } from "@/lib/server/structured-logger";
 import { requireUser } from "@/lib/server/auth-utils";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { createServiceSupabase } from "@/lib/supabase/server";
@@ -84,7 +85,7 @@ export async function POST(
     if (!updated) return apiFail("Job not found", 404);
     return apiOk({ job: updated });
   } catch (e) {
-    console.error("[dispatch-scheduled]", id, e);
-    return apiFail(e instanceof Error ? e.message : "Dispatch failed", 500);
+    serverLogger.error("job.dispatch_scheduled.failed", { operation: "dispatch_scheduled", jobId: id }, req, e);
+    return apiFail("The request could not be dispatched; try again shortly", 500, "dispatch_failed");
   }
 }

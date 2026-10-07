@@ -158,5 +158,15 @@
       "Radius expansion write failure could exhaust a request"
     ],
     "scope": "Current feature code and timeout/radius fixes; hosted rollout and broader manual/candidate aggregate races remain unverified"
+  },
+  "remainingWork": {
+    "code": [
+      "Complete independent review against an exact commit; retain pending status for unrun acceptance criteria.",
+      "Verify the migration on the full isolated schema and review remaining manual pairing races and best-effort event/notification delivery."
+    ],
+    "external": [
+      "Apply and verify migration 078 in the intended environment, then configure the supported minute scheduler and secret.",
+      "Record unattended no-browser execution, overlap/restart recovery, representative load, alerts, and authenticated browser smoke evidence."
+    ]
   }
 }

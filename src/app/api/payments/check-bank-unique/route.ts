@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { serverLogger } from "@/lib/server/structured-logger";
 import {
   getSupabaseAnonKey,
   getSupabaseUrl,
@@ -111,6 +112,7 @@ export async function POST(req: Request) {
 
     return apiOk({ available: true });
   } catch (e) {
-    return apiFail(e instanceof Error ? e.message : "Check failed", 500);
+    serverLogger.error("payment.bank_uniqueness.failed", { operation: "bank_uniqueness_check" }, req, e);
+    return apiFail("Unable to check bank details right now", 500, "bank_check_failed");
   }
 }

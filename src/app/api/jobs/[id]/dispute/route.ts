@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { serverLogger } from "@/lib/server/structured-logger";
 import { isJobParty, requireUser } from "@/lib/server/auth-utils";
 import { AdminAuthError, requireAdmin } from "@/lib/server/admin-auth";
 import {
@@ -114,6 +115,7 @@ export async function POST(
     if ("error" in res) return apiFail(res.error, 400);
     return apiOk({ job: res.job });
   } catch (e) {
-    return apiFail(e instanceof Error ? e.message : "Dispute failed", 500);
+    serverLogger.error("job.dispute.failed", { operation: "dispute" }, req, e);
+    return apiFail("Unable to process dispute right now", 500, "dispute_failed");
   }
 }

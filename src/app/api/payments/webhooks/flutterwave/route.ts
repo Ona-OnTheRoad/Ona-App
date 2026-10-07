@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createHash } from "node:crypto";
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { serverLogger } from "@/lib/server/structured-logger";
 import { authenticateFlutterwaveWebhook } from "@/lib/server/payments/flutterwave-webhook-auth";
 import { enqueuePaymentWebhook, processPaymentWebhookEvent } from "@/lib/server/payments/durable-processing";
 
@@ -43,7 +44,8 @@ export async function POST(req: Request) {
     }
     // Notification fields only identify work. The processor independently verifies the provider obligation.
     return apiOk({ outcome: processed.status, accepted: true });
-  } catch {
+  } catch (error) {
+    serverLogger.error("payment.webhook.processing_unavailable", { operation: "webhook_processing" }, req, error);
     return apiFail("Webhook processing unavailable", 503, "confirmation_pending");
   }
 }

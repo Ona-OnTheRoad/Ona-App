@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { apiFail, apiFailFromError, apiOk } from "@/lib/server/api-json";
+import { serverLogger } from "@/lib/server/structured-logger";
 import { isJobParty, requireUser } from "@/lib/server/auth-utils";
 import { actorMay, type TransitionEvent } from "@/lib/jobs/state-machine";
 import { computeDriveMetrics } from "@/lib/server/google-eta";
@@ -131,11 +132,12 @@ export async function POST(
           );
         }
       } catch (err) {
-        console.error(
-          `[sspe] ${b.event} threw id=${id} pro=${auth.userId}:`,
-          err,
-        );
-        return apiFail("Internal error", 500);
+        serverLogger.error("job.transition.failed", {
+          operation: "transition",
+          jobId: id,
+          outcome: b.event,
+        }, req, err);
+        return apiFail("Unable to update this job right now", 500, "job_transition_failed");
       }
       console.log(
         `[sspe] ${b.event} end id=${id} pro=${auth.userId} ok=${res.ok} ms=${Date.now() - t0}${res.ok ? "" : ` err=${res.error} status=${res.status}`}`,
@@ -217,6 +219,7 @@ export async function POST(
       serverNow: new Date().toISOString(),
     });
   } catch (e) {
+    serverLogger.error("job.transition.failed", { operation: "transition" }, req, e);
     return apiFailFromError(e, "Transition failed");
   }
 }

@@ -2,6 +2,7 @@ import { apiFail, apiOk } from "@/lib/server/api-json";
 import { isJobParty, requireUser } from "@/lib/server/auth-utils";
 import { retrySearch } from "@/lib/server/pairing/pairing-engine";
 import { getJob } from "@/lib/server/jobs/job-store";
+import { serverLogger } from "@/lib/server/structured-logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,7 +37,7 @@ export async function POST(
     const fresh = await getJob(id);
     return apiOk({ job: fresh ?? job, serverNow: new Date().toISOString() });
   } catch (e) {
-    console.error("[retry]", id, e);
-    return apiFail(e instanceof Error ? e.message : "Retry failed", 500);
+    serverLogger.error("job.retry.failed", { operation: "retry", jobId: id }, req, e);
+    return apiFail("Retry could not be completed; try again shortly", 500, "job_retry_failed");
   }
 }
