@@ -30,16 +30,7 @@ async function getJobRaw(id: string): Promise<JobRecord | null> {
 }
 
 export async function getJob(id: string): Promise<JobRecord | null> {
-  const job = await getJobRaw(id);
-  if (!job) return null;
-  const { reconcileJobPayment } = await import("./payments");
-  const { recoverReleasedFromFlutterwave } = await import("./recovery");
-  const { clearFalseSatisfiedStamp } = await import("./recovery");
-  const { maybeExpire } = await import("./expiry");
-  const synced = await reconcileJobPayment(job);
-  const recovered = await recoverReleasedFromFlutterwave(synced);
-  const cleaned = await clearFalseSatisfiedStamp(recovered);
-  return maybeExpire(cleaned);
+  return getJobRaw(id);
 }
 
 function isDeferredByPro(job: JobRecord, proId: string): boolean {
@@ -123,29 +114,7 @@ export async function listJobsForUser(
           ];
         }
       }
-      let mapped = await Promise.all(
-        rows.map(async (row) => {
-          let j = rowToJob(row as unknown as Record<string, unknown>);
-          if (
-            j.status === "negotiating" ||
-            j.status === "agreed" ||
-            j.status === "paid_booked" ||
-            j.status === "en_route" ||
-            j.status === "arrived" ||
-            j.status === "in_progress" ||
-            j.status === "completed" ||
-            j.status === "searching"
-          ) {
-            try {
-              const { maybeExpire } = await import("./expiry");
-              j = await maybeExpire(j);
-            } catch {
-              /* keep raw row */
-            }
-          }
-          return j;
-        }),
-      );
+      let mapped = rows.map((row) => rowToJob(row as unknown as Record<string, unknown>));
 
       if (role === "repair_pro") {
         const needPhoto = mapped.filter(

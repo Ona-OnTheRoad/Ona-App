@@ -13,6 +13,8 @@ describe("portable unattended scheduler client", () => {
     const fetcher = vi.fn(async () => Response.json({ ok: true, data: { outcomes: {
       pairing: { status: "completed", checked: 2, timedOut: 1, expired: 0 },
       negotiation: { status: "completed", checked: 1, expired: 1 },
+      payments: { status: "completed", inbox: {}, reconciliation: {}, outbox: {}, jobRecovery: {} },
+      jobDeadlines: { status: "completed", checked: 1, cancelled: 0, released: 0 },
     } } }));
     const config = schedulerConfig({ DEADLINE_SWEEP_BASE_URL: "https://dev.example.com", CRON_SECRET: "test-secret" });
     expect(await runDeadlineSweep(config, fetcher)).toMatchObject({ negotiation: { checked: 1, expired: 1 } });

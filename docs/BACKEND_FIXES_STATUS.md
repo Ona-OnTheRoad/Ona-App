@@ -8,7 +8,7 @@ Updated: 2026-10-07. Issue numbers below refer to the engineer report’s **Sugg
 | 2 | Authenticated Flutterwave webhook and shared payment confirmation | Implemented and reviewed on `feat/payment-confirmation`; release checks below remain. |
 | 3 | Server scheduler for pairing and negotiation expiry | Independently reviewed on `feat/unattended-deadline-sweeps`; hosted migration, scheduler activation and unattended evidence remain pending. |
 | 4 | Conditional writes throughout jobs; remove degraded persistence and memory authority | Merged to `dev` in PR #3; automated checks passed and migration 079 applied to the configured Supabase project. Formal code review, isolated migration verification and runtime checks remain pending. |
-| 5 | Transactional job transitions and pure reads | Not completed; separate payment/job writes and repair-on-read remain. |
+| 5 | Transactional job transitions and pure reads | In progress on `feat/transactional-job-lifecycle`; transactional payment booking and a durable worker are implemented locally. Migration validation/application, independent review and hosted unattended evidence remain pending. |
 | 6 | Structured logging and error visibility | Limited sanitized payment logs added; broader observability remains. |
 | 7 | Migration CI, distributed rate limiting and server-only guards | Separate follow-up; payment verification still uses the existing process-local soft limiter. |
 

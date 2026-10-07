@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   createEscrowPayment,
   getEscrowByRef,
@@ -6,6 +6,8 @@ import {
   preferPaymentRow,
   type EscrowPayment,
 } from "@/lib/server/payments/escrow-store";
+
+vi.mock("@/lib/supabase/env", () => ({ isSupabaseAdminConfigured: () => false }));
 
 describe("escrow-store (memory fallback)", () => {
   const sampleInput = {
@@ -18,7 +20,7 @@ describe("escrow-store (memory fallback)", () => {
     platformFeeMinor: 25_000,
     proPayoutMinor: 437_500,
     currency: "NGN" as const,
-    provider: "flutterwave",
+    provider: "mock",
     providerRef: "FLW-REF-001",
     serviceType: "mechanic",
     meta: { jobId: "job-1" },
@@ -33,7 +35,7 @@ describe("escrow-store (memory fallback)", () => {
     expect(payment.amountMinor).toBe(500_000);
     expect(payment.escrowStatus).toBe("pending_payment");
     expect(payment.status).toBe("pending");
-    expect(payment.provider).toBe("flutterwave");
+    expect(payment.provider).toBe("mock");
     expect(payment.providerRef).toBe("FLW-REF-001");
   });
 

@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "id": "issue-5-transactional-jobs",
+  "title": "Issue 5: transactional job transitions and pure reads",
+  "plan": "docs/review-guides/issue-5-transactional-jobs.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "writer-and-repair-inventory",
+      "stage": "code",
+      "expectation": "All cross-table job/payment writes, read-time repairs, provider calls, and emitted effects are mapped to explicit transaction and retry boundaries.",
+      "verification": "Search table writers and call chains; record each atomic DB unit, external side effect, idempotency key, and recovery path.",
+      "status": "pending",
+      "evidence": ["Inventory identified payment/job booking, webhook intake, read-time repair, expiry, payout recovery and emitted notification/event paths; provider verification remains outside the SQL transaction."]
+    },
+    {
+      "id": "atomic-payment-booking",
+      "stage": "code",
+      "expectation": "A successful payment booking commits payment state, job state/version, status event, and required outbox work atomically, or commits none of them.",
+      "verification": "Inspect SQL transaction/RPC and test rollback at each write boundary, including job cancellation/refund and stale-version races.",
+      "status": "pending",
+      "evidence": ["Unit test asserts the RPC receives the exact verified obligation and job_version. In a disposable PostgreSQL fixture, a forced outbox constraint failure rolled back payment/job writes; valid booking returned confirmed, duplicate booking returned already_confirmed, and Issue 4 trigger advanced job_version from 0 to 1."]
+    },
+    {
+      "id": "durable-inbox",
+      "stage": "code",
+      "expectation": "Authenticated provider notifications are durably and idempotently accepted before acknowledgement; duplicate delivery cannot repeat the transition.",
+      "verification": "Test identical and conflicting event IDs, process restart after intake, provider outage, malformed event, and acknowledgment/retry behavior.",
+      "status": "pending",
+      "evidence": ["Flutterwave webhook route is authenticated and inserts an idempotent inbox record before processing; route behavior tests pass with a mocked durable store. Database dedupe/restart evidence remains pending."]
+    },
+    {
+      "id": "durable-outbox",
+      "stage": "code",
+      "expectation": "Post-commit events/notifications are recoverable after process exit and safely redelivered at least once.",
+      "verification": "Crash after commit and before delivery; retry/lease expiry; verify idempotent consumers and explicit terminal/manual recovery.",
+      "status": "pending",
+      "evidence": ["Booking SQL inserts event and outbox intent in the same transaction; a disposable PostgreSQL test drained one outbox item into one event and two notifications. Lease takeover and full-schema testing remain pending."]
+    },
+    {
+      "id": "external-provider-boundary",
+      "stage": "code",
+      "expectation": "Provider verification/refund/transfer calls stay outside DB transactions and cannot be duplicated unsafely by worker retries.",
+      "verification": "Trace every external call and test durable intent, provider idempotency, uncertain outcomes, and reconciliation behavior.",
+      "status": "pending",
+      "evidence": ["Provider verification occurs before the SQL RPC; payout recovery remains in the worker via existing payout-settlement code. Provider idempotency and uncertain transfer outcomes still require hosted/test-account evidence."]
+    },
+    {
+      "id": "retry-and-recovery",
+      "stage": "code",
+      "expectation": "Transient failures retry with bounded backoff/leases; exhausted or ambiguous financial work remains visible and recoverable rather than silently discarded.",
+      "verification": "Test worker crash, repeated DB/provider outage, lease takeover, maximum retry handling, and manual recovery procedure.",
+      "status": "pending",
+      "evidence": ["Inbox/reconciliation retry bounds and attempt-matched finish calls are implemented; manual-review queue has no operator UI, and PostgreSQL lease/restart behavior remains untested."]
+    },
+    {
+      "id": "pure-reads",
+      "stage": "code",
+      "expectation": "Ordinary job reads and lists perform no payment verification, job/payment writes, notifications, or state repair.",
+      "verification": "Trace getJob and list call graphs; assert read endpoints make no provider calls or mutation queries; verify reconciliation remains available independently.",
+      "status": "pass",
+      "evidence": ["getJob now returns the durable read/hydration result directly; full and lean list paths no longer call maybeExpire. Static call-site review confirms reconciliation, expiry and release repair are assigned to explicit actions or the worker."]
+    },
+    {
+      "id": "issue4-and-business-invariants",
+      "stage": "code",
+      "expectation": "Issue 4 job_version CAS remains intact and payment, refund, terminal-state, assignment, fee, and deadline rules are preserved.",
+      "verification": "Review migration/function guards against current state-machine behavior and protected rules; run regression and concurrency tests.",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "security-and-migration",
+      "stage": "release",
+      "expectation": "Inbox/outbox tables and RPCs are inaccessible to anon/authenticated clients and the migration safely handles existing data.",
+      "verification": "Apply/reapply in isolated PostgreSQL; inspect grants/RLS, indexes, data migration and rollback/recovery behavior.",
+      "status": "pending",
+      "evidence": ["Migration 080 applied successfully to a disposable PostgreSQL fixture; RLS FORCE, table grants and function execute grants were reviewed in migration SQL. Full-schema reapplication and explicit role-privilege assertions remain pending."]
+    },
+    {
+      "id": "unattended-runtime",
+      "stage": "release",
+      "expectation": "Durable reconciliation and outbox processing catch up without a browser and recover after overlapping runs/restarts.",
+      "verification": "Record target scheduler, secret configuration, cadence, no-browser test, outage/restart evidence, and hosted monitoring separately.",
+      "status": "pending",
+      "evidence": ["Issue 3 scheduler activation and unattended hosted evidence are currently pending"]
+    }
+  ],
+  "implementationBranch": "feat/transactional-job-lifecycle",
+  "implementationNotes": "Draft implementation adds the transactional payment-booking RPC, durable webhook inbox/reconciliation queue/job outbox, and an authenticated worker entry point. Provider verification remains outside SQL. Local unit/API checks, types, targeted lint, and a disposable PostgreSQL migration/transaction smoke test pass. Hosted scheduling and unattended recovery evidence remain pending. Queue retention/manual-review UI and push notification delivery are limitations.",
+  "implementationState": "Implementation in progress; automated local checks pass, database and hosted release evidence pending",
+  "independentReview": {
+    "status": "Not started",
+    "findings": [],
+    "scope": "To be performed against the implementation commit"
+  }
+}

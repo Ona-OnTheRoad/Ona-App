@@ -12,8 +12,19 @@ import { POST as webhookPost } from "@/app/api/payments/webhooks/flutterwave/rou
 
 vi.mock("../confirmation-store", () => ({
   loadConfirmationPayment: vi.fn(), loadConfirmationJob: vi.fn(),
-  holdConfirmedPayment: vi.fn(), bookConfirmedJob: vi.fn(),
+  bookConfirmedJob: vi.fn(),
 }));
+vi.mock("../durable-processing", async () => {
+  const { confirmJobPayment } = await import("../confirm-job-payment");
+  return {
+    enqueuePaymentWebhook: vi.fn(async () => ({ id: "inbox-1", status: "pending" })),
+    processPaymentWebhookEvent: vi.fn(async () => {
+      const result = await confirmJobPayment({ reference: "ona_ref", expectedProvider: "flutterwave" });
+      const retry = result.outcome === "pending" || (result.outcome === "rejected" && "code" in result && ["not_found", "checkout_pending"].includes(result.code || ""));
+      return { status: result.outcome === "confirmed" || result.outcome === "already_confirmed" ? "processed" : retry ? "retry" : "rejected", result };
+    }),
+  };
+});
 vi.mock("@/lib/server/auth-utils", () => ({ requireUser: vi.fn() }));
 vi.mock("../providers", () => ({ verifyCharge: vi.fn(), isProductionRuntime: vi.fn(() => false) }));
 
@@ -44,16 +55,14 @@ beforeEach(() => {
   vi.mocked(providers.verifyCharge).mockResolvedValue({ ...transaction });
   vi.mocked(store.loadConfirmationPayment).mockImplementation(async () => payment);
   vi.mocked(store.loadConfirmationJob).mockImplementation(async () => job);
-  vi.mocked(store.holdConfirmedPayment).mockImplementation(async () => {
-    payment = { ...payment, status: "paid", escrowStatus: "held" };
-    return payment;
-  });
   vi.mocked(store.bookConfirmedJob).mockImplementation(async () => {
-    if (job.status === "agreed") {
+    const transitioning = job.status === "agreed";
+    if (transitioning) {
       job = { ...job, status: "paid_booked", paymentId: payment.id,
         statusHistory: [...job.statusHistory, { status: "paid_booked", at: "now", by: "system" }] };
     }
-    return job;
+    payment = { ...payment, status: "paid", escrowStatus: "held" };
+    return { outcome: transitioning ? "confirmed" : "already_confirmed", job, payment };
   });
 });
 
@@ -65,7 +74,6 @@ function request(body: unknown, secret = "test-notification-secret") {
 }
 
 function expectNoAcceptance() {
-  expect(store.holdConfirmedPayment).not.toHaveBeenCalled();
   expect(store.bookConfirmedJob).not.toHaveBeenCalled();
 }
 
@@ -75,7 +83,7 @@ describe("stored job payment confirmation", () => {
     expect(providers.verifyCharge).toHaveBeenCalledWith("ona_ref", "flutterwave", { strictProvider: true });
     expect((await confirmJobPayment({ reference: "ona_ref" })).outcome).toBe("already_confirmed");
     expect(providers.verifyCharge).toHaveBeenCalledTimes(1);
-    expect(store.bookConfirmedJob).toHaveBeenCalledTimes(1);
+    expect(store.bookConfirmedJob).toHaveBeenCalledTimes(2);
   });
 
   it.each([
@@ -145,10 +153,9 @@ describe("stored job payment confirmation", () => {
     job.paymentReference = "ona_ref";
     expect((await confirmJobPayment({ reference: "ona_ref" })).outcome).toBe("confirmed");
   });
-  it("rejects a changed obligation returned by the hold write", async () => {
-    vi.mocked(store.holdConfirmedPayment).mockResolvedValue({ ...payment, amountMinor: 1, escrowStatus: "held" });
-    expect(await confirmJobPayment({ reference: "ona_ref" })).toMatchObject({ outcome: "pending", code: "payment_changed" });
-    expect(store.bookConfirmedJob).not.toHaveBeenCalled();
+  it("does not book a job when the atomic transition reports a stale conflict", async () => {
+    vi.mocked(store.bookConfirmedJob).mockResolvedValue({ outcome: "conflict" });
+    expect(await confirmJobPayment({ reference: "ona_ref" })).toMatchObject({ outcome: "pending", code: "job_conflict" });
   });
   it("never books an agreed job with released funds", async () => {
     payment.escrowStatus = "released";
@@ -167,7 +174,7 @@ describe("stored job payment confirmation", () => {
     payment.escrowStatus = escrowStatus;
     job.status = "paid_booked";
     expect((await confirmJobPayment({ reference: "ona_ref" })).outcome).toBe("already_confirmed");
-    expectNoAcceptance();
+    expect(store.bookConfirmedJob).toHaveBeenCalledTimes(1);
     expect(providers.verifyCharge).not.toHaveBeenCalled();
   });
 
@@ -179,9 +186,9 @@ describe("stored job payment confirmation", () => {
   });
 
   it("does not book after refund wins a concurrent hold", async () => {
-    vi.mocked(store.holdConfirmedPayment).mockResolvedValue({ ...payment, escrowStatus: "refunded" });
+    vi.mocked(store.bookConfirmedJob).mockResolvedValue({ outcome: "refunded" });
     expect((await confirmJobPayment({ reference: "ona_ref" })).outcome).toBe("rejected");
-    expect(store.bookConfirmedJob).not.toHaveBeenCalled();
+    expect(store.bookConfirmedJob).toHaveBeenCalledTimes(1);
   });
 
   it("does not resurrect a job cancelled during provider verification", async () => {
@@ -243,7 +250,7 @@ describe("Flutterwave webhook", () => {
     expect((await webhookPost(request(event))).status).toBe(200);
     expect(job.status).toBe("paid_booked");
     expect(providers.verifyCharge).toHaveBeenCalledTimes(1);
-    expect(store.bookConfirmedJob).toHaveBeenCalledTimes(1);
+    expect(store.bookConfirmedJob).toHaveBeenCalledTimes(2);
   });
   it("does not trust successful notification data", async () => {
     vi.mocked(providers.verifyCharge).mockResolvedValue({ ...transaction, amountMinor: 0 });

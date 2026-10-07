@@ -1,12 +1,11 @@
 /** Narrow, fail-closed persistence for confirmation; no live database fallback. */
 import type { JobRecord } from "@/lib/jobs/types";
-import { assertTransition } from "@/lib/jobs/state-machine";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { getJobRaw } from "@/lib/server/jobs/job-store/reads";
-import { flowToLegacyStatus, rowToJob } from "@/lib/server/jobs/job-store/mappers";
+import { rowToJob } from "@/lib/server/jobs/job-store/mappers";
 import {
-  getEscrowByRef, getEscrowByRequest, rowToEscrow, updateEscrow,
+  getEscrowByRef, getEscrowByRequest, rowToEscrow,
   type EscrowPayment,
 } from "./escrow-store";
 import type { VerifyChargeResult } from "./providers";
@@ -43,76 +42,45 @@ export async function loadConfirmationJob(id: string): Promise<JobRecord | null>
   return data ? rowToJob(data as Record<string, unknown>) : null;
 }
 
-export async function holdConfirmedPayment(payment: EscrowPayment, verified: VerifyChargeResult) {
-  const patch = {
-    status: "paid", escrowStatus: "held" as const,
-    paidAt: verified.paidAt || new Date().toISOString(), providerChannel: verified.channel || null,
-  };
-  if (!isSupabaseAdminConfigured()) {
-    const updated = await updateEscrow(payment.id, patch);
-    if (!updated) throw new Error("Could not persist confirmed payment");
-    return updated;
-  }
-  const { data, error } = await createServiceSupabase().from("payments").update({
-    status: patch.status, escrow_status: patch.escrowStatus, paid_at: patch.paidAt,
-    provider_channel: patch.providerChannel, updated_at: new Date().toISOString(),
-  }).eq("id", payment.id).eq("updated_at", payment.updatedAt)
-    .eq("escrow_status", payment.escrowStatus)
-    .eq("provider", payment.provider).eq("provider_ref", payment.providerRef!)
-    .eq("request_id", payment.requestId).eq("amount_kobo", payment.amountMinor)
-    .eq("currency", payment.currency).eq("motorist_id", payment.motoristId)
-    .eq("repair_pro_id", payment.repairProId).select("*").maybeSingle();
-  if (error) throw new Error("Could not persist confirmed payment");
-  // A concurrent confirmation/release/refund won. Reload; never regress its state.
-  if (!data) {
-    const fresh = await loadConfirmationPayment({ reference: payment.providerRef! });
-    if (!fresh) throw new Error("Payment disappeared during confirmation");
-    return fresh;
-  }
-  const saved = rowToEscrow(data as Record<string, unknown>);
-  // Preserve the existing best-effort backup hook, only for the hold-write winner.
-  try {
-    const { triggerBackupAfterPaymentChange } = await import("@/lib/server/local-backup-trigger");
-    triggerBackupAfterPaymentChange("payment_held");
-  } catch { /* backups never determine payment acceptance */ }
-  return saved;
-}
+export type AtomicPaymentBooking = {
+  outcome: "confirmed" | "already_confirmed" | "conflict" | "terminal_job" |
+    "payment_terminal" | "payment_not_payable" | "refunded" | "association_mismatch" |
+    "not_found" | "job_not_found";
+  job?: JobRecord;
+  payment?: EscrowPayment;
+};
 
-export async function bookConfirmedJob(job: JobRecord, payment: EscrowPayment) {
-  const ts = new Date().toISOString();
-  const updated: JobRecord = {
-    ...job, status: assertTransition(job.status, { type: "PAYMENT_SUCCESS" }),
-    paymentId: payment.id, paymentReference: payment.providerRef,
-    amountMinor: payment.amountMinor, platformFeeMinor: payment.platformFeeMinor,
-    proPayoutMinor: payment.proPayoutMinor, escrowStatus: "held", paidAt: ts, updatedAt: ts,
-    statusHistory: [...job.statusHistory, { status: "paid_booked", at: ts, by: "system" }],
+/** Persist the verified payment and booked job, event, and outbox intent in one SQL transaction. */
+export async function bookConfirmedJob(
+  job: JobRecord,
+  payment: EscrowPayment,
+  verified: VerifyChargeResult,
+): Promise<AtomicPaymentBooking> {
+  if (!isSupabaseAdminConfigured()) throw new Error("Job/payment persistence is unavailable");
+  const { data, error } = await createServiceSupabase().rpc("apply_confirmed_job_payment", {
+    p_payment_id: payment.id,
+    p_request_id: job.id,
+    p_expected_job_version: job.jobVersion ?? 0,
+    p_provider: payment.provider,
+    p_provider_ref: payment.providerRef,
+    p_verified_amount_kobo: verified.amountMinor,
+    p_verified_currency: verified.currency,
+    p_paid_at: verified.paidAt || payment.paidAt || new Date().toISOString(),
+    p_provider_channel: verified.channel || payment.providerChannel,
+  });
+  if (error) throw new Error("Could not persist atomic payment booking");
+  const result = data as { outcome?: string; job?: Record<string, unknown>; payment?: Record<string, unknown> } | null;
+  const outcomes = new Set<AtomicPaymentBooking["outcome"]>([
+    "confirmed", "already_confirmed", "conflict", "terminal_job", "payment_terminal",
+    "payment_not_payable", "refunded", "association_mismatch", "not_found", "job_not_found",
+  ]);
+  const outcome = outcomes.has(result?.outcome as AtomicPaymentBooking["outcome"])
+    ? result!.outcome as AtomicPaymentBooking["outcome"] : "association_mismatch";
+  return {
+    outcome,
+    job: result?.job ? rowToJob(result.job) : undefined,
+    payment: result?.payment ? rowToEscrow(result.payment) : undefined,
   };
-  if (!isSupabaseAdminConfigured()) throw new Error("Job persistence is unavailable");
-  const { data, error } = await createServiceSupabase().from("service_requests")
-    .update({
-      flow_status: updated.status, status: flowToLegacyStatus(updated.status),
-      payment_id: payment.id, payment_reference: payment.providerRef,
-      amount_minor: payment.amountMinor, platform_fee_minor: payment.platformFeeMinor,
-      pro_payout_minor: payment.proPayoutMinor, labour_agreed_kobo: payment.amountMinor,
-      escrow_status: "held", paid_at: ts, updated_at: ts,
-      status_history: updated.statusHistory, negotiation_status: "paid",
-    }).eq("id", job.id).eq("flow_status", "agreed")
-    .eq("job_version", job.jobVersion ?? 0)
-    .eq("payment_reference", payment.providerRef!).eq("updated_at", job.updatedAt)
-    .select("*").maybeSingle();
-  if (error) throw new Error("Could not persist booked job");
-  if (!data) return loadConfirmationJob(job.id);
-  const saved = rowToJob(data as Record<string, unknown>);
-  // Only the conditional-write winner emits the event. Booking has no notification side effects.
-  try {
-    const { error: eventError } = await createServiceSupabase().from("job_events").insert({
-      request_id: job.id, event_type: "status", payload: { status: "paid_booked" },
-    });
-    if (eventError) console.error("Confirmed booking event could not be saved", { jobId: job.id });
-  } catch {
-    console.error("Confirmed booking event could not be saved", { jobId: job.id });
-  }
-  return saved;
 }
 
 /** Bind checkout only while the exact agreed job snapshot still owns the session. */
