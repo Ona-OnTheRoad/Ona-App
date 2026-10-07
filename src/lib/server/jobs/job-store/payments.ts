@@ -6,23 +6,23 @@ import {
   PLATFORM_FEE_PERCENT,
 } from "@/lib/jobs/constants";
 import type {
-  JobFlowStatus,
   JobRecord,
 } from "@/lib/jobs/types";
 import { toMinorUnits, type AppCurrency } from "@/lib/pricing";
 import {
   createEscrowPayment,
-  getEscrowByRef,
   getEscrowByRequest,
   supersedePendingPaymentsForRequest,
   updateEscrow,
 } from "@/lib/server/payments/escrow-store";
-import { initCharge, verifyCharge } from "@/lib/server/payments/providers";
+import { initCharge } from "@/lib/server/payments/providers";
+import { bindJobCheckout, loadConfirmationPayment } from "@/lib/server/payments/confirmation-store";
+import { confirmJobPayment } from "@/lib/server/payments/confirm-job-payment";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { createServiceSupabase } from "@/lib/supabase/server";
-import { nowIso, splitMinor, uid } from "./mappers";
-import { cacheJob, persist } from "./cache";
-import { getJob, getJobRaw } from "./reads";
+import { nowIso, splitMinor } from "./mappers";
+import { persist } from "./cache";
+import { getJob } from "./reads";
 
 async function expirePendingPaymentForJob(
   job: JobRecord,
@@ -318,35 +318,12 @@ export async function releaseJobEscrow(job: JobRecord): Promise<{
   proPayoutMinor?: number;
   platformFeeMinor?: number;
 }> {
-  // Auto-heal pending payment → held when FLW already settled collection
+  // All collection recovery uses the same stored obligation validation.
   const esc = await getEscrowByRequest(job.id);
-  if (
-    esc?.providerRef &&
-    (esc.escrowStatus === "pending_payment" ||
-      esc.escrowStatus === "none" ||
-      esc.escrowStatus === "failed" ||
-      esc.status === "pending" ||
-      esc.status === "failed")
-  ) {
-    try {
-      const verified = await verifyCharge(
-        esc.providerRef,
-        String(esc.provider),
-      );
-      if (verified.success) {
-        await updateEscrow(esc.id, {
-          status: "paid",
-          escrowStatus: "held",
-          paidAt: verified.paidAt || nowIso(),
-          providerChannel: verified.channel || null,
-        });
-        if (job.status === "agreed") {
-          await markJobPaidFromReference(esc.providerRef);
-        }
-      }
-    } catch (e) {
-      console.error("releaseJobEscrow auto-verify", job.id, e);
-    }
+  if (!esc?.providerRef) return { ok: false, message: "Payment not found." };
+  const confirmation = await confirmJobPayment({ reference: esc.providerRef, jobId: job.id });
+  if (confirmation.outcome !== "confirmed" && confirmation.outcome !== "already_confirmed") {
+    return { ok: false, message: confirmation.message };
   }
 
   const { attemptProPayout } =
@@ -429,8 +406,11 @@ export async function mockPayJob(input: {
   motoristId: string;
   email?: string;
 }): Promise<{ job: JobRecord; reference: string } | { error: string }> {
+  const { isProductionRuntime } = await import("@/lib/server/payments/providers");
+  if (isProductionRuntime()) return { error: "Mock payments are disabled on deployed runtimes." };
   const job = await getJob(input.jobId);
   if (!job) return { error: "Job not found" };
+  if (job.motoristId !== input.motoristId) return { error: "Only the customer on this job can pay." };
   if (job.status !== "agreed") {
     return { error: "Job must be in Agreed status before payment." };
   }
@@ -489,13 +469,7 @@ export async function mockPayJob(input: {
     },
   });
 
-  await updateEscrow(payment.id, {
-    status: "held",
-    escrowStatus: "held",
-    paidAt: nowIso(),
-  });
-
-  let updated: JobRecord = {
+  const updated: JobRecord = {
     ...job,
     paymentId: payment.id,
     paymentReference: reference,
@@ -504,9 +478,12 @@ export async function mockPayJob(input: {
     proPayoutMinor: split.proPayoutMinor,
     escrowStatus: "held",
   };
-  const { applyEvent } = await import("./transitions");
-  updated = await applyEvent(updated, { type: "PAYMENT_SUCCESS" }, "system");
-  return { job: updated, reference };
+  await persist({ ...updated, escrowStatus: "pending_payment" });
+  const confirmed = await confirmJobPayment({ reference, jobId: job.id });
+  if (confirmed.outcome !== "confirmed" && confirmed.outcome !== "already_confirmed") {
+    return { error: confirmed.message };
+  }
+  return { job: confirmed.job, reference };
 }
 
 /**
@@ -846,6 +823,13 @@ export async function startJobEscrowPayment(input: {
       },
     });
 
+    // Do not expose a live checkout backed only by the escrow store's memory fallback.
+    const storedIntent = await loadConfirmationPayment({ reference: charge.reference });
+    if (!storedIntent || storedIntent.requestId !== job.id || storedIntent.amountMinor !== amountMinor ||
+        storedIntent.currency !== currency || storedIntent.provider !== charge.provider) {
+      throw new Error("Payment intent could not be saved. Check payment status before trying again.");
+    }
+
     // Open a new 20‑min session (does NOT count as an attempt until it expires unpaid)
     const sessionStart = nowIso();
     const refreshed: JobRecord = {
@@ -862,10 +846,12 @@ export async function startJobEscrowPayment(input: {
         },
       ],
       paymentReference: charge.reference,
+      paymentId: null,
       paymentSessionEndsAt: sessionEndsAt,
       paymentAttemptCount: paymentWindowsExpiredCount(job),
     };
-    await persist(refreshed);
+    const bound = await bindJobCheckout(job, refreshed);
+    if (!bound) return { error: "Job changed while checkout was being created. Check payment status before trying again." };
 
     return {
       authorizationUrl: charge.authorizationUrl,
@@ -892,106 +878,24 @@ export async function startJobEscrowPayment(input: {
   }
 }
 
+/** Compatibility entry point: never marks an unverified obligation paid. */
 export async function markJobPaidFromReference(
   reference: string,
 ): Promise<
   | { job: JobRecord; paymentId: string; alreadyBooked?: boolean }
   | { error: string }
 > {
-  const payment = await getEscrowByRef(reference);
-  if (!payment) return { error: "Payment not found for this reference." };
-
-  if (payment.escrowStatus !== "held" && payment.escrowStatus !== "released") {
-    await updateEscrow(payment.id, {
-      status: "paid",
-      escrowStatus: "held",
-      paidAt: nowIso(),
-    });
+  const result = await confirmJobPayment({ reference });
+  if ((result.outcome === "confirmed" || result.outcome === "already_confirmed") && result.job) {
+    return { job: result.job, paymentId: result.payment.id,
+      alreadyBooked: result.outcome === "already_confirmed" };
   }
-
-  // Use raw load getJob() reconciles payment and would recurse
-  const job = await getJobRaw(payment.requestId);
-  if (!job) return { error: "Job not found for this payment." };
-
-  if (
-    job.status === "paid_booked" ||
-    job.status === "en_route" ||
-    job.status === "arrived" ||
-    job.status === "in_progress" ||
-    job.status === "completed" ||
-    job.status === "satisfied" ||
-    job.status === "released"
-  ) {
-    return { job, paymentId: payment.id, alreadyBooked: true };
-  }
-
-  if (job.status !== "agreed") {
-    return {
-      error: `Job is ${job.status}; expected agreed before booking payment.`,
-    };
-  }
-
-  let updated: JobRecord = {
-    ...job,
-    paymentId: payment.id,
-    paymentReference: payment.providerRef || reference,
-    amountMinor: payment.amountMinor,
-    platformFeeMinor: payment.platformFeeMinor,
-    proPayoutMinor: payment.proPayoutMinor,
-    escrowStatus: "held",
-  };
-  try {
-    const { applyEvent } = await import("./transitions");
-    updated = await applyEvent(updated, { type: "PAYMENT_SUCCESS" }, "system");
-  } catch (e) {
-    return {
-      error: e instanceof Error ? e.message : "Could not mark job Booked",
-    };
-  }
-  return { job: updated, paymentId: payment.id };
+  return { error: result.message || "Could not mark job Booked" };
 }
 
 export async function reconcileJobPayment(job: JobRecord): Promise<JobRecord> {
   if (job.status !== "agreed") return job;
-
-  const payment = await getEscrowByRequest(job.id);
-  if (!payment?.providerRef) return job;
-
-  // Already held in escrow DB → book the job
-  if (
-    payment.escrowStatus === "held" ||
-    payment.escrowStatus === "released" ||
-    payment.status === "paid"
-  ) {
-    const booked = await markJobPaidFromReference(payment.providerRef);
-    if ("job" in booked) return booked.job;
-    return job;
-  }
-
-  // Pending row but Flutterwave already collected verify live
-  if (
-    payment.escrowStatus === "pending_payment" ||
-    payment.escrowStatus === "none"
-  ) {
-    try {
-      const verified = await verifyCharge(
-        payment.providerRef,
-        String(payment.provider),
-      );
-      if (verified.success) {
-        await updateEscrow(payment.id, {
-          status: "paid",
-          escrowStatus: "held",
-          paidAt: verified.paidAt || nowIso(),
-          providerChannel: verified.channel || null,
-        });
-        const booked = await markJobPaidFromReference(payment.providerRef);
-        if ("job" in booked) return booked.job;
-      }
-    } catch {
-      /* keep agreed until verify succeeds */
-    }
-  }
-
-  return job;
+  const result = await confirmJobPayment({ jobId: job.id });
+  return (result.outcome === "confirmed" || result.outcome === "already_confirmed")
+    ? result.job ?? job : job;
 }
