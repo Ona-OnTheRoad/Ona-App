@@ -20,9 +20,12 @@ export async function runDeadlineSweep(config, fetcher = fetch) {
   const payload = await response.json().catch(() => null);
   if (!response.ok || payload?.ok !== true) throw new Error(`Deadline sweep failed (HTTP ${response.status})`);
   // Whitelist counters; never echo arbitrary provider/server error payloads.
-  const summary = Object.fromEntries(["pairing", "negotiation"].map((scope) => {
+  const summary = Object.fromEntries(["pairing", "negotiation", "payments", "jobDeadlines"].map((scope) => {
     const result = payload.data?.outcomes?.[scope];
     if (!result || result.status !== "completed") throw new Error(`Missing ${scope} completion`);
+    if (scope === "payments") return [scope, { inbox: result.inbox, reconciliation: result.reconciliation,
+      outbox: result.outbox, jobRecovery: result.jobRecovery }];
+    if (scope === "jobDeadlines") return [scope, { checked: result.checked, cancelled: result.cancelled, released: result.released }];
     return [scope, { checked: result.checked, expired: result.expired, timedOut: result.timedOut }];
   }));
   return summary;

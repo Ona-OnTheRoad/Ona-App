@@ -1,6 +1,6 @@
 # Ona — human developer handover
 
-**Last reviewed:** 2026-10-05  
+**Last reviewed:** 2026-10-07
 **Do not rewrite the product or the visual system.** Finish, secure, and own.
 
 This file is the index. Read it once, then follow the frozen docs and the code.

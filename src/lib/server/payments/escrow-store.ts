@@ -251,24 +251,15 @@ export async function createEscrowPayment(input: {
   };
 
   if (isSupabaseAdminConfigured()) {
-    try {
-      // A fresh intent supersedes any older unpaid drafts (race-safe: even
-      // concurrent double-submits converge last writer wins).
-      await supersedePendingPaymentsForRequest(
-        input.requestId,
-        input.providerRef,
-      );
-      const sb = createServiceSupabase();
-      const { data, error } = await sb
-        .from("payments")
-        .insert(payload)
-        .select("*")
-        .single();
-      if (!error && data) return rowToEscrow(data as Record<string, unknown>);
-    } catch {
-      /* fall through to memory */
-    }
+    // A fresh intent supersedes older unpaid drafts, then the database trigger
+    // creates its durable reconciliation task with the payment row.
+    await supersedePendingPaymentsForRequest(input.requestId, input.providerRef);
+    const { data, error } = await createServiceSupabase()
+      .from("payments").insert(payload).select("*").single();
+    if (error || !data) throw new Error("Could not persist payment intent");
+    return rowToEscrow(data as Record<string, unknown>);
   }
+  if (input.provider !== "mock") throw new Error("Payment persistence is unavailable");
 
   const id = `pay-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const mem: EscrowPayment = {

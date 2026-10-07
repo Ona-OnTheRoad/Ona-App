@@ -1,8 +1,8 @@
 import type { JobRecord } from "@/lib/jobs/types";
 import type { EscrowPayment } from "./escrow-store";
-import { isProductionRuntime, verifyCharge } from "./providers";
+import { isProductionRuntime, verifyCharge, type VerifyChargeResult } from "./providers";
 import {
-  loadConfirmationPayment, loadConfirmationJob, holdConfirmedPayment, bookConfirmedJob,
+  loadConfirmationPayment, loadConfirmationJob, bookConfirmedJob,
 } from "./confirmation-store";
 
 export type ConfirmationInput = { reference?: string; jobId?: string; expectedProvider?: string; motoristId?: string };
@@ -27,11 +27,14 @@ function associationError(payment: EscrowPayment, job: JobRecord): string | null
   if (booked.has(job.status) && (!job.paymentReference || job.paymentReference !== payment.providerRef)) {
     return "Booked job is associated with another payment";
   }
+  if (!booked.has(job.status) && job.status !== "agreed") {
+    return "Job is no longer payable";
+  }
   return null;
 }
 
 async function confirm(input: ConfirmationInput): Promise<ConfirmationResult> {
-  let payment = await loadConfirmationPayment(input);
+  const payment = await loadConfirmationPayment(input);
   if (!payment) return { outcome: "rejected", code: "not_found", message: "Payment not found" };
   if (input.motoristId && payment.motoristId !== input.motoristId) {
     return { outcome: "rejected", code: "forbidden", message: "Only the customer on this payment can verify it" };
@@ -50,6 +53,9 @@ async function confirm(input: ConfirmationInput): Promise<ConfirmationResult> {
   if (payment.escrowStatus === "refunded" || payment.refundedAt) return reject("Payment has been refunded");
   let job = await loadConfirmationJob(payment.requestId);
   if (!job) return reject("Job not found for this payment");
+  if (["released", "release_pending", "pending_settlement"].includes(payment.escrowStatus) && !booked.has(job.status)) {
+    return reject("Payment is no longer payable");
+  }
   // A notification can precede checkout binding. Never book a draft reference or acknowledge it as terminal.
   if (job.status === "agreed" && job.paymentReference !== payment.providerRef && payment.meta.superseded !== true) {
     return { outcome: "pending", code: "checkout_pending", retryable: true,
@@ -58,8 +64,16 @@ async function confirm(input: ConfirmationInput): Promise<ConfirmationResult> {
   const mismatch = associationError(payment, job);
   if (mismatch) return reject(mismatch);
   const alreadyFunded = funded.has(payment.escrowStatus);
+  let verified: VerifyChargeResult = {
+    success: true,
+    reference: payment.providerRef!,
+    amountMinor: payment.amountMinor,
+    currency: payment.currency,
+    channel: payment.providerChannel || undefined,
+    paidAt: payment.paidAt || undefined,
+  };
   if (!alreadyFunded) {
-    const verified = await verifyCharge(payment.providerRef, payment.provider, { strictProvider: true });
+    verified = await verifyCharge(payment.providerRef, payment.provider, { strictProvider: true });
     if (!verified.success) return { outcome: "pending", message: "Payment not confirmed yet. Wait and try again.", payment };
     if (verified.reference !== payment.providerRef) return reject("Provider transaction reference does not match");
     // Flutterwave amount is in major units; Paystack amount is already in minor units.
@@ -68,33 +82,31 @@ async function confirm(input: ConfirmationInput): Promise<ConfirmationResult> {
       !Number.isSafeInteger(verified.amountMinor) || verified.amountMinor <= 0 ||
       verified.amountMinor !== payment.amountMinor || verified.currency !== payment.currency
     )) return reject("Provider amount or currency does not match the stored payment");
-    const held = await holdConfirmedPayment(payment, verified);
-    if (held.id !== payment.id || held.providerRef !== payment.providerRef ||
-        held.provider !== payment.provider || held.requestId !== payment.requestId ||
-        held.amountMinor !== payment.amountMinor || held.currency !== payment.currency ||
-        held.motoristId !== payment.motoristId || held.repairProId !== payment.repairProId) {
-      return { outcome: "pending", code: "payment_changed", retryable: true,
-        message: "Payment obligation changed during confirmation. Check again." };
-    }
-    payment = held;
-    if (payment.escrowStatus === "refunded" || payment.refundedAt) return reject("Payment has been refunded");
-    if (!funded.has(payment.escrowStatus)) {
-      return { outcome: "pending", message: "Payment changed during confirmation. Check again.", retryable: true, payment };
-    }
   }
-  // Refresh after provider I/O: a cancel, new checkout or another confirmation may have won.
+  // Refresh after provider I/O; the RPC rechecks this exact version under row lock.
   job = await loadConfirmationJob(payment.requestId);
   if (!job) return reject("Job not found for this payment");
   const freshMismatch = associationError(payment, job);
   if (freshMismatch) return reject(freshMismatch);
-  if (booked.has(job.status)) return { outcome: "already_confirmed", payment, job };
-  if (job.status !== "agreed") return reject(`Job is ${job.status}; payment requires manual recovery`);
-  if (payment.escrowStatus !== "held") return reject("Released or releasing payment requires manual job recovery");
-  job = await bookConfirmedJob(job, payment);
-  if (!job || !booked.has(job.status) || associationError(payment, job)) {
-    return { outcome: "pending", message: "Payment held; booking changed concurrently. Check again.", retryable: true, payment };
+  const booking = await bookConfirmedJob(job, payment, verified);
+  if (booking.outcome === "confirmed" || booking.outcome === "already_confirmed") {
+    const savedJob = booking.job;
+    const savedPayment = booking.payment || payment;
+    if (!savedJob || !booked.has(savedJob.status) || associationError(savedPayment, savedJob)) {
+      return { outcome: "pending", code: "booking_reload_required", message: "Booking is being reconciled. Check again.", retryable: true, payment: savedPayment };
+    }
+    return { outcome: booking.outcome === "confirmed" && !alreadyFunded ? "confirmed" : "already_confirmed",
+      payment: savedPayment, job: savedJob };
   }
-  return { outcome: alreadyFunded ? "already_confirmed" : "confirmed", payment, job };
+  if (booking.outcome === "conflict") {
+    return { outcome: "pending", code: "job_conflict", message: "Job changed during payment confirmation. Check again.", retryable: true, payment };
+  }
+  if (booking.outcome === "terminal_job" || booking.outcome === "payment_terminal" || booking.outcome === "payment_not_payable") {
+    return { outcome: "rejected", code: "manual_recovery", message: "Verified payment requires manual recovery because the job or payment is no longer payable.", payment };
+  }
+  if (booking.outcome === "refunded") return reject("Payment has been refunded");
+  if (booking.outcome === "not_found" || booking.outcome === "job_not_found") return reject("Payment or job no longer exists");
+  return { outcome: "rejected", code: "association_mismatch", message: "Payment association changed before booking.", payment };
 }
 
 /** Only this operation accepts job collection payments. Caller hints cannot override obligations. */

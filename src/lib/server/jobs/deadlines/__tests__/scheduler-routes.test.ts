@@ -6,6 +6,7 @@ import { sweepNegotiationDeadlines } from "../negotiation-expiry";
 import { sweepPairing, sweepScheduledDispatches } from "@/lib/server/pairing/pairing-engine";
 import { expireOverdueBookedJobs, expireUnacceptedJobs } from "@/lib/server/jobs/job-store";
 import { processDuePayoutRetries } from "@/lib/server/payments/payout-settlement";
+import { processPaymentLifecycleBatch } from "@/lib/server/payments/durable-processing";
 import { GET, POST } from "@/app/api/jobs/deadline-sweep/route";
 import { POST as maintenance } from "@/app/api/jobs/expire-stale/route";
 import { POST as pairingRecovery } from "@/app/api/jobs/pairing-sweep/route";
@@ -15,6 +16,7 @@ vi.mock("../negotiation-expiry", () => ({ sweepNegotiationDeadlines: vi.fn() }))
 vi.mock("@/lib/server/pairing/pairing-engine", () => ({ sweepPairing: vi.fn(), sweepScheduledDispatches: vi.fn() }));
 vi.mock("@/lib/server/jobs/job-store", () => ({ expireOverdueBookedJobs: vi.fn(), expireUnacceptedJobs: vi.fn() }));
 vi.mock("@/lib/server/payments/payout-settlement", () => ({ processDuePayoutRetries: vi.fn() }));
+vi.mock("@/lib/server/payments/durable-processing", () => ({ processPaymentLifecycleBatch: vi.fn() }));
 vi.mock("@/lib/supabase/env", () => ({ isSupabaseAdminConfigured: () => false }));
 
 const request = (headers: HeadersInit = {}) => new Request("http://localhost/api/jobs/deadline-sweep", { headers });
@@ -26,6 +28,12 @@ beforeEach(() => {
   vi.mocked(requireUser).mockResolvedValue({ ok: false, response: Response.json({}, { status: 401 }) });
   vi.mocked(sweepPairing).mockResolvedValue({ checked: 1, timedOut: 1, expired: 0 });
   vi.mocked(sweepNegotiationDeadlines).mockResolvedValue({ checked: 1, expired: 1, batchFull: false });
+  vi.mocked(processPaymentLifecycleBatch).mockResolvedValue({
+    inbox: { checked: 1, completed: 1, retried: 0, manualReview: 0, rejected: 0 },
+    reconciliation: { checked: 1, completed: 1, retried: 0, manualReview: 0, rejected: 0 },
+    outbox: { delivered: 1, failed: 0 },
+    jobRecovery: { checked: 1, recovered: 0 },
+  });
   vi.spyOn(console, "info").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
@@ -57,13 +65,14 @@ describe("scheduler authorization", () => {
 });
 
 describe("minute deadline route", () => {
-  it("runs pairing and negotiations, without broad financial maintenance", async () => {
+  it("runs pairing, negotiation, deadline, and durable payment lifecycle work", async () => {
     const response = await POST(request({ authorization: "Bearer scheduler-test-secret" }));
     expect(response.status).toBe(200);
     expect((await response.json()).data.outcomes.negotiation).toMatchObject({ status: "completed", expired: 1 });
     expect(sweepPairing).toHaveBeenCalledWith(25);
     expect(sweepNegotiationDeadlines).toHaveBeenCalledWith(25);
-    expect(expireOverdueBookedJobs).not.toHaveBeenCalled();
+    expect(processPaymentLifecycleBatch).toHaveBeenCalledWith(10);
+    expect(expireOverdueBookedJobs).toHaveBeenCalledWith(20);
     expect(processDuePayoutRetries).not.toHaveBeenCalled();
     expect(sweepScheduledDispatches).not.toHaveBeenCalled();
   });
