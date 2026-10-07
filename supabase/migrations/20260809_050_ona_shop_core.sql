@@ -4,8 +4,13 @@
 -- Shop payments are SEPARATE from job escrow (public.payments).
 -- ============================================================
 
--- Extensions (safe if already present)
-create extension if not exists "pgcrypto";
+-- Avoid invoking managed extension hooks when pgcrypto is already installed
+-- by Supabase/bootstrap. A missing extension still fails if installation fails.
+do $$ begin
+  if not exists (select 1 from pg_extension where extname = 'pgcrypto') then
+    create extension "pgcrypto";
+  end if;
+end $$;
 
 -- ------------------------------------------------------------
 -- Trade category tree (unlimited depth)
