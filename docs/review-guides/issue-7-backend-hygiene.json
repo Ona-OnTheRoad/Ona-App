@@ -14,7 +14,8 @@
         "CI run 37641594995 failed on bootstrap admin seed FK; source guard repair awaiting replay",
         "CI run 37642788895 passed bootstrap but failed on notifications.group_key index in migration 020; add column before index and rerun",
         "CI run 37643838358 reached migration 035 and failed on PostGIS permissions; audit found nonexistent jobs/coordinate identifiers and no application consumers. Replace draft with actual scalar coordinate indexes.",
-        "CI run 37645802930 passed migration 035 and failed on missing admin_actions.target_type in migration 036; explicit audit field upgrade and schema assertions added"
+        "CI run 37645802930 passed migration 035 and failed on missing admin_actions.target_type in migration 036; explicit audit field upgrade and schema assertions added",
+        "CI run 37675739426 passed storage policy migration after local-only executor fixture, then failed legacy migration 043 on absent public.jobs. Guard original legacy maintenance by table existence, without redirecting escrow updates to service_requests."
       ],
       "affectedAreas": [
         ".github/workflows/ci.yml",
