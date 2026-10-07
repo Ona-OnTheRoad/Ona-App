@@ -1,75 +1,20 @@
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { sweepPairing } from "@/lib/server/pairing/pairing-engine";
+import { canRunMaintenance } from "@/lib/server/jobs/deadlines/scheduler-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
-/**
- * Server sweep for Smart Sequential Pairing (SSPE).
- * Enforces DB-owned `pairing_deadline` (66s) for requests in a pairing stage
- * the single source of truth (D3). Safe to call every minute from:
- * - Vercel cron (Bearer CRON_SECRET / JOB_EXPIRE_SECRET)
- * - Authenticated app client while open (idempotent)
- * - pg_cron wrapper `public.pairing_sweep()` (timeout transition only)
- *
- * Production/preview: secret required for unauthenticated callers (fail closed).
- */
-async function authorized(req: Request): Promise<boolean> {
-  // Accept any configured cron secret (cron-job.org / Vercel / local).
-  const secrets = [
-    process.env.CRON_SECRET?.trim(),
-    process.env.JOB_EXPIRE_SECRET?.trim(),
-    process.env.ONA_CRON_SECRET?.trim(),
-  ].filter((s): s is string => Boolean(s));
-  const auth = req.headers.get("authorization") || "";
-  const header =
-    req.headers.get("x-cron-secret") ||
-    req.headers.get("x-job-expire-secret") ||
-    "";
-  // cron-job.org often sends Bearer <token> or raw token in custom headers
-  for (const secret of secrets) {
-    if (auth === `Bearer ${secret}`) return true;
-    if (auth === secret) return true;
-    if (header === secret) return true;
-  }
-  try {
-    const { requireUser } = await import("@/lib/server/auth-utils");
-    const u = await requireUser(req);
-    if (u.ok) return true;
-  } catch {
-    /* fall through */
-  }
-  const isProd =
-    process.env.NODE_ENV === "production" ||
-    process.env.VERCEL_ENV === "production" ||
-    process.env.VERCEL_ENV === "preview";
-  if (isProd) return false;
-  if (secrets.length === 0) return true;
-  return false;
-}
-
-export async function GET(req: Request) {
-  return run(req);
-}
-
-export async function POST(req: Request) {
-  return run(req);
-}
-
+/** Authenticated browser recovery remains available; the minute scheduler uses deadline-sweep. */
 async function run(req: Request) {
+  if (!(await canRunMaintenance(req))) return apiFail("Unauthorized", 401, "unauthorized");
   try {
-    if (!(await authorized(req))) {
-      return apiFail("Unauthorized", 401);
-    }
-    const result = await sweepPairing(50);
-    return apiOk({
-      ...result,
-      rule: "Requests in a pairing stage past their 66s pairing_deadline are timed out and advanced to the next merit-ranked pro.",
-    });
-  } catch (e) {
-    return apiFail(
-      e instanceof Error ? e.message : "Pairing sweep failed",
-      500,
-    );
+    return apiOk({ ...await sweepPairing(25),
+      rule: "Expired stored pairing deadlines advance to the next merit-ranked pro; the shared dispatch window is 144 seconds." });
+  } catch {
+    return apiFail("Pairing sweep unavailable; retry", 503, "sweep_incomplete");
   }
 }
+export const GET = run;
+export const POST = run;

@@ -1,3 +1,4 @@
+import { canRunMaintenance } from "@/lib/server/jobs/deadlines/scheduler-auth";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import {
   expireOverdueBookedJobs,
@@ -6,6 +7,7 @@ import {
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 /**
  * Zombie guard: jobs that reached a terminal status but whose flow_status
@@ -55,66 +57,18 @@ async function resetZombieFlowStatuses(): Promise<number> {
 const PAIRING_SWEEP_INTERVAL_MS = 30_000;
 let lastPairingSweepAt = 0;
 
-/**
- * Auto-cancel Booked jobs not completed within 6h of payment + full refund.
- * Safe to call from:
- * - Vercel cron / external scheduler (Bearer CRON_SECRET / JOB_EXPIRE_SECRET)
- * - Authenticated app client (Bearer user session) as backup while app is open
- *
- * Production/preview: secret required for unauthenticated callers (fail closed).
- * Local/dev without secret: open only when NODE_ENV is not production and not Vercel prod.
- */
-async function authorized(req: Request): Promise<boolean> {
-  const secrets = [
-    process.env.CRON_SECRET?.trim(),
-    process.env.JOB_EXPIRE_SECRET?.trim(),
-    process.env.ONA_CRON_SECRET?.trim(),
-  ].filter((s): s is string => Boolean(s));
-  const auth = req.headers.get("authorization") || "";
-  const header =
-    req.headers.get("x-cron-secret") ||
-    req.headers.get("x-job-expire-secret") ||
-    "";
-  for (const secret of secrets) {
-    if (auth === `Bearer ${secret}`) return true;
-    if (auth === secret) return true;
-    if (header === secret) return true;
-  }
-
-  // Authenticated app users may trigger the sweep (idempotent maintenance)
-  try {
-    const { requireUser } = await import("@/lib/server/auth-utils");
-    const u = await requireUser(req);
-    if (u.ok) return true;
-  } catch {
-    /* fall through */
-  }
-
-  const isProd =
-    process.env.NODE_ENV === "production" ||
-    process.env.VERCEL_ENV === "production" ||
-    process.env.VERCEL_ENV === "preview";
-  // Fail closed outside local: require secret or user session
-  if (isProd) return false;
-  // Local dev without secret configured allow for DX
-  if (secrets.length === 0) return true;
-  return false;
-}
-
 async function run(req: Request) {
   try {
-    // Job cancel/refund sweeps stay behind CRON_SECRET when configured.
-    // Payout catch-up is always allowed (idempotent) so open jobs unstick when
-    // Available is funded even if the browser cannot send the cron secret.
+    if (!(await canRunMaintenance(req))) return apiFail("Unauthorized", 401, "unauthorized");
+    // Authenticated recovery runs the existing broad maintenance operations.
+    // Browser sessions retain recovery access without receiving the cron secret.
     let result: { checked: number; cancelled: number; ids: string[] } = {
       checked: 0,
       cancelled: 0,
       ids: [],
     };
     let zombies = 0;
-    if (await authorized(req)) {
-      result = await expireOverdueBookedJobs(50);
-    }
+    result = await expireOverdueBookedJobs(50);
 
     // Sweep unaccepted jobs reroute to next pro after 1 min, expire after 15 min
     let unacceptedResult: {
@@ -135,7 +89,7 @@ async function run(req: Request) {
       console.error("resetZombieFlowStatuses in expire-stale", e);
     }
 
-    // SSPE sweep enforce 66s pairing deadlines and advance to next pro.
+    // SSPE sweep enforce 144s pairing deadlines and advance to next pro.
     // Backed by the dedicated pairing-sweep route (every minute); throttled
     // here so the frequent expire-stale hits don't duplicate it every 8s.
     let pairingResult: {

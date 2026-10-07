@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "id": "issue-3-deadline-scheduler",
+  "title": "Issue 3: unattended pairing and negotiation deadlines",
+  "plan": "docs/BACKEND_FIXES_STATUS.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "scheduler",
+      "stage": "release",
+      "expectation": "A supported server scheduler invokes deadline processing every minute; target and deployed cadence are verified.",
+      "verification": "Deployment configuration and timestamped run evidence; an edited cron expression alone is insufficient.",
+      "status": "pending",
+      "evidence": [
+        "scripts/run-deadline-sweep.mjs supports one-shot or sequential minute watch mode; no hosted schedule configured"
+      ]
+    },
+    {
+      "id": "auth",
+      "stage": "code",
+      "expectation": "The minute scheduler endpoint rejects missing/incorrect server credentials before any mutation. Existing browser recovery requires an authenticated user or server secret, with authorization before every maintenance operation.",
+      "verification": "Route tests covering every operation; secret values must never appear in evidence.",
+      "status": "pending",
+      "evidence": [
+        "src/lib/server/jobs/deadlines/scheduler-auth.ts",
+        "src/lib/server/jobs/deadlines/__tests__/scheduler-routes.test.ts: unauthorized requests cannot invoke any sweep; authenticated browser recovery retained"
+      ]
+    },
+    {
+      "id": "negotiation",
+      "stage": "code",
+      "expectation": "Bounded durable queries include overdue negotiating jobs, only when the negotiation timer is armed.",
+      "verification": "Tests for overdue, unarmed, future-deadline and terminal jobs; the current booked-job query excludes negotiating jobs.",
+      "status": "pending",
+      "evidence": [
+        "src/lib/server/jobs/deadlines/negotiation-expiry.ts",
+        "src/lib/server/jobs/deadlines/__tests__/negotiation-expiry.test.ts: overdue/future/sentinel/terminal selection, duplicate expiry, agreement/cancellation/rearming races"
+      ]
+    },
+    {
+      "id": "pairing",
+      "stage": "code",
+      "expectation": "Expired stored pairing deadlines advance through existing pairing rules with no browser open.",
+      "verification": "Existing race tests plus unattended dev run; preserve the 144-second rule, correct stale 66-second comments.",
+      "status": "pending",
+      "evidence": [
+        "src/lib/server/pairing/pairing-engine.ts: existing pairing sweep under a durable lease; atomic timeout transaction checks stage/deadline/pro/update timestamp",
+        "src/lib/server/pairing/__tests__/pairing-race.test.ts: existing progression/race tests plus failed reads, fallback arming and unarmed-offer coverage; unattended hosted run still pending"
+      ]
+    },
+    {
+      "id": "rules",
+      "stage": "code",
+      "expectation": "Shared deadline, assignment, negotiation, pricing, refund and payout rules remain intact.",
+      "verification": "Diff review and relevant contract tests; no changed timer durations or financial formulas.",
+      "status": "pending",
+      "evidence": [
+        "No fee, radius, ranking, shared duration or payout formula changes; state machine reused. Existing product-rule tests pass in full suite. Protected-flow human review remains pending."
+      ]
+    },
+    {
+      "id": "overlap",
+      "stage": "code",
+      "expectation": "Overlapping workers and repeated runs do not duplicate transitions or financial effects.",
+      "verification": "Concurrent-worker tests and durable conditional-write/claim evidence; an in-process throttle is insufficient.",
+      "status": "pending",
+      "evidence": [
+        "supabase/migrations/20261007_078_job_sweep_leases.sql",
+        "scripts/verify-job-sweep-leases.mjs: isolated PostgreSQL verified one winner from eight concurrent claims, stale-owner isolation, expiry recovery, independent scopes, role permissions and reapplication",
+        "Other manual pairing/aggregate writers remain outside sweep leases; review the documented remaining limits.",
+        "Atomic timeout fixture verifies single concurrent winner, no destructive effects after a rearm/confirmation winner, matching quote ownership, rollback on settlement failure, and retry. Candidate/manual aggregate workflows remain outside the full transaction boundary."
+      ]
+    },
+    {
+      "id": "batching",
+      "stage": "code",
+      "expectation": "Bounded processing does not indefinitely starve overdue jobs behind unrelated rows.",
+      "verification": "Selection/order and backlog tests; document batch limits and expected catch-up behavior.",
+      "status": "pending",
+      "evidence": [
+        "Overdue-only negotiation selection ordered by deadline/ID; bounded fallback arming ordered by updated_at/ID, conditional on unchanged snapshot",
+        "Negotiation tests drain a backlog across bounded batches; pairing test checks fallback limit and snapshot filters. Representative hosted load remains pending."
+      ]
+    },
+    {
+      "id": "failures",
+      "stage": "code",
+      "expectation": "Database/provider failures are observable and retryable; success is not reported for a failed sweep.",
+      "verification": "Failure-injection tests, sanitized logs and scheduler retry/monitoring configuration.",
+      "status": "pending",
+      "evidence": [
+        "Scheduler route returns 503 on scope failure/contention; logs sanitized outcomes",
+        "Negative tests cover missing lease migration/database, provider-candidate reads, writes, scan and fallback arming; hosted alerts/restart observation still pending",
+        "Independent review radius-update failure finding fixed; engine regression asserts no expiry on write failure."
+      ]
+    },
+    {
+      "id": "clients",
+      "stage": "code",
+      "expectation": "Existing client-triggered sweep callers are audited and adapted to the chosen auth boundary.",
+      "verification": "Caller inventory and authenticated browser smoke; no leaked cron secret, broken screens or recovery regression.",
+      "status": "pending",
+      "evidence": [
+        "src/lib/jobs/client.ts: jobFetch attaches user authentication for both existing maintenance callers; no browser cron secret added",
+        "Route compatibility tested; authenticated browser smoke not run"
+      ]
+    },
+    {
+      "id": "scope",
+      "stage": "code",
+      "expectation": "Frequent runs account for expire-stale cancellation/refund, dispatch and payout side effects.",
+      "verification": "Explicit decision to separate or retain operations, with idempotency evidence and preserved payout retry spacing.",
+      "status": "pending",
+      "evidence": [
+        "docs/ISSUE_3_DEADLINE_SCHEDULER.md: minute endpoint excludes refund/payout/dispatch maintenance; existing broad recovery retained",
+        "Scheduler-route tests assert financial maintenance and scheduled dispatch are not invoked"
+      ]
+    },
+    {
+      "id": "checks",
+      "stage": "code",
+      "expectation": "Lint, typecheck and appropriate tests pass for the exact reviewed commit.",
+      "verification": "Record commit SHA, commands/results and relevant test cases; existing warnings identified.",
+      "status": "pending",
+      "evidence": [
+        "Working-tree validation: 101 Vitest files / 1,209 tests passed; typecheck passed. Exact reviewed commit not assigned; formal review pending.",
+        "Lint passed with zero errors and 167 existing warnings; diff check passed."
+      ]
+    },
+    {
+      "id": "unattended",
+      "stage": "release",
+      "expectation": "Dev deployment advances pairing and expires armed negotiation while all browsers are closed.",
+      "verification": "Timestamped before/after records and scheduler runs; verify actual deadlines and duplicate delivery.",
+      "status": "pending",
+      "evidence": [
+        "Not run against a hosted dev deployment. Migration is unapplied to hosted databases."
+      ]
+    },
+    {
+      "id": "operations",
+      "stage": "release",
+      "expectation": "Scheduler ownership, secret setup, cadence, alerts, outage recovery and rollback are documented.",
+      "verification": "Deployment guide and tested failure/restart recovery; distinguish configured dev from production rollout.",
+      "status": "pending",
+      "evidence": [
+        "docs/ISSUE_3_DEADLINE_SCHEDULER.md: external scheduler setup, portable client, alerts, contention, crash TTL and rollback. Hosted activation/observation remains pending."
+      ]
+    }
+  ],
+  "implementationBranch": "feat/unattended-deadline-sweeps",
+  "implementationNotes": "docs/ISSUE_3_DEADLINE_SCHEDULER.md",
+  "implementationState": "Implemented on feat/unattended-deadline-sweeps; formal review and hosted verification pending",
+  "independentReview": {
+    "status": "Completed: both findings fixed and independently re-reviewed; no new blocking defects found in the fixes",
+    "findings": [
+      "Timeout side effects preceded ownership",
+      "Radius expansion write failure could exhaust a request"
+    ],
+    "scope": "Current feature code and timeout/radius fixes; hosted rollout and broader manual/candidate aggregate races remain unverified"
+  }
+}

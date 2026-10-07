@@ -6,7 +6,7 @@ Updated: 2026-10-07. Issue numbers below refer to the engineer report’s **Sugg
 | --- | --- | --- |
 | 1 | Lock down protected client writes and use the transition API | Prior work committed as `08cb5c7`; migration 077 was verified on dev, per the payment plan. Production rollout is not established here. |
 | 2 | Authenticated Flutterwave webhook and shared payment confirmation | Implemented and reviewed on `feat/payment-confirmation`; release checks below remain. |
-| 3 | Server scheduler for pairing and negotiation expiry | **Next implementation task**; operational cadence remains unverified. |
+| 3 | Server scheduler for pairing and negotiation expiry | Code implemented on `feat/unattended-deadline-sweeps`; formal review, hosted migration, scheduler activation and unattended evidence remain pending. |
 | 4 | Conditional writes throughout jobs; remove degraded persistence and memory authority | Partial protection in payment confirmation/checkout only; broader work remains. |
 | 5 | Transactional job transitions and pure reads | Not completed; separate payment/job writes and repair-on-read remain. |
 | 6 | Structured logging and error visibility | Limited sanitized payment logs added; broader observability remains. |
@@ -57,3 +57,5 @@ Implement in a separate branch/change:
 6. Document target URL, cadence, secret configuration, failure monitoring and dev evidence. Production scheduler configuration remains a distinct rollout action.
 
 Issue 2’s release checks should be completed before its deployment is described as verified. Issue 3 can be developed independently while those checks remain open.
+
+Issue 3 implementation and rollout details: [deadline scheduler](ISSUE_3_DEADLINE_SCHEDULER.md).

@@ -51,6 +51,10 @@ Defined in `vercel.json` and sent to the `/api/...` routes with the cron secret:
 
 These are daily because of the Vercel **Hobby** plan limit. Deadlines (pairing, negotiation, pay window) are server-owned; the client sweep keeps them near-real-time between cron runs. Faster server-side sweeps need a Pro plan or an external scheduler.
 
+## Issue 3 minute deadline scheduler
+
+The dedicated `/api/jobs/deadline-sweep` endpoint requires a configured server secret and migration `20261007_078_job_sweep_leases.sql`. Prepare an external one-minute HTTPS schedule for the current hosting setup; the daily entries above remain unchanged. See [Issue 3 setup, acceptance and rollback](ISSUE_3_DEADLINE_SCHEDULER.md). This repository change does not configure a hosted scheduler.
+
 ## After deploy
 
 1. Open https://ona-mi.vercel.app.
