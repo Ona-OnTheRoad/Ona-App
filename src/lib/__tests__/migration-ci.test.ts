@@ -22,8 +22,8 @@ describe("isolated migration replay project", () => {
       }
       expect(readFileSync(path.join(destination, "supabase/config.toml"), "utf8"))
         .toContain('project_id = "ona-migration-ci"');
-      expect(readFileSync(path.join(destination, "supabase/.temp/postgres-version"), "utf8"))
-        .toBe("15.8.1.099");
+      expect(readFileSync(path.join(destination, "supabase/config.toml"), "utf8"))
+        .toContain("major_version = 17");
       expect(() => execFileSync(process.execPath, ["scripts/prepare-migration-ci.mjs", destination],
         { stdio: "pipe" })).toThrow();
     } finally { rmSync(parent, { recursive: true, force: true }); }
