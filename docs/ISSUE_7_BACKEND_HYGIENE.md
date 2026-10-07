@@ -18,7 +18,7 @@ node scripts/verify-migration-ci.mjs /private/tmp/ona-migration-ci-example
 supabase stop --no-backup --workdir /private/tmp/ona-migration-ci-example
 ```
 
-The verifier connects only to `127.0.0.1:54322`. It is intended for the isolated stack above. Full replay is unrun locally because this machine has no Docker or Supabase CLI. Any migration failure found by the first CI run remains required work; no historical SQL was rewritten in this change. See [Supabase migration workflow](https://supabase.com/docs/guides/local-development/database-migrations).
+The verifier connects only to `127.0.0.1:54322`. It is intended for the isolated stack above. Full replay is unrun locally because this machine has no Docker or Supabase CLI. Any migration failure found by the first CI run remains required work; the bootstrap admin seed now skips its deployment-specific identity when absent from auth.users. See [Supabase migration workflow](https://supabase.com/docs/guides/local-development/database-migrations).
 
 ## Rate limits
 
@@ -41,3 +41,7 @@ The production build also uncovered an existing invalid route export: `jobDetail
 ## Verification and release status
 
 Review checklist: [Issue 7 guide](review-guides/issue-7-backend-hygiene.md). The implementation is being committed for a PR targeting `dev`; no reviewed commit or independent review is established. No hosted migration, Redis configuration or deployment was changed. Require the fresh migration, lint/typecheck, tests and build checks in branch protection after a successful CI run. Retain migration replay manifests and record Redis/runtime evidence without credentials or personal data.
+
+## CI replay repair
+
+The first PR CI run failed on bootstrap migration 002: a deployment-specific admin profile referenced an absent auth user in the empty database. The seed is now guarded by auth-user existence; existing email-owner promotion is preserved. This historical source correction affects fresh replay only; do not reapply it to hosted migration ledgers. Full replay remains pending the corrected CI run.

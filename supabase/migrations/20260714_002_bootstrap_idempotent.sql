@@ -465,6 +465,12 @@ begin
   where email = seed_admin_email limit 1;
 
   if email_owner is null then
+    -- Fresh-schema replay has no auth users. Do not manufacture an identity
+    -- or violate profiles_id_fkey for a deployment-specific seed account.
+    if not exists (select 1 from auth.users where id = seed_admin_id) then
+      raise notice 'Skipping admin profile seed: auth user does not exist';
+      return;
+    end if;
     insert into public.profiles (id, role, full_name, email, is_active)
     values (seed_admin_id, 'admin', seed_admin_name, seed_admin_email, true)
     on conflict (id) do update set

@@ -30,3 +30,7 @@ External: provision isolated Redis per environment, verify deployment behavior a
 ## Closeout
 
 Reviewed commit: pending (working tree based on `800b785331b610c2aeda5d5c224dab842802c69a`, existing `codex/backend-observability-hygiene` branch). This implementation has not been committed or deployed. Update this guide and BACKEND_FIXES_STATUS.md with concrete evidence and residuals.
+
+## CI replay repair
+
+The first PR CI run failed on bootstrap migration 002: a deployment-specific admin profile referenced an absent auth user in the empty database. The seed is now guarded by auth-user existence; existing email-owner promotion is preserved. This historical source correction affects fresh replay only; do not reapply it to hosted migration ledgers. Full replay remains pending the corrected CI run.
