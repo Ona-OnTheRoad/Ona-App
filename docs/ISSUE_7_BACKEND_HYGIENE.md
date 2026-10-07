@@ -45,3 +45,5 @@ Review checklist: [Issue 7 guide](review-guides/issue-7-backend-hygiene.md). The
 ## CI replay repair
 
 The first PR CI run failed on bootstrap migration 002: a deployment-specific admin profile referenced an absent auth user in the empty database. The seed is now guarded by auth-user existence; existing email-owner promotion is preserved. This historical source correction affects fresh replay only; do not reapply it to hosted migration ledgers. Full replay remains pending the corrected CI run.
+
+The second replay passed bootstrap and failed in migration 020 because the bootstrap notification table lacks group_key. Migration 020 now adds that nullable column before creating its index, matching migration 021. No source migration is skipped.
