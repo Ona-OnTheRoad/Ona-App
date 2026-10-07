@@ -30,9 +30,18 @@ function isBackendHost(host: string): boolean {
 }
 
 export function middleware(req: NextRequest) {
+  const suppliedRequestId = req.headers.get("x-request-id")?.trim() || "";
+  const requestId = /^[A-Za-z0-9._-]{1,64}$/.test(suppliedRequestId)
+    ? suppliedRequestId
+    : crypto.randomUUID();
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-request-id", requestId);
+
   const host = req.headers.get("host") || "";
   if (!isBackendHost(host)) {
-    return NextResponse.next();
+    const response = NextResponse.next({ request: { headers: requestHeaders } });
+    response.headers.set("x-request-id", requestId);
+    return response;
   }
 
   const { pathname } = req.nextUrl;
@@ -42,12 +51,16 @@ export function middleware(req: NextRequest) {
     pathname.startsWith("/_next") ||
     pathname === "/favicon.ico"
   ) {
-    return NextResponse.next();
+    const response = NextResponse.next({ request: { headers: requestHeaders } });
+    response.headers.set("x-request-id", requestId);
+    return response;
   }
 
   const url = req.nextUrl.clone();
   url.pathname = "/admin";
-  return NextResponse.redirect(url);
+  const response = NextResponse.redirect(url);
+  response.headers.set("x-request-id", requestId);
+  return response;
 }
 
 export const config = {

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { serverLogger } from "@/lib/server/structured-logger";
 import { requireUser } from "@/lib/server/auth-utils";
 import { recalculateMerit } from "@/lib/server/merit/merit-engine";
 import { getJob, rateJob } from "@/lib/server/jobs/job-store";
@@ -57,6 +58,7 @@ export async function POST(
 
     return apiOk({ job: res.job });
   } catch (e) {
-    return apiFail(e instanceof Error ? e.message : "Rate failed", 500);
+    serverLogger.error("job.rating.failed", { operation: "rate_job" }, req, e);
+    return apiFail("Unable to save this review right now", 500, "job_rating_failed");
   }
 }

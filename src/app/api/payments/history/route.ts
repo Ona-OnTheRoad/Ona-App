@@ -5,6 +5,7 @@
  */
 
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { serverLogger } from "@/lib/server/structured-logger";
 import { requireUser } from "@/lib/server/auth-utils";
 import { listEscrowForUser } from "@/lib/server/payments/escrow-store";
 import type { EscrowPayment } from "@/lib/server/payments/escrow-store";
@@ -194,7 +195,7 @@ export async function GET(req: Request) {
           : "We hold your money until you say the job is done. Refunds are handled by Ona support.",
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "History failed";
-    return apiFail(msg, 500);
+    serverLogger.error("payment.history.failed", { operation: "history" }, req, e);
+    return apiFail("Payment history is temporarily unavailable", 500, "payment_history_failed");
   }
 }

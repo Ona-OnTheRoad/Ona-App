@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { apiFail, apiFailFromError, apiOk } from "@/lib/server/api-json";
+import { serverLogger } from "@/lib/server/structured-logger";
 import { requireUser } from "@/lib/server/auth-utils";
 import { createJob, listJobsForUser } from "@/lib/server/jobs/job-store";
 import type { JobMedia } from "@/lib/jobs/types";
@@ -105,6 +106,7 @@ export async function POST(req: Request) {
     });
     return apiOk({ job, serverNow: new Date().toISOString() });
   } catch (e) {
+    serverLogger.error("job.create.failed", { operation: "create_job" }, req, e);
     return apiFailFromError(e, "Could not create job");
   }
 }
@@ -128,6 +130,7 @@ export async function GET(req: Request) {
     const jobs = await listJobsForUser(userId, role, { lean });
     return apiOk({ jobs, serverNow: new Date().toISOString() });
   } catch (e) {
+    serverLogger.error("job.list.failed", { operation: "list_jobs" }, req, e);
     return apiFailFromError(e, "Could not load jobs");
   }
 }

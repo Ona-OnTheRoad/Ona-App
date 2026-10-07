@@ -1,5 +1,6 @@
 import { canRunMaintenance } from "@/lib/server/jobs/deadlines/scheduler-auth";
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { serverLogger } from "@/lib/server/structured-logger";
 import {
   expireOverdueBookedJobs,
   expireUnacceptedJobs,
@@ -14,7 +15,7 @@ export const maxDuration = 60;
  * is still a live pairing value would linger on the Dispatch board forever.
  * Reset them each sweep (additive hygiene, touches only stale rows).
  */
-async function resetZombieFlowStatuses(): Promise<number> {
+async function resetZombieFlowStatuses(req: Request): Promise<number> {
   try {
     const { createServiceSupabase } = await import(
       "@/lib/supabase/server"
@@ -44,9 +45,17 @@ async function resetZombieFlowStatuses(): Promise<number> {
         "refunded",
       ])
       .select("id");
-    if (error) return 0;
+    if (error) {
+      serverLogger.error("jobs.expire_stale.zombie_reset_query_failed", {
+        operation: "reset_zombie_flow",
+      }, req, error);
+      return 0;
+    }
     return data?.length ?? 0;
-  } catch {
+  } catch (error) {
+    serverLogger.error("jobs.expire_stale.zombie_reset_failed", {
+      operation: "reset_zombie_flow",
+    }, req, error);
     return 0;
   }
 }
@@ -79,14 +88,14 @@ async function run(req: Request) {
     try {
       unacceptedResult = await expireUnacceptedJobs(40);
     } catch (e) {
-      console.error("expireUnacceptedJobs in expire-stale", e);
+      serverLogger.error("jobs.expire_stale.unaccepted_failed", { operation: "expire_unaccepted" }, req, e);
     }
 
     // Zombie guard: clear stale live flow_status on terminal jobs
     try {
-      zombies = await resetZombieFlowStatuses();
+      zombies = await resetZombieFlowStatuses(req);
     } catch (e) {
-      console.error("resetZombieFlowStatuses in expire-stale", e);
+      serverLogger.error("jobs.expire_stale.zombie_reset_failed", { operation: "reset_zombie_flow" }, req, e);
     }
 
     // SSPE sweep enforce 144s pairing deadlines and advance to next pro.
@@ -105,7 +114,7 @@ async function run(req: Request) {
           await import("@/lib/server/pairing/pairing-engine");
         pairingResult = await sweepPairing(50);
       } catch (e) {
-        console.error("sweepPairing in expire-stale", e);
+        serverLogger.error("jobs.expire_stale.pairing_failed", { operation: "sweep_pairing" }, req, e);
       }
     }
 
@@ -123,7 +132,7 @@ async function run(req: Request) {
         await import("@/lib/server/pairing/pairing-engine");
       scheduledDispatchResult = await sweepScheduledDispatches(50);
     } catch (e) {
-      console.error("sweepScheduledDispatches in expire-stale", e);
+      serverLogger.error("jobs.expire_stale.scheduled_dispatch_failed", { operation: "sweep_scheduled_dispatch" }, req, e);
     }
 
     let payoutRetry: {
@@ -138,7 +147,7 @@ async function run(req: Request) {
         await import("@/lib/server/payments/payout-settlement");
       payoutRetry = await processDuePayoutRetries(30);
     } catch (e) {
-      console.error("payout retry in expire-stale", e);
+      serverLogger.error("jobs.expire_stale.payout_retry_failed", { operation: "payout_retry" }, req, e);
     }
     return apiOk({
       ...result,
@@ -149,7 +158,8 @@ async function run(req: Request) {
       rule: "Agreed unpaid: payment details expire after 11 min; Booked not completed within 6h: cancel + refund; Completed 6h: auto-release pro 87.5%; PENDING_SETTLEMENT: auto-retry when FLW Available is enough",
     });
   } catch (e) {
-    return apiFail(e instanceof Error ? e.message : "Expire sweep failed", 500);
+    serverLogger.error("jobs.expire_stale.failed", { operation: "expire_stale" }, req, e);
+    return apiFail("Maintenance sweep failed; retry shortly", 500, "maintenance_failed");
   }
 }
 

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { serverLogger } from "@/lib/server/structured-logger";
 import { requireUser } from "@/lib/server/auth-utils";
 import {
   getEscrowByRequest,
@@ -137,7 +138,7 @@ export async function POST(req: Request) {
       "payout_failed",
     );
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Release failed";
-    return apiFail(msg, 500);
+    serverLogger.error("payment.release.failed", { operation: "release" }, req, e);
+    return apiFail("Payout release failed; funds remain in escrow", 500, "payout_release_failed");
   }
 }

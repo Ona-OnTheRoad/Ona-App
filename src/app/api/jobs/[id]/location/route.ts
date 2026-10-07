@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { apiFail, apiFailFromError, apiOk } from "@/lib/server/api-json";
+import { serverLogger } from "@/lib/server/structured-logger";
 import { isJobParty, requireUser } from "@/lib/server/auth-utils";
 import { haversineEtaMinutes } from "@/lib/server/google-eta";
 import { getJob, updateTripPartyLocation } from "@/lib/server/jobs/job-store";
@@ -120,6 +121,7 @@ export async function POST(
       },
     });
   } catch (e) {
+    serverLogger.error("job.location_update.failed", { operation: "location_update" }, req, e);
     return apiFailFromError(e, "Location update failed");
   }
 }

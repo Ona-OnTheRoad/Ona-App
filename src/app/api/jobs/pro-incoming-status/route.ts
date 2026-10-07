@@ -1,4 +1,5 @@
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { serverLogger } from "@/lib/server/structured-logger";
 import { requireUser } from "@/lib/server/auth-utils";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { createServiceSupabase } from "@/lib/supabase/server";
@@ -48,7 +49,10 @@ export async function GET(req: Request) {
       .select(STATUS_COLUMNS)
       .eq("repair_pro_id", auth.userId)
       .in("id", ids);
-    if (error) return apiFail(error.message, 500);
+    if (error) {
+      serverLogger.error("job.incoming_status.query_failed", { operation: "incoming_status" }, req, error);
+      return apiFail("Unable to load request status right now", 500, "job_status_failed");
+    }
 
     const rows = (data as unknown as Record<string, unknown>[] | null) ?? [];
     const jobs = rows.map((r) => ({
@@ -62,6 +66,7 @@ export async function GET(req: Request) {
     }));
     return apiOk({ jobs, serverNow: new Date().toISOString() });
   } catch (e) {
-    return apiFail(e instanceof Error ? e.message : "Status check failed", 500);
+    serverLogger.error("job.incoming_status.failed", { operation: "incoming_status" }, req, e);
+    return apiFail("Unable to load request status right now", 500, "job_status_failed");
   }
 }

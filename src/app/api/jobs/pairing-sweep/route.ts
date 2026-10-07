@@ -1,4 +1,5 @@
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { serverLogger } from "@/lib/server/structured-logger";
 import { sweepPairing } from "@/lib/server/pairing/pairing-engine";
 import { canRunMaintenance } from "@/lib/server/jobs/deadlines/scheduler-auth";
 
@@ -12,7 +13,8 @@ async function run(req: Request) {
   try {
     return apiOk({ ...await sweepPairing(25),
       rule: "Expired stored pairing deadlines advance to the next merit-ranked pro; the shared dispatch window is 144 seconds." });
-  } catch {
+  } catch (error) {
+    serverLogger.error("jobs.pairing_sweep.failed", { operation: "pairing_sweep" }, req, error);
     return apiFail("Pairing sweep unavailable; retry", 503, "sweep_incomplete");
   }
 }

@@ -1,4 +1,5 @@
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { serverLogger } from "@/lib/server/structured-logger";
 import { requireUser } from "@/lib/server/auth-utils";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { createServiceSupabase } from "@/lib/supabase/server";
@@ -38,7 +39,10 @@ export async function POST(
       .select("id, job_version, pairing_stage, repair_pro_id, pairing_deadline")
       .eq("id", id)
       .maybeSingle();
-    if (error) return apiFail(error.message, 500);
+    if (error) {
+      serverLogger.error("job.surface.query_failed", { operation: "surface", jobId: id }, req, error);
+      return apiFail("Unable to load this request right now", 500, "job_surface_failed");
+    }
     if (!data) return apiFail("Request not found", 404);
 
     const row = data as {
@@ -75,7 +79,10 @@ export async function POST(
         .is("pairing_deadline", null)
         .select("id")
         .maybeSingle();
-      if (uErr) return apiFail(uErr.message, 500);
+      if (uErr) {
+        serverLogger.error("job.surface.update_failed", { operation: "surface", jobId: id }, req, uErr);
+        return apiFail("Unable to update this request right now", 500, "job_surface_failed");
+      }
       if (!updatedRow) return apiFail("Request changed; reload and retry", 409);
       armed = true;
     }
@@ -88,6 +95,7 @@ export async function POST(
       serverNow: new Date().toISOString(),
     });
   } catch (e) {
-    return apiFail(e instanceof Error ? e.message : "Surface failed", 500);
+    serverLogger.error("job.surface.failed", { operation: "surface", jobId: id }, req, e);
+    return apiFail("Unable to load this request right now", 500, "job_surface_failed");
   }
 }

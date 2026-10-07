@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { serverLogger } from "@/lib/server/structured-logger";
 import { isJobParty, requireUser } from "@/lib/server/auth-utils";
 import { getJob } from "@/lib/server/jobs/job-store";
 import {
@@ -38,7 +39,8 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     const items = await listJobRecommendations(id);
     return apiOk({ recommendations: items, jobId: id });
   } catch (e) {
-    return apiFail(e instanceof Error ? e.message : "Failed", 500);
+    serverLogger.error("job.recommendations.list_failed", { operation: "list_recommendations" }, req, e);
+    return apiFail("Unable to load recommendations right now", 500, "recommendations_failed");
   }
 }
 
@@ -63,7 +65,8 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     });
     return apiOk({ recommendation: rec }, { status: 201 });
   } catch (e) {
-    return apiFail(e instanceof Error ? e.message : "Failed", 500);
+    serverLogger.error("job.recommendations.add_failed", { operation: "add_recommendation" }, req, e);
+    return apiFail("Unable to save recommendation right now", 500, "recommendations_failed");
   }
 }
 
@@ -84,6 +87,7 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
     });
     return apiOk({ removed: true });
   } catch (e) {
-    return apiFail(e instanceof Error ? e.message : "Failed", 500);
+    serverLogger.error("job.recommendations.remove_failed", { operation: "remove_recommendation" }, req, e);
+    return apiFail("Unable to remove recommendation right now", 500, "recommendations_failed");
   }
 }

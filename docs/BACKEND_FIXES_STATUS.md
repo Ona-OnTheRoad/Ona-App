@@ -4,13 +4,29 @@ Updated: 2026-10-07. Issue numbers below refer to the engineer report’s **Sugg
 
 | Issue | Work | Current status |
 | --- | --- | --- |
-| 1 | Lock down protected client writes and use the transition API | Prior work committed as `08cb5c7`; migration 077 was verified on dev, per the payment plan. Production rollout is not established here. |
-| 2 | Authenticated Flutterwave webhook and shared payment confirmation | Implemented and reviewed on `feat/payment-confirmation`; release checks below remain. |
-| 3 | Server scheduler for pairing and negotiation expiry | Independently reviewed on `feat/unattended-deadline-sweeps`; hosted migration, scheduler activation and unattended evidence remain pending. |
-| 4 | Conditional writes throughout jobs; remove degraded persistence and memory authority | Merged to `dev` in PR #3; automated checks passed and migration 079 applied to the configured Supabase project. Formal code review, isolated migration verification and runtime checks remain pending. |
-| 5 | Transactional job transitions and pure reads | In progress on `feat/transactional-job-lifecycle`; transactional payment booking and a durable worker are implemented locally. Migration validation/application, independent review and hosted unattended evidence remain pending. |
-| 6 | Structured logging and error visibility | Limited sanitized payment logs added; broader observability remains. |
-| 7 | Migration CI, distributed rate limiting and server-only guards | Separate follow-up; payment verification still uses the existing process-local soft limiter. |
+| 1 | Lock down protected client writes and use the transition API | Prior work committed as `08cb5c7`; migration 077 was verified on dev. Current source audit and production rollout evidence remain pending. See [Issue 1 remaining work](review-guides/issue-1-protected-client-writes.md). |
+| 2 | Authenticated Flutterwave webhook and shared payment confirmation | Implemented and reviewed on `feat/payment-confirmation`; provider/browser release checks remain. See [Issue 2 remaining work](review-guides/issue-2-payment-confirmation.md) and detailed checks below. |
+| 3 | Server scheduler for pairing and negotiation expiry | Independently reviewed on `feat/unattended-deadline-sweeps`; hosted migration, scheduler activation and unattended evidence remain pending. See [Issue 3 guide](review-guides/issue-3-deadline-scheduler.md). |
+| 4 | Conditional writes throughout jobs; remove degraded persistence and memory authority | Merged to `dev` in PR #3; automated checks passed and migration 079 applied to the configured Supabase project. Formal code review, isolated migration verification and runtime checks remain pending. See [Issue 4 guide](review-guides/issue-4-job-persistence.md). |
+| 5 | Transactional job transitions and pure reads | Merged to `dev` in PR #5; migration 080 was applied to the configured Supabase project. Independent review, unattended worker evidence, operator handling and retention work remain pending. See [Issue 5 guide](review-guides/issue-5-transactional-jobs.md). |
+| 6 | Structured logging and error visibility | In progress on `feat/issue-6-structured-observability`; request IDs, JSON server logging, safer 5xx responses, and payment/job API coverage are implemented locally. Tests, typecheck and lint pass; lower-level service coverage and hosted log evidence remain pending. See [Issue 6 guide](review-guides/issue-6-structured-observability.md). |
+| 7 | Migration CI, distributed rate limiting and server-only guards | Separate follow-up; payment verification still uses the existing process-local soft limiter. Create its review guide before implementation; track remaining code and external work here and in its guide. |
+
+## Remaining work ledger
+
+Keep this ledger current for every report issue, including issues whose main code change is merged or described as implemented. “Code” includes unfinished implementation, regression coverage, independent review, migration verification and code-level rollout preparation. “External” includes hosted secrets/configuration, deployment, live service behavior, operational monitoring and ownership. A completed fix is not presented as fully closed while required items remain.
+
+| Issue | Remaining code / review work | Remaining external / operational work |
+| --- | --- | --- |
+| 1 | Confirm the Issue 1 acceptance criteria and current branch contents against the exact reviewed commit; update this row if code gaps remain. | Production rollout of the Issue 1 migration/change is not established; verify the target environment and record evidence. |
+| 2 | Issue 4/5/7 dependencies are tracked separately below; no additional Issue 2 code change is currently identified. | Configure test webhook and retries; complete browser-closed test payment, delayed/outage recovery, browser smoke checks, and historical held-payment review as detailed above. |
+| 3 | Complete formal review against a commit; verify migration/permissions on an isolated full schema; review remaining multi-row/manual pairing races and notification durability. | Apply/verify migration in target environment, activate supported minute scheduler with secret, then record no-browser catch-up, overlap/restart, load and alert evidence. |
+| 4 | Complete independent writer coverage review, isolated migration reapplication and protected-flow review; any unguarded SQL/direct writer found must be fixed or explicitly deferred. | Migration 079 was applied to the configured Supabase project; verify the intended hosted runtime and record observed CAS conflict behavior. |
+| 5 | Finish full-schema migration/role testing, worker lease/restart/concurrency tests, independent review, operator handling and retention design. | Migration 080 was applied to the configured Supabase project; verify the intended hosted worker runtime and record unattended recovery, outage and duplicate-delivery evidence. |
+| 6 | Finish lower-level payment/job service logging migration, scoped catch inventory, failure-injection tests and independent review; decide whether remaining service logs are migrated or explicitly deferred. | Verify request ID and JSON log correlation on a non-production host; document platform retention/access and monitoring/alert ownership. Sentry/OpenTelemetry remains a separate decision. |
+| 7 | Implement migration CI, distributed rate limiting and server-only guard coverage under its own review guide. | Configure and verify shared rate limiting and migration checks in the intended deployment environment. |
+
+Update each row when work is completed, moved, or explicitly deferred; link the evidence or decision in its issue guide. Do not leave “none” implicit.
 
 ## Issue 2: completed
 

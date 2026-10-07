@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { serverLogger } from "@/lib/server/structured-logger";
 import { isJobParty, requireUser } from "@/lib/server/auth-utils";
 import { AdminAuthError, requireAdmin } from "@/lib/server/admin-auth";
 import { getJob, openAppeal, resolveAppeal } from "@/lib/server/jobs/job-store";
@@ -98,6 +99,7 @@ export async function POST(
     if ("error" in res) return apiFail(res.error, 400);
     return apiOk({ job: res.job });
   } catch (e) {
-    return apiFail(e instanceof Error ? e.message : "Appeal failed", 500);
+    serverLogger.error("job.appeal.failed", { operation: "appeal" }, req, e);
+    return apiFail("Unable to process appeal right now", 500, "appeal_failed");
   }
 }

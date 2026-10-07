@@ -2,6 +2,7 @@ import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { requireUser } from "@/lib/server/auth-utils";
 import { confirmJobPayment } from "@/lib/server/payments/confirm-job-payment";
+import { serverLogger } from "@/lib/server/structured-logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -84,7 +85,7 @@ export async function POST(req: Request) {
       },
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Verify failed";
-    return apiFail(msg, 500);
+    serverLogger.error("payment.verify.failed", { operation: "verify" }, req, e);
+    return apiFail("Payment verification failed; retry shortly", 500, "verify_failed");
   }
 }

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { serverLogger } from "@/lib/server/structured-logger";
 import { requireUser } from "@/lib/server/auth-utils";
 import {
   buildPricingSnapshot,
@@ -215,7 +216,7 @@ export async function POST(req: Request) {
       pricing: snap,
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Payment init failed";
-    return apiFail(msg, 500, "payment_init_failed");
+    serverLogger.error("payment.init.failed", { operation: "init" }, req, e);
+    return apiFail("Payment could not be initialized; retry shortly", 500, "payment_init_failed");
   }
 }

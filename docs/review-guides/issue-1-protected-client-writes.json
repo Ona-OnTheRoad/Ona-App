@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "issue-1-protected-client-writes",
+  "title": "Issue 1: protected client writes and job transition API",
+  "plan": "docs/review-guides/issue-1-protected-client-writes.md",
+  "reviewedCommit": "08cb5c7d32533eb25dc75f5bc767ec2c6444de56",
+  "requirements": [
+    {
+      "id": "current-source-audit",
+      "stage": "code",
+      "expectation": "Current client mutation paths preserve the protected-write boundary and use the server transition API for job state changes.",
+      "verification": "Inspect direct PostgREST writers, mutation inventory, and desk transition call path; record a focused regression test or confirmed coverage.",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "production-rollout",
+      "stage": "release",
+      "expectation": "The intended production environment has the reviewed migration/policy/trigger state.",
+      "verification": "Inspect the production migration ledger, grants/policies and trigger state; record sanitized evidence without credentials or personal data.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Re-audit current client mutation paths and confirm protected writes remain server-owned, with the permitted presence heartbeat preserved.",
+      "Verify the current desk transition helper uses the server transition API; the historical backendUpdateJobStatus symbol is absent, so inspect its equivalent call path.",
+      "Record current independent review and regression evidence; fix any bypass found in a scoped follow-up."
+    ],
+    "external": [
+      "Dev migration 077 verification is recorded; production migration/policy/trigger application is not established and must be checked in the intended environment."
+    ]
+  },
+  "implementationState": "Migration and code change recorded; current source audit and production rollout evidence remain open"
+}

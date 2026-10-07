@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "id": "issue-6-structured-observability",
+  "title": "Issue 6: structured logging and error visibility",
+  "plan": "docs/review-guides/issue-6-structured-observability.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "current-state-inventory",
+      "stage": "code",
+      "expectation": "Current payment/job logging, empty catches, and error responses are inventoried with deliberate fallback and typed-error behavior distinguished from swallowed failures.",
+      "verification": "Recount targeted paths and trace relevant callers; document baseline and explicitly excluded cases.",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "request-correlation",
+      "stage": "code",
+      "expectation": "API requests receive a validated or generated request ID that is returned to clients and available to server logs across the relevant call chain.",
+      "verification": "Test generated IDs, valid/invalid incoming IDs, response headers, context propagation, and parallel requests without cross-request leakage.",
+      "status": "pass",
+      "evidence": [
+        "Middleware test confirms bounded supplied IDs are returned and invalid IDs are replaced by UUIDs; middleware also forwards the ID on the request."
+      ]
+    },
+    {
+      "id": "structured-server-logger",
+      "stage": "code",
+      "expectation": "Server events use a consistent JSON schema with severity, stable event name, timestamp, request ID when available, and safe error metadata.",
+      "verification": "Unit-test serialization and required fields; inspect emitted output in server runtime; confirm browser code cannot import the server-only logger.",
+      "status": "pass",
+      "evidence": [
+        "Focused tests confirm JSON shape, severity/event/request correlation fields, allowlisted context, and server logger output."
+      ]
+    },
+    {
+      "id": "redaction-and-privacy",
+      "stage": "code",
+      "expectation": "Logs exclude credentials, authorization headers, provider payloads, and unnecessary personal/payment data; stack traces and diagnostics remain server-side.",
+      "verification": "Use sentinel secrets and representative provider/customer errors in tests; inspect serialized logs and API responses for leakage.",
+      "status": "pass",
+      "evidence": [
+        "Focused tests confirm arbitrary context and untrusted exception messages are omitted; only allowlisted identifiers and error class/code metadata are serialized. Exception stacks are also omitted."
+      ]
+    },
+    {
+      "id": "payment-and-job-failure-visibility",
+      "stage": "code",
+      "expectation": "High-risk payment and job failures, including formerly swallowed failures, produce actionable structured events without changing transaction, retry, or fallback semantics.",
+      "verification": "Review confirmation/refund/payout and job transition/retry/recovery call paths; test caught failures and verify one useful event with safe identifiers and request correlation where available.",
+      "status": "pending",
+      "evidence": [
+        "Payment/job API route failures now emit stable events with allowlisted identifiers and generic 5xx responses; selected best-effort failures also log. Lower-level payment/job services still contain legacy console calls, and injected route/service failure tests remain outstanding."
+      ]
+    },
+    {
+      "id": "safe-client-errors",
+      "stage": "code",
+      "expectation": "Known typed/auth/validation errors retain intended public status and message; unknown internal failures return generic 5xx responses and are logged server-side.",
+      "verification": "Test typed and unknown errors for scoped API routes; assert internal messages and stacks are absent from client responses.",
+      "status": "pass",
+      "evidence": [
+        "apiFailFromError unit test confirms explicit typed 403 and 503 statuses are retained, typed client messages remain public, and 5xx details/codes map to generic responses. Scoped API catches return generic messages for unknown failures."
+      ]
+    },
+    {
+      "id": "regression-scope",
+      "stage": "code",
+      "expectation": "Observability changes preserve Issue 4 concurrency behavior and Issue 5 transactional/idempotent payment-job processing; out-of-scope client logs and intentional fallbacks are not mechanically altered.",
+      "verification": "Run focused tests plus relevant payment/job regression suites; inspect diff for altered business outcomes and broad mechanical replacements.",
+      "status": "pass",
+      "evidence": [
+        "Full test suite passes (102 files, 1,205 tests); typecheck passes. Diff review confirms changes are limited to middleware correlation, logger/error handling, docs, and focused tests."
+      ]
+    },
+    {
+      "id": "hosted-log-evidence",
+      "stage": "release",
+      "expectation": "A non-production hosted request can be correlated through the platform logs with the returned request ID, and log retention/access are understood.",
+      "verification": "Record a sanitized request ID and matching hosted log evidence; document platform retention, access controls, and any truncation limits.",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "external-monitoring-decision",
+      "stage": "release",
+      "expectation": "Sentry/OpenTelemetry adoption is either configured and verified or explicitly deferred with an owner and follow-up requirement.",
+      "verification": "Document provider, environment configuration/secrets, sampling/privacy settings, alert ownership, and a non-production delivery test, or record the deferral decision.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "implementationBranch": "feat/issue-6-structured-observability",
+  "implementationNotes": "Middleware request ID propagation, server JSON logger with allowlisted context and no untrusted exception messages/stacks, generic 5xx error mapping, and API-level payment/job route migration are implemented locally. Full unit tests, typecheck, and lint pass. Lower-level service console migration and hosted log evidence remain pending.",
+  "implementationState": "First API-level implementation is in progress; local checks pass, lower-level service coverage and release evidence pending",
+  "independentReview": {
+    "status": "Not started",
+    "findings": [],
+    "scope": "Review the implementation commit against each criterion, including privacy/redaction and typed-error compatibility."
+  },
+  "remainingWork": {
+    "code": [
+      "Migrate remaining high-risk lower-level payment/job service console calls with safe context, and inventory residual catches/logging.",
+      "Add injected route/service failure tests and complete an independent review."
+    ],
+    "external": [
+      "Verify request ID and JSON log correlation in non-production hosting; document retention, access controls, and alert ownership.",
+      "Decide whether to adopt Sentry/OpenTelemetry and record the configuration/test or explicit deferral."
+    ]
+  }
+}
