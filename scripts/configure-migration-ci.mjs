@@ -19,5 +19,14 @@ try {
   await client.query(`ALTER SYSTEM SET supautils.policy_grants = '{"postgres":["storage.objects"]}'`);
   await client.query("SELECT pg_reload_conf()");
 } finally { await client.end(); }
+const migrationClient = new pg.Client({ connectionString: "postgresql://postgres:postgres@127.0.0.1:54322/postgres" });
+await migrationClient.connect();
+try {
+  // Exercise the actual non-owner executor before application SQL. No test policy
+  // survives this transaction, and failure leaves replay disabled.
+  await migrationClient.query("BEGIN");
+  await migrationClient.query('CREATE POLICY "ona_ci_policy_probe" ON storage.objects FOR SELECT USING (false)');
+  await migrationClient.query("ROLLBACK");
+} finally { await migrationClient.end(); }
 writeFileSync(path, config.replace("[db.migrations]\nenabled = false", "[db.migrations]\nenabled = true"));
 console.log("Configured local storage-policy delegation; full application replay enabled");
