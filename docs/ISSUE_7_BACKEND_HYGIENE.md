@@ -2,7 +2,7 @@
 
 ## Migration CI
 
-CI runs on pull requests and pushes targeting dev, staging and main. The fresh Supabase migration job gates the build. CLI 2.75.0 starts a disposable PostgreSQL 17 stack with application migrations disabled, then applies all source SQL with migration up. The local administrator grants the postgres migration executor inherited membership in the storage owner role and verifies the complete avatar SQL in a rolled-back transaction before replay. This local fixture preserves table ownership and client-role grants; it is not a hosted provisioning procedure. The setting-based policy bypass and constant-policy probe were insufficient for the actual avatar expressions. All six storage policies are asserted after replay. Hosted PostgreSQL version and migration executor privileges require separate rollout verification.
+CI runs on pull requests and pushes targeting dev, staging and main. The fresh Supabase migration job gates the build. CLI 2.75.0 starts a disposable PostgreSQL 17 stack with application migrations disabled, then applies all source SQL with migration up. The local administrator grants the postgres migration executor inherited membership in the storage owner role and verifies the complete avatar SQL in a rolled-back transaction before replay. This local fixture preserves table ownership and client-role grants; it is not a hosted provisioning procedure. The setting-based policy bypass and constant-policy probe were insufficient for the actual avatar expressions. The local platform fixture also installs pg_trgm, pg_cron and pg_net. All six storage policies and required extensions are asserted after replay. Hosted PostgreSQL version and migration executor privileges require separate rollout verification.
 
 There are 83 historical SQL files. Their date prefixes repeat, so CLI versions would collide. `scripts/prepare-migration-ci.mjs` copies every file unchanged into a new temporary project with unique timestamps in the same lexical order used by `sync-db-latest.mjs`. The uploaded manifest maps generated versions to original filenames. These synthetic versions are for fresh replay only; do not use them for hosted `db push`, ledger repair or production deployment. Future filenames must retain the repository naming convention until a separate hosted migration-ledger migration is agreed.
 
@@ -13,12 +13,13 @@ To reproduce with Docker and Supabase CLI installed, choose a new, disposable di
 ```sh
 node scripts/prepare-migration-ci.mjs /private/tmp/ona-migration-ci-example
 supabase start --workdir /private/tmp/ona-migration-ci-example
-supabase db reset --local --workdir /private/tmp/ona-migration-ci-example
+node scripts/configure-migration-ci.mjs /private/tmp/ona-migration-ci-example
+supabase migration up --local --workdir /private/tmp/ona-migration-ci-example
 node scripts/verify-migration-ci.mjs /private/tmp/ona-migration-ci-example
 supabase stop --no-backup --workdir /private/tmp/ona-migration-ci-example
 ```
 
-The verifier connects only to `127.0.0.1:54322`. It is intended for the isolated stack above. Full replay is unrun locally because this machine has no Docker or Supabase CLI. Any migration failure found by the first CI run remains required work; the bootstrap admin seed now skips its deployment-specific identity when absent from auth.users. See [Supabase migration workflow](https://supabase.com/docs/guides/local-development/database-migrations).
+The verifier connects only to `127.0.0.1:54322`. It is intended for the isolated stack above. Full replay is unrun locally because this machine has no Docker or Supabase CLI. GitHub CI [run 37746535695](https://github.com/Ona-OnTheRoad/Ona-App/actions/runs/37746535695) passed all 83 migrations, schema/role assertions, lint/typecheck, tests and default production build on `30fa6b8400295865459d0e9c785909602421d24b`; the bootstrap admin seed now skips its deployment-specific identity when absent from auth.users. See [Supabase migration workflow](https://supabase.com/docs/guides/local-development/database-migrations).
 
 ## Rate limits
 
@@ -40,11 +41,11 @@ The production build also uncovered an existing invalid route export: `jobDetail
 
 ## Verification and release status
 
-Review checklist: [Issue 7 guide](review-guides/issue-7-backend-hygiene.md). The implementation is being committed for a PR targeting `dev`; no reviewed commit or independent review is established. No hosted migration, Redis configuration or deployment was changed. Require the fresh migration, lint/typecheck, tests and build checks in branch protection after a successful CI run. Retain migration replay manifests and record Redis/runtime evidence without credentials or personal data.
+Review checklist: [Issue 7 guide](review-guides/issue-7-backend-hygiene.md). The implementation is committed in PR #7 targeting `dev`; no reviewed commit or independent review is established. No hosted migration, Redis configuration or deployment was changed. Require the fresh migration, lint/typecheck, tests and build checks in branch protection after a successful CI run. Retain migration replay manifests and record Redis/runtime evidence without credentials or personal data.
 
 ## CI replay repair
 
-The first PR CI run failed on bootstrap migration 002: a deployment-specific admin profile referenced an absent auth user in the empty database. The seed is now guarded by auth-user existence; existing email-owner promotion is preserved. This historical source correction affects fresh replay only; do not reapply it to hosted migration ledgers. Full replay remains pending the corrected CI run.
+The first PR CI run failed on bootstrap migration 002: a deployment-specific admin profile referenced an absent auth user in the empty database. The seed is now guarded by auth-user existence; existing email-owner promotion is preserved. This historical source correction affects fresh replay only; do not reapply it to hosted migration ledgers. Final full replay passed in run 37746535695 after the documented repairs.
 
 The second replay passed bootstrap and failed in migration 020 because the bootstrap notification table lacks group_key. Migration 020 now adds that nullable column before creating its index, matching migration 021. No source migration is skipped.
 

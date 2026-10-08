@@ -22,18 +22,18 @@ Local memory is allowed only for undeployed development/test when Redis is absen
 
 ## Remaining work
 
-Code: full Supabase migration replay/schema-role assertions and formal review against a commit remain pending. Real Redis Lua/concurrency/expiry integration evidence remains pending; mock contract tests do not establish it. Standard Turbopack build was interrupted after stalling in the sandbox; webpack production build passed.
+Code: formal independent review against a commit remains pending. Real Redis Lua/concurrency/expiry integration evidence remains pending; mock contract tests do not establish it. Default production build and server-only rejection pass in GitHub CI; local webpack production build also passed.
 
 Local evidence: 107 test files / 1,228 tests passed; typecheck passed; lint had 0 errors and 158 existing warnings; production webpack build passed; actual Next negative client-import build passed; diff whitespace check passed. Evidence counts are recorded in the paired JSON checklist. Protected job-store/payout changes are import markers only. See [implementation and rollout](../ISSUE_7_BACKEND_HYGIENE.md).
-External: provision isolated Redis per environment, verify deployment behavior and CI run, configure required branch checks and monitoring ownership.
+External: provision isolated Redis per environment, verify deployment behavior, configure required branch checks and monitoring ownership.
 
 ## Closeout
 
-Reviewed commit: pending (working tree based on `800b785331b610c2aeda5d5c224dab842802c69a`, existing `codex/backend-observability-hygiene` branch). This implementation has not been committed or deployed. Update this guide and BACKEND_FIXES_STATUS.md with concrete evidence and residuals.
+Reviewed commit: pending (working tree based on `800b785331b610c2aeda5d5c224dab842802c69a`, existing `codex/backend-observability-hygiene` branch). Implementation is committed in PR #7 targeting dev. All four CI jobs pass on `30fa6b8400295865459d0e9c785909602421d24b`: [run 37746535695](https://github.com/Ona-OnTheRoad/Ona-App/actions/runs/37746535695). No hosted deployment or independent formal review is established.
 
 ## CI replay repair
 
-The first PR CI run failed on bootstrap migration 002: a deployment-specific admin profile referenced an absent auth user in the empty database. The seed is now guarded by auth-user existence; existing email-owner promotion is preserved. This historical source correction affects fresh replay only; do not reapply it to hosted migration ledgers. Full replay remains pending the corrected CI run.
+The first PR CI run failed on bootstrap migration 002: a deployment-specific admin profile referenced an absent auth user in the empty database. The seed is now guarded by auth-user existence; existing email-owner promotion is preserved. This historical source correction affects fresh replay only; do not reapply it to hosted migration ledgers. Final full replay passed in run 37746535695 after the repairs below.
 
 The second replay passed bootstrap and failed in migration 020 because the bootstrap notification table lacks group_key. Migration 020 now adds that nullable column before creating its index, matching migration 021. No source migration is skipped.
 
