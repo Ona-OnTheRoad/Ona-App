@@ -2,6 +2,14 @@
 do $$
 declare name text; signature text;
 begin
+  if not exists (select 1 from pg_index where indexrelid =
+      to_regclass('public.payments_idempotent_transfer_ref_unique') and indisunique and indisvalid) then
+    raise exception 'Missing valid unique payment transfer reference index';
+  end if;
+  if not exists (select 1 from pg_constraint where conrelid = 'public.payments'::regclass
+      and conname = 'payments_amounts_consistent' and contype = 'c' and convalidated) then
+    raise exception 'Missing validated payment amounts check';
+  end if;
   if not exists (select 1 from pg_extension where extname = 'pg_trgm') then
     raise exception 'Missing shop search extension pg_trgm';
   end if;

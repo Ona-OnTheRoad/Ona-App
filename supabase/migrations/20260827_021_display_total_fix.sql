@@ -14,15 +14,21 @@ WHERE status IN ('in_progress','completed','paid_booked','en_route','arrived','r
   AND callout_eligible = true;
 
 -- Prevent double-pay: ensure idempotent transfer ref is unique per payment
-ALTER TABLE public.payments
-  ADD CONSTRAINT IF NOT EXISTS payments_idempotent_transfer_ref_unique
-  UNIQUE ((meta->>'idempotentTransferRef'));
+-- PostgreSQL expression uniqueness uses an index, not a table constraint.
+CREATE UNIQUE INDEX IF NOT EXISTS payments_idempotent_transfer_ref_unique
+  ON public.payments ((meta->>'idempotentTransferRef'));
 
 -- Ensure payment amounts are consistent: pro + platform + vat = total
-ALTER TABLE public.payments
-  ADD CONSTRAINT IF NOT EXISTS payments_amounts_consistent
-  CHECK (amount_minor >= 0 AND
-    (pro_payout_kobo + platform_fee_kobo + vat_kobo) = amount_minor);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint
+      WHERE conrelid = 'public.payments'::regclass
+        AND conname = 'payments_amounts_consistent') THEN
+    ALTER TABLE public.payments
+      ADD CONSTRAINT payments_amounts_consistent
+      CHECK (amount_minor >= 0 AND
+        (pro_payout_kobo + platform_fee_kobo + vat_kobo) = amount_minor);
+  END IF;
+END $$;
 
 -- Document the helper (no hard DB constraint to allow pending callouts, app enforces via getDisplayTotalMajor)
 COMMENT ON COLUMN service_requests.agreed_major IS 'Labour base (major). Display Total must use getDisplayTotalMajor() = coalesce(amount_minor/100, labour + calloutFee) — never format agreed_major alone';
