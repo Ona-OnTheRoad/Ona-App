@@ -18,6 +18,8 @@ const client = new pg.Client({ connectionString: "postgresql://supabase_admin:po
 await client.connect();
 try {
   await client.query("CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA extensions");
+  await client.query("CREATE EXTENSION IF NOT EXISTS pg_cron");
+  await client.query("CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA extensions");
   await client.query("GRANT supabase_storage_admin TO postgres WITH INHERIT TRUE");
 } finally { await client.end(); }
 const migrationClient = new pg.Client({ connectionString: "postgresql://postgres:postgres@127.0.0.1:54322/postgres" });
