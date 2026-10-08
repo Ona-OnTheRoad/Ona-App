@@ -6,9 +6,10 @@ begin
       to_regclass('public.payments_idempotent_transfer_ref_unique') and indisunique and indisvalid) then
     raise exception 'Missing valid unique payment transfer reference index';
   end if;
-  if not exists (select 1 from pg_constraint where conrelid = 'public.payments'::regclass
-      and conname = 'payments_amounts_consistent' and contype = 'c' and convalidated) then
-    raise exception 'Missing validated payment amounts check';
+  if not exists (select 1 from information_schema.columns where table_schema = 'public'
+      and table_name = 'payments' and column_name = 'amount_kobo'
+      and data_type = 'bigint' and is_nullable = 'NO') then
+    raise exception 'Missing actual non-null bigint payment amount_kobo';
   end if;
   if not exists (select 1 from pg_extension where extname = 'pg_trgm') then
     raise exception 'Missing shop search extension pg_trgm';
