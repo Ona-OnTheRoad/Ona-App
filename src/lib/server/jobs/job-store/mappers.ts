@@ -1,3 +1,4 @@
+import "server-only";
 import {
   MAX_NEGOTIATION_OFFERS,
   paymentEndsAtIso,

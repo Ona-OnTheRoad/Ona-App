@@ -1,10 +1,11 @@
+// Server module guards require: node --conditions=react-server --import tsx scripts/shop-trade-matrix-verify.mts
 /**
  * Phase 3 trade-matrix verification against the real Supabase DB.
  * For every trade: search a representative query, verify the ranking ladder
  * produced sorted results, run facet filters (availability, price), and check
  * that catalog rows validate against the trade's attribute schema.
  *
- * Usage: npx tsx scripts/shop-trade-matrix-verify.mts
+ * Usage: node --conditions=react-server --import tsx scripts/shop-trade-matrix-verify.mts
  */
 
 import { config } from "dotenv";

@@ -1,3 +1,4 @@
+import "server-only";
 import {
   MAX_PAYMENT_ATTEMPTS,
   PAY_HISTORY,

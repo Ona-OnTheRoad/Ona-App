@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Security store: Supabase + in-memory fallback.
  * Contact changes, referral codes, credit wallets, cashouts, fraud flags, audit logs.

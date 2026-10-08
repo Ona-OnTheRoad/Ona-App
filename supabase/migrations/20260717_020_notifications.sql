@@ -21,6 +21,10 @@ create table if not exists public.notifications (
   created_at timestamptz not null default now()
 );
 
+-- Bootstrap already creates a smaller notifications table. Ensure the indexed
+-- column exists before migration 021 expands the remaining notification fields.
+alter table public.notifications add column if not exists group_key text;
+
 create index if not exists notifications_user_created_idx
   on public.notifications (user_id, created_at desc);
 

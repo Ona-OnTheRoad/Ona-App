@@ -1,3 +1,4 @@
+import "server-only";
 import type { CalloutQuote } from "@/lib/callout/constants";
 import type { JobRecord } from "@/lib/jobs/types";
 import { estimateCalloutQuote } from "@/lib/server/callout/estimate";

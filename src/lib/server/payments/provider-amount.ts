@@ -1,3 +1,4 @@
+import "server-only";
 /** Two-decimal provider major units → exact minor units, without rounding a mismatch away. */
 export function exactProviderMinorUnits(amount: unknown): number {
   if ((typeof amount !== "number" && typeof amount !== "string") ||

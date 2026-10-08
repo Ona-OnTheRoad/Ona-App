@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Market access scoping (server-side, service role).
  *

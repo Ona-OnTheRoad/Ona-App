@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Server-authoritative Call-Out quote for a service request.
  * Distance comes from Google Distance Matrix (haversine fallback).

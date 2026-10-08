@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Full audit log for admin / Customer Care actions.
  */

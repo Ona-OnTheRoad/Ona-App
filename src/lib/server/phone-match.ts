@@ -1,3 +1,4 @@
+import "server-only";
 import { normalizeNgPhone } from "@/lib/server/africastalking";
 
 /**

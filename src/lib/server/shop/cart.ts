@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Server-authoritative shop cart. Never trust client totals.
  */
@@ -5,30 +6,8 @@
 import { createServiceSupabase } from "@/lib/supabase/server";
 import type { ShopAccountContext } from "@/lib/server/shop/types";
 
-export type CartLine = {
-  id: string;
-  variantId: string;
-  productId: string;
-  productName: string;
-  productSlug: string;
-  variantTitle: string;
-  sku: string;
-  qty: number;
-  unitPriceMinor: number;
-  lineTotalMinor: number;
-  inStock: boolean;
-  availableQty: number;
-};
-
-export type CartView = {
-  id: string;
-  userId: string;
-  accountContext: ShopAccountContext;
-  currency: string;
-  items: CartLine[];
-  subtotalMinor: number;
-  itemCount: number;
-};
+import type { CartLine, CartView } from "@/lib/types/shop-cart";
+export type { CartLine, CartView } from "@/lib/types/shop-cart";
 
 async function activePriceMinor(
   sb: ReturnType<typeof createServiceSupabase>,

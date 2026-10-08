@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Server-side notification writes (service role).
  */

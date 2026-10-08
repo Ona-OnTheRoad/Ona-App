@@ -1,3 +1,4 @@
+import "server-only";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { getJob } from "@/lib/server/jobs/job-store";

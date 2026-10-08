@@ -1,3 +1,4 @@
+import "server-only";
 export { createContactChangeRequest } from "@/lib/server/security/security-store";
 export { getContactChangeRequest } from "@/lib/server/security/security-store";
 export { listContactChangeRequests } from "@/lib/server/security/security-store";

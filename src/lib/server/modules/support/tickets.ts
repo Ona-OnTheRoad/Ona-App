@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Support tickets CRM foundation (Phase A scaffold).
  */

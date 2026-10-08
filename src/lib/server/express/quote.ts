@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Express price computation single source of truth for quote + book.
  * Base Fee (₦20k Mechanic / ₦15k others) + call-out via the existing

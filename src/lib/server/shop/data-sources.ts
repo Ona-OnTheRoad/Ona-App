@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * ONA Shop data source reporting (Phase 2).
  * Read-side: sources, connectors, jobs, batches, staging status.

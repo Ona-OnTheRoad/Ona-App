@@ -23,14 +23,14 @@ SET
   distance_rate = COALESCE(c.distance_rate, 350),
   billable_distance_km = COALESCE(c.billable_distance_km, 0.5),
   distance_charge = COALESCE(c.distance_charge, 0.5 * 350),
-  calculated_at = COALESCE(c.calculated_at, now()::text),
-  updated_at = now()::text
+  calculated_at = COALESCE(c.calculated_at, now()),
+  updated_at = now()
 FROM (
   SELECT
     sr.id,
     COALESCE(t.base_fee, 3000) AS base_fee
   FROM public.service_requests sr
-  LEFT JOIN public.trade_call_out_pricing t ON t.trade_id = sr.service_type
+  LEFT JOIN public.trade_call_out_pricing t ON t.trade_id = sr.service_type::text
   WHERE sr.agreed_major IS NOT NULL
     AND sr.status IN ('requested','accepted')
     AND sr.flow_status = 'agreed'

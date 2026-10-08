@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Persist / load Call-Out policy, trade fees, and per-request quotes.
  * Server-only (service role). Never trust client-submitted amounts.

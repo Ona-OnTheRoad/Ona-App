@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Broader platform audit (app + admin). Complements admin_actions.
  */

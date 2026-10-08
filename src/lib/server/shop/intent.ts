@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Lightweight structured intent from natural-language shop queries.
  * AI optional later this is deterministic extraction (authoritative catalog still wins).

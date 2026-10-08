@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Repair Pro pipeline DB-backed states (Phase A columns; Phase B full wire).
  */

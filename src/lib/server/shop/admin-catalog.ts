@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Admin catalog writes products, variants, prices, inventory, images.
  * Gated by shop_catalog permission at the API layer.

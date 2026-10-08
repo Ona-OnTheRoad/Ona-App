@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * ONA Shop import engine (Phase 2).
  *

@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Africa's Talking SMS helper
  * Docs: https://developers.africastalking.com/docs/sms/sending/bulk

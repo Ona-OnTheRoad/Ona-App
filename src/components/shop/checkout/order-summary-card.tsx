@@ -1,7 +1,7 @@
 "use client";
 
 import { formatShopPrice } from "@/components/shop/shared/format-shop-price";
-import type { CartView } from "@/lib/server/shop/cart";
+import type { CartView } from "@/lib/types/shop-cart";
 import type { DeliveryEstimateView } from "@/lib/shop/client";
 import { cn } from "@/lib/utils";
 

@@ -6,7 +6,11 @@
 -- discovered/imported/rejected/updated, errors, last/next sync.
 -- ============================================================
 
-create extension if not exists pg_trgm;
+do $$ begin
+  if not exists (select 1 from pg_extension where extname = 'pg_trgm') then
+    create extension pg_trgm;
+  end if;
+end $$;
 
 -- ------------------------------------------------------------
 -- 1) Product catalog enrichment

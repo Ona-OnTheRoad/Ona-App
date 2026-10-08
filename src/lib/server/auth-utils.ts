@@ -1,3 +1,4 @@
+import "server-only";
 import { createClient, type User } from "@supabase/supabase-js";
 import { apiFail } from "@/lib/server/api-json";
 

@@ -1,6 +1,7 @@
+import "server-only";
 /** Shared Shop domain types (server + API contracts). */
 
-export type ShopAccountContext = "motorist" | "professional";
+export type { ShopAccountContext } from "@/lib/types/shop-cart";
 
 export type FitmentStatus =
   "direct_fit" | "compatible" | "conditional" | "unknown" | "not_compatible";

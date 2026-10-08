@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * ONA Shop catalog reads (server-side, service role).
  */

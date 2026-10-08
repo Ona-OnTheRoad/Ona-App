@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Hard ledger for Flutterwave transfer references.
  * UNIQUE(transfer_ref) in DB second insert fails → never double-pay.

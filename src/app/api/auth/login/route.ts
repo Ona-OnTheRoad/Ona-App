@@ -1,3 +1,4 @@
+import { rateLimitUnavailableResponse } from "@/lib/server/modules/rate-limit";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { apiFail, apiOk } from "@/lib/server/api-json";
@@ -270,7 +271,7 @@ export async function POST(req: Request) {
     const email = parsed.data.email.trim().toLowerCase();
     const password = parsed.data.password;
 
-    // Soft IP + email throttle (in-memory; multi-instance → Redis later)
+    // Shared IP and email budgets across deployed workers.
     try {
       const { rateLimitAsync } =
         await import("@/lib/server/modules/rate-limit");
@@ -302,8 +303,8 @@ export async function POST(req: Request) {
           "rate_limited",
         );
       }
-    } catch {
-      /* never block login on rate-limit module errors */
+    } catch (error) {
+      return rateLimitUnavailableResponse(error, req) || apiFail("Security checks unavailable", 503);
     }
     const url = getSupabaseUrl();
     const anon = getSupabaseAnonKey();

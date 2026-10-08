@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Temporary unlock for sensitive Customer Care actions.
  * Password 336699 (or ADMIN_SENSITIVE_PASSWORD) grants a short-lived unlock cookie.

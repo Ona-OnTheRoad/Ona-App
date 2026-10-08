@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Notification retry queue.
  *

@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, staging]
+    branches: [main, staging, dev]
   pull_request:
-    branches: [main]
+    branches: [main, staging, dev]
 
 env:
   NODE_VERSION: "20"
@@ -48,7 +48,7 @@ jobs:
 
   build:
     name: Build
-    needs: [lint-and-typecheck, test]
+    needs: [lint-and-typecheck, test, migrations]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -60,7 +60,42 @@ jobs:
 
       - run: npm ci
 
+      - run: npm run check:server-boundaries
+
       - run: npm run build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || '' }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || '' }}
+
+  migrations:
+    name: Fresh Supabase migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.75.0
+      - name: Prepare isolated CLI migration project
+        run: node scripts/prepare-migration-ci.mjs "$RUNNER_TEMP/ona-migration-ci"
+      - name: Apply complete history to local Supabase
+        run: |
+          supabase start --workdir "$RUNNER_TEMP/ona-migration-ci"
+          node scripts/configure-migration-ci.mjs "$RUNNER_TEMP/ona-migration-ci"
+          supabase migration up --local --workdir "$RUNNER_TEMP/ona-migration-ci"
+      - name: Check migration count, schema and role boundaries
+        run: node scripts/verify-migration-ci.mjs "$RUNNER_TEMP/ona-migration-ci"
+      - name: Preserve replay manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-replay-manifest
+          path: ${{ runner.temp }}/ona-migration-ci/migration-manifest.json
+      - name: Stop isolated local stack
+        if: always()
+        run: supabase stop --no-backup --workdir "$RUNNER_TEMP/ona-migration-ci"

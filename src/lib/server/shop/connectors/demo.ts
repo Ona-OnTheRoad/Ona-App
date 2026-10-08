@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Ona Demo catalog connector (Phase 2).
  * Streams the synthetic demo catalog (70+ products, 14 trades) through the

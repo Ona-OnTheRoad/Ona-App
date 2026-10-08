@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Live motorist → Repair Pro reviews (Postgres `reviews` + pro rating_avg).
  */

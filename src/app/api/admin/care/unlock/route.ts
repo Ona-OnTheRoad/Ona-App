@@ -1,3 +1,4 @@
+import { rateLimitUnavailableResponse } from "@/lib/server/modules/rate-limit";
 import { z } from "zod";
 import {
   AdminAuthError,
@@ -7,7 +8,7 @@ import {
   logAdminAction,
 } from "@/lib/server/admin-auth";
 import { apiFail, apiOk } from "@/lib/server/api-json";
-import { rateLimit } from "@/lib/server/modules/rate-limit";
+import { rateLimitAsync } from "@/lib/server/modules/rate-limit";
 import {
   clearUnlockCookie,
   setUnlockCookie,
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
   try {
     const { session } = await requireAdmin();
     const ip = clientIp(req);
-    const rl = rateLimit({
+    const rl = await rateLimitAsync({
       key: `unlock:${session.userId}:${ip}`,
       limit: 8,
       windowMs: 5 * 60_000,
@@ -79,6 +80,8 @@ export async function POST(req: Request) {
       message: "Unlocked for this action / page",
     });
   } catch (e) {
+    const unavailable = rateLimitUnavailableResponse(e, req);
+    if (unavailable) return unavailable;
     if (e instanceof AdminAuthError) {
       return apiFail(e.message, e.status, e.code || "auth");
     }

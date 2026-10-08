@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * NHTSA vPIC connector (Phase 2) vehicle foundation for the catalog.
  *

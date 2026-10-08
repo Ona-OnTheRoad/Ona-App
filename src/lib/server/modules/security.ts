@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Multi-layer admin security (5 access levels).
  *

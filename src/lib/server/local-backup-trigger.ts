@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Trigger Local BackUp (disk snapshots under Local BackUp/snapshots/).
  * Works when Next runs on this Mac (dev/admin). Safe no-op / soft-fail on Vercel.

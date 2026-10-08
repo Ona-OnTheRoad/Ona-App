@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Resend email helper (free tier: https://resend.com)
  * Env: RESEND_API_KEY, RESEND_FROM_EMAIL (e.g. Ona <onboarding@resend.dev>)

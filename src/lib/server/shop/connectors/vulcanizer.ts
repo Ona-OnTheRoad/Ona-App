@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Ona Vulcanizer Shop catalog connector (real catalogue).
  * Streams the ETRTO-grounded vulcanizer catalogue through the standard import

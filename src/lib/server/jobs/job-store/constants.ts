@@ -1,3 +1,4 @@
+import "server-only";
 export const REROUTE_AFTER_MS = 60_000;
 export const REROUTE_WINDOW_MS = 15 * 60_000;
 export const DEFER_DURATION_MS = 5 * 60_000;

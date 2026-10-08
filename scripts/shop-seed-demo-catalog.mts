@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Run with node --conditions=react-server --import tsx scripts/shop-seed-demo-catalog.mts
 /**
  * Seed ONA Shop demo catalog (Phase 2) — 70+ demo products across 14 trades.
  * Runs the standard import pipeline with the DemoCatalogConnector so all
@@ -7,7 +8,7 @@
  * Idempotent: uses deterministic dedup keys, so re-running merges instead of
  * duplicating.
  *
- * Usage: npx tsx scripts/shop-seed-demo-catalog.mts
+ * Usage: node --conditions=react-server --import tsx scripts/shop-seed-demo-catalog.mts
  */
 
 import { createClient } from "@supabase/supabase-js";

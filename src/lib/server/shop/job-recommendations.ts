@@ -1,3 +1,4 @@
+import "server-only";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { listProducts } from "@/lib/server/shop/catalog";
 import type { ShopProductCard } from "@/lib/server/shop/types";

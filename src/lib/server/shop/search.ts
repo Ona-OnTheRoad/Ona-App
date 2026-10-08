@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Smart shop search text intent + optional trade lock + fitment re-rank.
  */

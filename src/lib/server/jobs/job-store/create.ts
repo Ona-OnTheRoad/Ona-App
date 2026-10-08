@@ -1,3 +1,4 @@
+import "server-only";
 import { MAX_NEGOTIATION_OFFERS } from "@/lib/jobs/constants";
 import type { CreateJobInput, JobRecord } from "@/lib/jobs/types";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";

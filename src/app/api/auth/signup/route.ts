@@ -1,3 +1,4 @@
+import { rateLimitUnavailableResponse } from "@/lib/server/modules/rate-limit";
 import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { createServiceSupabase } from "@/lib/supabase/server";
@@ -257,12 +258,12 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { rateLimit } = await import("@/lib/server/modules/rate-limit");
+    const { rateLimitAsync } = await import("@/lib/server/modules/rate-limit");
     const ip =
       req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       req.headers.get("x-real-ip") ||
       "unknown";
-    const rl = rateLimit({
+    const rl = await rateLimitAsync({
       key: `signup:ip:${ip}`,
       limit: 10,
       windowMs: 15 * 60_000,
@@ -274,8 +275,8 @@ export async function POST(req: Request) {
         "rate_limited",
       );
     }
-  } catch {
-    /* non-fatal */
+  } catch (error) {
+    return rateLimitUnavailableResponse(error, req) || apiFail("Security checks unavailable", 503);
   }
 
   const input = parsed.data;

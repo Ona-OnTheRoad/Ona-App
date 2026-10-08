@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Ona Smart Sequential Pairing Engine (SSPE).
  *
