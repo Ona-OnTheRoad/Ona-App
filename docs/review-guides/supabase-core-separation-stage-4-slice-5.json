@@ -5,7 +5,7 @@
   "plan": "docs/review-guides/supabase-core-separation-stage-4-slice-5.md",
   "inventoryCommit": "ed07d76d8518da279e4553dfb00c0e09841a4976",
   "reviewedCommit": null,
-  "implementationState": "Batch 1 committed as a3dd798; batch 2 own-profile/role-flags implemented and locally verified. Independent review and hosted checks pending for both; later batches deferred.",
+  "implementationState": "Batch 1 committed as a3dd798; batch 2 committed as 13e0c6f. Batch 3 admin user listing implemented and locally verified. Independent review and hosted checks pending; later identity batches deferred.",
   "requirements": [
     {
       "id": "inventory",
@@ -99,6 +99,28 @@
       "stage": "external",
       "expectation": "Hosted own-profile and role-flags smoke passes on deployed reviewed commit.",
       "verification": "Two accounts / both roles; record hosted evidence separately.",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "batch-3-admin-users",
+      "stage": "code",
+      "expectation": "Approved GET admin/users delegates five read sites and mapping through a typed identity interface, preserving authorization, both branches, filters, limits and error semantics.",
+      "verification": "Before/after route characterization, source parity/read-only audit and local gates.",
+      "status": "pass",
+      "evidence": [
+        "User approved GET /api/admin/users only on 2026-10-10, baseline 13e0c6f.",
+        "19 new characterization tests passed against original route and unchanged after extraction: both branches, ordering/limits, role/search filters, dual-role pros, defaults, returned/thrown errors, admin and config rejection.",
+        "Five select-only query sites and mapping body are verbatim after indentation/function/result wrapper changes. Route has no table/service-client access; server-only admin-users.ts is 156 lines.",
+        "npm run test: 1,431 tests / 134 files passed. npm run typecheck passed. npm run lint: 0 errors / 160 warnings, none in changed files. git diff --check passed.",
+        "Independent review of exact commit and hosted smoke remain pending."
+      ]
+    },
+    {
+      "id": "batch-3-hosted",
+      "stage": "external",
+      "expectation": "Hosted admin user listing/search/role-filter smoke passes on deployed reviewed commit.",
+      "verification": "Record authorized hosted evidence separately.",
       "status": "pending",
       "evidence": []
     }
@@ -2762,14 +2784,14 @@
   ],
   "remainingWork": {
     "code": [
-      "Independent review of batch 1 commit a3dd798 and batch 2 exact implementation commit (independent review pending).",
-      "Agree later admin, signup/profile-update, OTP and Care/lifecycle batches; destructive/other-domain candidates remain deferred.",
-      "No additional implementation/local test gap currently identified for the two approved batches after recorded gates."
+      "Independently review exact commits for batches 1-3 (batch 3 independent review pending).",
+      "Agree later admin-detail, signup/profile-update, OTP, Care and lifecycle batches; other-domain candidates remain deferred."
     ],
     "external": [
       "Deploy reviewed first-batch commit and record hosted password-login, both role-switch directions, inactive/missing-role, pro Away and shared-bank smoke.",
       "No new configuration or migration required by this first-batch relocation; hosted evidence still pending.",
-      "Batch 2: hosted own-profile and role-flags smoke using two accounts and both roles on deployed reviewed commit. No deployment performed."
+      "Batch 2: hosted own-profile and role-flags smoke using two accounts and both roles on deployed reviewed commit. No deployment performed.",
+      "Batch 3: hosted admin user-list/search/role-filter smoke on deployed reviewed commit."
     ]
   },
   "implementationFiles": [
@@ -2782,7 +2804,9 @@
     "src/lib/server/identity/own-profile.ts",
     "src/lib/server/identity/role-flags.ts",
     "src/app/api/profile/route.ts",
-    "src/app/api/account/role-flags/route.ts"
+    "src/app/api/account/role-flags/route.ts",
+    "src/lib/server/identity/admin-users.ts",
+    "src/app/api/admin/users/route.ts"
   ],
   "verificationLimitations": [
     "Route tests mock existing identity-sync exports and database results; full suite includes existing sync tests.",
@@ -2790,5 +2814,7 @@
     "Inventory call-site records are historical at inventoryCommit, not current route line locations."
   ],
   "firstBatchCommit": "a3dd798",
-  "batch2BaselineCommit": "a3dd798"
+  "batch2BaselineCommit": "a3dd798",
+  "batch2Commit": "13e0c6f",
+  "batch3BaselineCommit": "13e0c6f"
 }

@@ -227,6 +227,12 @@ User approved this read-only batch after batch 1 was committed as `a3dd798`. GET
 
 26 route tests (17 new) passed before and after extraction. Full suite: 1,412 tests / 133 files; typecheck passes; lint 0 errors / 160 warnings, none in changed files; diff check passes. [Detailed criteria and evidence](supabase-core-separation-stage-4-slice-5.md). Independent review of the exact commit and hosted two-account/both-role smoke remain pending. Later identity batches remain deferred.
 
+## Slice 5 batch 3: admin user list (implemented and locally verified)
+
+Approved scope: GET `/api/admin/users` only, baseline `13e0c6f`. New server-only `admin-users.ts` owns five identity read sites and result mapping (156 lines); route retains admin/config checks, query parsing and HTTP/error responses. Preserves general 300-row and special 400-pro listings, dual-role inclusion, different search paths, projections, missing-profile defaults and secondary-error handling. No writes/schema/config/protected changes.
+
+19 new route tests passed before and after extraction; full suite 1,431 tests / 134 files and typecheck pass. Lint passes: 0 errors / 160 warnings, none in changed files; diff check passes. Independent review of exact commit and hosted listing/search/filter smoke remain pending. [Detailed criteria/evidence](supabase-core-separation-stage-4-slice-5.md). Later batches excluded.
+
 ## Remaining slices
 
 - **catalog.ts's `listProducts`:** needs its own dedicated slice with

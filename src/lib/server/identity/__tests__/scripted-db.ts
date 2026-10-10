@@ -23,6 +23,10 @@ export function scriptedDb(replies: Record<string, QueryReply[]>) {
       const call: QueryCall = { table, steps: [] };
       const chain = {
         select(...args: unknown[]) { call.steps.push({ method: "select", args }); return chain; },
+        order(...args: unknown[]) { call.steps.push({ method: "order", args }); return chain; },
+        limit(...args: unknown[]) { call.steps.push({ method: "limit", args }); return chain; },
+        in(...args: unknown[]) { call.steps.push({ method: "in", args }); return chain; },
+        or(...args: unknown[]) { call.steps.push({ method: "or", args }); return chain; },
         eq(...args: unknown[]) { call.steps.push({ method: "eq", args }); return chain; },
         update(...args: unknown[]) { call.steps.push({ method: "update", args }); return chain; },
         upsert(...args: unknown[]) { call.steps.push({ method: "upsert", args }); return chain; },
