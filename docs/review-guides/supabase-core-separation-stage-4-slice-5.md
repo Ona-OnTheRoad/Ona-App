@@ -211,10 +211,28 @@ Route characterization runs real new identity modules with a scripted database; 
 
 ## Remaining work
 
-Code: independently review the exact resulting commit (independent review pending); agree later batches before implementation. Own-profile/role-flags reads, signup/profile updates, OTP, Care/admin operations and the destructive/other-domain candidates in the inventory remain deferred, not closed. No additional first-batch implementation or local test work is currently identified after the recorded gates.
+Code: independently review the exact resulting commit (independent review pending); agree later batches before implementation. Signup/profile updates, OTP, Care/admin operations and the destructive/other-domain candidates in the inventory remain deferred, not closed. No additional first-batch implementation or local test work is currently identified after the recorded gates.
 
 External: hosted smoke on the deployed reviewed commit remains pending: password login, both role-switch directions, inactive account, missing target role, pro Away and shared-bank behaviour. No new configuration/migration need identified for this first batch; deployment and hosted evidence have not been performed.
 
 ## Closeout
 
 First batch implemented and locally verified against the working tree based on `ed07d76d8518da279e4553dfb00c0e09841a4976`. Reviewed implementation commit: pending independent review. Independent review and hosted verification remain pending. Broader Slice 5 and Stage 4 are not closed. This is the separate Supabase decoupling effort; the parent guide excludes it from BACKEND_FIXES_STATUS.md's numbered report-issue ledger.
+
+## Batch 2: own-profile and role-flags reads (implemented locally)
+
+User approved this batch on 2026-10-10. Baseline: `a3dd798` (batch 1). Scope is GET `/api/profile` and GET `/api/account/role-flags` only. Move profile reads/mapping into `own-profile.ts` and role-existence reads into `role-flags.ts`. Routes keep configuration guards, requireUser, HTTP responses and exception mapping. Preserve all selects, session-derived filters, guarantor mapping, active-role bank precedence, stored/derived primary-role behaviour and returned-error versus thrown-error semantics. Do not introduce sync or repair writes into these reads.
+
+| Criterion | Verification | Status |
+|---|---|---|
+| Caller isolation / contracts | Existing and extended route tests: client query userId cannot override session; 401/503 do not query; null shared profile stays 200/null. | Pass: before/after route characterization |
+| Projection / fallback parity | Characterization: both roles, stored primary and creation-date fallback, identity status, bank fallback, guarantor and query errors. | Pass: 26 route tests |
+| Defined read interfaces | Routes contain no table/client/row-mapper access; new modules below 300 lines; same 6 read sites including guarantor; no writes. | Pass: source audit; modules 211 / 41 lines |
+| Local gates | Focused tests before/after; full tests, typecheck, lint and diff check. | Pass: 1,412 tests / 133 files; typecheck; lint 0 errors / 160 warnings, none in changed files; diff check |
+| Hosted evidence | Own-profile and role-flags smoke on deployed reviewed commit with two accounts / both roles. | Pending |
+
+Independent review of the implementation commit remains pending. Later admin reads, signup/update, OTP and Care/lifecycle batches are excluded. No migration or configuration change planned.
+
+Batch 2 evidence: 17 new characterization cases extend the 9 existing route tests. All 26 passed against original routes before extraction and unchanged after. Source comparison confirms verbatim query/mapping relocation after indentation, function parameter and return-wrapper changes. The session user ID is the only ID passed to each operation. `own-profile.ts` reads profiles, both role tables and guarantors; `role-flags.ts` retains its slim role/creation-date selects. All six query sites remain scoped and select-only. Existing returned-error fallback and thrown-error response behaviour is intentionally unchanged.
+
+Batch 2 remaining code: independent review of the exact resulting commit (independent review pending); later admin, signup/update, OTP and Care/lifecycle batches still need agreed scope. No further batch 2 implementation/local verification gap identified. External: deploy reviewed changes and record two-account/both-role profile/flags smoke; no deployment or configuration/migration change performed. Tests use scripted/mocked database replies and do not establish hosted behaviour.

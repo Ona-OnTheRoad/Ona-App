@@ -5,7 +5,7 @@
   "plan": "docs/review-guides/supabase-core-separation-stage-4-slice-5.md",
   "inventoryCommit": "ed07d76d8518da279e4553dfb00c0e09841a4976",
   "reviewedCommit": null,
-  "implementationState": "Login/switch-role first batch implemented and locally verified. Independent review and hosted verification pending; broader Slice 5 deferred.",
+  "implementationState": "Batch 1 committed as a3dd798; batch 2 own-profile/role-flags implemented and locally verified. Independent review and hosted checks pending for both; later batches deferred.",
   "requirements": [
     {
       "id": "inventory",
@@ -77,6 +77,28 @@
       "stage": "external",
       "expectation": "Hosted smoke passes on deployed reviewed implementation commit.",
       "verification": "See paired Markdown reviewer criteria.",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "batch-2-own-profile-reads",
+      "stage": "code",
+      "expectation": "Approved own-profile/role-flags routes use named read interfaces with session isolation and unchanged response/projection/error semantics.",
+      "verification": "Before/after route characterization, read-only query audit and local gates; see batch 2 Markdown plan.",
+      "status": "pass",
+      "evidence": [
+        "User approved on 2026-10-10; baseline a3dd798.",
+        "17 new tests plus 9 existing route tests: 26 passed before/after extraction, including session-id isolation, projections, primary-role/bank/identity fallback and returned/thrown errors.",
+        "Source audit: verbatim relocated query/mapping bodies; six select-only sites including guarantor, same session-derived filters; no table/service-client/row-type/mapper access in routes.",
+        "New own-profile.ts / role-flags.ts are 211 / 41 lines and server-only; no schema/config/protected changes.",
+        "npm run test: 1,412 tests / 133 files passed. npm run typecheck passed. npm run lint: 0 errors / 160 warnings, none in changed files. git diff --check passed."
+      ]
+    },
+    {
+      "id": "batch-2-hosted",
+      "stage": "external",
+      "expectation": "Hosted own-profile and role-flags smoke passes on deployed reviewed commit.",
+      "verification": "Two accounts / both roles; record hosted evidence separately.",
       "status": "pending",
       "evidence": []
     }
@@ -2740,13 +2762,14 @@
   ],
   "remainingWork": {
     "code": [
-      "Independent review of exact resulting commit; independent review pending.",
-      "Agree later batches; own-profile/role-flags, signup/profile updates, OTP, Care/admin and destructive/other-domain candidates remain deferred.",
-      "No additional first-batch implementation/local tests currently identified after recorded gates; broader Slice 5 is not closed."
+      "Independent review of batch 1 commit a3dd798 and batch 2 exact implementation commit (independent review pending).",
+      "Agree later admin, signup/profile-update, OTP and Care/lifecycle batches; destructive/other-domain candidates remain deferred.",
+      "No additional implementation/local test gap currently identified for the two approved batches after recorded gates."
     ],
     "external": [
       "Deploy reviewed first-batch commit and record hosted password-login, both role-switch directions, inactive/missing-role, pro Away and shared-bank smoke.",
-      "No new configuration or migration required by this first-batch relocation; hosted evidence still pending."
+      "No new configuration or migration required by this first-batch relocation; hosted evidence still pending.",
+      "Batch 2: hosted own-profile and role-flags smoke using two accounts and both roles on deployed reviewed commit. No deployment performed."
     ]
   },
   "implementationFiles": [
@@ -2755,11 +2778,17 @@
     "src/lib/server/identity/switch-identity.ts",
     "src/lib/server/identity/switch-profile.ts",
     "src/app/api/auth/login/route.ts",
-    "src/app/api/auth/switch-role/route.ts"
+    "src/app/api/auth/switch-role/route.ts",
+    "src/lib/server/identity/own-profile.ts",
+    "src/lib/server/identity/role-flags.ts",
+    "src/app/api/profile/route.ts",
+    "src/app/api/account/role-flags/route.ts"
   ],
   "verificationLimitations": [
     "Route tests mock existing identity-sync exports and database results; full suite includes existing sync tests.",
     "Hosted Auth/schema/concurrency evidence not established. Existing partial-write/fallback/ignored-error semantics remain.",
     "Inventory call-site records are historical at inventoryCommit, not current route line locations."
-  ]
+  ],
+  "firstBatchCommit": "a3dd798",
+  "batch2BaselineCommit": "a3dd798"
 }

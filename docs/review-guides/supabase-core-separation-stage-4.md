@@ -221,6 +221,12 @@ before and after, same queries, same field computations). New tests:
 
 32 characterization tests passed against the original routes and after extraction; 9 additional persistence/projection cases pass. Full local suite: 1,395 tests / 133 files; typecheck passes; lint 0 errors / 160 warnings with none in changed files. No migration, environment or protected-file change. Reviewed commit, independent review and hosted smoke remain pending. The rest of the identity inventory is not implemented by this first batch.
 
+## Slice 5 batch 2: own-profile and role-flags (implemented and locally verified)
+
+User approved this read-only batch after batch 1 was committed as `a3dd798`. GET `/api/profile` and GET `/api/account/role-flags` now delegate to server-only `own-profile.ts` and `role-flags.ts` (211 / 41 lines). Session-only authorization, HTTP/error responses, projections, bank/primary-role/identity fallbacks and guarantor mapping are preserved. All six query sites, including guarantor, are select-only and scoped to the session caller. No schema/config/protected changes.
+
+26 route tests (17 new) passed before and after extraction. Full suite: 1,412 tests / 133 files; typecheck passes; lint 0 errors / 160 warnings, none in changed files; diff check passes. [Detailed criteria and evidence](supabase-core-separation-stage-4-slice-5.md). Independent review of the exact commit and hosted two-account/both-role smoke remain pending. Later identity batches remain deferred.
+
 ## Remaining slices
 
 - **catalog.ts's `listProducts`:** needs its own dedicated slice with
@@ -228,7 +234,7 @@ before and after, same queries, same field computations). New tests:
   anything else.
 - Still unresolved: where the `checkout`/`delivery-estimate`
   `user_addresses` duplication should actually live, since it isn't shop's.
-- **Identity (slice 5):** [caller inventory and proposed scope](supabase-core-separation-stage-4-slice-5.md) records 53 API routes / 237 literal identity-table call sites. The earlier ~15 estimate was incomplete. Approved first batch (login and switch-role) is implemented locally; independent review and hosted checks remain pending. Later batches require scope agreement. Use focused identity interfaces rather than expanding `identity-sync.ts` into a larger monolith.
+- **Identity (slice 5):** [caller inventory and proposed scope](supabase-core-separation-stage-4-slice-5.md) records 53 API routes / 237 literal identity-table call sites. The earlier ~15 estimate was incomplete. Approved first batch (login and switch-role, commit `a3dd798`) and batch 2 (own-profile/role-flags, local) are implemented; independent review and hosted checks remain pending. Later batches require scope agreement. Use focused identity interfaces rather than expanding `identity-sync.ts` into a larger monolith.
 
 ## Reviewer procedure
 

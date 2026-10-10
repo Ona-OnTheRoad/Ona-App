@@ -137,11 +137,23 @@
         "git diff --check: passed. Protected files, approval modules and migrations unchanged.",
         "Full detail in docs/review-guides/supabase-core-separation-stage-4-slice-5.md and paired JSON. Independent review/hosted smoke remain pending."
       ]
+    },
+    {
+      "id": "slice-5-batch-2-own-profile-reads",
+      "stage": "code",
+      "expectation": "Approved own-profile/role-flags routes delegate through named read interfaces with unchanged session isolation and projections/error behaviour.",
+      "verification": "Before/after characterization; scoped read-only query audit; full local gates.",
+      "status": "pass",
+      "evidence": [
+        "26 route tests passed before/after (17 new); all six scoped select-only queries preserved including guarantor.",
+        "1,412 tests / 133 files passed; typecheck; lint 0 errors / 160 warnings, none in changed files; diff check.",
+        "New own-profile.ts / role-flags.ts below 300 lines; detailed evidence in Slice 5 paired guide. Independent review/hosted checks pending."
+      ]
     }
   ],
   "implementationBranch": "codex/supabase-core-separation-stage-4",
   "implementationNotes": "Stage 4 scoped via parallel research on 2026-10-10 (see domain-scope-researched evidence). Slice 1 (payments route handlers, commit 04bab32): new src/lib/server/payments/bank-lookup.ts adapter, 4 call sites rewired, 24 new tests. Slice 2 (jobs route handlers, commit 386a3e7): 3 new job-store functions, 3 routes rewired, 15 new tests, 1 existing test file fixed. Pairing deliberately skipped (see pairing-interface-decision). Slice 3 (shop admin routes with no domain-folder home, commit 032bdf1): 4 new src/lib/server/shop/ files, 4 routes rewired, 39 new tests. Slice 4 (shop scope survey + all-parts.ts split), same day: surveyed the 9 non-excluded remaining shop files before touching any of them -- most already satisfy Stage 4's spirit (pure logic already lives in sibling files or local helpers), so only all-parts.ts's getAllPartsForVehicle got a real split (4 pure functions extracted, 11 new tests). catalog.ts's listProducts (424 lines, most central function in shop) was deliberately left alone given its complexity+blast-radius combination. Full suite (1,354 tests, 129 files), typecheck and lint pass after all 4 slices. Findings surfaced and tracked rather than silently fixed, ignored, or mechanically forced: a pre-existing bank-uniqueness-check inconsistency, a jobs/payments domain-boundary violation in finalizeJobReleasedAfterPayout, confirmation that job_version's DB trigger makes compound WHERE-clause guards provably redundant (kept anyway), that the checkout/delivery-estimate user_addresses duplication isn't actually a shop-domain gap, and that most of shop's 'direct-Supabase' files don't actually need splitting -- the original 56-file/32-direct-Supabase count measured presence of Supabase calls, not absence of structure.",
-  "implementationState": "Slices 1 (04bab32), 2 (386a3e7) and 3 (032bdf1) committed and pushed to codex/supabase-core-separation-stage-4. Slice 4 (all-parts.ts split) committed as ed07d76; independent review pending. Pairing deliberately skipped. Slice 5 first batch (login/switch-role) implemented and locally verified; independent review and hosted smoke pending.",
+  "implementationState": "Slices 1 (04bab32), 2 (386a3e7) and 3 (032bdf1) committed and pushed to codex/supabase-core-separation-stage-4. Slice 4 (all-parts.ts split) committed as ed07d76; independent review pending. Pairing deliberately skipped. Slice 5 first batch (login/switch-role) implemented and locally verified; independent review and hosted smoke pending. Batch 1 committed as a3dd798. Slice 5 batch 2 own-profile/role-flags implemented and locally verified.",
   "independentReview": {
     "status": "Not started",
     "findings": [],
@@ -154,11 +166,12 @@
       "Verify whether pairing-engine.ts and job-store/dispatch.ts's assignNextPro/rerouteDeclinedJob ever operate on the same job concurrently, or are mutually exclusive by job state -- the pairing-skip decision did not independently confirm this; it's a real-bug-risk question independent of the Stage 4 interface question.",
       "catalog.ts's listProducts: a dedicated future slice, not mechanical -- read the whole function, map every output field, write characterization tests before touching it (424 lines, most central function in shop).",
       "Where the checkout/delivery-estimate user_addresses duplication should live, given it's not really shop's -- still unresolved.",
-      "Slice 5 first batch: independent review of exact commit (independent review pending). Later identity batches remain deferred; see docs/review-guides/supabase-core-separation-stage-4-slice-5.md.",
+      "Slice 5: independent review of batch 1 a3dd798 and batch 2 exact commit (independent review pending); later admin/signup/update/OTP/Care/lifecycle batches deferred. See Slice 5 paired guide.",
       "Independent review of slices 1-4."
     ],
     "external": [
-      "Slice 5 first batch: hosted password-login, both switch directions, inactive/missing-role, pro Away and shared-bank smoke on deployed reviewed commit."
+      "Slice 5 first batch: hosted password-login, both switch directions, inactive/missing-role, pro Away and shared-bank smoke on deployed reviewed commit.",
+      "Slice 5 batch 2: hosted own-profile/role-flags smoke using two accounts and both roles on deployed reviewed commit."
     ]
   }
 }
