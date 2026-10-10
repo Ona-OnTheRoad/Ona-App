@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "id": "supabase-core-separation",
+  "title": "Scope 2: separating Ona's core from Supabase",
+  "plan": "docs/review-guides/supabase-core-separation.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "scope-and-criteria-agreed",
+      "stage": "code",
+      "expectation": "The full inventory of direct-access paths (27 backend* functions in app-api.ts) is classified, the 9 in-scope functions are identified, and the requirements below are agreed before implementation starts.",
+      "verification": "Stakeholder review of reports/Ona-Scope-2-Stage-1-Review-Guide.html and this guide.",
+      "status": "pass",
+      "evidence": [
+        "Approved by stakeholder on 2026-10-10 (\"let's begin work\") after review of the Stage 1 inventory and this guide. Stage 2 implementation started the same day."
+      ]
+    },
+    {
+      "id": "no-direct-browser-business-writes",
+      "stage": "code",
+      "expectation": "No direct browser business writes remain in the 9 in-scope functions, and no error path silently restores a removed fallback (backendFetchPros, backendSetProOnline).",
+      "verification": "Diff review of each in-scope function; grep for remaining .from(...) writes; trace every catch/fallback branch.",
+      "status": "pending",
+      "evidence": [
+        "Done (3 of 9): backendSetProOnline's direct repair_pro_profiles write fallback is removed (app-api.ts) and pro-live-patch.ts/its test deleted as dead code; backendSendMessage's direct messages insert + conversations update are replaced by a call to /api/messages/send; backendFetchPros's direct repair_pro_profiles/profiles read fallback is removed — it now only calls /api/pros and returns [] on any failure, matching the dependency-free behavior /api/pros already provides (tier/suspension/synthetic-account filtering, dual-role self-exclusion).",
+        "Remaining (6 of 9): backendGetProOnline, backendFetchJobsForUser, backendEnsureConversation, backendFetchConversations, backendDualRoleFlags, backendLoadUserProfile are still direct Supabase calls."
+      ]
+    },
+    {
+      "id": "authorization-preserved",
+      "stage": "code",
+      "expectation": "Unauthorized users cannot access or modify another account's jobs, conversations or private profile information once access moves server-side.",
+      "verification": "Route-level authorization tests; attempted cross-account access against staging.",
+      "status": "pending",
+      "evidence": [
+        "/api/messages/send explicitly checks that the authenticated sender is the conversation's motorist_id or repair_pro_id before inserting, since its service-role client bypasses the RLS check the direct browser write relied on. Covered by a unit test (403 for a non-member sender) in src/app/api/messages/__tests__/send.test.ts. Jobs and profile authorization (the other 7 in-scope functions) are not yet covered — staging cross-account attempts not yet run for any of the 9."
+      ]
+    },
+    {
+      "id": "grants-match-boundaries",
+      "stage": "release",
+      "expectation": "Database grants and RLS policies match the intended API and realtime access boundaries; revoking a direct-table grant does not break a realtime subscription that still needs it.",
+      "verification": "Diff RLS policies/grants against the finalized access list; confirm each realtime channel (messages, jobs, pro presence) still authenticates after any revocation.",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "database-guarantees-preserved",
+      "stage": "code",
+      "expectation": "Payment atomicity, job version checks, worker ownership and stock reservation behavior are unchanged.",
+      "verification": "Re-run existing concurrency tests in src/lib/server/payments and src/lib/server/jobs/deadlines unchanged.",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "message-send-consistency",
+      "stage": "code",
+      "expectation": "backendSendMessage's insert/conversation-update/notify sequence has an explicit, tested answer for partial failure after moving behind a route, not a relocated copy of the same three unguarded calls.",
+      "verification": "Failure-injection test on each of the three steps; confirm no message is left with an unupdated conversation or a silently dropped notification.",
+      "status": "pass",
+      "evidence": [
+        "/api/messages/send treats the message insert as authoritative (failure returns 500, notify is skipped) and the conversation-timestamp update and notify call as best-effort (failure is logged via serverLogger.warn with outcome context, not silently swallowed, and does not fail an already-delivered message). Covered by src/app/api/messages/__tests__/send.test.ts: insert failure returns 500 and skips notify; conversation-update failure still returns 200 and asserts the warning was logged with the exact event/context."
+      ]
+    },
+    {
+      "id": "docs-pending-radius-cap-enforced",
+      "stage": "code",
+      "expectation": "Pros with docs_status 'under_review' or 'rejected' are only shown to customers within DOCS_PENDING_MAX_RADIUS_KM (2 km), not the full marketplace radius.",
+      "verification": "Unit test asserting /api/pros excludes a docs-pending pro beyond 2 km but within the normal 5 km radius; code review of the distance filter.",
+      "status": "fail",
+      "evidence": [
+        "Pre-existing defect, surfaced on 2026-10-10 while removing backendFetchPros's client fallback. The deleted fallback enforced Math.min(MAX_RADIUS_KM, DOCS_PENDING_MAX_RADIUS_KM) for docs-pending pros, but /api/pros (src/app/api/pros/route.ts:231-241) applies a flat MAX_RADIUS_KM + 0.75 (5.75 km) to every pro regardless of docs_status — it only reports docsPendingRadiusKm in the response meta, it never filters on it. Removing the fallback eliminates the only enforcement that existed, which was itself unreliable since it only ran when /api/pros failed. Per stakeholder decision, this is tracked here and fixed separately rather than folded into the fallback-removal change."
+      ]
+    },
+    {
+      "id": "contracts-agree",
+      "stage": "code",
+      "expectation": "Client and route contracts agree; failed saves are reported accurately. The notification-settings nested/flat field mismatch is fixed, not deferred.",
+      "verification": "Contract test for the notification-settings payload shape; assert the client checks the response before showing \"saved\".",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "defined-interfaces-only",
+      "stage": "code",
+      "expectation": "Business services in the agreed scope use defined interfaces rather than Supabase SDK types or clients directly.",
+      "verification": "Manual import audit of src/lib/server/{jobs,payments,pairing,shop,identity} and the new interface layer.",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "evidence-recorded-separately",
+      "stage": "release",
+      "expectation": "Code checks, browser regression checks, hosted verification and rollout/rollback evidence are recorded separately; unrun checks remain pending.",
+      "verification": "This guide's evidence fields are updated per requirement rather than a single blanket status.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "implementationBranch": "codex/supabase-core-separation-stage-2",
+  "implementationNotes": "Stage 1 approved 2026-10-10. Stage 2 (remove direct writes and fallback paths) in progress: backendSetProOnline's direct-write fallback removed; backendSendMessage moved behind a new /api/messages/send route with an explicit conversation-membership check and a documented partial-failure policy; backendFetchPros's direct-query fallback removed, leaving /api/pros as the only path. Full suite (1,231 tests, 107 files), typecheck and lint all pass locally. Stages 3-6 (remaining reads, domain extraction, auth/realtime/storage isolation, rollout) are unstarted.",
+  "implementationState": "Stage 2 in progress — 3 of 9 in-scope functions moved; local checks pass; no commit, independent review or hosted verification yet",
+  "independentReview": {
+    "status": "Not started",
+    "findings": [],
+    "scope": "Review the implementation commit against each requirement once Stage 2 work lands."
+  },
+  "remainingWork": {
+    "code": [
+      "Fix /api/pros to enforce DOCS_PENDING_MAX_RADIUS_KM for docs-pending pros (tracked defect surfaced by backendFetchPros fallback removal; see the docs-pending-radius-cap-enforced requirement). Tracked separately per stakeholder decision, not bundled into the fallback-removal change.",
+      "Stage 3: move backendDualRoleFlags, backendLoadUserProfile, backendGetProOnline, backendFetchJobsForUser, backendEnsureConversation, backendFetchConversations behind routes.",
+      "Stages 4-6: extract server persistence by domain into defined interfaces, isolate auth/realtime/storage, validate and roll out incrementally.",
+      "Fix the notification-settings contract mismatch as part of this work, not as a separate deferred item.",
+      "Independent review of the Stage 2 diff against a committed commit remains pending; nothing has been committed yet."
+    ],
+    "external": [
+      "None identified yet. Database grant/RLS changes will be scoped once the in-scope functions are moved and verified against hosted policy before any revocation."
+    ]
+  }
+}

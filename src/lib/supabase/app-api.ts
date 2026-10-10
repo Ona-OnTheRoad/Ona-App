@@ -5,12 +5,9 @@
  * Falls back gracefully when keys/session missing.
  */
 
-import { hasRecentLiveHeartbeat, MAX_RADIUS_KM } from "@/lib/matching";
-import { DOCS_PENDING_MAX_RADIUS_KM } from "@/lib/skill-questions";
 import { getAppSupabase, isAppBackendOnline } from "@/lib/supabase/app-client";
 import {
   mapConversationToThread,
-  mapProToTechnician,
   mapRequestRow,
   profileToUserProfile,
   resolvePrimaryAccountType,
@@ -31,8 +28,6 @@ import type {
   MessageThread,
 } from "@/lib/types";
 import { isProService } from "@/lib/pro-service-id";
-import { buildProLivePatch } from "@/lib/supabase/pro-live-patch";
-import { isSyntheticAccount } from "@/lib/synthetic-accounts";
 import {
   apiVerifyIdemOp,
   clearIdemKey,
@@ -1043,17 +1038,20 @@ export async function backendFetchPros(
     lat: number;
     lng: number;
   },
-  opts?: { trade?: ProService | null },
+  // opts.trade is unused: /api/pros derives the pro's trade from the
+  // session, not a client-supplied param.
+  _opts?: { trade?: ProService | null },
 ): Promise<Technician[]> {
-  const trade = opts?.trade && isProService(opts.trade) ? opts.trade : null;
-  // Prefer server route (service role) so every approved pro + name reaches the app
+  // Server route (service role): applies tier/suspension/synthetic-account
+  // filtering and dual-role self-exclusion. No direct-query fallback — a
+  // client-side fallback here would need to re-derive all of that itself
+  // and could drift from the server's rules (e.g. widen a pro's market).
   try {
     const qs = new URLSearchParams({
       lat: String(userCoords.lat),
       lng: String(userCoords.lng),
     });
     // authFetch so server can exclude the signed-in dual-role user from results
-    // NOTE: no trade param /api/pros derives the pro's trade from the session.
     const { authFetch } = await import("@/lib/api-auth-headers");
     const res = await authFetch(`/api/pros?${qs.toString()}`, {
       method: "GET",
@@ -1066,89 +1064,10 @@ export async function backendFetchPros(
     if (json?.ok && Array.isArray(json.data?.technicians)) {
       return json.data.technicians;
     }
+    return [];
   } catch {
-    /* fall through to client Supabase */
+    return [];
   }
-
-  const sb = getAppSupabase();
-  if (!sb) return [];
-
-  // Client fallback: slim columns only (never pull cert base64 / skills blobs)
-  let prosQuery = sb
-    .from("repair_pro_profiles")
-    .select(
-      "user_id, business_name, primary_service, services, status, is_online, rating_avg, rating_count, lat, lng, location_updated_at, service_radius_km, years_experience, bio, verified, labour_prices, pricing_currency, vehicle_focus, skills, jobs_completed, docs_status, face_liveness_verified, in_person_verified, visibility_tier, is_new_artisan, go_live_window_ends_at",
-    );
-  // Client fallback for pros must respect the same trade scope as the server
-  // route otherwise a Repair Pro could widen their market via this fallback.
-  if (trade) prosQuery = prosQuery.eq("primary_service", trade);
-  prosQuery = prosQuery.eq("is_online", true).limit(60);
-  const { data: pros, error } = await prosQuery;
-
-  if (error || !pros?.length) return [];
-
-  const slimPros = pros as unknown as RepairProRow[];
-  let selfId: string | null = null;
-  try {
-    const { data: sess } = await sb.auth.getSession();
-    selfId = sess.session?.user?.id ? String(sess.session.user.id) : null;
-  } catch {
-    selfId = null;
-  }
-  const ids = slimPros.map((p) => p.user_id);
-  const { data: profiles } = await sb
-    .from("profiles")
-    .select("id, full_name, avatar_url, phone, role, is_active")
-    .in("id", ids)
-    .eq("is_active", true);
-
-  const byId = new Map(
-    (profiles as unknown as ProfileRow[] | null)?.map((p) => [p.id, p]) ?? [],
-  );
-
-  const nowMs = Date.now();
-  return slimPros
-    .filter((pro) => {
-      // Dual-role: never see own Live pro profile when searching as customer
-      if (selfId && String(pro.user_id) === selfId) return false;
-      if (pro.status === "suspended" || pro.status === "rejected") return false;
-      if (
-        !pro.is_online ||
-        !hasRecentLiveHeartbeat(pro.location_updated_at, nowMs)
-      ) {
-        return false;
-      }
-      const profile = byId.get(pro.user_id);
-      if (!profile || profile.role === "motorist") return false;
-      // Never surface demo/audit pros to real customers (client fallback feed)
-      if (
-        isSyntheticAccount({
-          businessName: pro.business_name,
-          fullName: profile.full_name,
-        })
-      ) {
-        return false;
-      }
-      return true;
-    })
-    .map((pro) =>
-      mapProToTechnician(pro, byId.get(pro.user_id) ?? null, userCoords),
-    )
-    .filter((t) => {
-      if (
-        !t.hasLiveLocation ||
-        typeof t.distanceKm !== "number" ||
-        !Number.isFinite(t.distanceKm)
-      ) {
-        return false;
-      }
-      const docsPending =
-        t.docsStatus === "under_review" || t.docsStatus === "rejected";
-      const cap = docsPending
-        ? Math.min(MAX_RADIUS_KM, DOCS_PENDING_MAX_RADIUS_KM)
-        : MAX_RADIUS_KM;
-      return t.distanceKm <= cap;
-    });
 }
 
 /**
@@ -1226,22 +1145,12 @@ export async function backendSetProOnline(
       return "Could not go Away on server. Try again.";
     }
     return null;
-  } catch {
-    const sb = getAppSupabase();
-    if (!sb) return "Backend offline";
-    // Ensure session for RLS fallback
-    await ensureAppSession().catch(() => null);
-    const { error } = await sb
-      .from("repair_pro_profiles")
-      .update(buildProLivePatch(online, coords))
-      .eq("user_id", userId);
-    if (error) {
-      if (/JWT|session|auth/i.test(error.message)) {
-        return SESSION_RELOGIN_MESSAGE;
-      }
-      return error.message;
-    }
-    return null;
+  } catch (e) {
+    // No direct-write fallback: /api/pros/live also gates tier/suspension/GPS,
+    // upserts pro_presence for customer discovery, recalculates merit and
+    // reroutes unbooked jobs on going offline. A bypass here would silently
+    // skip all of that instead of surfacing the failure.
+    return e instanceof Error ? e.message : "Could not update Live status";
   }
 }
 
@@ -1499,56 +1408,31 @@ export async function backendFetchConversations(
 
 export async function backendSendMessage(input: {
   conversationId: string;
+  /** Kept for callers; the route derives the sender from the auth session, not this field. */
   senderId: string;
   body: string;
   /** Display name for the other party's toast */
   senderName?: string | null;
 }): Promise<string | null> {
-  const sb = getAppSupabase();
-  if (!sb) return "Backend offline";
-  const { error } = await sb.from("messages").insert({
-    conversation_id: input.conversationId,
-    sender_id: input.senderId,
-    body: input.body,
-  });
-  if (error) return error.message;
-  await sb
-    .from("conversations")
-    .update({ last_message_at: new Date().toISOString() })
-    .eq("id", input.conversationId);
-
-  // Popup for the other party (notification → toast + open chat on tap)
+  const { authFetch } = await import("@/lib/api-auth-headers");
   try {
-    let preview = input.body;
-    try {
-      const j = JSON.parse(input.body) as { text?: string; voiceUrl?: string };
-      if (j && typeof j === "object") {
-        preview = j.voiceUrl
-          ? j.text
-            ? `🎤 ${j.text}`
-            : "🎤 Voice note"
-          : String(j.text || input.body);
-      }
-    } catch {
-      /* plain text */
-    }
-    void import("@/lib/api-auth-headers")
-      .then(({ authFetch }) =>
-        authFetch("/api/messages/notify", {
-          method: "POST",
-          body: JSON.stringify({
-            conversationId: input.conversationId,
-            senderId: input.senderId,
-            preview: String(preview || "New message").slice(0, 200),
-            senderName: input.senderName || undefined,
-          }),
-        }),
-      )
-      .catch(() => null);
+    const res = await authFetch("/api/messages/send", {
+      method: "POST",
+      body: JSON.stringify({
+        conversationId: input.conversationId,
+        body: input.body,
+        senderName: input.senderName || undefined,
+      }),
+    });
+    const json = (await res.json().catch(() => null)) as {
+      ok?: boolean;
+      error?: { message?: string };
+    } | null;
+    if (!json?.ok) return json?.error?.message || "Message not sent";
+    return null;
   } catch {
-    /* non-fatal */
+    return "Network error sending message";
   }
-  return null;
 }
 
 /**

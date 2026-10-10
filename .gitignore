@@ -63,3 +63,6 @@ CLAUDE.md
 
 # Keep the env template tracked (the .env* rule above would otherwise hide it)
 !.env.example
+
+# Local-only HTML report/artifact drafts (not product)
+/reports/
