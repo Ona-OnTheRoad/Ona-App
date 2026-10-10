@@ -750,45 +750,44 @@ export async function backendSwitchRole(target: AccountType): Promise<{
 }
 
 /** Whether this user has motorist + pro side profiles (for dual switch UI). */
-export async function backendDualRoleFlags(userId: string): Promise<{
+export async function backendDualRoleFlags(
+  // userId is kept for callers; the route derives the caller from the
+  // session, never a client-supplied id.
+  _userId: string,
+): Promise<{
   hasMotorist: boolean;
   hasPro: boolean;
   /** Original signup role (earlier side-table), independent of active role */
   primaryAccountType: AccountType;
 }> {
-  const sb = getAppSupabase();
-  if (!sb) {
-    return {
-      hasMotorist: false,
-      hasPro: false,
-      primaryAccountType: "motorist",
-    };
-  }
-  const [mot, pro] = await Promise.all([
-    sb
-      .from("motorist_profiles")
-      .select("user_id, created_at")
-      .eq("user_id", userId)
-      .maybeSingle(),
-    sb
-      .from("repair_pro_profiles")
-      .select("user_id, created_at")
-      .eq("user_id", userId)
-      .maybeSingle(),
-  ]);
-  const hasMotorist = Boolean(mot.data);
-  const hasPro = Boolean(pro.data);
-  return {
-    hasMotorist,
-    hasPro,
-    primaryAccountType: resolvePrimaryAccountType({
-      hasMotorist,
-      hasPro,
-      motoristCreatedAt: (mot.data as { created_at?: string } | null)
-        ?.created_at,
-      proCreatedAt: (pro.data as { created_at?: string } | null)?.created_at,
-    }),
+  const fallback = {
+    hasMotorist: false,
+    hasPro: false,
+    primaryAccountType: "motorist" as AccountType,
   };
+  try {
+    const { authFetch } = await import("@/lib/api-auth-headers");
+    const res = await authFetch("/api/account/role-flags", {
+      method: "GET",
+      cache: "no-store",
+    });
+    const json = (await res.json().catch(() => null)) as {
+      ok?: boolean;
+      data?: {
+        hasMotorist?: boolean;
+        hasPro?: boolean;
+        primaryAccountType?: AccountType;
+      };
+    } | null;
+    if (!json?.ok || !json.data) return fallback;
+    return {
+      hasMotorist: Boolean(json.data.hasMotorist),
+      hasPro: Boolean(json.data.hasPro),
+      primaryAccountType: json.data.primaryAccountType || "motorist",
+    };
+  } catch {
+    return fallback;
+  }
 }
 
 /** Server logout: force is_online=false then clear browser session */

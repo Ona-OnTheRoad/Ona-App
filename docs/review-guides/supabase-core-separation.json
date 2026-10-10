@@ -22,8 +22,8 @@
       "verification": "Diff review of each in-scope function; grep for remaining .from(...) writes; trace every catch/fallback branch.",
       "status": "pending",
       "evidence": [
-        "Done (4 of 9): backendSetProOnline's direct repair_pro_profiles write fallback is removed (app-api.ts) and pro-live-patch.ts/its test deleted as dead code; backendSendMessage's direct messages insert + conversations update are replaced by a call to /api/messages/send; backendFetchPros's direct repair_pro_profiles/profiles read fallback is removed — it now only calls /api/pros and returns [] on any failure, matching the dependency-free behavior /api/pros already provides (tier/suspension/synthetic-account filtering, dual-role self-exclusion); backendGetProOnline's direct repair_pro_profiles read is replaced by a new GET /api/pros/live route that derives the caller from requireUser(req), never a client-supplied id. Covered by src/app/api/pros/__tests__/live.test.ts (own-status read, no-profile null case, 401/503/500 paths).",
-        "Remaining (5 of 9): backendFetchJobsForUser, backendEnsureConversation, backendFetchConversations, backendDualRoleFlags, backendLoadUserProfile are still direct Supabase calls."
+        "Done (5 of 9): backendSetProOnline's direct repair_pro_profiles write fallback is removed (app-api.ts) and pro-live-patch.ts/its test deleted as dead code; backendSendMessage's direct messages insert + conversations update are replaced by a call to /api/messages/send; backendFetchPros's direct repair_pro_profiles/profiles read fallback is removed — it now only calls /api/pros and returns [] on any failure, matching the dependency-free behavior /api/pros already provides (tier/suspension/synthetic-account filtering, dual-role self-exclusion); backendGetProOnline's direct repair_pro_profiles read is replaced by a new GET /api/pros/live route that derives the caller from requireUser(req), never a client-supplied id (covered by src/app/api/pros/__tests__/live.test.ts); backendDualRoleFlags's direct motorist_profiles/repair_pro_profiles reads are replaced by a new GET /api/account/role-flags route, same requireUser-derived-caller rule, reusing the exact resolvePrimaryAccountType call the original client code made (covered by src/app/api/account/role-flags/__tests__/route.test.ts).",
+        "Remaining (4 of 9): backendFetchJobsForUser, backendEnsureConversation, backendFetchConversations, backendLoadUserProfile are still direct Supabase calls."
       ]
     },
     {
@@ -98,8 +98,8 @@
     }
   ],
   "implementationBranch": "codex/supabase-core-separation-stage-2",
-  "implementationNotes": "Stage 1 approved 2026-10-10. Stage 2 complete and committed (facb735): backendSetProOnline's direct-write fallback removed; backendSendMessage moved behind /api/messages/send; backendFetchPros's direct-query fallback removed. Stage 3 (remaining reads/writes behind routes) started same day: backendGetProOnline moved behind a new GET /api/pros/live route. Full suite (1,236 tests, 108 files), typecheck and lint all pass locally. Stages 4-6 (domain extraction, auth/realtime/storage isolation, rollout) are unstarted.",
-  "implementationState": "Stage 3 in progress — 4 of 9 in-scope functions moved; local checks pass; Stage 2 commit facb735 landed, Stage 3 work uncommitted",
+  "implementationNotes": "Stage 1 approved 2026-10-10. Stage 2 complete and committed (facb735): backendSetProOnline's direct-write fallback removed; backendSendMessage moved behind /api/messages/send; backendFetchPros's direct-query fallback removed. Stage 3 (remaining reads/writes behind routes) started same day: backendGetProOnline moved behind GET /api/pros/live (commit 3f06d8a); backendDualRoleFlags moved behind GET /api/account/role-flags. Full suite (1,240 tests, 109 files), typecheck and lint all pass locally. Stages 4-6 (domain extraction, auth/realtime/storage isolation, rollout) are unstarted.",
+  "implementationState": "Stage 3 in progress — 5 of 9 in-scope functions moved; local checks pass; Stage 2 commit facb735 and Stage 3's pros/live commit 3f06d8a landed, backendDualRoleFlags move uncommitted",
   "independentReview": {
     "status": "Not started",
     "findings": [],
@@ -108,7 +108,7 @@
   "remainingWork": {
     "code": [
       "Fix /api/pros to enforce DOCS_PENDING_MAX_RADIUS_KM for docs-pending pros (tracked defect surfaced by backendFetchPros fallback removal; see the docs-pending-radius-cap-enforced requirement). Tracked separately per stakeholder decision, not bundled into the fallback-removal change.",
-      "Stage 3 (in progress): move backendDualRoleFlags, backendLoadUserProfile, backendFetchJobsForUser, backendEnsureConversation, backendFetchConversations behind routes (backendGetProOnline done).",
+      "Stage 3 (in progress): move backendLoadUserProfile, backendFetchJobsForUser, backendEnsureConversation, backendFetchConversations behind routes (backendGetProOnline, backendDualRoleFlags done).",
       "Stages 4-6: extract server persistence by domain into defined interfaces, isolate auth/realtime/storage, validate and roll out incrementally.",
       "Fix the notification-settings contract mismatch as part of this work, not as a separate deferred item.",
       "Independent review of the Stage 2 diff against a committed commit remains pending; nothing has been committed yet."
