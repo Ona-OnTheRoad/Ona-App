@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { requireUser } from "@/lib/server/auth-utils";
 import { recalculateMerit } from "@/lib/server/merit/merit-engine";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import {
@@ -383,5 +384,27 @@ export async function POST(req: Request) {
     });
   } catch (e) {
     return apiFail(e instanceof Error ? e.message : "Live update failed", 500);
+  }
+}
+
+/** Read the caller's own Live/Away status. */
+export async function GET(req: Request) {
+  if (!isSupabaseAdminConfigured()) {
+    return apiFail("Server not configured", 503);
+  }
+  const auth = await requireUser(req);
+  if (!auth.ok) return auth.response;
+
+  try {
+    const sb = createServiceSupabase();
+    const { data, error } = await sb
+      .from("repair_pro_profiles")
+      .select("is_online")
+      .eq("user_id", auth.userId)
+      .maybeSingle();
+    if (error) return apiFail(error.message, 500);
+    return apiOk({ online: data ? Boolean(data.is_online) : null });
+  } catch (e) {
+    return apiFail(e instanceof Error ? e.message : "Could not load status", 500);
   }
 }

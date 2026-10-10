@@ -1156,17 +1156,25 @@ export async function backendSetProOnline(
 
 /** Read Live flag from server (sync dashboard UI). */
 export async function backendGetProOnline(
-  userId: string,
+  // userId is kept for callers; the route derives the caller from the
+  // session, never a client-supplied id.
+  _userId: string,
 ): Promise<boolean | null> {
-  const sb = getAppSupabase();
-  if (!sb) return null;
-  const { data, error } = await sb
-    .from("repair_pro_profiles")
-    .select("is_online")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error || !data) return null;
-  return Boolean(data.is_online);
+  try {
+    const { authFetch } = await import("@/lib/api-auth-headers");
+    const res = await authFetch("/api/pros/live", {
+      method: "GET",
+      cache: "no-store",
+    });
+    const json = (await res.json().catch(() => null)) as {
+      ok?: boolean;
+      data?: { online?: boolean | null };
+    } | null;
+    if (!json?.ok) return null;
+    return typeof json.data?.online === "boolean" ? json.data.online : null;
+  } catch {
+    return null;
+  }
 }
 
 /**

@@ -22,8 +22,8 @@
       "verification": "Diff review of each in-scope function; grep for remaining .from(...) writes; trace every catch/fallback branch.",
       "status": "pending",
       "evidence": [
-        "Done (3 of 9): backendSetProOnline's direct repair_pro_profiles write fallback is removed (app-api.ts) and pro-live-patch.ts/its test deleted as dead code; backendSendMessage's direct messages insert + conversations update are replaced by a call to /api/messages/send; backendFetchPros's direct repair_pro_profiles/profiles read fallback is removed — it now only calls /api/pros and returns [] on any failure, matching the dependency-free behavior /api/pros already provides (tier/suspension/synthetic-account filtering, dual-role self-exclusion).",
-        "Remaining (6 of 9): backendGetProOnline, backendFetchJobsForUser, backendEnsureConversation, backendFetchConversations, backendDualRoleFlags, backendLoadUserProfile are still direct Supabase calls."
+        "Done (4 of 9): backendSetProOnline's direct repair_pro_profiles write fallback is removed (app-api.ts) and pro-live-patch.ts/its test deleted as dead code; backendSendMessage's direct messages insert + conversations update are replaced by a call to /api/messages/send; backendFetchPros's direct repair_pro_profiles/profiles read fallback is removed — it now only calls /api/pros and returns [] on any failure, matching the dependency-free behavior /api/pros already provides (tier/suspension/synthetic-account filtering, dual-role self-exclusion); backendGetProOnline's direct repair_pro_profiles read is replaced by a new GET /api/pros/live route that derives the caller from requireUser(req), never a client-supplied id. Covered by src/app/api/pros/__tests__/live.test.ts (own-status read, no-profile null case, 401/503/500 paths).",
+        "Remaining (5 of 9): backendFetchJobsForUser, backendEnsureConversation, backendFetchConversations, backendDualRoleFlags, backendLoadUserProfile are still direct Supabase calls."
       ]
     },
     {
@@ -98,8 +98,8 @@
     }
   ],
   "implementationBranch": "codex/supabase-core-separation-stage-2",
-  "implementationNotes": "Stage 1 approved 2026-10-10. Stage 2 (remove direct writes and fallback paths) in progress: backendSetProOnline's direct-write fallback removed; backendSendMessage moved behind a new /api/messages/send route with an explicit conversation-membership check and a documented partial-failure policy; backendFetchPros's direct-query fallback removed, leaving /api/pros as the only path. Full suite (1,231 tests, 107 files), typecheck and lint all pass locally. Stages 3-6 (remaining reads, domain extraction, auth/realtime/storage isolation, rollout) are unstarted.",
-  "implementationState": "Stage 2 in progress — 3 of 9 in-scope functions moved; local checks pass; no commit, independent review or hosted verification yet",
+  "implementationNotes": "Stage 1 approved 2026-10-10. Stage 2 complete and committed (facb735): backendSetProOnline's direct-write fallback removed; backendSendMessage moved behind /api/messages/send; backendFetchPros's direct-query fallback removed. Stage 3 (remaining reads/writes behind routes) started same day: backendGetProOnline moved behind a new GET /api/pros/live route. Full suite (1,236 tests, 108 files), typecheck and lint all pass locally. Stages 4-6 (domain extraction, auth/realtime/storage isolation, rollout) are unstarted.",
+  "implementationState": "Stage 3 in progress — 4 of 9 in-scope functions moved; local checks pass; Stage 2 commit facb735 landed, Stage 3 work uncommitted",
   "independentReview": {
     "status": "Not started",
     "findings": [],
@@ -108,7 +108,7 @@
   "remainingWork": {
     "code": [
       "Fix /api/pros to enforce DOCS_PENDING_MAX_RADIUS_KM for docs-pending pros (tracked defect surfaced by backendFetchPros fallback removal; see the docs-pending-radius-cap-enforced requirement). Tracked separately per stakeholder decision, not bundled into the fallback-removal change.",
-      "Stage 3: move backendDualRoleFlags, backendLoadUserProfile, backendGetProOnline, backendFetchJobsForUser, backendEnsureConversation, backendFetchConversations behind routes.",
+      "Stage 3 (in progress): move backendDualRoleFlags, backendLoadUserProfile, backendFetchJobsForUser, backendEnsureConversation, backendFetchConversations behind routes (backendGetProOnline done).",
       "Stages 4-6: extract server persistence by domain into defined interfaces, isolate auth/realtime/storage, validate and roll out incrementally.",
       "Fix the notification-settings contract mismatch as part of this work, not as a separate deferred item.",
       "Independent review of the Stage 2 diff against a committed commit remains pending; nothing has been committed yet."
