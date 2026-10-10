@@ -64,6 +64,31 @@
       ]
     },
     {
+      "id": "pairing-interface-decision",
+      "stage": "code",
+      "expectation": "A deliberate decision on whether/how to formalize an interface for the pairing domain, made after understanding why pairing-engine.ts is shaped the way it is -- not a mechanical application of the slice-1/2 pattern.",
+      "verification": "Read docs/SSPE_REFACTOR_PLAN.md (the module's original design spec) and docs/ANTI_REGRESSION.md (mandatory before touching job-flow code) before proposing any change.",
+      "status": "pass",
+      "evidence": [
+        "docs/SSPE_REFACTOR_PLAN.md section 6 shows pairing-engine.ts was deliberately designed as its own standalone module: 'idempotent, DB-first, advisory-locked per request', with each function doing an atomic UPDATE ... WHERE pairing_stage = expected in a single round-trip. This is not accidental tech debt -- splitting the read-check from the write across a 'business logic' file and an 'adapter' file would reopen the exact TOCTOU race the atomic single-statement UPDATE was built to close.",
+        "pairing-engine.ts already satisfies the spirit of Stage 4 for its own domain better than shop or identity do: every pairing/dispatch state mutation is concentrated in one file behind named, documented, idempotent exported functions (advancePairing, openRequest, confirmRequest, declineRequest, deferRequest, timeoutRequest, sweepPairing, sweepScheduledDispatches) -- it's just that each function still calls createServiceSupabase() inline rather than importing from a separate adapter file, which is a much smaller gap than shop's (zero concentration) or identity's (logic duplicated across ~15 routes).",
+        "Decision (stakeholder, 2026-10-10): skip a pairing refactor for Stage 4. Spend the risk budget on shop next, which has no atomicity pattern to accidentally break. The 'two uncoordinated paths write service_requests' finding from the original scope research (pairing-engine vs job-store/dispatch.ts's assignNextPro/rerouteDeclinedJob) was NOT independently verified before this decision -- whether those two code paths ever operate on the same job concurrently, or are mutually exclusive by job state (SSPE vs legacy dispatch), remains an open question, tracked below as remaining work rather than blocking this decision."
+      ]
+    },
+    {
+      "id": "slice-3-shop-admin-routes-have-a-home",
+      "stage": "code",
+      "expectation": "The 4 shop-admin route handlers that had real business logic + direct Supabase calls with no corresponding file in src/lib/server/shop/ (analytics, deliveries, couriers, product-requests) now delegate to domain functions; behavior is unchanged.",
+      "verification": "Diff review of each route confirming identical queries/tables/payloads; unit tests for each new domain function and route; full suite green.",
+      "status": "pass",
+      "evidence": [
+        "Ruled out a different first candidate: checkout/route.ts and delivery/estimate/route.ts both inline a user_addresses lookup, but user_addresses is also used by /api/addresses/route.ts and identity-sync.ts -- it's a cross-cutting concern shop doesn't own, not a shop-domain gap. Fixing it would invent an implicit 6th domain, out of scope for a shop slice.",
+        "New src/lib/server/shop/admin-analytics.ts (getShopDemandAnalytics), admin-couriers.ts (listCourierProviders, upsertCourierProvider, patchCourierProvider), admin-deliveries.ts (upsertDeliveryStatus), product-requests.ts (recordProductRequest, ProductRequestsNotMigratedError). Each verbatim-relocates its route's existing queries/payloads -- no behavior change.",
+        "Design grounded in existing src/lib/server/shop/ conventions, not invented: shop_audit_logs and shop_order_events inserts moved into the domain functions because admin-catalog.ts/orders.ts/payments.ts already do this at every write; logAdminAction (cross-cutting admin-identity audit, needs the route's requireAdmin() result) and requireAdmin()/isSupabaseAdminConfigured() stayed in the routes, matching every prior slice's routes-own-auth boundary.",
+        "New tests: src/lib/server/shop/__tests__/{admin-analytics,admin-couriers,admin-deliveries,product-requests}.test.ts (3+7+7+3=20) and src/app/api/{admin/shop/analytics,admin/shop/couriers,admin/shop/deliveries,shop/product-requests}/__tests__/route.test.ts (3+8+4+4=19). None of these 4 routes had any test coverage before this slice. Full suite (1,343 tests, 128 files), typecheck and lint pass with no new warnings beyond the pre-existing baseline (confirmed via git diff that the one new-looking warning, analytics route's unused _req param, was already unused before this slice)."
+      ]
+    },
+    {
       "id": "defined-interfaces-only",
       "stage": "code",
       "expectation": "Business services in the agreed scope use defined interfaces rather than Supabase SDK types or clients directly. (Same requirement id as the parent Stage 1-3 guide; Stage 4 is where it actually gets addressed, domain by domain.)",
@@ -72,13 +97,15 @@
       "evidence": [
         "Slice 1 (payments route handlers): done, see slice-1-payments-routes-no-direct-supabase above.",
         "Slice 2 (jobs route handlers): done, see slice-2-jobs-routes-no-direct-supabase above.",
-        "Remaining: pairing (needs a design decision on its relationship to the jobs interface before any code -- it writes service_requests completely independently of job-store today); shop (boundary doesn't exist yet, largest slice); identity (centralizing ~15 duplicated caller routes); the deferred jobs-payments-boundary-respected fix (finalizeJobReleasedAfterPayout)."
+        "Pairing: deliberately skipped, see pairing-interface-decision above.",
+        "Slice 3 (shop admin routes with no domain-folder home): done, see slice-3-shop-admin-routes-have-a-home above. Shop has 17 more direct-Supabase files remaining (cart, orders, catalog, admin-catalog, delivery, garage, import-engine, job-recommendations, search, all-parts, payments, import-job-detail, plus the checkout/delivery-estimate address-lookup duplication and the identity-adjacent user_addresses question) -- not started.",
+        "Remaining: rest of shop (17 files); identity (centralizing ~15 duplicated caller routes); the deferred jobs-payments-boundary-respected fix (finalizeJobReleasedAfterPayout)."
       ]
     }
   ],
   "implementationBranch": "codex/supabase-core-separation-stage-4",
-  "implementationNotes": "Stage 4 scoped via parallel research on 2026-10-10 (see domain-scope-researched evidence). Slice 1 (payments route handlers, commit 04bab32): new src/lib/server/payments/bank-lookup.ts adapter, 4 call sites rewired, 24 new tests. Slice 2 (jobs route handlers), same day: 3 new job-store functions (armSurfacePairingDeadline, dispatchScheduledSecondPro, resetZombieFlowStatuses), 3 routes rewired, 15 new tests, 1 existing test file fixed (its job-store mock was missing the new exports). Full suite (1,304 tests, 120 files), typecheck and lint pass after both slices. Three findings surfaced and tracked rather than silently fixed or ignored: a pre-existing bank-uniqueness-check inconsistency between check-bank-unique and profile/update, a jobs/payments domain-boundary violation in payout-settlement.ts's finalizeJobReleasedAfterPayout, and (slice 2) confirmation that job_version's DB trigger makes compound WHERE-clause guards provably redundant -- kept them anyway for verbatim-relocation discipline.",
-  "implementationState": "Slices 1 and 2 of Stage 4 complete locally; slice 1 committed as 04bab32, slice 2 not yet committed. Remaining: pairing, shop, identity.",
+  "implementationNotes": "Stage 4 scoped via parallel research on 2026-10-10 (see domain-scope-researched evidence). Slice 1 (payments route handlers, commit 04bab32): new src/lib/server/payments/bank-lookup.ts adapter, 4 call sites rewired, 24 new tests. Slice 2 (jobs route handlers, commit 386a3e7): 3 new job-store functions, 3 routes rewired, 15 new tests, 1 existing test file fixed. Pairing deliberately skipped (see pairing-interface-decision). Slice 3 (shop admin routes with no domain-folder home), same day: 4 new src/lib/server/shop/ files (admin-analytics, admin-couriers, admin-deliveries, product-requests), 4 routes rewired, 39 new tests. Full suite (1,343 tests, 128 files), typecheck and lint pass after all 3 slices. Findings surfaced and tracked rather than silently fixed or ignored: a pre-existing bank-uniqueness-check inconsistency, a jobs/payments domain-boundary violation in finalizeJobReleasedAfterPayout, confirmation that job_version's DB trigger makes compound WHERE-clause guards provably redundant (kept anyway for verbatim-relocation discipline), and (slice 3) that the checkout/delivery-estimate user_addresses duplication isn't actually a shop-domain gap.",
+  "implementationState": "Slices 1 (04bab32) and 2 (386a3e7) committed and pushed. Pairing deliberately skipped. Slice 3 (shop admin routes) complete locally, not yet committed -- awaiting review per the user's standing instruction to confirm before any commit.",
   "independentReview": {
     "status": "Not started",
     "findings": [],
@@ -86,11 +113,13 @@
   },
   "remainingWork": {
     "code": [
-      "Commit slice 2.",
+      "Commit slice 3 once reviewed.",
       "Fix the bank-uniqueness-check inconsistency between check-bank-unique and profile/update (see bank-uniqueness-checks-consistent).",
       "Fix the jobs/payments boundary violation in payout-settlement.ts's finalizeJobReleasedAfterPayout (see jobs-payments-boundary-respected) -- requires a new job-store function.",
-      "Slice 3+: pairing (design decision first -- its relationship to the jobs interface), shop (boundary from scratch), identity (centralize ~15 caller routes).",
-      "Independent review of slices 1 and 2 once committed."
+      "Verify whether pairing-engine.ts and job-store/dispatch.ts's assignNextPro/rerouteDeclinedJob ever operate on the same job concurrently, or are mutually exclusive by job state -- the pairing-skip decision did not independently confirm this; it's a real-bug-risk question independent of the Stage 4 interface question.",
+      "Slice 4 (shop continued): the remaining 17 direct-Supabase shop files (cart, orders, catalog, admin-catalog, delivery, garage, import-engine, job-recommendations, search, all-parts, payments, import-job-detail) -- needs its own sub-slicing plan given the size. Also unresolved: where the checkout/delivery-estimate user_addresses duplication should live, given it's not really shop's.",
+      "Slice 5: identity -- centralize ~15 duplicated caller routes onto identity-sync.ts.",
+      "Independent review of slices 1-3."
     ],
     "external": [
       "None identified yet."

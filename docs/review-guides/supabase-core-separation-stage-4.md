@@ -67,7 +67,7 @@ before).
   inconsistency** (two bank-uniqueness checks that don't agree) worth fixing
   regardless of Stage 4.
 
-## Slice 2: jobs route handlers (done, not yet committed)
+## Slice 2: jobs route handlers (done, commit `386a3e7`)
 
 The 3 jobs route handlers that bypassed `job-store` (`surface`,
 `dispatch-scheduled`, `expire-stale`'s zombie-reset).
@@ -109,17 +109,80 @@ functions doing this exact raw-guarded-update shape).
   `jobs/[id]/surface/__tests__/route.test.ts` (7 — this route had zero
   coverage before). Full suite: 1,304 tests / 120 files.
 
-## Remaining slices (not started)
+## Pairing: deliberately skipped
 
-- Pairing: needs a design decision before any code — does `pairing-engine.ts`
-  get folded into the jobs interface (since it writes the same table) or get
-  a sibling interface? Not just a mechanical port like slice 1.
-- Shop: largest slice, needs a boundary built from scratch; also needs
-  deciding whether the admin routes with no domain-folder home (analytics,
-  deliveries, couriers) get new files in `src/lib/server/shop` or stay
-  route-local but Supabase-free.
-- Identity: centralizing ~15 duplicated caller routes onto `identity-sync.ts`
-  is the biggest call-site count of any domain.
+Before touching `pairing-engine.ts`, read its original design spec
+(`docs/SSPE_REFACTOR_PLAN.md` §6) and the mandatory
+`docs/ANTI_REGRESSION.md`. This file is not accidental tech debt — it was
+deliberately designed as a standalone, idempotent, advisory-locked module
+where every function does an atomic `UPDATE ... WHERE pairing_stage =
+expected` in one round-trip. Splitting the read-check from the write across
+a "business logic" file and an "adapter" file (the slice-1/2 pattern) would
+reopen the exact TOCTOU race that single-statement `UPDATE` was built to
+close.
+
+It also already satisfies Stage 4's spirit better than shop or identity do:
+every pairing/dispatch mutation is concentrated in one file behind named,
+documented, idempotent exported functions. The real gap (inline
+`createServiceSupabase()` per function, not imported from a separate
+adapter) is much smaller than shop's (zero concentration at all) or
+identity's (logic duplicated across ~15 routes).
+
+**Decision (2026-10-10):** skip a pairing refactor for Stage 4; spend the
+risk budget on shop next. Not independently verified: whether
+`pairing-engine.ts` and `job-store/dispatch.ts`'s `assignNextPro`/
+`rerouteDeclinedJob` ever operate on the same job concurrently, or are
+mutually exclusive by job state (SSPE vs. legacy dispatch) — tracked as
+open remaining work, separate from the interface question.
+
+## Slice 3: shop admin routes with no domain-folder home (done, not yet committed)
+
+Shop is 21 files, no boundary; too large for one slice. This first shop
+sub-slice targets the cleanest, most unambiguous gap: 4 admin route
+handlers had real business logic + direct Supabase calls with **no
+corresponding file in `src/lib/server/shop/` at all** — the boundary
+wasn't bypassed here, it was never built.
+
+**Ruled out first:** `checkout/route.ts` and `delivery/estimate/route.ts`
+both inline a `user_addresses` lookup — looked like a clean slice-1-style
+duplication fix, but `user_addresses` is also used by
+`/api/addresses/route.ts` and `identity-sync.ts`. It's a cross-cutting
+concern shop doesn't own; fixing it would invent an implicit 6th domain,
+out of scope here.
+
+**Fixed:**
+- `GET /api/admin/shop/analytics` → new `admin-analytics.ts`
+  (`getShopDemandAnalytics`).
+- `GET|POST|PATCH /api/admin/shop/couriers` → new `admin-couriers.ts`
+  (`listCourierProviders`, `upsertCourierProvider`,
+  `patchCourierProvider`).
+- `PATCH /api/admin/shop/deliveries` → new `admin-deliveries.ts`
+  (`upsertDeliveryStatus`), including the `shop_orders` status-mirror
+  logic and the `shop_order_events`/`shop_audit_logs` writes.
+- `POST /api/shop/product-requests` → new `product-requests.ts`
+  (`recordProductRequest`, `ProductRequestsNotMigratedError`).
+
+**Design grounded in existing conventions, not invented:**
+`shop_audit_logs` and `shop_order_events` inserts moved *into* the domain
+functions, because `admin-catalog.ts`/`orders.ts`/`payments.ts` already do
+this at every write. `logAdminAction` (cross-cutting admin-identity audit,
+needs the route's `requireAdmin()` result) and
+`requireAdmin()`/`isSupabaseAdminConfigured()` stayed in the routes —
+matches every slice so far: routes own auth, domain modules own tables.
+
+New tests: `shop/__tests__/{admin-analytics,admin-couriers,admin-deliveries,
+product-requests}.test.ts` (20) and 4 new route test files (19). None of
+these 4 routes had coverage before. Full suite: 1,343 tests / 128 files.
+
+## Remaining slices
+
+- **Shop (slice 4):** the other 17 direct-Supabase files (cart, orders,
+  catalog, admin-catalog, delivery, garage, import-engine,
+  job-recommendations, search, all-parts, payments, import-job-detail).
+  Also still unresolved: where the `checkout`/`delivery-estimate`
+  `user_addresses` duplication should actually live, since it isn't shop's.
+- **Identity (slice 5):** centralizing ~15 duplicated caller routes onto
+  `identity-sync.ts` is the biggest call-site count of any domain.
 
 ## Reviewer procedure
 
@@ -137,6 +200,9 @@ per-slice progress toward that, not a one-shot pass/fail.
 
 ## Closeout
 
-Reviewed commit: slice 1 committed as `04bab32`; slice 2 complete locally,
-not yet committed. Independent review and hosted verification are pending
-for all of Stage 4, same as Stages 2-3.
+Reviewed commit: slice 1 as `04bab32`, slice 2 as `386a3e7`, both pushed to
+`codex/supabase-core-separation-stage-4`. Pairing deliberately skipped (no
+commit). Slice 3 complete locally, awaiting review before commit (per
+standing instruction to confirm with the user before committing). Independent
+review and hosted verification are pending for all of Stage 4, same as
+Stages 2-3.
