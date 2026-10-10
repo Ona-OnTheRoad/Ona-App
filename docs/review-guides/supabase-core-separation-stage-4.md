@@ -233,6 +233,12 @@ Approved scope: GET `/api/admin/users` only, baseline `13e0c6f`. New server-only
 
 19 new route tests passed before and after extraction; full suite 1,431 tests / 134 files and typecheck pass. Lint passes: 0 errors / 160 warnings, none in changed files; diff check passes. Independent review of exact commit and hosted listing/search/filter smoke remain pending. [Detailed criteria/evidence](supabase-core-separation-stage-4-slice-5.md). Later batches excluded.
 
+## Slice 5 batch 4: admin detail identity reads (implemented and locally verified)
+
+Approved identity-only portion of GET `/api/admin/users/[id]`, baseline `40e0fa1`. New server-only `admin-detail.ts` (51 lines) internally owns its client and exposes typed shared-profile, nullable customer/pro-profile and identity-status operations. Route retains config/admin/HTTP guards and all four existing history queries. Three identity query chains and four history query chains preserve their original projections/filters/terminals; secondary reads remain concurrent. No writes/schema/config/protected changes.
+
+14 new characterization tests passed before/after extraction; one additional client-boundary test passes. Full suite: 1,446 tests / 135 files; typecheck; lint 0 errors / 160 existing warnings; diff check. [Detailed evidence and limitations](supabase-core-separation-stage-4-slice-5.md). Independent review of exact commit and hosted admin-detail smoke pending. The route's history persistence boundary is explicitly not closed by this batch.
+
 ## Remaining slices
 
 - **catalog.ts's `listProducts`:** needs its own dedicated slice with

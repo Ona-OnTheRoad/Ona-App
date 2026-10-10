@@ -163,11 +163,25 @@
         "npm run test: 1,431 tests / 134 files passed. npm run typecheck passed. npm run lint: 0 errors / 160 warnings, none in changed files. git diff --check passed.",
         "Independent review of exact commit and hosted smoke remain pending."
       ]
+    },
+    {
+      "id": "slice-5-batch-4-admin-detail-identity",
+      "stage": "code",
+      "expectation": "Approved admin-detail identity portion uses named typed operations preserving guards, concurrency, profiles/status/history response behaviour; history persistence boundary explicitly deferred.",
+      "verification": "Before/after route characterization, query/source audit and local gates.",
+      "status": "pass",
+      "evidence": [
+        "Approved identity-only admin-detail scope on 2026-10-10; baseline 40e0fa1.",
+        "14 route characterization tests passed before/after extraction; one additional test verifies separate internally-owned identity and route history clients. Deferred-status test verifies concurrent secondary reads.",
+        "Source audit: three identity query chains preserved; four route history query chains unchanged. admin-detail.ts is 51 lines, server-only, exposes no client/SDK builders; existing identityStatus unchanged.",
+        "npm run test: 1,446 tests / 135 files passed. npm run typecheck passed. npm run lint: 0 errors / 160 existing warnings. git diff --check passed.",
+        "Independent review/hosted smoke pending; four route history table calls explicitly deferred."
+      ]
     }
   ],
   "implementationBranch": "codex/supabase-core-separation-stage-4",
   "implementationNotes": "Stage 4 scoped via parallel research on 2026-10-10 (see domain-scope-researched evidence). Slice 1 (payments route handlers, commit 04bab32): new src/lib/server/payments/bank-lookup.ts adapter, 4 call sites rewired, 24 new tests. Slice 2 (jobs route handlers, commit 386a3e7): 3 new job-store functions, 3 routes rewired, 15 new tests, 1 existing test file fixed. Pairing deliberately skipped (see pairing-interface-decision). Slice 3 (shop admin routes with no domain-folder home, commit 032bdf1): 4 new src/lib/server/shop/ files, 4 routes rewired, 39 new tests. Slice 4 (shop scope survey + all-parts.ts split), same day: surveyed the 9 non-excluded remaining shop files before touching any of them -- most already satisfy Stage 4's spirit (pure logic already lives in sibling files or local helpers), so only all-parts.ts's getAllPartsForVehicle got a real split (4 pure functions extracted, 11 new tests). catalog.ts's listProducts (424 lines, most central function in shop) was deliberately left alone given its complexity+blast-radius combination. Full suite (1,354 tests, 129 files), typecheck and lint pass after all 4 slices. Findings surfaced and tracked rather than silently fixed, ignored, or mechanically forced: a pre-existing bank-uniqueness-check inconsistency, a jobs/payments domain-boundary violation in finalizeJobReleasedAfterPayout, confirmation that job_version's DB trigger makes compound WHERE-clause guards provably redundant (kept anyway), that the checkout/delivery-estimate user_addresses duplication isn't actually a shop-domain gap, and that most of shop's 'direct-Supabase' files don't actually need splitting -- the original 56-file/32-direct-Supabase count measured presence of Supabase calls, not absence of structure.",
-  "implementationState": "Batch 1 committed as a3dd798; batch 2 committed as 13e0c6f. Batch 3 admin user listing implemented and locally verified. Independent review and hosted checks pending; later identity batches deferred.",
+  "implementationState": "Batches 1-3 committed as a3dd798, 13e0c6f and 40e0fa1. Batch 4 admin-detail identity reads implemented and locally verified. Independent review and hosted checks pending; later identity/history tasks deferred.",
   "independentReview": {
     "status": "Not started",
     "findings": [],
@@ -181,12 +195,13 @@
       "catalog.ts's listProducts: a dedicated future slice, not mechanical -- read the whole function, map every output field, write characterization tests before touching it (424 lines, most central function in shop).",
       "Where the checkout/delivery-estimate user_addresses duplication should live, given it's not really shop's -- still unresolved.",
       "Independent review of slices 1-4.",
-      "Slice 5: independent review of batches 1-3 exact commits; later identity batches deferred."
+      "Slice 5: independent review of batches 1-4 exact commits; batch 4 independent review pending. Admin-detail four cross-domain history queries remain deferred, along with later identity batches."
     ],
     "external": [
       "Slice 5 first batch: hosted password-login, both switch directions, inactive/missing-role, pro Away and shared-bank smoke on deployed reviewed commit.",
       "Slice 5 batch 2: hosted own-profile/role-flags smoke using two accounts and both roles on deployed reviewed commit.",
-      "Slice 5 batch 3: hosted admin user-list/search/role-filter smoke on deployed reviewed commit."
+      "Slice 5 batch 3: hosted admin user-list/search/role-filter smoke on deployed reviewed commit.",
+      "Slice 5 batch 4: hosted authorized admin-detail both-role/missing-profile/status/history smoke on deployed reviewed commit."
     ]
   }
 }

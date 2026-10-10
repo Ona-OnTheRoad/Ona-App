@@ -6,7 +6,7 @@ import {
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
-import { identityStatus } from "@/lib/server/identity/identity-sync";
+import { createAdminIdentityReader } from "@/lib/server/identity/admin-detail";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,31 +26,19 @@ export async function GET(
   try {
     await requireAdmin();
     const { id } = await ctx.params;
-    const supabase = createServiceSupabase();
-
-    const { data: profile, error } = await supabase
-      .from("profiles")
-      .select(
-        "id, role, full_name, phone, email, city, area, is_active, avatar_url, created_at, updated_at",
-      )
-      .eq("id", id)
-      .maybeSingle();
-
-    if (error) return apiFail(error.message, 500);
+    const reader = createAdminIdentityReader(id);
+    const shared = await reader.loadSharedProfile();
+    if (!shared.ok) return apiFail(shared.message, 500);
+    const profile = shared.profile;
     if (!profile) return apiFail("User not found", 404);
 
-    const [motRes, proRes, jobs, bookings, payments, reviews, identity] =
+    // Keep cross-domain history queries in the route for this identity-only batch.
+    const supabase = createServiceSupabase();
+
+    const [motoristProfile, repairProProfile, jobs, bookings, payments, reviews, identity] =
       await Promise.all([
-        supabase
-          .from("motorist_profiles")
-          .select("*")
-          .eq("user_id", id)
-          .maybeSingle(),
-        supabase
-          .from("repair_pro_profiles")
-          .select("*")
-          .eq("user_id", id)
-          .maybeSingle(),
+        reader.loadMotoristProfile(),
+        reader.loadRepairProProfile(),
         supabase
           .from("service_requests")
           .select(
@@ -79,14 +67,14 @@ export async function GET(
           .or(`motorist_id.eq.${id},repair_pro_id.eq.${id}`)
           .order("created_at", { ascending: false })
           .limit(20),
-        identityStatus(supabase, id),
+        reader.loadStatus(),
       ]);
 
     return apiOk({
       user: {
         ...profile,
-        motorist_profiles: motRes.data ?? null,
-        repair_pro_profiles: proRes.data ?? null,
+        motorist_profiles: motoristProfile,
+        repair_pro_profiles: repairProProfile,
       },
       identity,
       jobs: jobs.data ?? [],
