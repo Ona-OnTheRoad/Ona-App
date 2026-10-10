@@ -23,6 +23,11 @@ export type AllPartsCategory = {
   path: string;
 };
 
+export type EnrichedPartProduct = ShopProductCard & {
+  fitmentStatus: string | null;
+  fitmentBadge: string | null;
+};
+
 export type AllPartsTree = {
   vehicle: {
     makeName: string;
@@ -31,12 +36,7 @@ export type AllPartsTree = {
   };
   tradeKey: string;
   categories: AllPartsCategory[];
-  products: Array<
-    ShopProductCard & {
-      fitmentStatus: string | null;
-      fitmentBadge: string | null;
-    }
-  >;
+  products: EnrichedPartProduct[];
 };
 
 function fitmentBadge(status: string | null | undefined): string | null {
@@ -46,6 +46,98 @@ function fitmentBadge(status: string | null | undefined): string | null {
   if (s === "conditional") return "Check fit";
   // E1: unknown / missing → no badge
   return null;
+}
+
+/**
+ * Attach fitment status/badge to one product: prefer the DB-verified
+ * fitment map, else fall back to a soft make+model text match.
+ */
+export function enrichProductWithFitment(
+  product: ShopProductCard,
+  fitMap: Map<string, string>,
+  vehicle: Pick<GarageVehicle, "makeName" | "modelName">,
+): EnrichedPartProduct {
+  const fs = fitMap.get(product.id) || null;
+  // Soft text match when no DB fitment
+  let soft: string | null = null;
+  if (!fs) {
+    const hay = `${product.name} ${product.subtitle || ""}`.toLowerCase();
+    const mk = vehicle.makeName.toLowerCase();
+    const md = vehicle.modelName.toLowerCase();
+    if (mk && md && hay.includes(mk) && hay.includes(md)) {
+      soft = "compatible";
+    }
+  }
+  const status = fs || soft;
+  return {
+    ...product,
+    fitmentStatus: status,
+    fitmentBadge: fitmentBadge(status),
+  };
+}
+
+/** Fitment-matched products first; same-fit ties break on lower price. */
+export function compareEnrichedByFitmentThenPrice(
+  a: EnrichedPartProduct,
+  b: EnrichedPartProduct,
+): number {
+  const as = a.fitmentBadge ? 1 : 0;
+  const bs = b.fitmentBadge ? 1 : 0;
+  if (as !== bs) return bs - as;
+  return (a.fromPriceMinor ?? 0) - (b.fromPriceMinor ?? 0);
+}
+
+/** Count products per category id from a list of `{ id, category_id }` rows. */
+export function buildCategoryProductCounts(
+  rows: Array<{ category_id?: unknown }>,
+): Map<string, number> {
+  const countByCat = new Map<string, number>();
+  for (const r of rows) {
+    const cid = String(r.category_id || "");
+    if (!cid) continue;
+    countByCat.set(cid, (countByCat.get(cid) || 0) + 1);
+  }
+  return countByCat;
+}
+
+/**
+ * Category tree rollup: each category's productCount includes its own
+ * direct count plus every descendant category's count (via `path` prefix
+ * match). Categories still at zero after rollup are dropped (E1 honesty).
+ */
+export function rollupCategoryTree(
+  categories: Array<Record<string, unknown>>,
+  countByCat: Map<string, number>,
+): AllPartsCategory[] {
+  return categories
+    .filter((c) => Number(c.depth) >= 1 || !c.parent_id)
+    .map((c) => {
+      const id = String(c.id);
+      const count = countByCat.get(id) || 0;
+      // Also count children under path
+      let total = count;
+      const path = String(c.path || "");
+      for (const [cid, n] of countByCat) {
+        const child = categories.find((x) => String(x.id) === cid);
+        if (
+          child &&
+          String(child.path || "").startsWith(path + "/") &&
+          cid !== id
+        ) {
+          total += n;
+        }
+      }
+      return {
+        id,
+        slug: String(c.slug),
+        name: String(c.name),
+        tradeKey: String(c.trade_key),
+        productCount: total || count,
+        depth: Number(c.depth ?? 0),
+        path: String(c.path || ""),
+      };
+    })
+    .filter((c) => c.productCount > 0);
 }
 
 async function productIdsForVehicle(
@@ -139,33 +231,12 @@ export async function getAllPartsForVehicle(opts: {
   });
 
   // Prefer fitment-matched products first; keep others without badge (E1)
-  const enriched = products.map((p) => {
-    const fs = fitMap.get(p.id) || null;
-    // Soft text match when no DB fitment
-    let soft: string | null = null;
-    if (!fs) {
-      const hay = `${p.name} ${p.subtitle || ""}`.toLowerCase();
-      const mk = opts.vehicle.makeName.toLowerCase();
-      const md = opts.vehicle.modelName.toLowerCase();
-      if (mk && md && hay.includes(mk) && hay.includes(md)) {
-        soft = "compatible";
-      }
-    }
-    const status = fs || soft;
-    return {
-      ...p,
-      fitmentStatus: status,
-      fitmentBadge: fitmentBadge(status),
-    };
-  });
+  const enriched = products.map((p) =>
+    enrichProductWithFitment(p, fitMap, opts.vehicle),
+  );
 
   // If vehicle has fitment data, sort matching first; still show others in category
-  enriched.sort((a, b) => {
-    const as = a.fitmentBadge ? 1 : 0;
-    const bs = b.fitmentBadge ? 1 : 0;
-    if (as !== bs) return bs - as;
-    return (a.fromPriceMinor ?? 0) - (b.fromPriceMinor ?? 0);
-  });
+  enriched.sort(compareEnrichedByFitmentThenPrice);
 
   // Count products per category (from full trade list)
   const allTrade = opts.categoryId
@@ -175,50 +246,18 @@ export async function getAllPartsForVehicle(opts: {
         accountContext: opts.accountContext,
       })
     : products;
-  const countByCat = new Map<string, number>();
   // load category_id for products
   const ids = allTrade.map((p) => p.id);
+  let countByCat = new Map<string, number>();
   if (ids.length) {
     const { data: rows } = await sb
       .from("shop_products")
       .select("id, category_id")
       .in("id", ids);
-    for (const r of rows ?? []) {
-      const cid = String(r.category_id || "");
-      if (!cid) continue;
-      countByCat.set(cid, (countByCat.get(cid) || 0) + 1);
-    }
+    countByCat = buildCategoryProductCounts(rows ?? []);
   }
 
-  const nonEmpty: AllPartsCategory[] = categories
-    .filter((c) => Number(c.depth) >= 1 || !c.parent_id)
-    .map((c) => {
-      const id = String(c.id);
-      const count = countByCat.get(id) || 0;
-      // Also count children under path
-      let total = count;
-      const path = String(c.path || "");
-      for (const [cid, n] of countByCat) {
-        const child = categories.find((x) => String(x.id) === cid);
-        if (
-          child &&
-          String(child.path || "").startsWith(path + "/") &&
-          cid !== id
-        ) {
-          total += n;
-        }
-      }
-      return {
-        id,
-        slug: String(c.slug),
-        name: String(c.name),
-        tradeKey: String(c.trade_key),
-        productCount: total || count,
-        depth: Number(c.depth ?? 0),
-        path: String(c.path || ""),
-      };
-    })
-    .filter((c) => c.productCount > 0);
+  const nonEmpty = rollupCategoryTree(categories, countByCat);
 
   return {
     vehicle: {

@@ -135,7 +135,7 @@ risk budget on shop next. Not independently verified: whether
 mutually exclusive by job state (SSPE vs. legacy dispatch) — tracked as
 open remaining work, separate from the interface question.
 
-## Slice 3: shop admin routes with no domain-folder home (done, not yet committed)
+## Slice 3: shop admin routes with no domain-folder home (done, commit `032bdf1`)
 
 Shop is 21 files, no boundary; too large for one slice. This first shop
 sub-slice targets the cleanest, most unambiguous gap: 4 admin route
@@ -174,12 +174,53 @@ New tests: `shop/__tests__/{admin-analytics,admin-couriers,admin-deliveries,
 product-requests}.test.ts` (20) and 4 new route test files (19). None of
 these 4 routes had coverage before. Full suite: 1,343 tests / 128 files.
 
+## Slice 4: shop scope survey + all-parts.ts split (done, not yet committed)
+
+Before touching any of shop's other direct-Supabase files, surveyed them
+first rather than assuming the original file count meant they all needed
+splitting. Per the user's explicit instruction, `cart.ts`, `orders.ts`,
+`admin-catalog.ts` and `payments.ts` were excluded up front — they sit next
+to (or directly contain, for `orders.ts`) the atomic inventory-reservation
+RPC (`ona_shop_reserve`) and the payment-verification/refund-on-failure
+sequence, the same category of risk that got pairing skipped.
+
+**Finding: most of the rest already satisfy Stage 4's spirit.**
+`garage.ts`, `job-recommendations.ts`, `delivery.ts` (pure
+`computeDeliveryFee` already extracted), `search.ts` (pure logic already
+lives in `intent.ts`/`normalize.ts`; `searchShop` is thin orchestration),
+and `import-engine.ts` (doesn't even self-instantiate a client — takes one
+as a parameter) are already thin, single-purpose domain modules. This is
+the same acceptable shape job-store's own "store" sublayer
+(`cache.ts`/`reads.ts`) has — Stage 4 never asked for *zero* direct
+Supabase calls in domain files, only that business-logic callers (routes,
+other domains) not touch tables directly. Forcing a split here would add
+file-hopping indirection with no real benefit.
+
+**One file flagged but deliberately left alone:** `catalog.ts`'s
+`listProducts` (424 lines) does mix real filtering/fitment/stock logic
+with queries — but it's the single most central function in shop (search,
+all-parts, job-recommendations, home sections all call it). That
+complexity + blast-radius combination makes it a bad fit for a quick
+slice; it needs its own dedicated pass with characterization tests, not a
+mechanical split alongside everything else.
+
+**One genuine, bounded, safe candidate: `all-parts.ts`'s
+`getAllPartsForVehicle`** (~125 lines, single caller, read-only, no
+reservation/payment adjacency). Extracted 4 pure functions verbatim from
+the existing logic — `enrichProductWithFitment`,
+`compareEnrichedByFitmentThenPrice`, `buildCategoryProductCounts`,
+`rollupCategoryTree` — with no behavior change (confirmed: full suite green
+before and after, same queries, same field computations). New tests:
+`shop/__tests__/all-parts.test.ts` (11 — unit tests per pure function plus
+2 integration tests against the orchestrator). Full suite: 1,354 tests /
+129 files.
+
 ## Remaining slices
 
-- **Shop (slice 4):** the other 17 direct-Supabase files (cart, orders,
-  catalog, admin-catalog, delivery, garage, import-engine,
-  job-recommendations, search, all-parts, payments, import-job-detail).
-  Also still unresolved: where the `checkout`/`delivery-estimate`
+- **catalog.ts's `listProducts`:** needs its own dedicated slice with
+  characterization tests first, not a mechanical split bundled with
+  anything else.
+- Still unresolved: where the `checkout`/`delivery-estimate`
   `user_addresses` duplication should actually live, since it isn't shop's.
 - **Identity (slice 5):** centralizing ~15 duplicated caller routes onto
   `identity-sync.ts` is the biggest call-site count of any domain.
@@ -200,9 +241,8 @@ per-slice progress toward that, not a one-shot pass/fail.
 
 ## Closeout
 
-Reviewed commit: slice 1 as `04bab32`, slice 2 as `386a3e7`, both pushed to
-`codex/supabase-core-separation-stage-4`. Pairing deliberately skipped (no
-commit). Slice 3 complete locally, awaiting review before commit (per
-standing instruction to confirm with the user before committing). Independent
-review and hosted verification are pending for all of Stage 4, same as
-Stages 2-3.
+Reviewed commit: slices 1-3 (`04bab32`, `386a3e7`, `032bdf1`), all pushed to
+`codex/supabase-core-separation-stage-4`. Slice 4 (all-parts.ts split)
+complete locally, awaiting review before commit. Pairing deliberately
+skipped (no commit). Independent review and hosted verification are
+pending for all of Stage 4, same as Stages 2-3.
