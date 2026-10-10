@@ -1260,36 +1260,29 @@ export async function backendFetchJobsForUser(
 
 export async function backendEnsureConversation(input: {
   requestId: string;
+  /** Kept for callers; the route derives both party ids from the
+   * service_requests row itself, never from client input. */
   motoristId: string;
   repairProId: string;
 }): Promise<{ error: string | null; conversationId?: string }> {
-  const sb = getAppSupabase();
-  if (!sb) return { error: "Backend offline" };
-
-  const { data: existing } = await sb
-    .from("conversations")
-    .select("id")
-    .eq("request_id", input.requestId)
-    .maybeSingle();
-  if (existing?.id)
-    return { error: null, conversationId: existing.id as string };
-
-  const { data, error } = await sb
-    .from("conversations")
-    .insert({
-      request_id: input.requestId,
-      motorist_id: input.motoristId,
-      repair_pro_id: input.repairProId,
-      last_message_at: new Date().toISOString(),
-    })
-    .select("id")
-    .single();
-  if (error || !data) return { error: error?.message || "Chat create failed" };
-
-  // Empty thread only never insert system "Chat opened…" spam.
-  // First real message appears when a user actually sends one.
-
-  return { error: null, conversationId: data.id as string };
+  try {
+    const { authFetch } = await import("@/lib/api-auth-headers");
+    const res = await authFetch("/api/conversations/ensure", {
+      method: "POST",
+      body: JSON.stringify({ requestId: input.requestId }),
+    });
+    const json = (await res.json().catch(() => null)) as {
+      ok?: boolean;
+      data?: { conversationId?: string };
+      error?: { message?: string };
+    } | null;
+    if (!json?.ok) {
+      return { error: json?.error?.message || "Chat create failed" };
+    }
+    return { error: null, conversationId: json.data?.conversationId };
+  } catch {
+    return { error: "Network error starting chat" };
+  }
 }
 
 export async function backendFetchConversations(
