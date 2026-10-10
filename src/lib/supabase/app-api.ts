@@ -8,17 +8,12 @@
 import { getAppSupabase, isAppBackendOnline } from "@/lib/supabase/app-client";
 import {
   mapConversationToThread,
-  mapRequestRow,
   profileToUserProfile,
   resolvePrimaryAccountType,
   type ConversationRow,
   type MessageRow,
 } from "@/lib/supabase/mappers";
-import type {
-  ProfileRow,
-  RepairProRow,
-  ServiceRequestRow,
-} from "@/lib/supabase/types";
+import type { ProfileRow, RepairProRow } from "@/lib/supabase/types";
 import type {
   AccountType,
   ProService,
@@ -1247,50 +1242,22 @@ export async function backendFetchJobsForUser(
   userId: string,
   role: AccountType,
 ): Promise<ServiceRequest[]> {
-  const sb = getAppSupabase();
-  if (!sb) return [];
-
-  let q = sb
-    .from("service_requests")
-    .select(
-      "id, motorist_id, repair_pro_id, service_type, status, description, pickup_lat, pickup_lng, pickup_address, radius_km, created_at, updated_at",
-    )
-    .order("created_at", {
-      ascending: false,
+  try {
+    const qs = new URLSearchParams({ userId, role });
+    const { authFetch } = await import("@/lib/api-auth-headers");
+    const res = await authFetch(`/api/requests?${qs.toString()}`, {
+      method: "GET",
+      cache: "no-store",
     });
-  if (role === "motorist") q = q.eq("motorist_id", userId);
-  // Pros only ever see jobs assigned to them. The old `status.in.(requested,matched)`
-  // broad clause made EVERY open job visible to every pro leaking another
-  // pro's accepted jobs into the store / Orders desk (account isolation bug).
-  else q = q.eq("repair_pro_id", userId);
-
-  const { data, error } = await q.limit(30);
-  if (error || !data) return [];
-
-  const proIds = [
-    ...new Set(
-      (data as ServiceRequestRow[])
-        .map((r) => r.repair_pro_id)
-        .filter(Boolean) as string[],
-    ),
-  ];
-  const names = new Map<string, string>();
-  if (proIds.length) {
-    const { data: profiles } = await sb
-      .from("profiles")
-      .select("id, full_name")
-      .in("id", proIds);
-    for (const p of profiles || []) {
-      names.set(
-        (p as { id: string; full_name: string }).id,
-        (p as { id: string; full_name: string }).full_name,
-      );
-    }
+    const json = (await res.json().catch(() => null)) as {
+      ok?: boolean;
+      data?: { requests?: ServiceRequest[] };
+    } | null;
+    if (!json?.ok || !Array.isArray(json.data?.requests)) return [];
+    return json.data.requests;
+  } catch {
+    return [];
   }
-
-  return (data as ServiceRequestRow[]).map((r) =>
-    mapRequestRow(r, r.repair_pro_id ? names.get(r.repair_pro_id) : undefined),
-  );
 }
 
 export async function backendEnsureConversation(input: {
