@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "id": "supabase-core-separation-stage-4",
+  "title": "Scope 2, Stage 4: extract server persistence by domain",
+  "plan": "docs/review-guides/supabase-core-separation-stage-4.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "domain-scope-researched",
+      "stage": "code",
+      "expectation": "The full scope of direct-Supabase-in-business-logic across the 5 named domains (jobs, payments, pairing, shop, identity) is inventoried before any slice starts, so slices are sized and sequenced deliberately rather than discovered mid-implementation.",
+      "verification": "Parallel research across all 5 domains, cross-checked against each domain's actual files.",
+      "status": "pass",
+      "evidence": [
+        "56 non-test files across the 5 domains, ~32 touching Supabase directly. jobs and payments already have real adapter/boundary layers (job-store barrel; confirmation-store/durable-processing/payout-ledger/escrow-store) with a handful of route handlers bypassing them. pairing is a single 1459-line file with zero boundary and writes service_requests independently of jobs' job-store (two uncoordinated paths on one table). shop is 21 files, ~93% mixed, almost no boundary, and several admin routes have business logic with no domain-folder home at all. identity is only 3 files but ~15 caller routes duplicate direct profile-table queries instead of centralizing. Full detail in the paired .md guide's scope-research table.",
+        "Also flagged (out of Stage 4's named scope, same underlying problem): merit/merit-engine.ts and 7 other domain folders (callout, express, modules, push, reviews, security) under src/lib/server/."
+      ]
+    },
+    {
+      "id": "slice-1-payments-routes-no-direct-supabase",
+      "stage": "code",
+      "expectation": "The 3 payments route handlers that bypass existing payments adapters (init, refund, check-bank-unique) and payout-settlement.ts's loadProBank no longer call Supabase directly; behavior is unchanged.",
+      "verification": "Diff review of each call site; grep for remaining direct .from(...) calls in these 4 files; unit tests for the new adapter and each route's existing behavior.",
+      "status": "pass",
+      "evidence": [
+        "New src/lib/server/payments/bank-lookup.ts centralizes loadMotoristBankCode, loadProBankCode, loadMotoristBankDetails, loadProBankDetails, loadIdentityCheck, isBankAccountTaken. All 4 call sites (init/route.ts, refund/route.ts, check-bank-unique/route.ts, payout-settlement.ts) now import from it instead of calling createServiceSupabase() themselves. No behavior change: same queries, same tables, same null-on-error fallback (verified by diff, not just by running the new tests).",
+        "New tests: src/lib/server/payments/__tests__/bank-lookup.test.ts (11 tests covering each adapter function including the self-exclusion and payout_methods-last4 match cases), src/app/api/payments/init/__tests__/route.test.ts (4, including the self-payment-block path), src/app/api/payments/refund/__tests__/route.test.ts (4, including the gateway-refund-attempted path), src/app/api/payments/check-bank-unique/__tests__/route.test.ts (5, including the token-resolved-exclude-self path). None of these 3 routes had any test coverage before this slice.",
+        "Full suite (1,285 tests, 117 files), typecheck and lint all pass locally with 0 new warnings beyond one pre-existing unrelated warning (refund/route.ts's gatewayRaw, present before this slice)."
+      ]
+    },
+    {
+      "id": "bank-uniqueness-checks-consistent",
+      "stage": "code",
+      "expectation": "There is one bank-account-uniqueness check, not two disagreeing implementations.",
+      "verification": "Compare src/app/api/profile/update/route.ts's isBankAccountTakenByOtherUser against the new isBankAccountTaken in bank-lookup.ts.",
+      "status": "fail",
+      "evidence": [
+        "Found during slice 1 research: src/app/api/profile/update/route.ts has its own isBankAccountTakenByOtherUser (lines 19-78) that duplicates check-bank-unique's old matcher but never checks payout_methods -- so the same bank account could be flagged 'taken' by one endpoint and not the other. Pre-existing, not introduced by slice 1. Deliberately not fixed in slice 1 (profile/update is outside 'payments route handlers' scope); tracked here so it isn't lost."
+      ]
+    },
+    {
+      "id": "jobs-payments-boundary-respected",
+      "stage": "code",
+      "expectation": "Payments-domain code does not directly mutate jobs-domain tables (service_requests) with job-state transitions; that belongs behind the jobs interface.",
+      "verification": "Audit payout-settlement.ts and any other payments file for direct service_requests writes.",
+      "status": "fail",
+      "evidence": [
+        "payout-settlement.ts's finalizeJobReleasedAfterPayout (line ~1320, unchanged by slice 1) reads and updates service_requests directly with job_version-guarded optimistic concurrency -- a jobs-domain state transition performed from the payments domain. Needs a job-store function (e.g. markJobReleasedAfterPayout) added to src/lib/server/jobs/job-store before payout-settlement.ts can stop touching the table directly. Deferred to a later slice since it's a cross-domain design decision, not a mechanical port."
+      ]
+    },
+    {
+      "id": "defined-interfaces-only",
+      "stage": "code",
+      "expectation": "Business services in the agreed scope use defined interfaces rather than Supabase SDK types or clients directly. (Same requirement id as the parent Stage 1-3 guide; Stage 4 is where it actually gets addressed, domain by domain.)",
+      "verification": "Manual import audit of src/lib/server/{jobs,payments,pairing,shop,identity}, slice by slice.",
+      "status": "pending",
+      "evidence": [
+        "Slice 1 (payments route handlers): done, see slice-1-payments-routes-no-direct-supabase above.",
+        "Remaining: jobs' 3 bypassing route handlers (surface, dispatch-scheduled, expire-stale); pairing (needs a design decision on its relationship to the jobs interface before any code); shop (boundary doesn't exist yet, largest slice); identity (centralizing ~15 duplicated caller routes)."
+      ]
+    }
+  ],
+  "implementationBranch": "codex/supabase-core-separation-stage-4",
+  "implementationNotes": "Stage 4 scoped via parallel research on 2026-10-10 (see domain-scope-researched evidence). Slice 1 (payments route handlers) implemented same day: new src/lib/server/payments/bank-lookup.ts adapter, 4 call sites rewired, 24 new tests, full suite (1,285 tests, 117 files) passing. Two findings surfaced and tracked rather than silently fixed or ignored: a pre-existing bank-uniqueness-check inconsistency between check-bank-unique and profile/update, and a jobs/payments domain-boundary violation in payout-settlement.ts's finalizeJobReleasedAfterPayout.",
+  "implementationState": "Slice 1 of Stage 4 complete locally; not yet committed. Slices 2+ (jobs route handlers, pairing, shop, identity) not started.",
+  "independentReview": {
+    "status": "Not started",
+    "findings": [],
+    "scope": "Review each slice's diff against its specific requirement once committed."
+  },
+  "remainingWork": {
+    "code": [
+      "Commit slice 1.",
+      "Fix the bank-uniqueness-check inconsistency between check-bank-unique and profile/update (see bank-uniqueness-checks-consistent).",
+      "Fix the jobs/payments boundary violation in payout-settlement.ts's finalizeJobReleasedAfterPayout (see jobs-payments-boundary-respected) -- requires a new job-store function.",
+      "Slice 2+: jobs' 3 bypassing route handlers, pairing (design decision first), shop (boundary from scratch), identity (centralize ~15 caller routes).",
+      "Independent review of slice 1's diff once committed."
+    ],
+    "external": [
+      "None identified yet."
+    ]
+  }
+}
