@@ -174,7 +174,7 @@ New tests: `shop/__tests__/{admin-analytics,admin-couriers,admin-deliveries,
 product-requests}.test.ts` (20) and 4 new route test files (19). None of
 these 4 routes had coverage before. Full suite: 1,343 tests / 128 files.
 
-## Slice 4: shop scope survey + all-parts.ts split (done, not yet committed)
+## Slice 4: shop scope survey + all-parts.ts split (done, commit `ed07d76`)
 
 Before touching any of shop's other direct-Supabase files, surveyed them
 first rather than assuming the original file count meant they all needed
@@ -215,6 +215,12 @@ before and after, same queries, same field computations). New tests:
 2 integration tests against the orchestrator). Full suite: 1,354 tests /
 129 files.
 
+## Slice 5 first batch: login and switch-role (implemented and locally verified)
+
+[Inventory and review evidence](supabase-core-separation-stage-4-slice-5.md) records the broader identity dependency set. The user approved login/switch-role as the first batch. Both routes now delegate identity persistence to focused server-only modules: `login-identity.ts` / `login-profile.ts` and `switch-identity.ts` / `switch-profile.ts`, each under 300 lines. Auth and HTTP mapping stay in the routes. The existing queries, response mapping, role guards, profile repair, migration fallback, pro Away, bank sync/reload and differing error semantics are preserved.
+
+32 characterization tests passed against the original routes and after extraction; 9 additional persistence/projection cases pass. Full local suite: 1,395 tests / 133 files; typecheck passes; lint 0 errors / 160 warnings with none in changed files. No migration, environment or protected-file change. Reviewed commit, independent review and hosted smoke remain pending. The rest of the identity inventory is not implemented by this first batch.
+
 ## Remaining slices
 
 - **catalog.ts's `listProducts`:** needs its own dedicated slice with
@@ -222,8 +228,7 @@ before and after, same queries, same field computations). New tests:
   anything else.
 - Still unresolved: where the `checkout`/`delivery-estimate`
   `user_addresses` duplication should actually live, since it isn't shop's.
-- **Identity (slice 5):** centralizing ~15 duplicated caller routes onto
-  `identity-sync.ts` is the biggest call-site count of any domain.
+- **Identity (slice 5):** [caller inventory and proposed scope](supabase-core-separation-stage-4-slice-5.md) records 53 API routes / 237 literal identity-table call sites. The earlier ~15 estimate was incomplete. Approved first batch (login and switch-role) is implemented locally; independent review and hosted checks remain pending. Later batches require scope agreement. Use focused identity interfaces rather than expanding `identity-sync.ts` into a larger monolith.
 
 ## Reviewer procedure
 
@@ -243,6 +248,6 @@ per-slice progress toward that, not a one-shot pass/fail.
 
 Reviewed commit: slices 1-3 (`04bab32`, `386a3e7`, `032bdf1`), all pushed to
 `codex/supabase-core-separation-stage-4`. Slice 4 (all-parts.ts split)
-complete locally, awaiting review before commit. Pairing deliberately
-skipped (no commit). Independent review and hosted verification are
+committed as `ed07d76`; independent review remains pending. Pairing deliberately
+skipped (no commit). Slice 5 first batch is implemented and locally verified. Independent review and hosted verification are
 pending for all of Stage 4, same as Stages 2-3.
