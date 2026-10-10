@@ -5,23 +5,9 @@
  * Falls back gracefully when keys/session missing.
  */
 
-import { hasRecentLiveHeartbeat, MAX_RADIUS_KM } from "@/lib/matching";
-import { DOCS_PENDING_MAX_RADIUS_KM } from "@/lib/skill-questions";
 import { getAppSupabase, isAppBackendOnline } from "@/lib/supabase/app-client";
-import {
-  mapConversationToThread,
-  mapProToTechnician,
-  mapRequestRow,
-  profileToUserProfile,
-  resolvePrimaryAccountType,
-  type ConversationRow,
-  type MessageRow,
-} from "@/lib/supabase/mappers";
-import type {
-  ProfileRow,
-  RepairProRow,
-  ServiceRequestRow,
-} from "@/lib/supabase/types";
+import { profileToUserProfile, type MessageRow } from "@/lib/supabase/mappers";
+import type { ProfileRow } from "@/lib/supabase/types";
 import type {
   AccountType,
   ProService,
@@ -31,8 +17,6 @@ import type {
   MessageThread,
 } from "@/lib/types";
 import { isProService } from "@/lib/pro-service-id";
-import { buildProLivePatch } from "@/lib/supabase/pro-live-patch";
-import { isSyntheticAccount } from "@/lib/synthetic-accounts";
 import {
   apiVerifyIdemOp,
   clearIdemKey,
@@ -755,45 +739,44 @@ export async function backendSwitchRole(target: AccountType): Promise<{
 }
 
 /** Whether this user has motorist + pro side profiles (for dual switch UI). */
-export async function backendDualRoleFlags(userId: string): Promise<{
+export async function backendDualRoleFlags(
+  // userId is kept for callers; the route derives the caller from the
+  // session, never a client-supplied id.
+  _userId: string,
+): Promise<{
   hasMotorist: boolean;
   hasPro: boolean;
   /** Original signup role (earlier side-table), independent of active role */
   primaryAccountType: AccountType;
 }> {
-  const sb = getAppSupabase();
-  if (!sb) {
-    return {
-      hasMotorist: false,
-      hasPro: false,
-      primaryAccountType: "motorist",
-    };
-  }
-  const [mot, pro] = await Promise.all([
-    sb
-      .from("motorist_profiles")
-      .select("user_id, created_at")
-      .eq("user_id", userId)
-      .maybeSingle(),
-    sb
-      .from("repair_pro_profiles")
-      .select("user_id, created_at")
-      .eq("user_id", userId)
-      .maybeSingle(),
-  ]);
-  const hasMotorist = Boolean(mot.data);
-  const hasPro = Boolean(pro.data);
-  return {
-    hasMotorist,
-    hasPro,
-    primaryAccountType: resolvePrimaryAccountType({
-      hasMotorist,
-      hasPro,
-      motoristCreatedAt: (mot.data as { created_at?: string } | null)
-        ?.created_at,
-      proCreatedAt: (pro.data as { created_at?: string } | null)?.created_at,
-    }),
+  const fallback = {
+    hasMotorist: false,
+    hasPro: false,
+    primaryAccountType: "motorist" as AccountType,
   };
+  try {
+    const { authFetch } = await import("@/lib/api-auth-headers");
+    const res = await authFetch("/api/account/role-flags", {
+      method: "GET",
+      cache: "no-store",
+    });
+    const json = (await res.json().catch(() => null)) as {
+      ok?: boolean;
+      data?: {
+        hasMotorist?: boolean;
+        hasPro?: boolean;
+        primaryAccountType?: AccountType;
+      };
+    } | null;
+    if (!json?.ok || !json.data) return fallback;
+    return {
+      hasMotorist: Boolean(json.data.hasMotorist),
+      hasPro: Boolean(json.data.hasPro),
+      primaryAccountType: json.data.primaryAccountType || "motorist",
+    };
+  } catch {
+    return fallback;
+  }
 }
 
 /** Server logout: force is_online=false then clear browser session */
@@ -832,210 +815,26 @@ export async function backendGetSessionUserId(): Promise<string | null> {
 }
 
 export async function backendLoadUserProfile(
-  userId: string,
+  // userId is kept for callers; the route derives the caller from the
+  // session only -- not even as a cross-check -- since this returns bank
+  // details, NIN/BVN, gov-ID and guarantor info.
+  _userId: string,
 ): Promise<UserProfile | null> {
-  const sb = getAppSupabase();
-  if (!sb) return null;
-  const { data: profile } = await sb
-    .from("profiles")
-    .select("*")
-    .eq("id", userId)
-    .maybeSingle();
-  if (!profile) return null;
-  const p = profile as ProfileRow;
-  const accountType: AccountType =
-    p.role === "repair_pro" ? "professional" : "motorist";
-
-  // Load both side tables so primary = original signup (earlier created_at)
-  const [motRes, proRes, guarantorRes] = await Promise.all([
-    sb
-      .from("motorist_profiles")
-      .select("*")
-      .eq("user_id", userId)
-      .maybeSingle(),
-    sb
-      .from("repair_pro_profiles")
-      .select("*")
-      .eq("user_id", userId)
-      .maybeSingle(),
-    sb
-      .from("repair_pro_guarantors")
-      .select("*")
-      .eq("user_id", userId)
-      .maybeSingle(),
-  ]);
-  const mot = motRes.data as {
-    vehicle_make?: string | null;
-    vehicle_model?: string | null;
-    vehicle_year?: string | null;
-    plate_number?: string | null;
-    vehicle_photo?: string | null;
-    vehicle_common_issues?: string[] | null;
-    vehicles?: UserProfile["vehicles"];
-    nin_last4?: string | null;
-    bvn_last4?: string | null;
-    nin_verified?: boolean;
-    bvn_verified?: boolean;
-    identity_verified_at?: string | null;
-    identity_review_status?: string | null;
-    identity_submitted_at?: string | null;
-    gov_id_kind?: string | null;
-    gov_id_front_url?: string | null;
-    phone_verified?: boolean;
-    first_service_at?: string | null;
-    created_at?: string;
-    bank_name?: string | null;
-    bank_account_name?: string | null;
-    bank_account_number?: string | null;
-    bank_code?: string | null;
-  } | null;
-  const pr = proRes.data as
-    | (RepairProRow & {
-        bank_name?: string | null;
-        bank_account_name?: string | null;
-        bank_account_number?: string | null;
-        bank_code?: string | null;
-      })
-    | null;
-  const storedPrimary = (() => {
-    const prRole = (p as { primary_role?: string | null }).primary_role;
-    if (prRole === "repair_pro") return "professional" as const;
-    if (prRole === "motorist") return "motorist" as const;
+  try {
+    const { authFetch } = await import("@/lib/api-auth-headers");
+    const res = await authFetch("/api/profile", {
+      method: "GET",
+      cache: "no-store",
+    });
+    const json = (await res.json().catch(() => null)) as {
+      ok?: boolean;
+      data?: { profile?: UserProfile | null };
+    } | null;
+    if (!json?.ok) return null;
+    return json.data?.profile ?? null;
+  } catch {
     return null;
-  })();
-  const primaryAccountType =
-    storedPrimary ||
-    resolvePrimaryAccountType({
-      hasMotorist: Boolean(mot),
-      hasPro: Boolean(pr),
-      motoristCreatedAt: mot?.created_at,
-      proCreatedAt: pr?.created_at,
-      activeAccountType: accountType,
-    });
-  const dualRole = Boolean(mot) && Boolean(pr);
-  const lastRoleSwitchAt =
-    (p as { last_role_switch_at?: string | null }).last_role_switch_at ||
-    undefined;
-  const roleSwitchCount = Number(
-    (p as { role_switch_count?: number | null }).role_switch_count || 0,
-  );
-
-  if (accountType === "professional") {
-    const proExtra = pr as
-      | (RepairProRow & {
-          labour_prices?: UserProfile["servicePrices"];
-          pricing_currency?: import("@/lib/pricing").AppCurrency;
-          jobs_completed?: number;
-          vehicle_focus?: Record<string, string | undefined>;
-        })
-      | null;
-    const vf = (proExtra?.vehicle_focus || {}) as Record<
-      string,
-      string | undefined
-    >;
-    return profileToUserProfile(p, {
-      accountType,
-      primaryAccountType,
-      dualRole,
-      lastRoleSwitchAt,
-      roleSwitchCount,
-      services:
-        (pr?.services as ProService[]) ||
-        (pr?.primary_service ? [pr.primary_service as ProService] : []),
-      businessName: pr?.business_name || undefined,
-      bio: pr?.bio || undefined,
-      yearsExperience: pr?.years_experience || undefined,
-      serviceRadiusKm: pr?.service_radius_km,
-      ninVerified: pr?.nin_verified,
-      bvnVerified: pr?.bvn_verified,
-      docsStatus: (pr?.docs_status as UserProfile["docsStatus"]) || "approved",
-      docsRatingBoostApplied: Boolean(pr?.docs_rating_boost_applied),
-      certificationFileName: pr?.certification_file_name || undefined,
-      certificationFileDataUrl: pr?.certification_file_url || undefined,
-      skillAnswers: (pr?.skills as UserProfile["skillAnswers"]) || undefined,
-      averageRating: pr ? Number(pr.rating_avg) || undefined : undefined,
-      jobsCompleted: proExtra?.jobs_completed,
-      servicePrices: proExtra?.labour_prices,
-      pricingCurrency: proExtra?.pricing_currency,
-      servedVehicleType: vf.servedVehicleType,
-      servedBrand: vf.servedBrand,
-      servedModel: vf.servedModel,
-      servedCountry: vf.servedCountry,
-      servedLocation: vf.servedLocation,
-      // One bank per login: prefer pro side, fall back to customer bank
-      bankName: pr?.bank_name || mot?.bank_name || undefined,
-      bankAccountName:
-        pr?.bank_account_name || mot?.bank_account_name || undefined,
-      bankAccountNumber:
-        pr?.bank_account_number || mot?.bank_account_number || undefined,
-      bankCode: pr?.bank_code || mot?.bank_code || undefined,
-      guarantor: guarantorRes.data
-        ? (() => {
-            const g = guarantorRes.data as {
-              full_name?: string | null;
-              phone?: string | null;
-              address?: string | null;
-              occupation?: string | null;
-              relationship?: string | null;
-              linked_user_id?: string | null;
-            };
-            return {
-              fullName: g.full_name || "",
-              phone: g.phone || "",
-              address: g.address || undefined,
-              occupation: g.occupation || undefined,
-              relationship: g.relationship || "",
-              linkedUserId: g.linked_user_id || undefined,
-            };
-          })()
-        : undefined,
-      phoneVerified:
-        Boolean((p as { phone_verified?: boolean }).phone_verified) ||
-        Boolean(mot?.phone_verified),
-    });
   }
-
-  const reviewStatus = (mot?.identity_review_status ||
-    (mot?.identity_verified_at
-      ? "approved"
-      : mot?.nin_last4 || mot?.bvn_last4
-        ? "submitted"
-        : "none")) as UserProfile["identityReviewStatus"];
-
-  return profileToUserProfile(p, {
-    accountType,
-    primaryAccountType,
-    dualRole,
-    lastRoleSwitchAt,
-    roleSwitchCount,
-    vehicleMake: mot?.vehicle_make || undefined,
-    vehicleModel: mot?.vehicle_model || undefined,
-    vehicleYear: mot?.vehicle_year || undefined,
-    vehiclePlate: mot?.plate_number || undefined,
-    vehiclePhoto: mot?.vehicle_photo || undefined,
-    vehicleCommonIssues: mot?.vehicle_common_issues || undefined,
-    vehicles: Array.isArray(mot?.vehicles) ? mot.vehicles : undefined,
-    ninVerified: Boolean(mot?.nin_verified),
-    bvnVerified: Boolean(mot?.bvn_verified),
-    govIdVerified:
-      reviewStatus === "approved" || Boolean(mot?.identity_verified_at),
-    identityVerifiedAt: mot?.identity_verified_at || undefined,
-    identityReviewStatus: reviewStatus,
-    identitySubmittedAt: mot?.identity_submitted_at || undefined,
-    govIdKind: mot?.gov_id_kind || undefined,
-    govIdFrontUrl: mot?.gov_id_front_url || undefined,
-    phoneVerified:
-      Boolean((p as { phone_verified?: boolean }).phone_verified) ||
-      Boolean(mot?.phone_verified),
-    firstServiceAt: mot?.first_service_at || undefined,
-    // One bank per login: prefer customer side, fall back to pro bank
-    bankName: mot?.bank_name || pr?.bank_name || undefined,
-    bankAccountName:
-      mot?.bank_account_name || pr?.bank_account_name || undefined,
-    bankAccountNumber:
-      mot?.bank_account_number || pr?.bank_account_number || undefined,
-    bankCode: mot?.bank_code || pr?.bank_code || undefined,
-  });
 }
 
 export async function backendFetchPros(
@@ -1043,17 +842,20 @@ export async function backendFetchPros(
     lat: number;
     lng: number;
   },
-  opts?: { trade?: ProService | null },
+  // opts.trade is unused: /api/pros derives the pro's trade from the
+  // session, not a client-supplied param.
+  _opts?: { trade?: ProService | null },
 ): Promise<Technician[]> {
-  const trade = opts?.trade && isProService(opts.trade) ? opts.trade : null;
-  // Prefer server route (service role) so every approved pro + name reaches the app
+  // Server route (service role): applies tier/suspension/synthetic-account
+  // filtering and dual-role self-exclusion. No direct-query fallback — a
+  // client-side fallback here would need to re-derive all of that itself
+  // and could drift from the server's rules (e.g. widen a pro's market).
   try {
     const qs = new URLSearchParams({
       lat: String(userCoords.lat),
       lng: String(userCoords.lng),
     });
     // authFetch so server can exclude the signed-in dual-role user from results
-    // NOTE: no trade param /api/pros derives the pro's trade from the session.
     const { authFetch } = await import("@/lib/api-auth-headers");
     const res = await authFetch(`/api/pros?${qs.toString()}`, {
       method: "GET",
@@ -1066,89 +868,10 @@ export async function backendFetchPros(
     if (json?.ok && Array.isArray(json.data?.technicians)) {
       return json.data.technicians;
     }
+    return [];
   } catch {
-    /* fall through to client Supabase */
+    return [];
   }
-
-  const sb = getAppSupabase();
-  if (!sb) return [];
-
-  // Client fallback: slim columns only (never pull cert base64 / skills blobs)
-  let prosQuery = sb
-    .from("repair_pro_profiles")
-    .select(
-      "user_id, business_name, primary_service, services, status, is_online, rating_avg, rating_count, lat, lng, location_updated_at, service_radius_km, years_experience, bio, verified, labour_prices, pricing_currency, vehicle_focus, skills, jobs_completed, docs_status, face_liveness_verified, in_person_verified, visibility_tier, is_new_artisan, go_live_window_ends_at",
-    );
-  // Client fallback for pros must respect the same trade scope as the server
-  // route otherwise a Repair Pro could widen their market via this fallback.
-  if (trade) prosQuery = prosQuery.eq("primary_service", trade);
-  prosQuery = prosQuery.eq("is_online", true).limit(60);
-  const { data: pros, error } = await prosQuery;
-
-  if (error || !pros?.length) return [];
-
-  const slimPros = pros as unknown as RepairProRow[];
-  let selfId: string | null = null;
-  try {
-    const { data: sess } = await sb.auth.getSession();
-    selfId = sess.session?.user?.id ? String(sess.session.user.id) : null;
-  } catch {
-    selfId = null;
-  }
-  const ids = slimPros.map((p) => p.user_id);
-  const { data: profiles } = await sb
-    .from("profiles")
-    .select("id, full_name, avatar_url, phone, role, is_active")
-    .in("id", ids)
-    .eq("is_active", true);
-
-  const byId = new Map(
-    (profiles as unknown as ProfileRow[] | null)?.map((p) => [p.id, p]) ?? [],
-  );
-
-  const nowMs = Date.now();
-  return slimPros
-    .filter((pro) => {
-      // Dual-role: never see own Live pro profile when searching as customer
-      if (selfId && String(pro.user_id) === selfId) return false;
-      if (pro.status === "suspended" || pro.status === "rejected") return false;
-      if (
-        !pro.is_online ||
-        !hasRecentLiveHeartbeat(pro.location_updated_at, nowMs)
-      ) {
-        return false;
-      }
-      const profile = byId.get(pro.user_id);
-      if (!profile || profile.role === "motorist") return false;
-      // Never surface demo/audit pros to real customers (client fallback feed)
-      if (
-        isSyntheticAccount({
-          businessName: pro.business_name,
-          fullName: profile.full_name,
-        })
-      ) {
-        return false;
-      }
-      return true;
-    })
-    .map((pro) =>
-      mapProToTechnician(pro, byId.get(pro.user_id) ?? null, userCoords),
-    )
-    .filter((t) => {
-      if (
-        !t.hasLiveLocation ||
-        typeof t.distanceKm !== "number" ||
-        !Number.isFinite(t.distanceKm)
-      ) {
-        return false;
-      }
-      const docsPending =
-        t.docsStatus === "under_review" || t.docsStatus === "rejected";
-      const cap = docsPending
-        ? Math.min(MAX_RADIUS_KM, DOCS_PENDING_MAX_RADIUS_KM)
-        : MAX_RADIUS_KM;
-      return t.distanceKm <= cap;
-    });
 }
 
 /**
@@ -1226,38 +949,36 @@ export async function backendSetProOnline(
       return "Could not go Away on server. Try again.";
     }
     return null;
-  } catch {
-    const sb = getAppSupabase();
-    if (!sb) return "Backend offline";
-    // Ensure session for RLS fallback
-    await ensureAppSession().catch(() => null);
-    const { error } = await sb
-      .from("repair_pro_profiles")
-      .update(buildProLivePatch(online, coords))
-      .eq("user_id", userId);
-    if (error) {
-      if (/JWT|session|auth/i.test(error.message)) {
-        return SESSION_RELOGIN_MESSAGE;
-      }
-      return error.message;
-    }
-    return null;
+  } catch (e) {
+    // No direct-write fallback: /api/pros/live also gates tier/suspension/GPS,
+    // upserts pro_presence for customer discovery, recalculates merit and
+    // reroutes unbooked jobs on going offline. A bypass here would silently
+    // skip all of that instead of surfacing the failure.
+    return e instanceof Error ? e.message : "Could not update Live status";
   }
 }
 
 /** Read Live flag from server (sync dashboard UI). */
 export async function backendGetProOnline(
-  userId: string,
+  // userId is kept for callers; the route derives the caller from the
+  // session, never a client-supplied id.
+  _userId: string,
 ): Promise<boolean | null> {
-  const sb = getAppSupabase();
-  if (!sb) return null;
-  const { data, error } = await sb
-    .from("repair_pro_profiles")
-    .select("is_online")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error || !data) return null;
-  return Boolean(data.is_online);
+  try {
+    const { authFetch } = await import("@/lib/api-auth-headers");
+    const res = await authFetch("/api/pros/live", {
+      method: "GET",
+      cache: "no-store",
+    });
+    const json = (await res.json().catch(() => null)) as {
+      ok?: boolean;
+      data?: { online?: boolean | null };
+    } | null;
+    if (!json?.ok) return null;
+    return typeof json.data?.online === "boolean" ? json.data.online : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -1331,224 +1052,100 @@ export async function backendFetchJobsForUser(
   userId: string,
   role: AccountType,
 ): Promise<ServiceRequest[]> {
-  const sb = getAppSupabase();
-  if (!sb) return [];
-
-  let q = sb
-    .from("service_requests")
-    .select(
-      "id, motorist_id, repair_pro_id, service_type, status, description, pickup_lat, pickup_lng, pickup_address, radius_km, created_at, updated_at",
-    )
-    .order("created_at", {
-      ascending: false,
+  try {
+    const qs = new URLSearchParams({ userId, role });
+    const { authFetch } = await import("@/lib/api-auth-headers");
+    const res = await authFetch(`/api/requests?${qs.toString()}`, {
+      method: "GET",
+      cache: "no-store",
     });
-  if (role === "motorist") q = q.eq("motorist_id", userId);
-  // Pros only ever see jobs assigned to them. The old `status.in.(requested,matched)`
-  // broad clause made EVERY open job visible to every pro leaking another
-  // pro's accepted jobs into the store / Orders desk (account isolation bug).
-  else q = q.eq("repair_pro_id", userId);
-
-  const { data, error } = await q.limit(30);
-  if (error || !data) return [];
-
-  const proIds = [
-    ...new Set(
-      (data as ServiceRequestRow[])
-        .map((r) => r.repair_pro_id)
-        .filter(Boolean) as string[],
-    ),
-  ];
-  const names = new Map<string, string>();
-  if (proIds.length) {
-    const { data: profiles } = await sb
-      .from("profiles")
-      .select("id, full_name")
-      .in("id", proIds);
-    for (const p of profiles || []) {
-      names.set(
-        (p as { id: string; full_name: string }).id,
-        (p as { id: string; full_name: string }).full_name,
-      );
-    }
+    const json = (await res.json().catch(() => null)) as {
+      ok?: boolean;
+      data?: { requests?: ServiceRequest[] };
+    } | null;
+    if (!json?.ok || !Array.isArray(json.data?.requests)) return [];
+    return json.data.requests;
+  } catch {
+    return [];
   }
-
-  return (data as ServiceRequestRow[]).map((r) =>
-    mapRequestRow(r, r.repair_pro_id ? names.get(r.repair_pro_id) : undefined),
-  );
 }
 
 export async function backendEnsureConversation(input: {
   requestId: string;
+  /** Kept for callers; the route derives both party ids from the
+   * service_requests row itself, never from client input. */
   motoristId: string;
   repairProId: string;
 }): Promise<{ error: string | null; conversationId?: string }> {
-  const sb = getAppSupabase();
-  if (!sb) return { error: "Backend offline" };
-
-  const { data: existing } = await sb
-    .from("conversations")
-    .select("id")
-    .eq("request_id", input.requestId)
-    .maybeSingle();
-  if (existing?.id)
-    return { error: null, conversationId: existing.id as string };
-
-  const { data, error } = await sb
-    .from("conversations")
-    .insert({
-      request_id: input.requestId,
-      motorist_id: input.motoristId,
-      repair_pro_id: input.repairProId,
-      last_message_at: new Date().toISOString(),
-    })
-    .select("id")
-    .single();
-  if (error || !data) return { error: error?.message || "Chat create failed" };
-
-  // Empty thread only never insert system "Chat opened…" spam.
-  // First real message appears when a user actually sends one.
-
-  return { error: null, conversationId: data.id as string };
+  try {
+    const { authFetch } = await import("@/lib/api-auth-headers");
+    const res = await authFetch("/api/conversations/ensure", {
+      method: "POST",
+      body: JSON.stringify({ requestId: input.requestId }),
+    });
+    const json = (await res.json().catch(() => null)) as {
+      ok?: boolean;
+      data?: { conversationId?: string };
+      error?: { message?: string };
+    } | null;
+    if (!json?.ok) {
+      return { error: json?.error?.message || "Chat create failed" };
+    }
+    return { error: null, conversationId: json.data?.conversationId };
+  } catch {
+    return { error: "Network error starting chat" };
+  }
 }
 
 export async function backendFetchConversations(
   userId: string,
   role: AccountType,
 ): Promise<MessageThread[]> {
-  const sb = getAppSupabase();
-  if (!sb) return [];
-
-  const col = role === "professional" ? "repair_pro_id" : "motorist_id";
-  const { data: convs, error } = await sb
-    .from("conversations")
-    .select("*")
-    .eq(col, userId)
-    .order("last_message_at", { ascending: false, nullsFirst: false })
-    .limit(20);
-  if (error || !convs?.length) return [];
-
-  const convList = convs as ConversationRow[];
-  const convIds = convList.map((c) => c.id);
-  const peopleIds = [
-    ...new Set(convList.flatMap((c) => [c.motorist_id, c.repair_pro_id])),
-  ];
-  const requestIds = convList
-    .map((c) => c.request_id)
-    .filter(Boolean) as string[];
-
-  // Batch-fetch related rows (avoids N+1 lag).
-  // Slim columns + low message cap list only needs recent preview, not full history.
-  const [{ data: allMsgs }, { data: names }, { data: jobs }] =
-    await Promise.all([
-      sb
-        .from("messages")
-        .select("id, conversation_id, sender_id, body, created_at, read_at")
-        .in("conversation_id", convIds)
-        .order("created_at", { ascending: false })
-        .limit(200),
-      sb
-        .from("profiles")
-        .select("id, full_name, avatar_url")
-        .in("id", peopleIds),
-      requestIds.length
-        ? sb
-            .from("service_requests")
-            .select("id, service_type")
-            .in("id", requestIds)
-        : Promise.resolve({
-            data: [] as { id: string; service_type: string }[],
-          }),
-    ]);
-
-  const byId = new Map(
-    (
-      names as
-        { id: string; full_name: string; avatar_url: string | null }[] | null
-    )?.map((n) => [n.id, n]) ?? [],
-  );
-  const jobById = new Map(
-    (jobs as { id: string; service_type: string }[] | null)?.map((j) => [
-      j.id,
-      j.service_type,
-    ]) ?? [],
-  );
-  const msgsByConv = new Map<string, MessageRow[]>();
-  for (const m of (allMsgs as MessageRow[]) || []) {
-    const arr = msgsByConv.get(m.conversation_id) || [];
-    arr.push(m);
-    msgsByConv.set(m.conversation_id, arr);
+  try {
+    const qs = new URLSearchParams({ userId, role });
+    const { authFetch } = await import("@/lib/api-auth-headers");
+    const res = await authFetch(`/api/conversations?${qs.toString()}`, {
+      method: "GET",
+      cache: "no-store",
+    });
+    const json = (await res.json().catch(() => null)) as {
+      ok?: boolean;
+      data?: { threads?: MessageThread[] };
+    } | null;
+    if (!json?.ok || !Array.isArray(json.data?.threads)) return [];
+    return json.data.threads;
+  } catch {
+    return [];
   }
-
-  return convList.map((c) =>
-    mapConversationToThread(
-      c,
-      msgsByConv.get(c.id) || [],
-      {
-        motoristName: byId.get(c.motorist_id)?.full_name || "Customer",
-        technicianName: byId.get(c.repair_pro_id)?.full_name || "Repair Pro",
-        serviceType:
-          (c.request_id
-            ? (jobById.get(c.request_id) as ProService | undefined)
-            : undefined) || "mechanic",
-        photo: byId.get(c.repair_pro_id)?.avatar_url || "",
-      },
-      userId,
-    ),
-  );
 }
 
 export async function backendSendMessage(input: {
   conversationId: string;
+  /** Kept for callers; the route derives the sender from the auth session, not this field. */
   senderId: string;
   body: string;
   /** Display name for the other party's toast */
   senderName?: string | null;
 }): Promise<string | null> {
-  const sb = getAppSupabase();
-  if (!sb) return "Backend offline";
-  const { error } = await sb.from("messages").insert({
-    conversation_id: input.conversationId,
-    sender_id: input.senderId,
-    body: input.body,
-  });
-  if (error) return error.message;
-  await sb
-    .from("conversations")
-    .update({ last_message_at: new Date().toISOString() })
-    .eq("id", input.conversationId);
-
-  // Popup for the other party (notification → toast + open chat on tap)
+  const { authFetch } = await import("@/lib/api-auth-headers");
   try {
-    let preview = input.body;
-    try {
-      const j = JSON.parse(input.body) as { text?: string; voiceUrl?: string };
-      if (j && typeof j === "object") {
-        preview = j.voiceUrl
-          ? j.text
-            ? `🎤 ${j.text}`
-            : "🎤 Voice note"
-          : String(j.text || input.body);
-      }
-    } catch {
-      /* plain text */
-    }
-    void import("@/lib/api-auth-headers")
-      .then(({ authFetch }) =>
-        authFetch("/api/messages/notify", {
-          method: "POST",
-          body: JSON.stringify({
-            conversationId: input.conversationId,
-            senderId: input.senderId,
-            preview: String(preview || "New message").slice(0, 200),
-            senderName: input.senderName || undefined,
-          }),
-        }),
-      )
-      .catch(() => null);
+    const res = await authFetch("/api/messages/send", {
+      method: "POST",
+      body: JSON.stringify({
+        conversationId: input.conversationId,
+        body: input.body,
+        senderName: input.senderName || undefined,
+      }),
+    });
+    const json = (await res.json().catch(() => null)) as {
+      ok?: boolean;
+      error?: { message?: string };
+    } | null;
+    if (!json?.ok) return json?.error?.message || "Message not sent";
+    return null;
   } catch {
-    /* non-fatal */
+    return "Network error sending message";
   }
-  return null;
 }
 
 /**

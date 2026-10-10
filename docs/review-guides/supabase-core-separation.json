@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "id": "supabase-core-separation",
+  "title": "Scope 2: separating Ona's core from Supabase",
+  "plan": "docs/review-guides/supabase-core-separation.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "scope-and-criteria-agreed",
+      "stage": "code",
+      "expectation": "The full inventory of direct-access paths (27 backend* functions in app-api.ts) is classified, the 9 in-scope functions are identified, and the requirements below are agreed before implementation starts.",
+      "verification": "Stakeholder review of reports/Ona-Scope-2-Stage-1-Review-Guide.html and this guide.",
+      "status": "pass",
+      "evidence": [
+        "Approved by stakeholder on 2026-10-10 (\"let's begin work\") after review of the Stage 1 inventory and this guide. Stage 2 implementation started the same day."
+      ]
+    },
+    {
+      "id": "no-direct-browser-business-writes",
+      "stage": "code",
+      "expectation": "No direct browser business writes remain in the 9 in-scope functions, and no error path silently restores a removed fallback (backendFetchPros, backendSetProOnline).",
+      "verification": "Diff review of each in-scope function; grep for remaining .from(...) writes; trace every catch/fallback branch.",
+      "status": "pass",
+      "evidence": [
+        "Done (9 of 9, all in-scope functions): backendSetProOnline's direct repair_pro_profiles write fallback is removed (app-api.ts) and pro-live-patch.ts/its test deleted as dead code; backendSendMessage's direct messages insert + conversations update are replaced by a call to /api/messages/send; backendFetchPros's direct repair_pro_profiles/profiles read fallback is removed — it now only calls /api/pros and returns [] on any failure, matching the dependency-free behavior /api/pros already provides (tier/suspension/synthetic-account filtering, dual-role self-exclusion); backendGetProOnline's direct repair_pro_profiles read is replaced by a new GET /api/pros/live route that derives the caller from requireUser(req), never a client-supplied id (covered by src/app/api/pros/__tests__/live.test.ts); backendDualRoleFlags's direct motorist_profiles/repair_pro_profiles reads are replaced by a new GET /api/account/role-flags route, same requireUser-derived-caller rule, reusing the exact resolvePrimaryAccountType call the original client code made (covered by src/app/api/account/role-flags/__tests__/route.test.ts); backendFetchJobsForUser's direct service_requests/profiles reads are replaced by a new GET /api/requests route — the same query and mapRequestRow mapping, just run server-side with an explicit userId===session 403 check (mirroring /api/jobs GET's existing convention) instead of relying on browser RLS (covered by src/app/api/requests/__tests__/route.test.ts); backendFetchConversations's direct conversations/messages/profiles/service_requests reads are replaced by a new GET /api/conversations route — the exact same batch queries and mapConversationToThread mapping, run server-side with the same userId===session 403 check (covered by src/app/api/conversations/__tests__/route.test.ts); backendEnsureConversation's direct conversations read+insert is replaced by a new POST /api/conversations/ensure route that derives the caller from requireUser(req) and, unlike the original client function, takes ONLY requestId from the client — motorist_id/repair_pro_id are read from the service_requests row itself rather than trusted from client input, closing a gap the original function had (any caller could previously pass arbitrary motoristId/repairProId values), covered by src/app/api/conversations/ensure/__tests__/route.test.ts including a test that deliberately sends wrong party ids and asserts the insert uses the row's real ones; backendLoadUserProfile's three-table read (profiles/motorist_profiles/repair_pro_profiles/repair_pro_guarantors) is replaced by a new GET /api/profile route that accepts NO client-supplied userId at all, not even as a cross-check, given the sensitivity of the payload (bank account numbers, NIN/BVN, gov-ID URLs, guarantor info) — covered by src/app/api/profile/__tests__/route.test.ts.",
+        "Every one of the 9 replacement functions returns its existing safe default (null/[]/{error}) on any route failure, with no fallback to a direct Supabase call — verified per-function during implementation, consistent with the rule that motivated removing backendFetchPros's and backendSetProOnline's fallbacks in the first place."
+      ]
+    },
+    {
+      "id": "authorization-preserved",
+      "stage": "code",
+      "expectation": "Unauthorized users cannot access or modify another account's jobs, conversations or private profile information once access moves server-side.",
+      "verification": "Route-level authorization tests; attempted cross-account access against staging.",
+      "status": "pending",
+      "evidence": [
+        "/api/messages/send explicitly checks that the authenticated sender is the conversation's motorist_id or repair_pro_id before inserting, since its service-role client bypasses the RLS check the direct browser write relied on. Covered by a unit test (403 for a non-member sender) in src/app/api/messages/__tests__/send.test.ts.",
+        "/api/requests and /api/conversations (GET) both check userId===session 403 before querying, covered by unit tests in their respective __tests__ directories.",
+        "/api/conversations/ensure (POST) checks the caller is the service_requests row's motorist_id or repair_pro_id, and derives both party ids for the conversation from that row rather than from client input — covered by a test that sends deliberately wrong client-supplied party ids and asserts the insert uses the row's real ones (src/app/api/conversations/ensure/__tests__/route.test.ts).",
+        "/api/profile (GET), which returns the most sensitive data of any in-scope function (bank account numbers, NIN/BVN, gov-ID URLs, guarantor info), accepts no client-supplied userId at all -- the strictest form of the ownership check, since there is no id to mismatch.",
+        "All 9 in-scope functions now have a code-level authorization check. What remains for this requirement: staging cross-account attempts have not been run for any of the 9 (the verification method explicitly calls for this), and none of this work has been through independent review yet."
+      ]
+    },
+    {
+      "id": "grants-match-boundaries",
+      "stage": "release",
+      "expectation": "Database grants and RLS policies match the intended API and realtime access boundaries; revoking a direct-table grant does not break a realtime subscription that still needs it.",
+      "verification": "Diff RLS policies/grants against the finalized access list; confirm each realtime channel (messages, jobs, pro presence) still authenticates after any revocation.",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "database-guarantees-preserved",
+      "stage": "code",
+      "expectation": "Payment atomicity, job version checks, worker ownership and stock reservation behavior are unchanged.",
+      "verification": "Re-run existing concurrency tests in src/lib/server/payments and src/lib/server/jobs/deadlines unchanged.",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "message-send-consistency",
+      "stage": "code",
+      "expectation": "backendSendMessage's insert/conversation-update/notify sequence has an explicit, tested answer for partial failure after moving behind a route, not a relocated copy of the same three unguarded calls.",
+      "verification": "Failure-injection test on each of the three steps; confirm no message is left with an unupdated conversation or a silently dropped notification.",
+      "status": "pass",
+      "evidence": [
+        "/api/messages/send treats the message insert as authoritative (failure returns 500, notify is skipped) and the conversation-timestamp update and notify call as best-effort (failure is logged via serverLogger.warn with outcome context, not silently swallowed, and does not fail an already-delivered message). Covered by src/app/api/messages/__tests__/send.test.ts: insert failure returns 500 and skips notify; conversation-update failure still returns 200 and asserts the warning was logged with the exact event/context."
+      ]
+    },
+    {
+      "id": "docs-pending-radius-cap-enforced",
+      "stage": "code",
+      "expectation": "Pros with docs_status 'under_review' or 'rejected' are only shown to customers within DOCS_PENDING_MAX_RADIUS_KM (2 km), not the full marketplace radius.",
+      "verification": "Unit test asserting /api/pros excludes a docs-pending pro beyond 2 km but within the normal 5 km radius; code review of the distance filter.",
+      "status": "fail",
+      "evidence": [
+        "Pre-existing defect, surfaced on 2026-10-10 while removing backendFetchPros's client fallback. The deleted fallback enforced Math.min(MAX_RADIUS_KM, DOCS_PENDING_MAX_RADIUS_KM) for docs-pending pros, but /api/pros (src/app/api/pros/route.ts:231-241) applies a flat MAX_RADIUS_KM + 0.75 (5.75 km) to every pro regardless of docs_status — it only reports docsPendingRadiusKm in the response meta, it never filters on it. Removing the fallback eliminates the only enforcement that existed, which was itself unreliable since it only ran when /api/pros failed. Per stakeholder decision, this is tracked here and fixed separately rather than folded into the fallback-removal change."
+      ]
+    },
+    {
+      "id": "contracts-agree",
+      "stage": "code",
+      "expectation": "Client and route contracts agree; failed saves are reported accurately. The notification-settings nested/flat field mismatch is fixed, not deferred.",
+      "verification": "Contract test for the notification-settings payload shape; assert the client checks the response before showing \"saved\".",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "defined-interfaces-only",
+      "stage": "code",
+      "expectation": "Business services in the agreed scope use defined interfaces rather than Supabase SDK types or clients directly.",
+      "verification": "Manual import audit of src/lib/server/{jobs,payments,pairing,shop,identity} and the new interface layer.",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "evidence-recorded-separately",
+      "stage": "release",
+      "expectation": "Code checks, browser regression checks, hosted verification and rollout/rollback evidence are recorded separately; unrun checks remain pending.",
+      "verification": "This guide's evidence fields are updated per requirement rather than a single blanket status.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "implementationBranch": "codex/supabase-core-separation-stage-2",
+  "implementationNotes": "Stage 1 approved 2026-10-10. Stage 2 complete and committed (facb735). Stage 3 complete and committed: backendGetProOnline -> GET /api/pros/live (3f06d8a); backendDualRoleFlags -> GET /api/account/role-flags (3408812); backendFetchJobsForUser -> GET /api/requests (fb72489, a new route rather than reusing /api/jobs's different JobRecord shape); backendFetchConversations -> GET /api/conversations (fc2ec4b); backendEnsureConversation -> POST /api/conversations/ensure (6895db5, closes a party-id trust gap the original function had); backendLoadUserProfile -> GET /api/profile (no client-supplied userId accepted at all, given the sensitivity of the payload). All 9 of 9 in-scope backend* functions no longer call Supabase directly from the browser. Full suite (1,261 tests, 113 files), typecheck and lint all pass locally.",
+  "implementationState": "Stage 3 complete — 9 of 9 in-scope functions moved; local checks pass; final function (backendLoadUserProfile) uncommitted pending this update",
+  "independentReview": {
+    "status": "Not started",
+    "findings": [],
+    "scope": "Review the Stage 2 (facb735) and Stage 3 (3f06d8a, 3408812, fb72489, fc2ec4b, 6895db5, and the pending backendLoadUserProfile commit) diffs against each requirement."
+  },
+  "remainingWork": {
+    "code": [
+      "Fix /api/pros to enforce DOCS_PENDING_MAX_RADIUS_KM for docs-pending pros (tracked defect surfaced by backendFetchPros fallback removal; see the docs-pending-radius-cap-enforced requirement). Tracked separately per stakeholder decision, not bundled into the fallback-removal change.",
+      "Stages 4-6: extract server persistence by domain into defined interfaces, isolate auth/realtime/storage, validate and roll out incrementally.",
+      "Fix the notification-settings contract mismatch as part of this work, not as a separate deferred item.",
+      "Independent review of the Stage 2 and Stage 3 diffs remains pending.",
+      "Staging cross-account access attempts have not been run for any of the 9 in-scope functions."
+    ],
+    "external": [
+      "None identified yet. Database grant/RLS changes will be scoped once the in-scope functions are moved and verified against hosted policy before any revocation."
+    ]
+  }
+}
