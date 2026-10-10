@@ -31,7 +31,7 @@ and 7 other domain folders under `src/lib/server/` (`callout`, `express`,
 `modules`, `push`, `reviews`, `security`) exhibit the identical
 direct-Supabase-in-business-logic pattern.
 
-## Slice 1 (this slice): payments route handlers
+## Slice 1: payments route handlers (done, commit `04bab32`)
 
 Lowest-risk slice — payments already has real adapters, so this is about
 routing 3 handlers through them, not building a new interface.
@@ -67,10 +67,50 @@ before).
   inconsistency** (two bank-uniqueness checks that don't agree) worth fixing
   regardless of Stage 4.
 
+## Slice 2: jobs route handlers (done, not yet committed)
+
+The 3 jobs route handlers that bypassed `job-store` (`surface`,
+`dispatch-scheduled`, `expire-stale`'s zombie-reset).
+
+**Key fact confirmed against `supabase/migrations/20261007_079_job_version_cas.sql`:**
+`job_version` is bumped by a `BEFORE UPDATE` trigger on *every* write to a
+`service_requests` row, unconditionally. A bare `job_version` guard is
+therefore exactly as strong as the original compound guards (adding
+`pairing_stage`/`flow_status` checks) — any concurrent write already bumps
+`job_version`. Decided to keep the original guards verbatim anyway (not a
+"simplification") rather than lean on this equivalence, matching
+`job-store/dispatch.ts`'s own existing convention (it already has ~8
+functions doing this exact raw-guarded-update shape).
+
+**Fixed:**
+- New `src/lib/server/jobs/job-store/dispatch.ts` functions:
+  `armSurfacePairingDeadline`, `dispatchScheduledSecondPro` — verbatim
+  relocations of the two routes' raw `.update(...).eq(...)` calls, returning
+  a discriminated `{ ok, conflict, message }` result (not `persist()`'s
+  thrown error) so each route's existing inline 409/500 branching is
+  unchanged.
+- New `src/lib/server/jobs/job-store/expiry.ts` function
+  `resetZombieFlowStatuses` — verbatim relocation of the bulk hygiene sweep.
+- Deliberately did **not** route these through the generic `persist()`
+  helper: verifying `jobToDbPatch` covers every field these updates touch
+  would be extra verification surface for no benefit, and a silent gap
+  there would be a real regression (a dropped column on write).
+- All 3 routes rewired to call the new functions instead of
+  `createServiceSupabase()` directly.
+- Found and fixed a collateral break: an existing test
+  (`src/app/api/__tests__/second-pro-routes.test.ts`) mocked
+  `@/lib/server/jobs/job-store` without the 2 new exports, so after the
+  rewire 2 of its tests failed (the route called an `undefined` mock
+  function). Updated the mock and rewrote the 3 affected tests to assert on
+  `dispatchScheduledSecondPro`'s mocked result instead of a raw Supabase
+  update payload that no longer exists at the route level.
+- New tests: `job-store/__tests__/dispatch.test.ts` (8),
+  `job-store/__tests__/expiry.test.ts` (4),
+  `jobs/[id]/surface/__tests__/route.test.ts` (7 — this route had zero
+  coverage before). Full suite: 1,304 tests / 120 files.
+
 ## Remaining slices (not started)
 
-- Slice 2 candidate: jobs' 3 bypassing route handlers (`surface`,
-  `dispatch-scheduled`, `expire-stale`) — route them through `job-store`.
 - Pairing: needs a design decision before any code — does `pairing-engine.ts`
   get folded into the jobs interface (since it writes the same table) or get
   a sibling interface? Not just a mechanical port like slice 1.
@@ -84,9 +124,9 @@ before).
 ## Reviewer procedure
 
 Same as Stages 1-3: inspect each requirement below against the reviewed
-commit; confirm no behavior change for slice 1 (same queries/tables/fallback
-semantics, just relocated); record code evidence separately from hosted
-evidence; never mark an unrun check passed.
+commit; confirm no behavior change per slice (same queries/tables/guards/
+fallback semantics, just relocated); record code evidence separately from
+hosted evidence; never mark an unrun check passed.
 
 ## Exit criteria (from the parent plan, Stage 4 subset)
 
@@ -97,5 +137,6 @@ per-slice progress toward that, not a one-shot pass/fail.
 
 ## Closeout
 
-Reviewed commit: pending — slice 1 not yet committed. Independent review and
-hosted verification are pending for all of Stage 4, same as Stages 2-3.
+Reviewed commit: slice 1 committed as `04bab32`; slice 2 complete locally,
+not yet committed. Independent review and hosted verification are pending
+for all of Stage 4, same as Stages 2-3.

@@ -3,8 +3,10 @@ import { apiFail, apiOk } from "@/lib/server/api-json";
 import { serverLogger } from "@/lib/server/structured-logger";
 import { requireUser } from "@/lib/server/auth-utils";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
-import { createServiceSupabase } from "@/lib/supabase/server";
-import { getJob } from "@/lib/server/jobs/job-store";
+import {
+  dispatchScheduledSecondPro,
+  getJob,
+} from "@/lib/server/jobs/job-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,37 +46,13 @@ export async function POST(
       return apiFail("This request is no longer waiting on your address", 409);
     }
 
-    const sb = createServiceSupabase();
-    const ts = new Date().toISOString();
-    const { data: dispatched, error } = await sb
-      .from("service_requests")
-      .update({
-        flow_status: "sequential_pairing",
-        status: "requested",
-        pairing_stage: "sequential_pairing",
-        pairing_deadline: null,
-        queue_position: 0,
-        remaining_candidates: null,
-        reservation_status: "none",
-        assignment_status: "none",
-        pairing_radius_km: job.pairingRadiusKm ?? 1,
-        pickup_address: parsed.data.locationLabel,
-        pickup_lat: parsed.data.lat,
-        pickup_lng: parsed.data.lng,
-        motorist_location_at: ts,
-        updated_at: ts,
-        status_history: [
-          ...(job.statusHistory || []),
-          { status: "sequential_pairing", at: ts, by: "second_pro_dispatch" },
-        ],
-      })
-      .eq("id", id)
-      .eq("job_version", job.jobVersion ?? 0)
-      .eq("flow_status", "scheduled")
-      .select("id")
-      .maybeSingle();
-    if (error) return apiFail("Could not dispatch request", 500);
-    if (!dispatched) return apiFail("Request changed before dispatch; reload and retry", 409);
+    const result = await dispatchScheduledSecondPro(job, parsed.data);
+    if (!result.ok) {
+      if (result.conflict) {
+        return apiFail("Request changed before dispatch; reload and retry", 409);
+      }
+      return apiFail("Could not dispatch request", 500);
+    }
 
     // Immediately book the first pro of the requested trade.
     const { advancePairing } =

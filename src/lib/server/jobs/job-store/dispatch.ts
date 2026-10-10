@@ -929,3 +929,112 @@ export async function adminReassignJob(
   if (!updated) return { error: "Job not found after reassign" };
   return { ok: true, job: rowToJob(updated as Record<string, unknown>) };
 }
+
+/**
+ * "The request just appeared on this pro's screen." Server-owned arming:
+ * stamps `pairing_deadline` EXACTLY ONCE per offer, only when a deadline
+ * isn't armed yet (dispatch/create leave it NULL by design). Neither
+ * dispatch nor this call ever re-arms an already-set deadline, so the
+ * pro's card and the customer's ring start the timer at the same instant
+ * and it never rolls back to a higher number.
+ *
+ * Safety: the pairing sweep arms the deadline itself after a fallback grace
+ * period if the pro's device never surfaces (app closed) -- the
+ * `job_version` guard below still applies since that write (any write to
+ * the row) bumps `job_version` too.
+ */
+export type ArmSurfaceResult =
+  | { ok: true; pairingDeadline: string | null; armed: boolean }
+  | { ok: false; conflict: true }
+  | { ok: false; conflict: false; message: string };
+
+export async function armSurfacePairingDeadline(
+  job: JobRecord,
+): Promise<ArmSurfaceResult> {
+  const { PAIRING_ACTION_STAGES } = await import(
+    "@/lib/jobs/incoming-popup-timing"
+  );
+  const stage = job.pairingStage ?? "";
+  const existingMs = job.pairingDeadline
+    ? Date.parse(String(job.pairingDeadline))
+    : Number.NaN;
+
+  if (!PAIRING_ACTION_STAGES.has(stage) || Number.isFinite(existingMs)) {
+    return {
+      ok: true,
+      pairingDeadline: job.pairingDeadline ?? null,
+      armed: false,
+    };
+  }
+
+  const { PAIRING_WINDOW_MS } = await import(
+    "@/lib/server/pairing/pairing-engine"
+  );
+  const deadline = new Date(Date.now() + PAIRING_WINDOW_MS).toISOString();
+  const createServiceSupabase = await loadCreateServiceSupabase();
+  const sb = createServiceSupabase();
+  const { data: updatedRow, error } = await sb
+    .from("service_requests")
+    .update({ pairing_deadline: deadline })
+    .eq("id", job.id)
+    .eq("job_version", job.jobVersion ?? 0)
+    .eq("pairing_stage", stage)
+    .is("pairing_deadline", null)
+    .select("id")
+    .maybeSingle();
+  if (error) return { ok: false, conflict: false, message: error.message };
+  if (!updatedRow) return { ok: false, conflict: true };
+
+  return { ok: true, pairingDeadline: deadline, armed: true };
+}
+
+/**
+ * Tow "add another repair pro": the motorist was pinged at the 60-min mark
+ * to enter their current address. Dispatches the linked scheduled request --
+ * stamps the address + coordinates and moves it to sequential_pairing.
+ * Caller is responsible for immediately booking the first pro via
+ * `pairing-engine`'s `advancePairing` after this returns true.
+ */
+export type DispatchScheduledResult =
+  | { ok: true }
+  | { ok: false; conflict: true }
+  | { ok: false; conflict: false; message: string };
+
+export async function dispatchScheduledSecondPro(
+  job: JobRecord,
+  input: { locationLabel: string; lat: number; lng: number },
+): Promise<DispatchScheduledResult> {
+  const createServiceSupabase = await loadCreateServiceSupabase();
+  const sb = createServiceSupabase();
+  const ts = new Date().toISOString();
+  const { data: dispatched, error } = await sb
+    .from("service_requests")
+    .update({
+      flow_status: "sequential_pairing",
+      status: "requested",
+      pairing_stage: "sequential_pairing",
+      pairing_deadline: null,
+      queue_position: 0,
+      remaining_candidates: null,
+      reservation_status: "none",
+      assignment_status: "none",
+      pairing_radius_km: job.pairingRadiusKm ?? 1,
+      pickup_address: input.locationLabel,
+      pickup_lat: input.lat,
+      pickup_lng: input.lng,
+      motorist_location_at: ts,
+      updated_at: ts,
+      status_history: [
+        ...(job.statusHistory || []),
+        { status: "sequential_pairing", at: ts, by: "second_pro_dispatch" },
+      ],
+    })
+    .eq("id", job.id)
+    .eq("job_version", job.jobVersion ?? 0)
+    .eq("flow_status", "scheduled")
+    .select("id")
+    .maybeSingle();
+  if (error) return { ok: false, conflict: false, message: error.message };
+  if (!dispatched) return { ok: false, conflict: true };
+  return { ok: true };
+}

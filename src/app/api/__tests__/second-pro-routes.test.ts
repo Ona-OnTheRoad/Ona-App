@@ -8,16 +8,14 @@ vi.mock("@/lib/supabase/env", () => ({
   isSupabaseAdminConfigured: vi.fn(() => true),
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
-  createServiceSupabase: vi.fn(),
-}));
-
 vi.mock("@/lib/server/jobs/job-store", () => ({
   getJob: vi.fn(),
   createJob: vi.fn(),
   listJobsForUser: vi.fn(),
   expireOverdueBookedJobs: vi.fn(),
   expireUnacceptedJobs: vi.fn(),
+  resetZombieFlowStatuses: vi.fn(async () => 0),
+  dispatchScheduledSecondPro: vi.fn(),
 }));
 
 vi.mock("@/lib/server/pairing/pairing-engine", () => ({
@@ -42,12 +40,12 @@ vi.mock("@/lib/server/payments/payout-settlement", () => ({
 
 import { requireUser } from "@/lib/server/auth-utils";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
-import { createServiceSupabase } from "@/lib/supabase/server";
 import {
   getJob,
   createJob,
   expireOverdueBookedJobs,
   expireUnacceptedJobs,
+  dispatchScheduledSecondPro,
 } from "@/lib/server/jobs/job-store";
 import {
   sweepPairing,
@@ -63,10 +61,10 @@ import type { JobRecord } from "@/lib/jobs/types";
 
 const requireUserMock = vi.mocked(requireUser);
 const isSupabaseAdminConfiguredMock = vi.mocked(isSupabaseAdminConfigured);
-const createServiceSupabaseMock = vi.mocked(createServiceSupabase);
 const getJobMock = vi.mocked(getJob);
 const createJobMock = vi.mocked(createJob);
 const advancePairingMock = vi.mocked(advancePairing);
+const dispatchScheduledSecondProMock = vi.mocked(dispatchScheduledSecondPro);
 
 const SCHEDULED_JOB = {
   id: "tow-1",
@@ -94,23 +92,6 @@ function authOk(userId: string): Awaited<ReturnType<typeof requireUser>> {
     token: "t",
     user: {} as never,
   };
-}
-
-function fakeSb(updateError: { message: string } | null = null, matched = true) {
-  const result = { data: updateError || !matched ? null : { id: "tow-1" }, error: updateError };
-  const query = {
-    eq: vi.fn(() => query),
-    select: vi.fn(() => query),
-    maybeSingle: vi.fn(async () => result),
-    then: (resolve: (v: unknown) => void) => Promise.resolve(result).then(resolve),
-  };
-  const sb = {
-    from: vi.fn((_table: string) => ({
-      update: vi.fn((_patch: unknown) => query),
-    })),
-  };
-  createServiceSupabaseMock.mockReturnValue(sb as never);
-  return sb;
 }
 
 function dispatchReq(body: unknown) {
@@ -162,7 +143,7 @@ describe("POST /api/jobs/[id]/dispatch-scheduled", () => {
     getJobMock
       .mockResolvedValueOnce(SCHEDULED_JOB)
       .mockResolvedValueOnce(DISPATCHED_JOB);
-    fakeSb();
+    dispatchScheduledSecondProMock.mockResolvedValue({ ok: true });
 
     const res = await postDispatchScheduled(
       dispatchReq({ locationLabel: "Near the mall", lat: 6.5244, lng: 3.3792 }),
@@ -173,35 +154,10 @@ describe("POST /api/jobs/[id]/dispatch-scheduled", () => {
     expect(body.ok).toBe(true);
     expect(body.data.job.id).toBe("tow-1");
 
-    const sb = createServiceSupabaseMock.mock.results[0].value as {
-      from: ReturnType<typeof vi.fn>;
-    };
-    const update =
-      sb.from.mock.calls[0][0] === "service_requests"
-        ? (
-            sb.from.mock.results[0].value as {
-              update: ReturnType<typeof vi.fn>;
-            }
-          ).update
-        : null;
-    expect(update).not.toBeNull();
-    const patch = update!.mock.calls[0][0] as Record<string, unknown>;
-    expect(patch.flow_status).toBe("sequential_pairing");
-    expect(patch.pairing_stage).toBe("sequential_pairing");
-    expect(patch.pairing_deadline).toBeNull();
-    expect(patch.queue_position).toBe(0);
-    expect(patch.pickup_address).toBe("Near the mall");
-    expect(patch.pickup_lat).toBe(6.5244);
-    expect(patch.pairing_radius_km).toBe(5);
-    expect(patch.motorist_location_at).toBeDefined();
-    const history = patch.status_history as Array<{
-      status: string;
-      by?: string;
-    }>;
-    expect(history[history.length - 1]).toMatchObject({
-      status: "sequential_pairing",
-      by: "second_pro_dispatch",
-    });
+    expect(dispatchScheduledSecondProMock).toHaveBeenCalledWith(
+      SCHEDULED_JOB,
+      { locationLabel: "Near the mall", lat: 6.5244, lng: 3.3792 },
+    );
     expect(advancePairingMock).toHaveBeenCalledWith("tow-1");
   });
 
@@ -274,7 +230,11 @@ describe("POST /api/jobs/[id]/dispatch-scheduled", () => {
   it("returns 500 when the CAS update errors", async () => {
     requireUserMock.mockResolvedValue(authOk("motorist-1"));
     getJobMock.mockResolvedValueOnce(SCHEDULED_JOB);
-    fakeSb({ message: "update failed" });
+    dispatchScheduledSecondProMock.mockResolvedValue({
+      ok: false,
+      conflict: false,
+      message: "update failed",
+    });
     const res = await postDispatchScheduled(
       dispatchReq({ locationLabel: "x", lat: 1, lng: 2 }),
       params(),
@@ -285,7 +245,10 @@ describe("POST /api/jobs/[id]/dispatch-scheduled", () => {
   it("returns 409 when the scheduled job changes before the CAS update", async () => {
     requireUserMock.mockResolvedValue(authOk("motorist-1"));
     getJobMock.mockResolvedValueOnce(SCHEDULED_JOB);
-    fakeSb(null, false);
+    dispatchScheduledSecondProMock.mockResolvedValue({
+      ok: false,
+      conflict: true,
+    });
     const res = await postDispatchScheduled(
       dispatchReq({ locationLabel: "x", lat: 1, lng: 2 }),
       params(),

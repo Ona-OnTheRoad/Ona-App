@@ -4,61 +4,12 @@ import { serverLogger } from "@/lib/server/structured-logger";
 import {
   expireOverdueBookedJobs,
   expireUnacceptedJobs,
+  resetZombieFlowStatuses,
 } from "@/lib/server/jobs/job-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
-
-/**
- * Zombie guard: jobs that reached a terminal status but whose flow_status
- * is still a live pairing value would linger on the Dispatch board forever.
- * Reset them each sweep (additive hygiene, touches only stale rows).
- */
-async function resetZombieFlowStatuses(req: Request): Promise<number> {
-  try {
-    const { createServiceSupabase } = await import(
-      "@/lib/supabase/server"
-    );
-    const { isSupabaseAdminConfigured: configured } = await import(
-      "@/lib/supabase/env"
-    );
-    if (!configured()) return 0;
-    const sb = createServiceSupabase();
-    const { data, error } = await sb
-      .from("service_requests")
-      .update({ flow_status: "cancelled" })
-      .in("flow_status", [
-        "waiting_for_selected",
-        "selected_review",
-        "sequential_pairing",
-        "waiting_for_pro",
-        "reserved",
-        "searching",
-      ])
-      .in("status", [
-        "cancelled",
-        "expired",
-        "completed",
-        "satisfied",
-        "released",
-        "refunded",
-      ])
-      .select("id");
-    if (error) {
-      serverLogger.error("jobs.expire_stale.zombie_reset_query_failed", {
-        operation: "reset_zombie_flow",
-      }, req, error);
-      return 0;
-    }
-    return data?.length ?? 0;
-  } catch (error) {
-    serverLogger.error("jobs.expire_stale.zombie_reset_failed", {
-      operation: "reset_zombie_flow",
-    }, req, error);
-    return 0;
-  }
-}
 
 // The pairing sweep has its own dedicated every-minute route; expire-stale
 // only runs it as a backup, throttled to ≤1x/30s per instance so the ~8s
@@ -93,7 +44,7 @@ async function run(req: Request) {
 
     // Zombie guard: clear stale live flow_status on terminal jobs
     try {
-      zombies = await resetZombieFlowStatuses(req);
+      zombies = await resetZombieFlowStatuses();
     } catch (e) {
       serverLogger.error("jobs.expire_stale.zombie_reset_failed", { operation: "reset_zombie_flow" }, req, e);
     }

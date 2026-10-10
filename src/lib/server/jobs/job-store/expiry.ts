@@ -346,4 +346,44 @@ export async function expireOverdueBookedJobs(limit = 40): Promise<{
   return { checked, cancelled, released, ids };
 }
 
+/**
+ * Zombie guard: jobs that reached a terminal status but whose flow_status
+ * is still a live pairing value would linger on the Dispatch board forever.
+ * Reset them each sweep (additive hygiene, touches only stale rows).
+ */
+export async function resetZombieFlowStatuses(): Promise<number> {
+  if (!isSupabaseAdminConfigured()) return 0;
+  try {
+    const sb = createServiceSupabase();
+    const { data, error } = await sb
+      .from("service_requests")
+      .update({ flow_status: "cancelled" })
+      .in("flow_status", [
+        "waiting_for_selected",
+        "selected_review",
+        "sequential_pairing",
+        "waiting_for_pro",
+        "reserved",
+        "searching",
+      ])
+      .in("status", [
+        "cancelled",
+        "expired",
+        "completed",
+        "satisfied",
+        "released",
+        "refunded",
+      ])
+      .select("id");
+    if (error) {
+      console.error("resetZombieFlowStatuses query failed", error.message);
+      return 0;
+    }
+    return data?.length ?? 0;
+  } catch (error) {
+    console.error("resetZombieFlowStatuses failed", error);
+    return 0;
+  }
+}
+
 export { maybeExpire };
