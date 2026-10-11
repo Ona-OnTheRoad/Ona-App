@@ -90,11 +90,35 @@ describe("GET /api/admin/users/[id] characterization", () => {
     expect(body.data.payments).toEqual([{ id: "paid" }]);
   });
 
-  it.each(["profiles", "motorist_profiles", "payments"])("keeps thrown %s read errors generic", async table => {
+  it.each(["profiles", "motorist_profiles", "service_requests", "bookings", "payments", "reviews"])("keeps thrown %s read errors generic", async table => {
     db({ [table]: [new Error("private query detail")] });
     const response = await GET(request(), context());
     expect(response.status).toBe(500);
     expect((await response.json()).error).toEqual({ code: "error", message: "Failed to load user" });
+  });
+
+  it.each([
+    ["service_requests", "jobs"], ["bookings", "bookings"],
+    ["payments", "payments"], ["reviews", "reviews"],
+  ])("preserves returned-error defaults and partial data for %s", async (table, field) => {
+    db({ [table]: [{ data: null, error: { message: "history unavailable" } }] });
+    const empty = await GET(request(), context());
+    expect(empty.status).toBe(200);
+    expect((await empty.json()).data[field]).toEqual([]);
+
+    db({ [table]: [{ data: [{ id: "partial-row" }], error: { message: "partial history" } }] });
+    const partial = await GET(request(), context());
+    expect(partial.status).toBe(200);
+    expect((await partial.json()).data[field]).toEqual([{ id: "partial-row" }]);
+  });
+
+  it.each([
+    { data: null },
+    { data: sharedProfile, error: { message: "shared read failed" } },
+  ])("does not create the history client when the shared-profile guard stops loading", async reply => {
+    db({ profiles: [reply] });
+    await GET(request(), context());
+    expect(createServiceSupabase).toHaveBeenCalledTimes(1);
   });
 
   it("keeps identity-status failure generic", async () => {

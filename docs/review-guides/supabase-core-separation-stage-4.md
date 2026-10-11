@@ -269,3 +269,9 @@ Reviewed commit: slices 1-3 (`04bab32`, `386a3e7`, `032bdf1`), all pushed to
 committed as `ed07d76`; independent review remains pending. Pairing deliberately
 skipped (no commit). Slice 5 first batch is implemented and locally verified. Independent review and hosted verification are
 pending for all of Stage 4, same as Stages 2-3.
+
+## Admin user-detail history follow-up (implemented locally)
+
+Approved on 2026-10-11, baseline `b3c71fd`: the four jobs/bookings/payments/reviews queries now live in a 58-line server-only admin reporting reader with an internally owned client. The route retains its HTTP/admin/config/shared-profile guards and seven-way parallel loading, with no direct table/client calls. Query projections, both-role filters, descending order, limits and existing error/default behaviour are preserved.
+
+24 characterization tests passed before/after extraction; full suite 1,455 tests / 135 files and typecheck pass. Lint: 0 errors / 160 existing warnings; diff check passes. [Detailed guide and final gate results](supabase-core-separation-admin-user-history.md). Exact-commit independent review and hosted smoke remain pending. Later identity batches and other admin/Care routes remain deferred. Returned history query errors can still appear as empty histories; changing that behaviour is outside this extraction.

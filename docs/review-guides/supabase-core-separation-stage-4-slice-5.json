@@ -5,7 +5,7 @@
   "plan": "docs/review-guides/supabase-core-separation-stage-4-slice-5.md",
   "inventoryCommit": "ed07d76d8518da279e4553dfb00c0e09841a4976",
   "reviewedCommit": null,
-  "implementationState": "Batches 1-3 committed as a3dd798, 13e0c6f and 40e0fa1. Batch 4 admin-detail identity reads implemented and locally verified. Independent review and hosted checks pending; later identity/history tasks deferred.",
+  "implementationState": "Slice 5 batches 1-4 committed through b3c71fd. Approved admin user-detail history follow-up implemented and locally verified; committed with this guide; exact-commit independent review and hosted smoke pending. Later identity batches remain deferred.",
   "requirements": [
     {
       "id": "inventory",
@@ -24,7 +24,7 @@
       "verification": "See paired Markdown reviewer criteria.",
       "status": "pass",
       "evidence": [
-        "User approved the proposed login/switch-role first batch and criteria with \u201clet's go\u201d on 2026-10-10."
+        "User approved the proposed login/switch-role first batch and criteria with “let's go” on 2026-10-10."
       ]
     },
     {
@@ -145,6 +145,17 @@
       "verification": "Record hosted evidence separately from local checks.",
       "status": "pending",
       "evidence": []
+    },
+    {
+      "id": "admin-user-history-followup",
+      "stage": "code",
+      "expectation": "Approved admin user-detail history queries use a typed server-only reporting reader preserving queries, guards, parallel reads, errors and response defaults.",
+      "verification": "See supabase-core-separation-admin-user-history.md and paired JSON.",
+      "status": "pass",
+      "evidence": [
+        "24 route tests passed before and after extraction. Full suite 1,455 tests / 135 files and typecheck pass. 58-line reporting reader owns its client; route has no table/client calls. Independent exact-commit review and hosted checks remain pending.",
+        "npm run lint passed: 0 errors / 160 existing warnings, none in changed files; git diff --check passed."
+      ]
     }
   ],
   "scan": {
@@ -2807,16 +2818,18 @@
   "remainingWork": {
     "code": [
       "Independent review of exact commits for batches 1-4 (batch 4 independent review pending).",
-      "Admin-detail route history still has four direct cross-domain queries; dedicated boundary work is deferred.",
+      "Independently review Slice 5 batches 1-4 and the locally implemented admin-user-history follow-up at their exact commits; later identity batches remain deferred.",
       "Agree later signup/profile-update, OTP, Care and lifecycle batches; other-domain candidates remain deferred.",
-      "No additional implementation/local test gap currently identified for the approved four batches."
+      "No additional implementation/local test gap currently identified for the approved four batches.",
+      "Admin user-detail history follow-up: independently review exact implementation commit; preserve and track existing returned-error empty-history behaviour. See dedicated guide."
     ],
     "external": [
       "Deploy reviewed first-batch commit and record hosted password-login, both role-switch directions, inactive/missing-role, pro Away and shared-bank smoke.",
       "No new configuration or migration required by this first-batch relocation; hosted evidence still pending.",
       "Batch 2: hosted own-profile and role-flags smoke using two accounts and both roles on deployed reviewed commit. No deployment performed.",
       "Batch 3: hosted admin user-list/search/role-filter smoke on deployed reviewed commit.",
-      "Slice 5 batch 4: hosted authorized admin-detail both-role/missing-profile/status/history smoke on deployed reviewed commit."
+      "Slice 5 batch 4: hosted authorized admin-detail both-role/missing-profile/status/history smoke on deployed reviewed commit.",
+      "Admin user-detail history follow-up: deploy reviewed commit and record authorized both-role/populated/empty-history/missing-user/non-admin smoke."
     ]
   },
   "implementationFiles": [

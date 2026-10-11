@@ -4,7 +4,7 @@ import {
   requireAdmin,
 } from "@/lib/server/admin-auth";
 import { apiFail, apiOk } from "@/lib/server/api-json";
-import { createServiceSupabase } from "@/lib/supabase/server";
+import { createAdminUserHistoryReader } from "@/lib/server/admin/user-history";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { createAdminIdentityReader } from "@/lib/server/identity/admin-detail";
 
@@ -32,41 +32,16 @@ export async function GET(
     const profile = shared.profile;
     if (!profile) return apiFail("User not found", 404);
 
-    // Keep cross-domain history queries in the route for this identity-only batch.
-    const supabase = createServiceSupabase();
+    const history = createAdminUserHistoryReader(id);
 
     const [motoristProfile, repairProProfile, jobs, bookings, payments, reviews, identity] =
       await Promise.all([
         reader.loadMotoristProfile(),
         reader.loadRepairProProfile(),
-        supabase
-          .from("service_requests")
-          .select(
-            "id, service_type, status, description, pickup_address, created_at, completed_at, motorist_id, repair_pro_id",
-          )
-          .or(`motorist_id.eq.${id},repair_pro_id.eq.${id}`)
-          .order("created_at", { ascending: false })
-          .limit(50),
-        supabase
-          .from("bookings")
-          .select("*")
-          .or(`motorist_id.eq.${id},repair_pro_id.eq.${id}`)
-          .order("created_at", { ascending: false })
-          .limit(30),
-        supabase
-          .from("payments")
-          .select(
-            "id, amount_kobo, status, currency, provider, created_at, paid_at, motorist_id, repair_pro_id",
-          )
-          .or(`motorist_id.eq.${id},repair_pro_id.eq.${id}`)
-          .order("created_at", { ascending: false })
-          .limit(30),
-        supabase
-          .from("reviews")
-          .select("*")
-          .or(`motorist_id.eq.${id},repair_pro_id.eq.${id}`)
-          .order("created_at", { ascending: false })
-          .limit(20),
+        history.loadJobs(),
+        history.loadBookings(),
+        history.loadPayments(),
+        history.loadReviews(),
         reader.loadStatus(),
       ]);
 
@@ -77,10 +52,10 @@ export async function GET(
         repair_pro_profiles: repairProProfile,
       },
       identity,
-      jobs: jobs.data ?? [],
-      bookings: bookings.data ?? [],
-      payments: payments.data ?? [],
-      reviews: reviews.data ?? [],
+      jobs,
+      bookings,
+      payments,
+      reviews,
     });
   } catch (e) {
     if (e instanceof AdminAuthError) {
