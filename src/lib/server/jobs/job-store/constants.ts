@@ -45,7 +45,6 @@ export const LEAN_JOB_COLUMNS = [
   "motorist_name",
   "motorist_photo",
   "motorist_vehicle",
-  "vehicle_label",
   "repair_pro_id",
   "repair_pro_name",
   "repair_pro_photo",

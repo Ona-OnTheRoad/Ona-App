@@ -1,0 +1,44 @@
+{
+  "id": "job-list-vehicle-column",
+  "reviewedCommit": null,
+  "criteria": [
+    {
+      "id": "projection",
+      "expectation": "Remove vehicle_label from list projection, preserve motorist_vehicle and all other behavior",
+      "affectedAreas": [
+        "src/lib/server/jobs/job-store/constants.ts"
+      ],
+      "verification": "Diff audit, job-store regression tests, typecheck and lint",
+      "status": "passed",
+      "evidence": [
+        "One-line projection removal confirmed; mapper and motorist_vehicle retained. 28 existing regression tests passed across 3 files; typecheck, targeted lint and diff check passed."
+      ]
+    },
+    {
+      "id": "database",
+      "expectation": "Updated configured-database job projection succeeds",
+      "affectedAreas": [
+        "service_requests read query"
+      ],
+      "verification": "Read-only query against configured database; authenticated endpoint smoke separately",
+      "status": "passed",
+      "evidence": [
+        "Read-only job-list projection against configured Supabase succeeded with error=null and 0 rows for Halim. This is database-query evidence, not authenticated HTTP or hosted-deployment evidence."
+      ]
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent human review pending."
+    ],
+    "external": [
+      "Authenticated jobs endpoint/browser smoke and hosted deployment pending."
+    ]
+  },
+  "localChecks": {
+    "tests": "Full suite: 1,455 tests / 135 files passed in isolated branch checkout",
+    "typecheck": "passed",
+    "lint": "passed; zero errors",
+    "diffCheck": "passed"
+  }
+}
