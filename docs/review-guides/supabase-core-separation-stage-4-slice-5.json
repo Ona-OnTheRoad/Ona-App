@@ -1,0 +1,2862 @@
+{
+  "schemaVersion": 1,
+  "id": "supabase-core-separation-stage-4-slice-5",
+  "title": "Stage 4 Slice 5 identity inventory and proposed scope",
+  "plan": "docs/review-guides/supabase-core-separation-stage-4-slice-5.md",
+  "inventoryCommit": "ed07d76d8518da279e4553dfb00c0e09841a4976",
+  "reviewedCommit": null,
+  "implementationState": "Slice 5 batches 1-4 committed through b3c71fd. Approved admin user-detail history follow-up implemented and locally verified; committed with this guide; exact-commit independent review and hosted smoke pending. Later identity batches remain deferred.",
+  "requirements": [
+    {
+      "id": "inventory",
+      "stage": "code",
+      "expectation": "Record literal identity callers with source locations and scope limits.",
+      "verification": "Static scan and source inspection",
+      "status": "pass",
+      "evidence": [
+        "53 API route files / 237 literal call sites; 22 server modules / 88 literal call sites. Full records included below."
+      ]
+    },
+    {
+      "id": "scope",
+      "stage": "code",
+      "expectation": "Approve exact first batch before feature code.",
+      "verification": "See paired Markdown reviewer criteria.",
+      "status": "pass",
+      "evidence": [
+        "User approved the proposed login/switch-role first batch and criteria with “let's go” on 2026-10-10."
+      ]
+    },
+    {
+      "id": "contracts",
+      "stage": "code",
+      "expectation": "Preserve login and switch-role response and auth contracts.",
+      "verification": "See paired Markdown reviewer criteria.",
+      "status": "pass",
+      "evidence": [
+        "32 characterization route tests passed against original routes before extraction and unchanged after extraction; validation/config/Auth/HTTP behaviour and mapped fields covered."
+      ]
+    },
+    {
+      "id": "mutations",
+      "stage": "code",
+      "expectation": "Preserve queries, guards, ordering, fallbacks, Away, bank sync and audit semantics.",
+      "verification": "See paired Markdown reviewer criteria.",
+      "status": "pass",
+      "evidence": [
+        "9 additional persistence/projection tests passed, including returned-error/thrown-error handling, metadata defaults and legacy flags.",
+        "Source comparison: same 15 literal table sites, select projections and user filters. Loader/projection verbatim relocations except export/function/return wrappers."
+      ]
+    },
+    {
+      "id": "boundary",
+      "stage": "code",
+      "expectation": "Agreed routes use named typed identity persistence operations.",
+      "verification": "See paired Markdown reviewer criteria.",
+      "status": "pass",
+      "evidence": [
+        "Login/switch-role routes contain no .from calls, service-role client factory calls or Supabase row-type imports. Auth SDK calls remain in routes.",
+        "Four new server-only identity modules are below 300 lines; internal switch projection client parameter stays inside identity implementation. Route-facing operations accept identity values and return typed results."
+      ]
+    },
+    {
+      "id": "regressions",
+      "stage": "code",
+      "expectation": "Characterization tests and required lint/typecheck/full suite pass.",
+      "verification": "See paired Markdown reviewer criteria.",
+      "status": "pass",
+      "evidence": [
+        "npm run test: 1,395 tests / 133 files passed.",
+        "npm run typecheck: passed.",
+        "npm run lint: 0 errors / 160 warnings, none in changed files.",
+        "git diff --check: passed. Protected files, approval modules and migrations unchanged."
+      ]
+    },
+    {
+      "id": "live",
+      "stage": "external",
+      "expectation": "Hosted smoke passes on deployed reviewed implementation commit.",
+      "verification": "See paired Markdown reviewer criteria.",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "batch-2-own-profile-reads",
+      "stage": "code",
+      "expectation": "Approved own-profile/role-flags routes use named read interfaces with session isolation and unchanged response/projection/error semantics.",
+      "verification": "Before/after route characterization, read-only query audit and local gates; see batch 2 Markdown plan.",
+      "status": "pass",
+      "evidence": [
+        "User approved on 2026-10-10; baseline a3dd798.",
+        "17 new tests plus 9 existing route tests: 26 passed before/after extraction, including session-id isolation, projections, primary-role/bank/identity fallback and returned/thrown errors.",
+        "Source audit: verbatim relocated query/mapping bodies; six select-only sites including guarantor, same session-derived filters; no table/service-client/row-type/mapper access in routes.",
+        "New own-profile.ts / role-flags.ts are 211 / 41 lines and server-only; no schema/config/protected changes.",
+        "npm run test: 1,412 tests / 133 files passed. npm run typecheck passed. npm run lint: 0 errors / 160 warnings, none in changed files. git diff --check passed."
+      ]
+    },
+    {
+      "id": "batch-2-hosted",
+      "stage": "external",
+      "expectation": "Hosted own-profile and role-flags smoke passes on deployed reviewed commit.",
+      "verification": "Two accounts / both roles; record hosted evidence separately.",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "batch-3-admin-users",
+      "stage": "code",
+      "expectation": "Approved GET admin/users delegates five read sites and mapping through a typed identity interface, preserving authorization, both branches, filters, limits and error semantics.",
+      "verification": "Before/after route characterization, source parity/read-only audit and local gates.",
+      "status": "pass",
+      "evidence": [
+        "User approved GET /api/admin/users only on 2026-10-10, baseline 13e0c6f.",
+        "19 new characterization tests passed against original route and unchanged after extraction: both branches, ordering/limits, role/search filters, dual-role pros, defaults, returned/thrown errors, admin and config rejection.",
+        "Five select-only query sites and mapping body are verbatim after indentation/function/result wrapper changes. Route has no table/service-client access; server-only admin-users.ts is 156 lines.",
+        "npm run test: 1,431 tests / 134 files passed. npm run typecheck passed. npm run lint: 0 errors / 160 warnings, none in changed files. git diff --check passed.",
+        "Independent review of exact commit and hosted smoke remain pending."
+      ]
+    },
+    {
+      "id": "batch-3-hosted",
+      "stage": "external",
+      "expectation": "Hosted admin user listing/search/role-filter smoke passes on deployed reviewed commit.",
+      "verification": "Record authorized hosted evidence separately.",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "batch-4-admin-detail-identity",
+      "stage": "code",
+      "expectation": "Approved admin-detail identity reads use named operations with unchanged guards, secondary concurrency, raw profile/default/status and history response semantics. Four cross-domain history queries remain route-owned.",
+      "verification": "Before/after characterization; query/source/concurrency audit and required local gates.",
+      "status": "pass",
+      "evidence": [
+        "Approved identity-only admin-detail scope on 2026-10-10; baseline 40e0fa1.",
+        "14 route characterization tests passed before/after extraction; one additional test verifies separate internally-owned identity and route history clients. Deferred-status test verifies concurrent secondary reads.",
+        "Source audit: three identity query chains preserved; four route history query chains unchanged. admin-detail.ts is 51 lines, server-only, exposes no client/SDK builders; existing identityStatus unchanged.",
+        "npm run test: 1,446 tests / 135 files passed. npm run typecheck passed. npm run lint: 0 errors / 160 existing warnings. git diff --check passed.",
+        "Independent review/hosted smoke pending; four route history table calls explicitly deferred."
+      ]
+    },
+    {
+      "id": "batch-4-hosted",
+      "stage": "external",
+      "expectation": "Hosted authorized admin-detail smoke passes for both roles, missing user and histories on deployed reviewed commit.",
+      "verification": "Record hosted evidence separately from local checks.",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "admin-user-history-followup",
+      "stage": "code",
+      "expectation": "Approved admin user-detail history queries use a typed server-only reporting reader preserving queries, guards, parallel reads, errors and response defaults.",
+      "verification": "See supabase-core-separation-admin-user-history.md and paired JSON.",
+      "status": "pass",
+      "evidence": [
+        "24 route tests passed before and after extraction. Full suite 1,455 tests / 135 files and typecheck pass. 58-line reporting reader owns its client; route has no table/client calls. Independent exact-commit review and hosted checks remain pending.",
+        "npm run lint passed: 0 errors / 160 existing warnings, none in changed files; git diff --check passed."
+      ]
+    }
+  ],
+  "scan": {
+    "tables": [
+      "profiles",
+      "motorist_profiles",
+      "repair_pro_profiles",
+      "user_roles",
+      "payout_methods",
+      "identity_sync_log",
+      "identity_merges"
+    ],
+    "apiFiles": 53,
+    "apiLiteralCallSites": 237,
+    "serverFiles": 22,
+    "serverLiteralCallSites": 88,
+    "limitations": [
+      "Literal non-test TypeScript calls in API/server folders only; dynamic and indirect calls are not counted.",
+      "Classification is preliminary outside core candidates inspected; test presence is not coverage or passing evidence."
+    ]
+  },
+  "apiCallers": [
+    {
+      "path": "src/app/api/account/role-flags/route.ts",
+      "route": "account/role-flags",
+      "group": "Read-only next",
+      "callSites": [
+        {
+          "table": "motorist_profiles",
+          "line": 22,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 27,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "GET"
+      ],
+      "colocatedTests": [
+        "src/app/api/account/role-flags/__tests__/route.test.ts"
+      ]
+    },
+    {
+      "path": "src/app/api/admin/auth/login/route.ts",
+      "route": "admin/auth/login",
+      "group": "Admin reporting / staff auth",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 53,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/admin/customer-review/route.ts",
+      "route": "admin/customer-review",
+      "group": "Care / verification",
+      "callSites": [
+        {
+          "table": "motorist_profiles",
+          "line": 45,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 52,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 102,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 108,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 344,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 347,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 351,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 355,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 359,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 418,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 437,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 587,
+          "operation": "update"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 601,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 615,
+          "operation": "update"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 629,
+          "operation": "update"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 655,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 674,
+          "operation": "update"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 700,
+          "operation": "update"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 728,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 761,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 788,
+          "operation": "update"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 794,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 814,
+          "operation": "update"
+        }
+      ],
+      "identityModules": [
+        "dual-t2-mirror"
+      ],
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/admin/dashboard/route.ts",
+      "route": "admin/dashboard",
+      "group": "Admin reporting / staff auth",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 32,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 35,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 38,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 41,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 65,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "GET"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/admin/deletion/[userId]/route.ts",
+      "route": "admin/deletion/[userId]",
+      "group": "Destructive lifecycle / role replacement",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 31,
+          "operation": "update"
+        },
+        {
+          "table": "profiles",
+          "line": 45,
+          "operation": "update"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/admin/deletion-requests/route.ts",
+      "route": "admin/deletion-requests",
+      "group": "Destructive lifecycle / role replacement",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 22,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 53,
+          "operation": "update"
+        },
+        {
+          "table": "profiles",
+          "line": 69,
+          "operation": "update"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/admin/dispatch/route.ts",
+      "route": "admin/dispatch",
+      "group": "Other domain dependencies",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 258,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 294,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/admin/docs/route.ts",
+      "route": "admin/docs",
+      "group": "Admin reporting / staff auth",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 77,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 100,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "GET"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/admin/identity/merges/[id]/route.ts",
+      "route": "admin/identity/merges/[id]",
+      "group": "Identity operations",
+      "callSites": [
+        {
+          "table": "identity_merges",
+          "line": 37,
+          "operation": "select"
+        },
+        {
+          "table": "identity_merges",
+          "line": 46,
+          "operation": "update"
+        }
+      ],
+      "identityModules": [
+        "identity-sync"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/admin/identity/route.ts",
+      "route": "admin/identity",
+      "group": "Identity operations",
+      "callSites": [
+        {
+          "table": "user_roles",
+          "line": 24,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 25,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 26,
+          "operation": "select"
+        },
+        {
+          "table": "identity_merges",
+          "line": 28,
+          "operation": "select"
+        },
+        {
+          "table": "identity_sync_log",
+          "line": 34,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 91,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [
+        "identity-sync"
+      ],
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/admin/motorists/[id]/verify/route.ts",
+      "route": "admin/motorists/[id]/verify",
+      "group": "Care / verification",
+      "callSites": [
+        {
+          "table": "motorist_profiles",
+          "line": 59,
+          "operation": "update"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 65,
+          "operation": "update"
+        }
+      ],
+      "identityModules": [
+        "dual-t2-mirror"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/admin/motorists/route.ts",
+      "route": "admin/motorists",
+      "group": "Admin reporting / staff auth",
+      "callSites": [
+        {
+          "table": "motorist_profiles",
+          "line": 33,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 64,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 91,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "GET"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/admin/payments/[id]/route.ts",
+      "route": "admin/payments/[id]",
+      "group": "Other domain dependencies",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 182,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 189,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 197,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "GET"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/admin/pending-counts/route.ts",
+      "route": "admin/pending-counts",
+      "group": "Admin reporting / staff auth",
+      "callSites": [
+        {
+          "table": "motorist_profiles",
+          "line": 30,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 34,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 38,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 42,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 46,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 56,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 67,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 105,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "GET"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/admin/pro-review/route.ts",
+      "route": "admin/pro-review",
+      "group": "Care / verification",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 31,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 41,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 86,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 95,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 103,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 449,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 464,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 484,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 571,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 577,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 618,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 636,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 645,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 678,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 726,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 757,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 867,
+          "operation": "update"
+        }
+      ],
+      "identityModules": [
+        "dual-t2-mirror"
+      ],
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/admin/pros/[id]/bank/route.ts",
+      "route": "admin/pros/[id]/bank",
+      "group": "Care / verification",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 42,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "GET"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/admin/pros/[id]/status/route.ts",
+      "route": "admin/pros/[id]/status",
+      "group": "Care / verification",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 37,
+          "operation": "update"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "PATCH"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/admin/pros/route.ts",
+      "route": "admin/pros",
+      "group": "Admin reporting / staff auth",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 32,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 68,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "GET"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/admin/staff/route.ts",
+      "route": "admin/staff",
+      "group": "Admin reporting / staff auth",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 49,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 96,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 196,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 223,
+          "operation": "update"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/admin/users/[id]/role/route.ts",
+      "route": "admin/users/[id]/role",
+      "group": "Destructive lifecycle / role replacement",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 44,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 56,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 66,
+          "operation": "delete"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 68,
+          "operation": "upsert"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 71,
+          "operation": "delete"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 73,
+          "operation": "upsert"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 76,
+          "operation": "delete"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 77,
+          "operation": "delete"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "PATCH"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/admin/users/[id]/route.ts",
+      "route": "admin/users/[id]",
+      "group": "Read-only next",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 32,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 45,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 50,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [
+        "identity-sync"
+      ],
+      "methods": [
+        "GET"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/admin/users/[id]/status/route.ts",
+      "route": "admin/users/[id]/status",
+      "group": "Care / verification",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 40,
+          "operation": "update"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "PATCH"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/admin/users/route.ts",
+      "route": "admin/users",
+      "group": "Read-only next",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 32,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 42,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 100,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 126,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 132,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "GET"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/admin/verification/route.ts",
+      "route": "admin/verification",
+      "group": "Care / verification",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 67,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 219,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 226,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 241,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 314,
+          "operation": "update"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 319,
+          "operation": "update"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 353,
+          "operation": "update"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 358,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 380,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 412,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 431,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 442,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 466,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 497,
+          "operation": "update"
+        }
+      ],
+      "identityModules": [
+        "dual-t2-mirror"
+      ],
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/artisan/profile/route.ts",
+      "route": "artisan/profile",
+      "group": "Profile creation/update",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 62,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 67,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 73,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 140,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 146,
+          "operation": "upsert"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 197,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 217,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/auth/delete-account/route.ts",
+      "route": "auth/delete-account",
+      "group": "Destructive lifecycle / role replacement",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 26,
+          "operation": "update"
+        },
+        {
+          "table": "user_roles",
+          "line": 35,
+          "operation": "update"
+        },
+        {
+          "table": "user_roles",
+          "line": 40,
+          "operation": "update"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/auth/deletion-status/route.ts",
+      "route": "auth/deletion-status",
+      "group": "Destructive lifecycle / role replacement",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 18,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/auth/login/route.ts",
+      "route": "auth/login",
+      "group": "First batch",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 71,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 89,
+          "operation": "upsert"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 125,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 132,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [
+        "identity-sync"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/auth/logout/route.ts",
+      "route": "auth/logout",
+      "group": "Other domain dependencies",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 75,
+          "operation": "update"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/auth/otp/profile-verify/route.ts",
+      "route": "auth/otp/profile-verify",
+      "group": "OTP / phone verification",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 32,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 42,
+          "operation": "update"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 52,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 60,
+          "operation": "update"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/auth/otp/send/route.ts",
+      "route": "auth/otp/send",
+      "group": "OTP / phone verification",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 86,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 111,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/auth/otp/verify/route.ts",
+      "route": "auth/otp/verify",
+      "group": "OTP / phone verification",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 69,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 83,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 170,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 186,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 250,
+          "operation": "update"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 260,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 268,
+          "operation": "update"
+        },
+        {
+          "table": "profiles",
+          "line": 284,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 319,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 338,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/auth/restore-account/route.ts",
+      "route": "auth/restore-account",
+      "group": "Destructive lifecycle / role replacement",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 19,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 29,
+          "operation": "update"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/auth/signup/route.ts",
+      "route": "auth/signup",
+      "group": "Profile creation/update",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 399,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 525,
+          "operation": "upsert"
+        },
+        {
+          "table": "profiles",
+          "line": 548,
+          "operation": "upsert"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 601,
+          "operation": "delete"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 630,
+          "operation": "upsert"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 675,
+          "operation": "delete"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 781,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 800,
+          "operation": "upsert"
+        }
+      ],
+      "identityModules": [
+        "identity-sync"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/auth/switch-role/route.ts",
+      "route": "auth/switch-role",
+      "group": "First batch",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 77,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 94,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 107,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 141,
+          "operation": "update"
+        },
+        {
+          "table": "profiles",
+          "line": 151,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 170,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 175,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 220,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 225,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 348,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 353,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [
+        "identity-sync"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/callout/preview/route.ts",
+      "route": "callout/preview",
+      "group": "Other domain dependencies",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 36,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/conversations/route.ts",
+      "route": "conversations",
+      "group": "Other domain dependencies",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 67,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "GET"
+      ],
+      "colocatedTests": [
+        "src/app/api/conversations/__tests__/route.test.ts"
+      ]
+    },
+    {
+      "path": "src/app/api/cron/analytics-rollup/route.ts",
+      "route": "cron/analytics-rollup",
+      "group": "Admin reporting / staff auth",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 53,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/jobs/[id]/pay/route.ts",
+      "route": "jobs/[id]/pay",
+      "group": "Other domain dependencies",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 75,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/liveness/verify/route.ts",
+      "route": "liveness/verify",
+      "group": "Care / verification",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 59,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 74,
+          "operation": "update"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/messages/notify/route.ts",
+      "route": "messages/notify",
+      "group": "Other domain dependencies",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 56,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/messages/send/route.ts",
+      "route": "messages/send",
+      "group": "Other domain dependencies",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 104,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/notifications/settings/route.ts",
+      "route": "notifications/settings",
+      "group": "Other domain dependencies",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 34,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 46,
+          "operation": "update"
+        },
+        {
+          "table": "profiles",
+          "line": 63,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "PATCH",
+        "GET"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/profile/route.ts",
+      "route": "profile",
+      "group": "Read-only next",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 31,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 43,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 48,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "GET"
+      ],
+      "colocatedTests": [
+        "src/app/api/profile/__tests__/route.test.ts"
+      ]
+    },
+    {
+      "path": "src/app/api/profile/update/route.ts",
+      "route": "profile/update",
+      "group": "Profile creation/update",
+      "callSites": [
+        {
+          "table": "motorist_profiles",
+          "line": 45,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 51,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 65,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 71,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 211,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 252,
+          "operation": "update"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 290,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 295,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 341,
+          "operation": "upsert"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 408,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 447,
+          "operation": "upsert"
+        }
+      ],
+      "identityModules": [
+        "identity-sync"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/pros/[id]/reviews/route.ts",
+      "route": "pros/[id]/reviews",
+      "group": "Other domain dependencies",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 33,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "GET"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/pros/[id]/route.ts",
+      "route": "pros/[id]",
+      "group": "Other domain dependencies",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 40,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 69,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "GET"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/pros/live/route.ts",
+      "route": "pros/live",
+      "group": "Other domain dependencies",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 89,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 100,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 129,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 209,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 305,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 317,
+          "operation": "update"
+        },
+        {
+          "table": "profiles",
+          "line": 352,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 359,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 365,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 401,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/pros/route.ts",
+      "route": "pros",
+      "group": "Other domain dependencies",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 92,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 109,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 182,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "GET"
+      ],
+      "colocatedTests": [
+        "src/app/api/pros/__tests__/live.test.ts"
+      ]
+    },
+    {
+      "path": "src/app/api/requests/route.ts",
+      "route": "requests",
+      "group": "Other domain dependencies",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 59,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "GET"
+      ],
+      "colocatedTests": [
+        "src/app/api/requests/__tests__/route.test.ts"
+      ]
+    },
+    {
+      "path": "src/app/api/security/action/route.ts",
+      "route": "security/action",
+      "group": "Other domain dependencies",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 167,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 179,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 188,
+          "operation": "update"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 194,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 198,
+          "operation": "update"
+        },
+        {
+          "table": "profiles",
+          "line": 232,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 241,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 249,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 370,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 385,
+          "operation": "update"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 389,
+          "operation": "update"
+        },
+        {
+          "table": "profiles",
+          "line": 426,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/verify/customer-id/route.ts",
+      "route": "verify/customer-id",
+      "group": "Care / verification",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 86,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 92,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 160,
+          "operation": "update"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 191,
+          "operation": "update"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 200,
+          "operation": "insert"
+        }
+      ],
+      "identityModules": [
+        "identity-sync",
+        "protect-approval"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/app/api/verify/pro-id/route.ts",
+      "route": "verify/pro-id",
+      "group": "Care / verification",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 78,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 86,
+          "operation": "upsert"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 201,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 226,
+          "operation": "update"
+        },
+        {
+          "table": "profiles",
+          "line": 236,
+          "operation": "update"
+        }
+      ],
+      "identityModules": [
+        "identity-sync",
+        "protect-approval"
+      ],
+      "methods": [
+        "POST"
+      ],
+      "colocatedTests": []
+    }
+  ],
+  "delegatedApiCallers": [
+    {
+      "path": "src/app/api/admin/identity/dual-t2-backfill/route.ts",
+      "identityModules": [
+        "dual-t2-mirror"
+      ]
+    },
+    {
+      "path": "src/app/api/admin/users/[id]/sync/route.ts",
+      "identityModules": [
+        "identity-sync"
+      ]
+    }
+  ],
+  "serverCallers": [
+    {
+      "path": "src/lib/server/admin-auth.ts",
+      "route": "src/lib/server/admin-auth.ts",
+      "group": "Other server domain dependency",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 173,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [],
+      "colocatedTests": [
+        "src/lib/server/__tests__/africastalking.test.ts",
+        "src/lib/server/__tests__/api-json.test.ts",
+        "src/lib/server/__tests__/idempotency-preflight.test.ts",
+        "src/lib/server/__tests__/market-scope.test.ts",
+        "src/lib/server/__tests__/rate-limit-routes.test.ts",
+        "src/lib/server/__tests__/rate-limit.test.ts",
+        "src/lib/server/__tests__/structured-logger.test.ts"
+      ]
+    },
+    {
+      "path": "src/lib/server/callout/acceptance.ts",
+      "route": "src/lib/server/callout/acceptance.ts",
+      "group": "Other server domain dependency",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 99,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/lib/server/express/payments.ts",
+      "route": "src/lib/server/express/payments.ts",
+      "group": "Other server domain dependency",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 225,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/lib/server/express/store.ts",
+      "route": "src/lib/server/express/store.ts",
+      "group": "Other server domain dependency",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 97,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 102,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/lib/server/health-service.ts",
+      "route": "src/lib/server/health-service.ts",
+      "group": "Other server domain dependency",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 81,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 121,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 124,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [],
+      "colocatedTests": [
+        "src/lib/server/__tests__/africastalking.test.ts",
+        "src/lib/server/__tests__/api-json.test.ts",
+        "src/lib/server/__tests__/idempotency-preflight.test.ts",
+        "src/lib/server/__tests__/market-scope.test.ts",
+        "src/lib/server/__tests__/rate-limit-routes.test.ts",
+        "src/lib/server/__tests__/rate-limit.test.ts",
+        "src/lib/server/__tests__/structured-logger.test.ts"
+      ]
+    },
+    {
+      "path": "src/lib/server/identity/dual-t2-mirror.ts",
+      "route": "src/lib/server/identity/dual-t2-mirror.ts",
+      "group": "Existing identity boundary",
+      "callSites": [
+        {
+          "table": "motorist_profiles",
+          "line": 97,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 104,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 201,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 202,
+          "operation": "update"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 233,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 239,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [],
+      "colocatedTests": [
+        "src/lib/server/identity/__tests__/identity-sync.test.ts",
+        "src/lib/server/identity/__tests__/protect-approval.test.ts"
+      ]
+    },
+    {
+      "path": "src/lib/server/identity/identity-sync.ts",
+      "route": "src/lib/server/identity/identity-sync.ts",
+      "group": "Existing identity boundary",
+      "callSites": [
+        {
+          "table": "identity_sync_log",
+          "line": 46,
+          "operation": "insert"
+        },
+        {
+          "table": "user_roles",
+          "line": 77,
+          "operation": "select"
+        },
+        {
+          "table": "user_roles",
+          "line": 99,
+          "operation": "select"
+        },
+        {
+          "table": "user_roles",
+          "line": 108,
+          "operation": "insert"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 144,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 151,
+          "operation": "select"
+        },
+        {
+          "table": "payout_methods",
+          "line": 208,
+          "operation": "upsert"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 241,
+          "operation": "update"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 255,
+          "operation": "update"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 309,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 314,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 437,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 446,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 453,
+          "operation": "select"
+        },
+        {
+          "table": "identity_merges",
+          "line": 513,
+          "operation": "select"
+        },
+        {
+          "table": "identity_merges",
+          "line": 583,
+          "operation": "insert"
+        },
+        {
+          "table": "profiles",
+          "line": 674,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 681,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 710,
+          "operation": "update"
+        },
+        {
+          "table": "user_roles",
+          "line": 825,
+          "operation": "delete"
+        },
+        {
+          "table": "payout_methods",
+          "line": 827,
+          "operation": "delete"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 831,
+          "operation": "delete"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 835,
+          "operation": "delete"
+        },
+        {
+          "table": "profiles",
+          "line": 841,
+          "operation": "update"
+        },
+        {
+          "table": "identity_merges",
+          "line": 860,
+          "operation": "update"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 920,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 925,
+          "operation": "select"
+        },
+        {
+          "table": "payout_methods",
+          "line": 930,
+          "operation": "select"
+        },
+        {
+          "table": "identity_sync_log",
+          "line": 935,
+          "operation": "select"
+        },
+        {
+          "table": "identity_merges",
+          "line": 941,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [],
+      "colocatedTests": [
+        "src/lib/server/identity/__tests__/identity-sync.test.ts",
+        "src/lib/server/identity/__tests__/protect-approval.test.ts"
+      ]
+    },
+    {
+      "path": "src/lib/server/jobs/job-store/create.ts",
+      "route": "src/lib/server/jobs/job-store/create.ts",
+      "group": "Other server domain dependency",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 178,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [],
+      "colocatedTests": [
+        "src/lib/server/jobs/job-store/__tests__/dispatch.test.ts",
+        "src/lib/server/jobs/job-store/__tests__/expiry.test.ts"
+      ]
+    },
+    {
+      "path": "src/lib/server/jobs/job-store/dispatch.ts",
+      "route": "src/lib/server/jobs/job-store/dispatch.ts",
+      "group": "Other server domain dependency",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 197,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 299,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [],
+      "colocatedTests": [
+        "src/lib/server/jobs/job-store/__tests__/dispatch.test.ts",
+        "src/lib/server/jobs/job-store/__tests__/expiry.test.ts"
+      ]
+    },
+    {
+      "path": "src/lib/server/jobs/job-store/hydrate.ts",
+      "route": "src/lib/server/jobs/job-store/hydrate.ts",
+      "group": "Other server domain dependency",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 12,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 31,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 74,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 137,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 143,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [],
+      "colocatedTests": [
+        "src/lib/server/jobs/job-store/__tests__/dispatch.test.ts",
+        "src/lib/server/jobs/job-store/__tests__/expiry.test.ts"
+      ]
+    },
+    {
+      "path": "src/lib/server/jobs/job-store/notifications.ts",
+      "route": "src/lib/server/jobs/job-store/notifications.ts",
+      "group": "Other server domain dependency",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 120,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 126,
+          "operation": "update"
+        }
+      ],
+      "identityModules": [],
+      "methods": [],
+      "colocatedTests": [
+        "src/lib/server/jobs/job-store/__tests__/dispatch.test.ts",
+        "src/lib/server/jobs/job-store/__tests__/expiry.test.ts"
+      ]
+    },
+    {
+      "path": "src/lib/server/jobs/job-store/payments.ts",
+      "route": "src/lib/server/jobs/job-store/payments.ts",
+      "group": "Other server domain dependency",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 385,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 659,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 664,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [],
+      "colocatedTests": [
+        "src/lib/server/jobs/job-store/__tests__/dispatch.test.ts",
+        "src/lib/server/jobs/job-store/__tests__/expiry.test.ts"
+      ]
+    },
+    {
+      "path": "src/lib/server/jobs/job-store/reads.ts",
+      "route": "src/lib/server/jobs/job-store/reads.ts",
+      "group": "Other server domain dependency",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 140,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [],
+      "colocatedTests": [
+        "src/lib/server/jobs/job-store/__tests__/dispatch.test.ts",
+        "src/lib/server/jobs/job-store/__tests__/expiry.test.ts"
+      ]
+    },
+    {
+      "path": "src/lib/server/market-scope.ts",
+      "route": "src/lib/server/market-scope.ts",
+      "group": "Other server domain dependency",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 48,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 57,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 144,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 152,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [],
+      "colocatedTests": [
+        "src/lib/server/__tests__/africastalking.test.ts",
+        "src/lib/server/__tests__/api-json.test.ts",
+        "src/lib/server/__tests__/idempotency-preflight.test.ts",
+        "src/lib/server/__tests__/market-scope.test.ts",
+        "src/lib/server/__tests__/rate-limit-routes.test.ts",
+        "src/lib/server/__tests__/rate-limit.test.ts",
+        "src/lib/server/__tests__/structured-logger.test.ts"
+      ]
+    },
+    {
+      "path": "src/lib/server/merit/merit-engine.ts",
+      "route": "src/lib/server/merit/merit-engine.ts",
+      "group": "Other server domain dependency",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 329,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 361,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [],
+      "colocatedTests": [
+        "src/lib/server/merit/__tests__/merit-engine.test.ts"
+      ]
+    },
+    {
+      "path": "src/lib/server/modules/care-service.ts",
+      "route": "src/lib/server/modules/care-service.ts",
+      "group": "Other server domain dependency",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 90,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 108,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 114,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 203,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 211,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 216,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 294,
+          "operation": "update"
+        },
+        {
+          "table": "profiles",
+          "line": 311,
+          "operation": "update"
+        }
+      ],
+      "identityModules": [],
+      "methods": [],
+      "colocatedTests": []
+    },
+    {
+      "path": "src/lib/server/pairing/pairing-engine.ts",
+      "route": "src/lib/server/pairing/pairing-engine.ts",
+      "group": "Other server domain dependency",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 266,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 350,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [],
+      "colocatedTests": [
+        "src/lib/server/pairing/__tests__/pairing-engine.test.ts",
+        "src/lib/server/pairing/__tests__/pairing-race.test.ts",
+        "src/lib/server/pairing/__tests__/scheduled-second-pro.test.ts"
+      ]
+    },
+    {
+      "path": "src/lib/server/payments/bank-lookup.ts",
+      "route": "src/lib/server/payments/bank-lookup.ts",
+      "group": "Other server domain dependency",
+      "callSites": [
+        {
+          "table": "motorist_profiles",
+          "line": 21,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 38,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 62,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 95,
+          "operation": "select"
+        },
+        {
+          "table": "profiles",
+          "line": 124,
+          "operation": "select"
+        },
+        {
+          "table": "motorist_profiles",
+          "line": 167,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 172,
+          "operation": "select"
+        },
+        {
+          "table": "payout_methods",
+          "line": 177,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [],
+      "colocatedTests": [
+        "src/lib/server/payments/__tests__/bank-lookup.test.ts",
+        "src/lib/server/payments/__tests__/confirm-job-payment.test.ts",
+        "src/lib/server/payments/__tests__/confirmation-store.test.ts",
+        "src/lib/server/payments/__tests__/escrow-store.test.ts",
+        "src/lib/server/payments/__tests__/payout-settlement.test.ts",
+        "src/lib/server/payments/__tests__/self-payment-guard.test.ts",
+        "src/lib/server/payments/__tests__/stored-provider-verification.test.ts"
+      ]
+    },
+    {
+      "path": "src/lib/server/pro-visibility.ts",
+      "route": "src/lib/server/pro-visibility.ts",
+      "group": "Other server domain dependency",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 23,
+          "operation": "select"
+        },
+        {
+          "table": "repair_pro_profiles",
+          "line": 58,
+          "operation": "update"
+        }
+      ],
+      "identityModules": [],
+      "methods": [],
+      "colocatedTests": [
+        "src/lib/server/__tests__/africastalking.test.ts",
+        "src/lib/server/__tests__/api-json.test.ts",
+        "src/lib/server/__tests__/idempotency-preflight.test.ts",
+        "src/lib/server/__tests__/market-scope.test.ts",
+        "src/lib/server/__tests__/rate-limit-routes.test.ts",
+        "src/lib/server/__tests__/rate-limit.test.ts",
+        "src/lib/server/__tests__/structured-logger.test.ts"
+      ]
+    },
+    {
+      "path": "src/lib/server/reviews.ts",
+      "route": "src/lib/server/reviews.ts",
+      "group": "Other server domain dependency",
+      "callSites": [
+        {
+          "table": "repair_pro_profiles",
+          "line": 111,
+          "operation": "update"
+        },
+        {
+          "table": "profiles",
+          "line": 155,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [],
+      "colocatedTests": [
+        "src/lib/server/__tests__/africastalking.test.ts",
+        "src/lib/server/__tests__/api-json.test.ts",
+        "src/lib/server/__tests__/idempotency-preflight.test.ts",
+        "src/lib/server/__tests__/market-scope.test.ts",
+        "src/lib/server/__tests__/rate-limit-routes.test.ts",
+        "src/lib/server/__tests__/rate-limit.test.ts",
+        "src/lib/server/__tests__/structured-logger.test.ts"
+      ]
+    },
+    {
+      "path": "src/lib/server/security/security-store.ts",
+      "route": "src/lib/server/security/security-store.ts",
+      "group": "Other server domain dependency",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 1843,
+          "operation": "update"
+        }
+      ],
+      "identityModules": [],
+      "methods": [],
+      "colocatedTests": [
+        "src/lib/server/security/__tests__/cashout-engine.test.ts"
+      ]
+    },
+    {
+      "path": "src/lib/server/shop/catalog.ts",
+      "route": "src/lib/server/shop/catalog.ts",
+      "group": "Other server domain dependency",
+      "callSites": [
+        {
+          "table": "profiles",
+          "line": 37,
+          "operation": "select"
+        }
+      ],
+      "identityModules": [],
+      "methods": [],
+      "colocatedTests": [
+        "src/lib/server/shop/__tests__/admin-analytics.test.ts",
+        "src/lib/server/shop/__tests__/admin-couriers.test.ts",
+        "src/lib/server/shop/__tests__/admin-deliveries.test.ts",
+        "src/lib/server/shop/__tests__/all-parts.test.ts",
+        "src/lib/server/shop/__tests__/cart-validate.test.ts",
+        "src/lib/server/shop/__tests__/connectors.test.ts",
+        "src/lib/server/shop/__tests__/data-validate.test.ts",
+        "src/lib/server/shop/__tests__/delivery-search.test.ts",
+        "src/lib/server/shop/__tests__/intent.test.ts",
+        "src/lib/server/shop/__tests__/normalize.test.ts",
+        "src/lib/server/shop/__tests__/product-requests.test.ts"
+      ]
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent review of exact commits for batches 1-4 (batch 4 independent review pending).",
+      "Independently review Slice 5 batches 1-4 and the locally implemented admin-user-history follow-up at their exact commits; later identity batches remain deferred.",
+      "Agree later signup/profile-update, OTP, Care and lifecycle batches; other-domain candidates remain deferred.",
+      "No additional implementation/local test gap currently identified for the approved four batches.",
+      "Admin user-detail history follow-up: independently review exact implementation commit; preserve and track existing returned-error empty-history behaviour. See dedicated guide."
+    ],
+    "external": [
+      "Deploy reviewed first-batch commit and record hosted password-login, both role-switch directions, inactive/missing-role, pro Away and shared-bank smoke.",
+      "No new configuration or migration required by this first-batch relocation; hosted evidence still pending.",
+      "Batch 2: hosted own-profile and role-flags smoke using two accounts and both roles on deployed reviewed commit. No deployment performed.",
+      "Batch 3: hosted admin user-list/search/role-filter smoke on deployed reviewed commit.",
+      "Slice 5 batch 4: hosted authorized admin-detail both-role/missing-profile/status/history smoke on deployed reviewed commit.",
+      "Admin user-detail history follow-up: deploy reviewed commit and record authorized both-role/populated/empty-history/missing-user/non-admin smoke."
+    ]
+  },
+  "implementationFiles": [
+    "src/lib/server/identity/login-identity.ts",
+    "src/lib/server/identity/login-profile.ts",
+    "src/lib/server/identity/switch-identity.ts",
+    "src/lib/server/identity/switch-profile.ts",
+    "src/app/api/auth/login/route.ts",
+    "src/app/api/auth/switch-role/route.ts",
+    "src/lib/server/identity/own-profile.ts",
+    "src/lib/server/identity/role-flags.ts",
+    "src/app/api/profile/route.ts",
+    "src/app/api/account/role-flags/route.ts",
+    "src/lib/server/identity/admin-users.ts",
+    "src/app/api/admin/users/route.ts",
+    "src/lib/server/identity/admin-detail.ts",
+    "src/app/api/admin/users/[id]/route.ts"
+  ],
+  "verificationLimitations": [
+    "Route tests mock existing identity-sync exports and database results; full suite includes existing sync tests.",
+    "Hosted Auth/schema/concurrency evidence not established. Existing partial-write/fallback/ignored-error semantics remain.",
+    "Inventory call-site records are historical at inventoryCommit, not current route line locations."
+  ],
+  "firstBatchCommit": "a3dd798",
+  "batch2BaselineCommit": "a3dd798",
+  "batch2Commit": "13e0c6f",
+  "batch3BaselineCommit": "13e0c6f",
+  "batch3Commit": "40e0fa1",
+  "batch4BaselineCommit": "40e0fa1"
+}

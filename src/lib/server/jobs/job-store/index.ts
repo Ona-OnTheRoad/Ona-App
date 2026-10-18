@@ -59,7 +59,11 @@ export {
 } from "./payments";
 
 // ── Expiry ─────────────────────────────────────────────────────────
-export { maybeExpire, expireOverdueBookedJobs } from "./expiry";
+export {
+  maybeExpire,
+  expireOverdueBookedJobs,
+  resetZombieFlowStatuses,
+} from "./expiry";
 
 // ── Dispatch ───────────────────────────────────────────────────────
 export {
@@ -71,6 +75,10 @@ export {
   clearJobCooldowns,
   adminExpireJob,
   adminReassignJob,
+  armSurfacePairingDeadline,
+  dispatchScheduledSecondPro,
+  type ArmSurfaceResult,
+  type DispatchScheduledResult,
 } from "./dispatch";
 
 // ── Transitions ────────────────────────────────────────────────────

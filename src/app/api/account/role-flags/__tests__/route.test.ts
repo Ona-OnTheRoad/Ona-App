@@ -1,3 +1,4 @@
+import { scriptedDb } from "@/lib/server/identity/__tests__/scripted-db";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/server/auth-utils", () => ({
@@ -98,6 +99,7 @@ describe("GET /api/account/role-flags", () => {
 
     const res = await GET(req());
     expect(res.status).toBe(401);
+    expect(createServiceSupabaseMock).not.toHaveBeenCalled();
   });
 
   it("returns 503 when Supabase admin isn't configured", async () => {
@@ -106,5 +108,39 @@ describe("GET /api/account/role-flags", () => {
     const res = await GET(req());
     expect(res.status).toBe(503);
     expect(requireUserMock).not.toHaveBeenCalled();
+    expect(createServiceSupabaseMock).not.toHaveBeenCalled();
+  });
+
+  it("uses only session id and keeps slim projections when userId is supplied", async () => {
+    requireUserMock.mockResolvedValue(authOk("session-user"));
+    const sb = scriptedDb({ motorist_profiles: [{ data: { created_at: "2026-03-01" } }], repair_pro_profiles: [{ data: { created_at: "2026-01-01" } }] });
+    createServiceSupabaseMock.mockReturnValue(sb as never);
+    const response = await GET(new Request("http://localhost/api/account/role-flags?userId=other-user"));
+    expect((await response.json()).data).toEqual({ hasMotorist: true, hasPro: true, primaryAccountType: "professional" });
+    expect(sb.calls.map(c => c.steps)).toEqual(Array.from({ length: 2 }, () => [{ method: "select", args: ["user_id, created_at"] }, { method: "eq", args: ["user_id", "session-user"] }, { method: "maybeSingle", args: [] }]));
+  });
+
+  it("preserves absent-side returned errors as false flags", async () => {
+    requireUserMock.mockResolvedValue(authOk("user-1"));
+    const sb = scriptedDb({ motorist_profiles: [{ data: null, error: { message: "unavailable" } }], repair_pro_profiles: [{ data: null, error: { message: "unavailable" } }] });
+    createServiceSupabaseMock.mockReturnValue(sb as never);
+    const response = await GET(req());
+    expect(response.status).toBe(200);
+    expect((await response.json()).data).toEqual({ hasMotorist: false, hasPro: false, primaryAccountType: "motorist" });
+  });
+
+  it("uses returned role data despite a returned error", async () => {
+    requireUserMock.mockResolvedValue(authOk("user-1"));
+    const sb = scriptedDb({ motorist_profiles: [{ data: { created_at: "2026-01-01" }, error: { message: "partial" } }], repair_pro_profiles: [{ data: null }] });
+    createServiceSupabaseMock.mockReturnValue(sb as never);
+    expect((await (await GET(req())).json()).data).toEqual({ hasMotorist: true, hasPro: false, primaryAccountType: "motorist" });
+  });
+
+  it.each([[new Error("read failed"), "read failed"], ["non-error failure", "Could not load role flags"]])("maps thrown read errors to 500", async (failure, message) => {
+    requireUserMock.mockResolvedValue(authOk("user-1"));
+    createServiceSupabaseMock.mockImplementationOnce(() => { throw failure; });
+    const response = await GET(req());
+    expect(response.status).toBe(500);
+    expect((await response.json()).error).toEqual({ code: "error", message });
   });
 });

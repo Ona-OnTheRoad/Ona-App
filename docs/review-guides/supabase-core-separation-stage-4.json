@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 1,
+  "id": "supabase-core-separation-stage-4",
+  "title": "Scope 2, Stage 4: extract server persistence by domain",
+  "plan": "docs/review-guides/supabase-core-separation-stage-4.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "domain-scope-researched",
+      "stage": "code",
+      "expectation": "The full scope of direct-Supabase-in-business-logic across the 5 named domains (jobs, payments, pairing, shop, identity) is inventoried before any slice starts, so slices are sized and sequenced deliberately rather than discovered mid-implementation.",
+      "verification": "Parallel research across all 5 domains, cross-checked against each domain's actual files.",
+      "status": "pass",
+      "evidence": [
+        "56 non-test files across the 5 domains, ~32 touching Supabase directly. jobs and payments already have real adapter/boundary layers (job-store barrel; confirmation-store/durable-processing/payout-ledger/escrow-store) with a handful of route handlers bypassing them. pairing is a single 1459-line file with zero boundary and writes service_requests independently of jobs' job-store (two uncoordinated paths on one table). shop is 21 files, ~93% mixed, almost no boundary, and several admin routes have business logic with no domain-folder home at all. identity is only 3 files but ~15 caller routes duplicate direct profile-table queries instead of centralizing. Full detail in the paired .md guide's scope-research table.",
+        "Also flagged (out of Stage 4's named scope, same underlying problem): merit/merit-engine.ts and 7 other domain folders (callout, express, modules, push, reviews, security) under src/lib/server/."
+      ]
+    },
+    {
+      "id": "slice-1-payments-routes-no-direct-supabase",
+      "stage": "code",
+      "expectation": "The 3 payments route handlers that bypass existing payments adapters (init, refund, check-bank-unique) and payout-settlement.ts's loadProBank no longer call Supabase directly; behavior is unchanged.",
+      "verification": "Diff review of each call site; grep for remaining direct .from(...) calls in these 4 files; unit tests for the new adapter and each route's existing behavior.",
+      "status": "pass",
+      "evidence": [
+        "New src/lib/server/payments/bank-lookup.ts centralizes loadMotoristBankCode, loadProBankCode, loadMotoristBankDetails, loadProBankDetails, loadIdentityCheck, isBankAccountTaken. All 4 call sites (init/route.ts, refund/route.ts, check-bank-unique/route.ts, payout-settlement.ts) now import from it instead of calling createServiceSupabase() themselves. No behavior change: same queries, same tables, same null-on-error fallback (verified by diff, not just by running the new tests).",
+        "New tests: src/lib/server/payments/__tests__/bank-lookup.test.ts (11 tests covering each adapter function including the self-exclusion and payout_methods-last4 match cases), src/app/api/payments/init/__tests__/route.test.ts (4, including the self-payment-block path), src/app/api/payments/refund/__tests__/route.test.ts (4, including the gateway-refund-attempted path), src/app/api/payments/check-bank-unique/__tests__/route.test.ts (5, including the token-resolved-exclude-self path). None of these 3 routes had any test coverage before this slice.",
+        "Full suite (1,285 tests, 117 files), typecheck and lint all pass locally with 0 new warnings beyond one pre-existing unrelated warning (refund/route.ts's gatewayRaw, present before this slice)."
+      ]
+    },
+    {
+      "id": "bank-uniqueness-checks-consistent",
+      "stage": "code",
+      "expectation": "There is one bank-account-uniqueness check, not two disagreeing implementations.",
+      "verification": "Compare src/app/api/profile/update/route.ts's isBankAccountTakenByOtherUser against the new isBankAccountTaken in bank-lookup.ts.",
+      "status": "fail",
+      "evidence": [
+        "Found during slice 1 research: src/app/api/profile/update/route.ts has its own isBankAccountTakenByOtherUser (lines 19-78) that duplicates check-bank-unique's old matcher but never checks payout_methods -- so the same bank account could be flagged 'taken' by one endpoint and not the other. Pre-existing, not introduced by slice 1. Deliberately not fixed in slice 1 (profile/update is outside 'payments route handlers' scope); tracked here so it isn't lost."
+      ]
+    },
+    {
+      "id": "jobs-payments-boundary-respected",
+      "stage": "code",
+      "expectation": "Payments-domain code does not directly mutate jobs-domain tables (service_requests) with job-state transitions; that belongs behind the jobs interface.",
+      "verification": "Audit payout-settlement.ts and any other payments file for direct service_requests writes.",
+      "status": "fail",
+      "evidence": [
+        "payout-settlement.ts's finalizeJobReleasedAfterPayout (line ~1320, unchanged by slice 1) reads and updates service_requests directly with job_version-guarded optimistic concurrency -- a jobs-domain state transition performed from the payments domain. Needs a job-store function (e.g. markJobReleasedAfterPayout) added to src/lib/server/jobs/job-store before payout-settlement.ts can stop touching the table directly. Deferred to a later slice since it's a cross-domain design decision, not a mechanical port."
+      ]
+    },
+    {
+      "id": "slice-2-jobs-routes-no-direct-supabase",
+      "stage": "code",
+      "expectation": "The 3 jobs route handlers that bypass job-store (surface, dispatch-scheduled, expire-stale's zombie-reset) no longer call Supabase directly; behavior and the job_version/flow_status optimistic-concurrency guards are unchanged.",
+      "verification": "Diff review of each call site confirming the exact same WHERE-clause guards and update payloads are preserved, not simplified; unit tests for the new job-store functions and each route's 403/404/409/500 paths; full suite green.",
+      "status": "pass",
+      "evidence": [
+        "Confirmed against supabase/migrations/20261007_079_job_version_cas.sql that job_version is bumped by a BEFORE UPDATE trigger on every write to a service_requests row, unconditionally -- so a bare job_version guard is exactly as strong as the original compound guards (job_version + pairing_stage + pairing_deadline IS NULL for surface; job_version + flow_status for dispatch-scheduled). Decided to keep the original guards verbatim anyway rather than rely on this equivalence, matching the file's own existing convention (src/lib/server/jobs/job-store/dispatch.ts already has ~8 functions doing this exact raw-guarded-update shape, e.g. assignNextPro).",
+        "New src/lib/server/jobs/job-store/dispatch.ts functions armSurfacePairingDeadline and dispatchScheduledSecondPro verbatim-relocate the two routes' raw updates (same field lists, same WHERE clauses), returning a discriminated { ok, conflict, message } result instead of persist()'s thrown JobWriteConflictError, to preserve each route's existing inline 409/500 branching exactly. New src/lib/server/jobs/job-store/expiry.ts function resetZombieFlowStatuses verbatim-relocates the bulk zombie-reset update. All three exported from job-store/index.ts's barrel.",
+        "Deliberately did NOT route these through the generic persist()/jobToDbPatch helper: verifying jobToDbPatch covers every field these updates touch (flow_status, legacy status, pairing_stage, pairing_deadline, queue_position, remaining_candidates, reservation_status, assignment_status, pairing_radius_km, pickup_address/lat/lng, motorist_location_at) would be extra verification surface for no benefit, and a silent gap there would be a real regression (a dropped column on write).",
+        "surface/route.ts and dispatch-scheduled/route.ts now call getJob()/the new functions instead of raw Supabase; expire-stale/route.ts calls the job-store export instead of its own local helper.",
+        "Found and fixed an existing test (src/app/api/__tests__/second-pro-routes.test.ts) that mocked @/lib/server/jobs/job-store without the two new exports, which made 2 of its dispatch-scheduled tests fail after the rewire (the route now calls dispatchScheduledSecondPro, which the mock didn't provide, so it was undefined and threw). Updated the mock and rewrote the 3 affected tests to mock dispatchScheduledSecondPro's result directly instead of asserting on a raw Supabase update payload that no longer exists at the route level -- that payload-shape assertion now lives in the new job-store unit test instead.",
+        "New tests: src/lib/server/jobs/job-store/__tests__/dispatch.test.ts (8), src/lib/server/jobs/job-store/__tests__/expiry.test.ts (4), src/app/api/jobs/[id]/surface/__tests__/route.test.ts (7, this route had zero coverage before). Full suite (1,304 tests, 120 files), typecheck and lint pass with no new warnings (one pre-existing unrelated warning in expire-stale/route.ts, a dead `zombies` variable, confirmed unchanged by this diff)."
+      ]
+    },
+    {
+      "id": "pairing-interface-decision",
+      "stage": "code",
+      "expectation": "A deliberate decision on whether/how to formalize an interface for the pairing domain, made after understanding why pairing-engine.ts is shaped the way it is -- not a mechanical application of the slice-1/2 pattern.",
+      "verification": "Read docs/SSPE_REFACTOR_PLAN.md (the module's original design spec) and docs/ANTI_REGRESSION.md (mandatory before touching job-flow code) before proposing any change.",
+      "status": "pass",
+      "evidence": [
+        "docs/SSPE_REFACTOR_PLAN.md section 6 shows pairing-engine.ts was deliberately designed as its own standalone module: 'idempotent, DB-first, advisory-locked per request', with each function doing an atomic UPDATE ... WHERE pairing_stage = expected in a single round-trip. This is not accidental tech debt -- splitting the read-check from the write across a 'business logic' file and an 'adapter' file would reopen the exact TOCTOU race the atomic single-statement UPDATE was built to close.",
+        "pairing-engine.ts already satisfies the spirit of Stage 4 for its own domain better than shop or identity do: every pairing/dispatch state mutation is concentrated in one file behind named, documented, idempotent exported functions (advancePairing, openRequest, confirmRequest, declineRequest, deferRequest, timeoutRequest, sweepPairing, sweepScheduledDispatches) -- it's just that each function still calls createServiceSupabase() inline rather than importing from a separate adapter file, which is a much smaller gap than shop's (zero concentration) or identity's (logic duplicated across ~15 routes).",
+        "Decision (stakeholder, 2026-10-10): skip a pairing refactor for Stage 4. Spend the risk budget on shop next, which has no atomicity pattern to accidentally break. The 'two uncoordinated paths write service_requests' finding from the original scope research (pairing-engine vs job-store/dispatch.ts's assignNextPro/rerouteDeclinedJob) was NOT independently verified before this decision -- whether those two code paths ever operate on the same job concurrently, or are mutually exclusive by job state (SSPE vs legacy dispatch), remains an open question, tracked below as remaining work rather than blocking this decision."
+      ]
+    },
+    {
+      "id": "slice-3-shop-admin-routes-have-a-home",
+      "stage": "code",
+      "expectation": "The 4 shop-admin route handlers that had real business logic + direct Supabase calls with no corresponding file in src/lib/server/shop/ (analytics, deliveries, couriers, product-requests) now delegate to domain functions; behavior is unchanged.",
+      "verification": "Diff review of each route confirming identical queries/tables/payloads; unit tests for each new domain function and route; full suite green.",
+      "status": "pass",
+      "evidence": [
+        "Ruled out a different first candidate: checkout/route.ts and delivery/estimate/route.ts both inline a user_addresses lookup, but user_addresses is also used by /api/addresses/route.ts and identity-sync.ts -- it's a cross-cutting concern shop doesn't own, not a shop-domain gap. Fixing it would invent an implicit 6th domain, out of scope for a shop slice.",
+        "New src/lib/server/shop/admin-analytics.ts (getShopDemandAnalytics), admin-couriers.ts (listCourierProviders, upsertCourierProvider, patchCourierProvider), admin-deliveries.ts (upsertDeliveryStatus), product-requests.ts (recordProductRequest, ProductRequestsNotMigratedError). Each verbatim-relocates its route's existing queries/payloads -- no behavior change.",
+        "Design grounded in existing src/lib/server/shop/ conventions, not invented: shop_audit_logs and shop_order_events inserts moved into the domain functions because admin-catalog.ts/orders.ts/payments.ts already do this at every write; logAdminAction (cross-cutting admin-identity audit, needs the route's requireAdmin() result) and requireAdmin()/isSupabaseAdminConfigured() stayed in the routes, matching every prior slice's routes-own-auth boundary.",
+        "New tests: src/lib/server/shop/__tests__/{admin-analytics,admin-couriers,admin-deliveries,product-requests}.test.ts (3+7+7+3=20) and src/app/api/{admin/shop/analytics,admin/shop/couriers,admin/shop/deliveries,shop/product-requests}/__tests__/route.test.ts (3+8+4+4=19). None of these 4 routes had any test coverage before this slice. Full suite (1,343 tests, 128 files), typecheck and lint pass with no new warnings beyond the pre-existing baseline (confirmed via git diff that the one new-looking warning, analytics route's unused _req param, was already unused before this slice)."
+      ]
+    },
+    {
+      "id": "slice-4-shop-scope-survey-and-all-parts-split",
+      "stage": "code",
+      "expectation": "Before attempting a business-logic/Supabase-adapter split across shop's remaining direct-Supabase files, verify each file actually has the problem Stage 4 is trying to fix (mixed, scattered, hard-to-test logic) rather than mechanically splitting files that don't need it. Execute only on genuinely safe, valuable candidates.",
+      "verification": "Read every remaining candidate file's exported functions and structure before editing any of them; exclude anything with an atomic/RPC/reservation pattern per the user's explicit instruction; confirm no behavior change via diff + tests on whatever is split.",
+      "status": "pass",
+      "evidence": [
+        "Confirmed shop's routes already delegate cleanly: of 16 non-admin shop routes, 14 call zero Supabase directly; the other 2 (checkout, delivery/estimate) are the already-deferred user_addresses lookup. The 'remaining direct-Supabase shop files' are all in the domain layer itself, not bypassed by routes -- a different shape of gap than slice 3's.",
+        "Surveyed all 9 non-excluded candidate files (cart.ts, orders.ts, admin-catalog.ts, payments.ts were excluded per the user's instruction to stay away from the reservation/payment-consistency area). Found most already satisfy Stage 4's spirit: garage.ts, job-recommendations.ts, delivery.ts (pure computeDeliveryFee already extracted), search.ts (pure logic already lives in intent.ts/normalize.ts, searchShop is thin orchestration), import-engine.ts (doesn't even self-instantiate a client -- takes one as a parameter, cleaner than job-store's own pattern) are thin, single-purpose domain modules matching the same acceptable shape job-store's own store sublayer has. Splitting them further would add indirection with no benefit.",
+        "catalog.ts's listProducts (424 lines, the single most central function in shop -- search/all-parts/job-recommendations/home-sections all call it) does mix real filtering/fitment/stock logic with queries, but its complexity + blast-radius combination makes it a bad candidate for this slice; left alone, flagged for a dedicated future slice with its own characterization tests.",
+        "all-parts.ts's getAllPartsForVehicle (~125 lines, single caller, read-only, no reservation/payment adjacency) was the one genuine, bounded, safe candidate: real business logic (fitment scoring with soft-text-match fallback, sort-by-fitment-then-price, category-tree product-count rollup via path-prefix matching) mixed with 3 Supabase queries in one function.",
+        "Extracted 4 pure functions verbatim from the original logic (no behavior change, confirmed by running the full suite before and after): enrichProductWithFitment, compareEnrichedByFitmentThenPrice, buildCategoryProductCounts, rollupCategoryTree. The orchestrator now calls these instead of inlining the logic; Supabase queries (categories, shop_products category lookup) and the productIdsForVehicle/listProducts calls stay in the orchestrator.",
+        "New tests: src/lib/server/shop/__tests__/all-parts.test.ts (11 -- unit tests for each of the 4 pure functions plus 2 integration-style tests against the full orchestrator with a mocked Supabase client). This file had zero coverage before. Full suite (1,354 tests, 129 files), typecheck and lint pass with no new warnings."
+      ]
+    },
+    {
+      "id": "defined-interfaces-only",
+      "stage": "code",
+      "expectation": "Business services in the agreed scope use defined interfaces rather than Supabase SDK types or clients directly. (Same requirement id as the parent Stage 1-3 guide; Stage 4 is where it actually gets addressed, domain by domain.)",
+      "verification": "Manual import audit of src/lib/server/{jobs,payments,pairing,shop,identity}, slice by slice.",
+      "status": "pending",
+      "evidence": [
+        "Slice 1 (payments route handlers): done, see slice-1-payments-routes-no-direct-supabase above.",
+        "Slice 2 (jobs route handlers): done, see slice-2-jobs-routes-no-direct-supabase above.",
+        "Pairing: deliberately skipped, see pairing-interface-decision above.",
+        "Slice 3 (shop admin routes with no domain-folder home): done, see slice-3-shop-admin-routes-have-a-home above.",
+        "Slice 4 (shop scope survey + all-parts.ts split): done, see slice-4-shop-scope-survey-and-all-parts-split above. Most of shop's remaining direct-Supabase files turned out to already satisfy Stage 4's spirit on inspection; only all-parts.ts needed and got a real split. catalog.ts's listProducts remains flagged for a dedicated future slice. cart.ts/orders.ts/admin-catalog.ts/payments.ts remain untouched by design (reservation/payment-consistency risk).",
+        "Remaining: catalog.ts's listProducts (dedicated slice with characterization tests first); identity (centralizing ~15 duplicated caller routes); the deferred jobs-payments-boundary-respected fix (finalizeJobReleasedAfterPayout).",
+        "Slice 5 first batch login/switch-role locally implemented; remaining identity candidates still deferred. See slice-5-first-batch-login-switch-role."
+      ]
+    },
+    {
+      "id": "slice-5-first-batch-login-switch-role",
+      "stage": "code",
+      "expectation": "Approved login/switch-role routes delegate identity persistence to focused modules with unchanged behaviour.",
+      "verification": "Before/after characterization; persistence failure/projection tests; source query comparison and required local gates.",
+      "status": "pass",
+      "evidence": [
+        "32 characterization route tests passed against original routes before extraction and unchanged after extraction; validation/config/Auth/HTTP behaviour and mapped fields covered.",
+        "9 additional persistence/projection tests passed, including returned-error/thrown-error handling, metadata defaults and legacy flags.",
+        "Source comparison: same 15 literal table sites, select projections and user filters. Loader/projection verbatim relocations except export/function/return wrappers.",
+        "Login/switch-role routes contain no .from calls, service-role client factory calls or Supabase row-type imports. Auth SDK calls remain in routes.",
+        "Four new server-only identity modules are below 300 lines; internal switch projection client parameter stays inside identity implementation. Route-facing operations accept identity values and return typed results.",
+        "npm run test: 1,395 tests / 133 files passed.",
+        "npm run typecheck: passed.",
+        "npm run lint: 0 errors / 160 warnings, none in changed files.",
+        "git diff --check: passed. Protected files, approval modules and migrations unchanged.",
+        "Full detail in docs/review-guides/supabase-core-separation-stage-4-slice-5.md and paired JSON. Independent review/hosted smoke remain pending."
+      ]
+    },
+    {
+      "id": "slice-5-batch-2-own-profile-reads",
+      "stage": "code",
+      "expectation": "Approved own-profile/role-flags routes delegate through named read interfaces with unchanged session isolation and projections/error behaviour.",
+      "verification": "Before/after characterization; scoped read-only query audit; full local gates.",
+      "status": "pass",
+      "evidence": [
+        "26 route tests passed before/after (17 new); all six scoped select-only queries preserved including guarantor.",
+        "1,412 tests / 133 files passed; typecheck; lint 0 errors / 160 warnings, none in changed files; diff check.",
+        "New own-profile.ts / role-flags.ts below 300 lines; detailed evidence in Slice 5 paired guide. Independent review/hosted checks pending."
+      ]
+    },
+    {
+      "id": "slice-5-batch-3-admin-users",
+      "stage": "code",
+      "expectation": "Approved admin user-list route delegates identity reads/mapping while preserving auth, both branches, filters, limits and error semantics.",
+      "verification": "Before/after characterization, query/source comparison and full local gates.",
+      "status": "pass",
+      "evidence": [
+        "User approved GET /api/admin/users only on 2026-10-10, baseline 13e0c6f.",
+        "19 new characterization tests passed against original route and unchanged after extraction: both branches, ordering/limits, role/search filters, dual-role pros, defaults, returned/thrown errors, admin and config rejection.",
+        "Five select-only query sites and mapping body are verbatim after indentation/function/result wrapper changes. Route has no table/service-client access; server-only admin-users.ts is 156 lines.",
+        "npm run test: 1,431 tests / 134 files passed. npm run typecheck passed. npm run lint: 0 errors / 160 warnings, none in changed files. git diff --check passed.",
+        "Independent review of exact commit and hosted smoke remain pending."
+      ]
+    },
+    {
+      "id": "slice-5-batch-4-admin-detail-identity",
+      "stage": "code",
+      "expectation": "Approved admin-detail identity portion uses named typed operations preserving guards, concurrency, profiles/status/history response behaviour; history persistence boundary explicitly deferred.",
+      "verification": "Before/after route characterization, query/source audit and local gates.",
+      "status": "pass",
+      "evidence": [
+        "Approved identity-only admin-detail scope on 2026-10-10; baseline 40e0fa1.",
+        "14 route characterization tests passed before/after extraction; one additional test verifies separate internally-owned identity and route history clients. Deferred-status test verifies concurrent secondary reads.",
+        "Source audit: three identity query chains preserved; four route history query chains unchanged. admin-detail.ts is 51 lines, server-only, exposes no client/SDK builders; existing identityStatus unchanged.",
+        "npm run test: 1,446 tests / 135 files passed. npm run typecheck passed. npm run lint: 0 errors / 160 existing warnings. git diff --check passed.",
+        "Independent review/hosted smoke pending; four route history table calls explicitly deferred."
+      ]
+    },
+    {
+      "id": "admin-user-history-followup",
+      "stage": "code",
+      "expectation": "Approved admin user-detail history queries use a typed server-only reporting reader preserving queries, guards, parallel reads, errors and response defaults.",
+      "verification": "See supabase-core-separation-admin-user-history.md and paired JSON.",
+      "status": "pass",
+      "evidence": [
+        "24 route tests passed before and after extraction. Full suite 1,455 tests / 135 files and typecheck pass. 58-line reporting reader owns its client; route has no table/client calls. Independent exact-commit review and hosted checks remain pending.",
+        "npm run lint passed: 0 errors / 160 existing warnings, none in changed files; git diff --check passed."
+      ]
+    }
+  ],
+  "implementationBranch": "codex/supabase-core-separation-stage-4",
+  "implementationNotes": "Stage 4 scoped via parallel research on 2026-10-10 (see domain-scope-researched evidence). Slice 1 (payments route handlers, commit 04bab32): new src/lib/server/payments/bank-lookup.ts adapter, 4 call sites rewired, 24 new tests. Slice 2 (jobs route handlers, commit 386a3e7): 3 new job-store functions, 3 routes rewired, 15 new tests, 1 existing test file fixed. Pairing deliberately skipped (see pairing-interface-decision). Slice 3 (shop admin routes with no domain-folder home, commit 032bdf1): 4 new src/lib/server/shop/ files, 4 routes rewired, 39 new tests. Slice 4 (shop scope survey + all-parts.ts split), same day: surveyed the 9 non-excluded remaining shop files before touching any of them -- most already satisfy Stage 4's spirit (pure logic already lives in sibling files or local helpers), so only all-parts.ts's getAllPartsForVehicle got a real split (4 pure functions extracted, 11 new tests). catalog.ts's listProducts (424 lines, most central function in shop) was deliberately left alone given its complexity+blast-radius combination. Full suite (1,354 tests, 129 files), typecheck and lint pass after all 4 slices. Findings surfaced and tracked rather than silently fixed, ignored, or mechanically forced: a pre-existing bank-uniqueness-check inconsistency, a jobs/payments domain-boundary violation in finalizeJobReleasedAfterPayout, confirmation that job_version's DB trigger makes compound WHERE-clause guards provably redundant (kept anyway), that the checkout/delivery-estimate user_addresses duplication isn't actually a shop-domain gap, and that most of shop's 'direct-Supabase' files don't actually need splitting -- the original 56-file/32-direct-Supabase count measured presence of Supabase calls, not absence of structure.",
+  "implementationState": "Slice 5 batches 1-4 committed through b3c71fd. Approved admin user-detail history follow-up implemented and locally verified; committed with this guide; exact-commit independent review and hosted smoke pending. Later identity batches remain deferred.",
+  "independentReview": {
+    "status": "Not started",
+    "findings": [],
+    "scope": "Review each slice's diff against its specific requirement once committed."
+  },
+  "remainingWork": {
+    "code": [
+      "Fix the bank-uniqueness-check inconsistency between check-bank-unique and profile/update (see bank-uniqueness-checks-consistent).",
+      "Fix the jobs/payments boundary violation in payout-settlement.ts's finalizeJobReleasedAfterPayout (see jobs-payments-boundary-respected) -- requires a new job-store function.",
+      "Verify whether pairing-engine.ts and job-store/dispatch.ts's assignNextPro/rerouteDeclinedJob ever operate on the same job concurrently, or are mutually exclusive by job state -- the pairing-skip decision did not independently confirm this; it's a real-bug-risk question independent of the Stage 4 interface question.",
+      "catalog.ts's listProducts: a dedicated future slice, not mechanical -- read the whole function, map every output field, write characterization tests before touching it (424 lines, most central function in shop).",
+      "Where the checkout/delivery-estimate user_addresses duplication should live, given it's not really shop's -- still unresolved.",
+      "Independent review of slices 1-4.",
+      "Independently review Slice 5 batches 1-4 and the locally implemented admin-user-history follow-up at their exact commits; later identity batches remain deferred.",
+      "Admin user-detail history follow-up: independently review exact implementation commit; preserve and track existing returned-error empty-history behaviour. See dedicated guide."
+    ],
+    "external": [
+      "Slice 5 first batch: hosted password-login, both switch directions, inactive/missing-role, pro Away and shared-bank smoke on deployed reviewed commit.",
+      "Slice 5 batch 2: hosted own-profile/role-flags smoke using two accounts and both roles on deployed reviewed commit.",
+      "Slice 5 batch 3: hosted admin user-list/search/role-filter smoke on deployed reviewed commit.",
+      "Slice 5 batch 4: hosted authorized admin-detail both-role/missing-profile/status/history smoke on deployed reviewed commit.",
+      "Admin user-detail history follow-up: deploy reviewed commit and record authorized both-role/populated/empty-history/missing-user/non-admin smoke."
+    ]
+  }
+}

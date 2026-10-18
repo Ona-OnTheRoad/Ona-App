@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "id": "supabase-core-separation-admin-user-history",
+  "title": "Admin user-detail history separation",
+  "plan": "docs/review-guides/supabase-core-separation-admin-user-history.md",
+  "baselineCommit": "b3c71fd",
+  "reviewedCommit": null,
+  "implementationState": "Approved on 2026-10-11 and implemented based on b3c71fd and committed with this guide. Exact-commit independent review and hosted checks pending.",
+  "requirements": [
+    {
+      "id": "scope",
+      "stage": "code",
+      "expectation": "Agree the four-query read-only extraction and review criteria before implementation.",
+      "verification": "Conversation approval of paired plan.",
+      "status": "pass",
+      "evidence": [
+        "User approved the proposed plan and criteria with “do it.” on 2026-10-11."
+      ]
+    },
+    {
+      "id": "boundary",
+      "stage": "code",
+      "expectation": "The route uses typed history operations; the server-only admin read model owns its client internally, stays below 300 lines and exposes no SDK client/result types.",
+      "verification": "Source inspection and typecheck.",
+      "status": "pass",
+      "evidence": [
+        "58-line server-only admin/user-history.ts owns its client and returns Promise<Record<string, unknown>[]> operations. Route contains no table calls or service client factory. Typecheck passed."
+      ]
+    },
+    {
+      "id": "queries",
+      "stage": "code",
+      "expectation": "Preserve projections, both-role filters, descending creation order and history limits of 50/30/30/20.",
+      "verification": "Baseline comparison and unchanged route characterization assertions.",
+      "status": "pass",
+      "evidence": [
+        "24 route tests passed against the original implementation and unchanged after extraction; assertions preserve projections, both-role filters, order and 50/30/30/20 limits. Source comparison confirms four query chains are preserved."
+      ]
+    },
+    {
+      "id": "responses",
+      "stage": "code",
+      "expectation": "Preserve response fields, empty defaults, data-plus-returned-error semantics and generic thrown-error responses.",
+      "verification": "Characterization tests including all four history failure paths.",
+      "status": "pass",
+      "evidence": [
+        "Baseline/after tests cover all four thrown history failures and each returned-error empty/partial-data result. Existing response, null defaults and shared-profile error precedence preserved."
+      ]
+    },
+    {
+      "id": "guards-concurrency",
+      "stage": "code",
+      "expectation": "Configuration/admin/shared-profile guards precede history client creation; all seven secondary operations remain concurrent.",
+      "verification": "Guard and deferred-query tests plus source comparison.",
+      "status": "pass",
+      "evidence": [
+        "24 baseline/after tests include auth/config guards, history-client noncreation after missing/error shared profile, separate identity/history clients and deferred-status verification that all secondary queries start concurrently."
+      ]
+    },
+    {
+      "id": "local-gates",
+      "stage": "code",
+      "expectation": "Baseline and after tests, full test suite, typecheck, lint with zero errors and diff checks pass; no protected/schema/config/UI changes.",
+      "verification": "Recorded command results and changed-file inspection.",
+      "status": "pass",
+      "evidence": [
+        "24 route characterization tests passed before/after extraction; full suite 1,455 tests / 135 files passed. npm run typecheck passed. npm run lint passed with 0 errors / 160 existing warnings, none in changed files. git diff --check passed. Source comparison and changed-file audit found no protected/schema/config/UI changes."
+      ]
+    },
+    {
+      "id": "commit-review",
+      "stage": "code",
+      "expectation": "Review the exact resulting commit and reconcile parent-guide residual work.",
+      "verification": "Recorded commit and review findings.",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "hosted",
+      "stage": "external",
+      "expectation": "Authorized deployed admin-detail smoke preserves both-role populated/empty histories, missing-user and non-admin behaviour.",
+      "verification": "Record deployed commit and actual smoke evidence without personal data.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Review the implementation commit independently; reconcile final review findings. No migration/schema/config/UI/protected changes needed: changed files inspected. Later identity batches and other admin/Care routes remain outside scope."
+    ],
+    "external": [
+      "Deploy reviewed commit and record authorized hosted admin-detail smoke. Local scripted database tests do not establish hosted schema/policy behaviour."
+    ]
+  }
+}

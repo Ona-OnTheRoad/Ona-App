@@ -6,8 +6,7 @@ import {
   updateEscrow,
 } from "@/lib/server/payments/escrow-store";
 import { attemptFlutterwaveRefund } from "@/lib/server/payments/providers";
-import { createServiceSupabase } from "@/lib/supabase/server";
-import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
+import { loadMotoristBankDetails } from "@/lib/server/payments/bank-lookup";
 import { serverLogger } from "@/lib/server/structured-logger";
 
 export const runtime = "nodejs";
@@ -19,30 +18,6 @@ const bodySchema = z.object({
   /** Only full refund before job start (held, not released) */
   userId: z.string().min(1),
 });
-
-async function loadMotoristBank(motoristId: string) {
-  if (!isSupabaseAdminConfigured()) return null;
-  try {
-    const sb = createServiceSupabase();
-    const { data } = await sb
-      .from("motorist_profiles")
-      .select("bank_name, bank_account_name, bank_account_number, bank_code")
-      .eq("user_id", motoristId)
-      .maybeSingle();
-    if (!data) return null;
-    return {
-      bankName: (data.bank_name as string) || "",
-      accountName: (data.bank_account_name as string) || "",
-      accountNumber: String(data.bank_account_number || "").replace(/\D/g, ""),
-      bankCode: String(data.bank_code || "").trim(),
-    };
-  } catch (error) {
-    serverLogger.warn("payment.refund.bank_lookup_unavailable", {
-      operation: "load_refund_bank",
-    }, undefined, error);
-    return null;
-  }
-}
 
 /**
  * Full refund if job cancelled before start (escrow held, not released).
@@ -82,7 +57,7 @@ export async function POST(req: Request) {
       return apiFail("Nothing to refund", 400);
     }
 
-    const customerBank = await loadMotoristBank(payment.motoristId);
+    const customerBank = await loadMotoristBankDetails(payment.motoristId);
 
     // Try Flutterwave refund when we have a provider ref; always update ledger.
     let gatewayStatus: string = "pending_ops";

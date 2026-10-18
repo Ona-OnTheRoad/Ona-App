@@ -1,7 +1,10 @@
 import { NextRequest } from "next/server";
 import { apiFail, apiOk } from "@/lib/server/api-json";
-import { createServiceSupabase } from "@/lib/supabase/server";
 import { getUserFromRequest } from "@/lib/server/auth-utils";
+import {
+  ProductRequestsNotMigratedError,
+  recordProductRequest,
+} from "@/lib/server/shop/product-requests";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,39 +27,22 @@ export async function POST(req: NextRequest) {
       return apiFail("searchTerm required", 400, "VALIDATION");
     }
     const user = await getUserFromRequest(req);
-    const sb = createServiceSupabase();
-    const { data, error } = await sb
-      .from("shop_product_requests")
-      .insert({
-        user_id: user?.id ?? null,
-        trade_key: body.tradeKey || "mechanic",
-        search_term: term.slice(0, 200),
-        vehicle_context: body.vehicleContext || {},
-        location: body.location || null,
-        notify_requested: Boolean(body.notify),
-        status: "open",
-      })
-      .select("id")
-      .single();
-    if (error) {
-      if (
-        /relation .* does not exist|Could not find the table/i.test(
-          error.message,
-        )
-      ) {
-        return apiFail(
-          "Product requests table not migrated (run 061)",
-          503,
-          "SETUP_REQUIRED",
-        );
-      }
-      throw new Error(error.message);
-    }
+    const { id } = await recordProductRequest({
+      userId: user?.id ?? null,
+      tradeKey: body.tradeKey,
+      searchTerm: term,
+      vehicleContext: body.vehicleContext,
+      location: body.location,
+      notify: body.notify,
+    });
     return apiOk({
-      id: data?.id,
+      id,
       message: "Request recorded for Admin review",
     });
   } catch (e) {
+    if (e instanceof ProductRequestsNotMigratedError) {
+      return apiFail(e.message, 503, "SETUP_REQUIRED");
+    }
     const msg = e instanceof Error ? e.message : "Request failed";
     return apiFail(msg, 500, "PRODUCT_REQUEST_ERROR");
   }

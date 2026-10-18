@@ -32,6 +32,7 @@ import {
 } from "@/lib/pricing";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
+import { loadProBankDetails } from "@/lib/server/payments/bank-lookup";
 
 /** Fixed cadence: retry every 10 minutes. */
 export const PAYOUT_RETRY_INTERVAL_MS = 10 * 60 * 1000;
@@ -219,33 +220,6 @@ export type PayoutAttemptResult =
       proPayoutMinor?: number;
       platformFeeMinor?: number;
     };
-
-async function loadProBank(repairProId: string | null): Promise<{
-  bankCode: string;
-  accountNumber: string;
-  accountName: string;
-} | null> {
-  if (!repairProId || !isSupabaseAdminConfigured()) return null;
-  try {
-    const sb = createServiceSupabase();
-    const { data } = await sb
-      .from("repair_pro_profiles")
-      .select("bank_code, bank_account_number, bank_account_name")
-      .eq("user_id", repairProId)
-      .maybeSingle();
-    if (!data) return null;
-    const bankCode = String(data.bank_code || "").trim();
-    const accountNumber = String(data.bank_account_number || "").replace(
-      /\D/g,
-      "",
-    );
-    const accountName = String(data.bank_account_name || "").trim();
-    if (!bankCode || accountNumber.length < 10 || !accountName) return null;
-    return { bankCode, accountNumber, accountName };
-  } catch {
-    return null;
-  }
-}
 
 /**
  * Attempt (or re-attempt) pro payout (87.5% of service) for held / pending escrow.
@@ -578,7 +552,7 @@ export async function attemptProPayout(input: {
     };
   }
 
-  const bank = await loadProBank(input.repairProId || esc.repairProId);
+  const bank = await loadProBankDetails(input.repairProId || esc.repairProId);
   if (!bank) {
     return {
       ok: false,
