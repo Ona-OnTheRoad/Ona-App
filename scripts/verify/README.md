@@ -28,3 +28,18 @@ npx lighthouse http://localhost:3000/login --only-categories=performance,seo --v
 
 Note: Lighthouse scores a page by what the server sends. The app is client-rendered behind a login, so an
 empty-looking shell can score 100 for SEO and accessibility; the axe scan above is the more honest check.
+
+## Client-write lockdown migration
+
+`client-write-lockdown.sql` tests migration 077 with real PostgreSQL grants,
+RLS and triggers against a minimal schema. Run it **only in a disposable local
+PostgreSQL cluster/database**, never against Supabase or an existing app database:
+
+```bash
+psql -X -v ON_ERROR_STOP=1 -h /path/to/disposable/socket -d postgres -f scripts/verify/client-write-lockdown.sql
+```
+
+The fixture creates roles/tables, reapplies the migration, checks protected
+client writes before/after blanket regrants, and verifies own/other-Pro presence,
+new trust columns, service-role writes and trusted SECURITY DEFINER operations.
+It is not part of Vitest and does not reproduce the full Supabase schema.
