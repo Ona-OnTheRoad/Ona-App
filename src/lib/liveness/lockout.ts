@@ -5,8 +5,8 @@
 
 const KEY = "ona-liveness-attempts-v1";
 export const LIVENESS_MAX_FAILS = 6;
-/** Cool-down after max fails (ms) 30 minutes, data-light */
-export const LIVENESS_LOCKOUT_MS = 30 * 60 * 1000;
+/** Cool-down after max fails (ms): one minute. */
+export const LIVENESS_LOCKOUT_MS = 60 * 1000;
 
 type Store = {
   fails: number;
@@ -18,10 +18,14 @@ function read(userKey: string): Store {
     const raw = localStorage.getItem(`${KEY}:${userKey}`);
     if (!raw) return { fails: 0, lockUntil: null };
     const p = JSON.parse(raw) as Partial<Store>;
-    return {
-      fails: Number(p.fails) || 0,
-      lockUntil: p.lockUntil ? Number(p.lockUntil) : null,
-    };
+    let lockUntil = p.lockUntil ? Number(p.lockUntil) : null;
+    // Old records stored a 30-minute deadline. Preserve the original start
+    // time when shortening them; locks already within one minute can expire.
+    if (lockUntil && lockUntil > Date.now() + LIVENESS_LOCKOUT_MS) {
+      lockUntil -= 30 * 60 * 1000 - LIVENESS_LOCKOUT_MS;
+      write(userKey, { fails: Number(p.fails) || 0, lockUntil });
+    }
+    return { fails: Number(p.fails) || 0, lockUntil };
   } catch {
     return { fails: 0, lockUntil: null };
   }

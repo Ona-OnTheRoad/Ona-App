@@ -1,0 +1,56 @@
+{
+  "id": "liveness-cooldown",
+  "reviewedCommit": null,
+  "criteria": [
+    {
+      "id": "duration",
+      "expectation": "Six failures cause a 60-second cooldown and counters reset after expiry",
+      "affectedAreas": [
+        "src/lib/liveness/lockout.ts"
+      ],
+      "verification": "Deterministic storage/clock tests",
+      "status": "passed",
+      "evidence": [
+        "6 deterministic tests passed: sixth failure, expiry, legacy locks at 0/30/120 seconds, short remaining lock, isolation/reset. Typecheck, targeted lint and diff check passed."
+      ]
+    },
+    {
+      "id": "legacy",
+      "expectation": "Saved legacy locks exceed neither the new cooldown nor their existing remaining duration",
+      "affectedAreas": [
+        "src/lib/liveness/lockout.ts"
+      ],
+      "verification": "Deterministic storage/clock tests",
+      "status": "passed",
+      "evidence": [
+        "6 deterministic tests passed: sixth failure, expiry, legacy locks at 0/30/120 seconds, short remaining lock, isolation/reset. Typecheck, targeted lint and diff check passed."
+      ]
+    },
+    {
+      "id": "scope",
+      "expectation": "Per-user isolation and success reset remain; no detection/backend/protected changes",
+      "affectedAreas": [
+        "src/lib/liveness/lockout.ts"
+      ],
+      "verification": "Deterministic storage/clock tests",
+      "status": "passed",
+      "evidence": [
+        "6 deterministic tests passed: sixth failure, expiry, legacy locks at 0/30/120 seconds, short remaining lock, isolation/reset. Typecheck, targeted lint and diff check passed."
+      ]
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent human review pending."
+    ],
+    "external": [
+      "Browser/camera smoke and deployment pending"
+    ]
+  },
+  "localChecks": {
+    "tests": "Full suite: 1,461 tests / 136 files passed in isolated branch checkout",
+    "typecheck": "passed",
+    "lint": "passed; zero errors",
+    "diffCheck": "passed"
+  }
+}
