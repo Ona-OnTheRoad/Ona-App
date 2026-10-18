@@ -1,0 +1,69 @@
+{
+  "id": "admin-pros-data",
+  "plan": "docs/review-guides/admin-pros-data.md",
+  "reviewedCommit": null,
+  "criteria": [
+    {
+      "id": "fetch",
+      "expectation": "Request the pro-filtered endpoint only after admin readiness; manual refresh fetches again",
+      "affectedAreas": [
+        "src/app/admin/pros/page.tsx"
+      ],
+      "verification": "Focused page tests and source inspection",
+      "status": "passed",
+      "evidence": [
+        "Local: 4 page tests and 19 existing users-route tests passed; typecheck and diff check passed. Source inspection confirms existing admin classes, readiness guard and no polling or backend changes in this fix."
+      ]
+    },
+    {
+      "id": "rows",
+      "expectation": "Render returned pros, including dual-role records and missing optional fields",
+      "affectedAreas": [
+        "src/app/admin/pros/page.tsx"
+      ],
+      "verification": "Focused page tests and source inspection",
+      "status": "passed",
+      "evidence": [
+        "Local: 4 page tests and 19 existing users-route tests passed; typecheck and diff check passed. Source inspection confirms existing admin classes, readiness guard and no polling or backend changes in this fix."
+      ]
+    },
+    {
+      "id": "states",
+      "expectation": "Show distinct loading, empty and failure states; retry can recover",
+      "affectedAreas": [
+        "src/app/admin/pros/page.tsx"
+      ],
+      "verification": "Focused page tests and source inspection",
+      "status": "passed",
+      "evidence": [
+        "Local: 4 page tests and 19 existing users-route tests passed; typecheck and diff check passed. Source inspection confirms existing admin classes, readiness guard and no polling or backend changes in this fix."
+      ]
+    },
+    {
+      "id": "scope",
+      "expectation": "Use existing admin styling; no polling, schema, backend or protected-file edits",
+      "affectedAreas": [
+        "src/app/admin/pros/page.tsx"
+      ],
+      "verification": "Focused page tests and source inspection",
+      "status": "passed",
+      "evidence": [
+        "Local: 4 page tests and 19 existing users-route tests passed; typecheck and diff check passed. Source inspection confirms existing admin classes, readiness guard and no polling or backend changes in this fix."
+      ]
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent human review pending."
+    ],
+    "external": [
+      "Authenticated browser smoke and hosted deployment checks pending."
+    ]
+  },
+  "localChecks": {
+    "tests": "Full suite: 1,463 tests / 137 files passed in isolated branch checkout",
+    "typecheck": "passed",
+    "lint": "passed; zero errors; no warnings in changed files",
+    "diffCheck": "passed"
+  }
+}
