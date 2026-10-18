@@ -1,0 +1,69 @@
+{
+  "id": "admin-motorists-data",
+  "reviewedCommit": null,
+  "plan": "docs/review-guides/admin-motorists-data.md",
+  "criteria": [
+    {
+      "id": "fetch",
+      "expectation": "Only request /api/admin/users?role=motorist after readiness; refresh refetches",
+      "affectedAreas": [
+        "src/app/admin/motorists/page.tsx"
+      ],
+      "verification": "Focused page tests and source inspection",
+      "status": "passed",
+      "evidence": [
+        "Local page and endpoint tests: 27 tests across 3 files passed (4 motorists, 4 pros, 19 endpoint). Source inspection confirms role=motorist, readiness gating, existing admin styles, no polling and no backend changes."
+      ]
+    },
+    {
+      "id": "rows",
+      "expectation": "Display name/contact/location/account status with optional-field fallbacks",
+      "affectedAreas": [
+        "src/app/admin/motorists/page.tsx"
+      ],
+      "verification": "Focused page tests and source inspection",
+      "status": "passed",
+      "evidence": [
+        "Local page and endpoint tests: 27 tests across 3 files passed (4 motorists, 4 pros, 19 endpoint). Source inspection confirms role=motorist, readiness gating, existing admin styles, no polling and no backend changes."
+      ]
+    },
+    {
+      "id": "states",
+      "expectation": "Distinct pending, failure and empty states with retry recovery",
+      "affectedAreas": [
+        "src/app/admin/motorists/page.tsx"
+      ],
+      "verification": "Focused page tests and source inspection",
+      "status": "passed",
+      "evidence": [
+        "Local page and endpoint tests: 27 tests across 3 files passed (4 motorists, 4 pros, 19 endpoint). Source inspection confirms role=motorist, readiness gating, existing admin styles, no polling and no backend changes."
+      ]
+    },
+    {
+      "id": "scope",
+      "expectation": "Existing admin styles; no polling, backend, protected-file or schema changes",
+      "affectedAreas": [
+        "src/app/admin/motorists/page.tsx"
+      ],
+      "verification": "Focused page tests and source inspection",
+      "status": "passed",
+      "evidence": [
+        "Local page and endpoint tests: 27 tests across 3 files passed (4 motorists, 4 pros, 19 endpoint). Source inspection confirms role=motorist, readiness gating, existing admin styles, no polling and no backend changes."
+      ]
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent human review pending."
+    ],
+    "external": [
+      "Authenticated browser smoke and hosted deployment checks pending."
+    ]
+  },
+  "localChecks": {
+    "tests": "Full suite: 1,463 tests / 137 files passed in isolated branch checkout",
+    "typecheck": "passed",
+    "lint": "passed; zero errors; no warnings in changed files",
+    "diffCheck": "passed"
+  }
+}
