@@ -1,0 +1,92 @@
+{
+  "id": "issue-6-service-logging-followup",
+  "title": "Issue 6 follow-up: payment/job service logging",
+  "plan": "docs/review-guides/issue-6-service-logging-followup.md",
+  "reviewedCommit": null,
+  "implementationState": "Plan prepared; implementation not started",
+  "criteria": [
+    {
+      "id": "inventory",
+      "expectation": "Critical raw logs and suppressed catches are inventoried; deliberate fallbacks and deferrals are explicit",
+      "verification": "Scoped source audit",
+      "status": "pending",
+      "evidence": [],
+      "affectedAreas": [
+        "src/lib/server/payments/",
+        "src/lib/server/jobs/"
+      ]
+    },
+    {
+      "id": "privacy",
+      "expectation": "Stable JSON events omit exception messages/stacks, raw payloads, credentials and personal data",
+      "verification": "Failure-injection and logger assertions",
+      "status": "pending",
+      "evidence": [],
+      "affectedAreas": [
+        "src/lib/server/structured-logger.ts",
+        "scoped payment/job services"
+      ]
+    },
+    {
+      "id": "correlation",
+      "expectation": "Service failures include validated request IDs where supplied and safe record/operation context for workers",
+      "verification": "Route-to-service and worker tests",
+      "status": "pending",
+      "evidence": [],
+      "affectedAreas": [
+        "selected payment/job API callers",
+        "request context and scoped services"
+      ]
+    },
+    {
+      "id": "behavior",
+      "expectation": "Payment/job statuses, fees, CAS/transaction/lease/retry contracts and typed client errors remain unchanged",
+      "verification": "Money/job regression tests and protected-file review",
+      "status": "pending",
+      "evidence": [],
+      "affectedAreas": [
+        "protected payout/job files",
+        "money/job regression suites"
+      ]
+    },
+    {
+      "id": "quality",
+      "expectation": "Lint, typecheck, tests and production build pass against the reviewed commit",
+      "verification": "Repository gates",
+      "status": "pending",
+      "evidence": [],
+      "affectedAreas": [
+        "repository gates"
+      ]
+    },
+    {
+      "id": "hosted",
+      "expectation": "Non-production correlation, retention/access and alert ownership are verified separately",
+      "verification": "Hosted evidence in parent guide",
+      "status": "pending",
+      "evidence": [],
+      "affectedAreas": [
+        "non-production platform logs",
+        "parent Issue 6 release criteria"
+      ]
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Scoped inventory and observability implementation",
+      "Failure-injection tests and regression gates",
+      "Formal review including protected files"
+    ],
+    "external": [
+      "Hosted correlation/retention/access evidence",
+      "Monitoring ownership and telemetry decision in parent Issue 6 guide"
+    ]
+  },
+  "planPublicationChecks": {
+    "scope": "Documentation only; no implementation started",
+    "tests": "1,455 tests / 135 files passed",
+    "typecheck": "passed",
+    "lint": "0 errors / 160 existing warnings",
+    "diffCheck": "passed"
+  }
+}
