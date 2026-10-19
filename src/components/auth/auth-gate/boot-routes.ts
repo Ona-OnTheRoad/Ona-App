@@ -42,6 +42,16 @@ export function isDualRoleSignupPath(
     }
   }
 
+  // Menu/profile dual-signup also opens the shared details screen first.
+  if (pathname === "/signup" && typeof window !== "undefined") {
+    try {
+      const from = new URLSearchParams(window.location.search).get("from");
+      if (from === "menu" || from === "profile") return true;
+    } catch {
+      /* ignore */
+    }
+  }
+
   if (pathname.startsWith("/signup/motorist") && !hasMotoristAccount) {
     return true;
   }
@@ -58,6 +68,7 @@ export function isPublicContentRoute(pathname: string) {
 
 export function initialPhase(pathname: string): BootPhase {
   // Deep-link into forms: never trap on splash
-  if (isAuthFormRoute(pathname) || isPublicContentRoute(pathname)) return "ready";
+  if (isAuthFormRoute(pathname) || isPublicContentRoute(pathname))
+    return "ready";
   return "loading";
 }

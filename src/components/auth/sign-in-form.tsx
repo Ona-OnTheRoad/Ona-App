@@ -79,7 +79,7 @@ export function SignInForm() {
         codeStep || forgot ? null : (
           <button
             type="button"
-            onClick={() => go("/login/role")}
+            onClick={() => go("/signup")}
             className="mx-auto flex min-h-[44px] items-center border-0 bg-transparent text-[14px] font-semibold text-ona-brand-ink underline underline-offset-2"
           >
             {t("auth.newHere")}

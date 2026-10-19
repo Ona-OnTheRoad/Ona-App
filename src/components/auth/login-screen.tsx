@@ -1,12 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Car, Check, Wrench } from "lucide-react";
 import { useAuthNavigate } from "@/components/auth/auth-transition";
 import { Button } from "@/components/ui/button";
 import { OnaScreen, OnaTitle } from "@/components/ui/ona-screen";
 import { useT } from "@/lib/i18n";
+import {
+  clearSignupDraft,
+  loadSignupDraft,
+  signupHref,
+} from "@/lib/signup-draft";
 import type { AccountType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -15,7 +20,17 @@ export function LoginScreen() {
   const { exiting, go } = useAuthNavigate();
   const t = useT();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const ref = searchParams.get("ref");
+  const [ready, setReady] = useState(false);
+
+  // Sign-up starts at /signup (details first). Guest paths that still push
+  // /login/role land here and are forwarded when no details were saved yet.
+  useEffect(() => {
+    if (loadSignupDraft()) setReady(true);
+    else router.replace(signupHref("/signup", { ref }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   /** No default: user must pick Car Owner or Repair Pro */
   const [accountType, setAccountType] = useState<AccountType | null>(null);
 
@@ -24,17 +39,12 @@ export function LoginScreen() {
     if (!accountType) return;
     const dest =
       accountType === "professional" ? "/signup/pro" : "/signup/motorist";
-    go(ref ? `${dest}?ref=${encodeURIComponent(ref)}` : dest);
+    go(signupHref(dest, { ref }));
   };
 
-  const goBack = () => {
-    try {
-      sessionStorage.removeItem("ona-entry-done");
-    } catch {
-      /* ignore */
-    }
-    go("/login");
-  };
+  const goBack = () => go(signupHref("/signup/verify", { ref }));
+
+  if (!ready) return <div className="ona2 h-full" aria-busy="true" />;
 
   return (
     <form onSubmit={onSubmit} className="h-full min-h-0">
@@ -58,7 +68,10 @@ export function LoginScreen() {
               <button
                 type="button"
                 className="inline-flex min-h-11 items-center border-0 bg-transparent p-0 font-semibold text-ona-brand-ink underline underline-offset-2"
-                onClick={() => go("/login/signin")}
+                onClick={() => {
+                  clearSignupDraft();
+                  go("/login/signin");
+                }}
               >
                 Log in
               </button>

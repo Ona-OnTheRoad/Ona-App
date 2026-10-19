@@ -18,6 +18,7 @@ import { useApp } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { FLOW_STEPS, type Step } from "./pro-signup/constants";
 import { proFieldStyles } from "./pro-signup/field-styles";
+import { loadSignupDraft } from "@/lib/signup-draft";
 import { PrefPicker } from "./pro-signup/pref-picker";
 import { StepAbout } from "./pro-signup/step-about";
 import { StepArea } from "./pro-signup/step-area";
@@ -79,7 +80,7 @@ export function ProSignup() {
     fix,
     stepsOk: step4Ok && step5Ok && step6Ok,
     userProfile,
-    refCode: searchParams.get("ref"),
+    refCode: searchParams.get("ref") || loadSignupDraft()?.referral || null,
     completeSignup,
     replace: (href) => router.replace(href),
   });

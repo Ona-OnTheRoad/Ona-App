@@ -5,7 +5,6 @@ import { OnaScreen, OnaTitle } from "@/components/ui/ona-screen";
 import { OnaStepBars } from "@/components/ui/ona-step-bars";
 import { SignupFooter } from "./motorist-signup/signup-footer";
 import { StepArea } from "./motorist-signup/step-area";
-import { StepDetails } from "./motorist-signup/step-details";
 import { StepPassword } from "./motorist-signup/step-password";
 import { StepVehicles } from "./motorist-signup/step-vehicles";
 import {
@@ -17,7 +16,6 @@ import { useMotoristSignup } from "./motorist-signup/use-motorist-signup";
 export function MotoristSignup() {
   const {
     exiting,
-    go,
     router,
     step,
     done,
@@ -26,9 +24,6 @@ export function MotoristSignup() {
     fields,
     vehicleState,
     dualPasswordOk,
-    urlRef,
-    refInput,
-    setRefInput,
     goBack,
     goNext,
     finish,
@@ -47,29 +42,18 @@ export function MotoristSignup() {
             hasVehicles={vehicleState.vehicles.length > 0}
             onNext={goNext}
             onFinish={finish}
-            onLogin={() => go("/login/signin")}
           />
         }
       >
-        {step > 1 ? (
-          <div className="mb-5">
-            <OnaStepBars current={step - 1} total={3} />
-          </div>
-        ) : null}
+        <div className="mb-5">
+          <OnaStepBars current={step} total={3} />
+        </div>
         <OnaTitle title={titles[step]} subtitle={subtitles[step]} />
         <div className="mt-5">
           {step === 1 && (
-            <StepDetails
-              f={fields}
-              urlRef={urlRef}
-              refInput={refInput}
-              setRefInput={setRefInput}
-            />
-          )}
-          {step === 2 && (
             <StepPassword f={fields} dualPasswordOk={dualPasswordOk} />
           )}
-          {step === 3 && (
+          {step === 2 && (
             <StepArea
               city={fields.city}
               setCity={fields.setCity}
@@ -77,7 +61,7 @@ export function MotoristSignup() {
               setArea={fields.setArea}
             />
           )}
-          {step === 4 && <StepVehicles v={vehicleState} />}
+          {step === 3 && <StepVehicles v={vehicleState} />}
           {formError ? (
             <p
               role="alert"

@@ -11,7 +11,8 @@ differs from the mock-up and changing it would change functionality. **Protected
 
 | Item | Type | Detail |
 | --- | --- | --- |
-| Signup phone OTP ("Verify your number") | Backend/Code | Signup has no phone-code step today (phone is verified later in `/verify`). The OTP screen exists only for login. |
+| Signup phone OTP ("Verify your number") | Backend | Built at `/signup/verify` but disabled and skippable ("Skip for now"). `/api/auth/otp/send` only accepts registered phones, so no number can be verified before an account exists, and SMS billing is not live. Enabling needs a pre-account OTP endpoint. Phone is verified later in `/verify`. |
+| Signup order | Decision | New flow: `/signup` (shared Create account details, saved to a sessionStorage draft, never a password) -> `/signup/verify` (skippable) -> `/login/role` -> Customer (password, area, vehicles) or Repair Pro (existing wizard, details prefilled and editable). `/login/role` without a draft redirects to `/signup`, so old guest links keep working. |
 | Signup password rules | Code | Checklist shows the real rules (8 chars, 1 capital, 1 number). The design shows 10 chars, lowercase and symbol. Changing needs `src/lib/signup-validation.ts` and the server to agree. |
 | Reset password rules | Code | Reset page only enforces 6 characters and a match. The design's 5-rule checklist is not enforced server-side. |
 | Forgot password by OTP | Backend | Design shows an SMS-code reset. The backend sends an email recovery link (`/api/auth/forgot-password`); the reset page opens from that link. |

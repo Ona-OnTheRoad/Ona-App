@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { OnaField, OnaInput, OnaSelect } from "@/components/ui/ona-field";
 import {
   dobError,
@@ -47,6 +47,14 @@ export function AccountIdentityFields({ f }: { f: MotoristFields }) {
 
   // Local first/last so typing never re-splits; fullName stays the stored value.
   const [parts, setParts] = useState(() => splitFullName(fullName));
+  // Re-sync when fullName changes from outside (draft hydration, profile prefill).
+  useEffect(() => {
+    setParts((p) =>
+      composeFullName(p.first, p.last) === fullName.trim()
+        ? p
+        : splitFullName(fullName),
+    );
+  }, [fullName]);
   const shown = nameLocked ? splitFullName(fullName) : parts;
   const setPart = (key: "first" | "last", v: string) => {
     if (nameLocked) return;

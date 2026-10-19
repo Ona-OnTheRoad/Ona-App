@@ -61,7 +61,9 @@ export function smartBackFallback(
   // ── Auth / guest ──────────────────────────────────────────
   if (path === "/login" || path === "/logout") return "/login";
   if (path.startsWith("/login/")) return "/login";
-  if (path === "/signup" || path.startsWith("/signup/")) return "/login/role";
+  if (path === "/signup") return "/login";
+  if (path === "/signup/verify") return "/signup";
+  if (path.startsWith("/signup/")) return "/login/role";
 
   // ── Settings tree ─────────────────────────────────────────
   if (path.startsWith("/settings/legal/")) return "/settings/legal";
