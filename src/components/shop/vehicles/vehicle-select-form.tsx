@@ -1,13 +1,30 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
-import { FlatSelect } from "@/components/shop/flat-select";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { OnaField, OnaSelect } from "@/components/ui/ona-field";
 
 type Option = { value: string; label: string };
 
+function Options({
+  options,
+  placeholder,
+}: {
+  options: Option[];
+  placeholder?: string;
+}) {
+  return (
+    <>
+      {placeholder ? <option value="">{placeholder}</option> : null}
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </>
+  );
+}
+
 export function VehicleSelectForm({
-  isLight,
   isAuthenticated,
   typeSlug,
   makeId,
@@ -25,7 +42,6 @@ export function VehicleSelectForm({
   busy,
   applyVehicle,
 }: {
-  isLight: boolean;
   isAuthenticated: boolean;
   typeSlug: string;
   makeId: string;
@@ -43,92 +59,84 @@ export function VehicleSelectForm({
   busy: boolean;
   applyVehicle: (save: boolean) => Promise<void>;
 }) {
+  const incomplete = !makeId || !modelId;
   return (
-    <div className="border-0 p-0 shadow-none ring-0" data-om-vehicles-form="1">
-      <p
-        className={cn(
-          "text-[13px] font-black",
-          isLight ? "text-slate-900" : "text-white",
-        )}
-      >
-        Select vehicle
-      </p>
-      <div className="mt-2 flex flex-col gap-2">
-        <FlatSelect
-          isLight={isLight}
-          aria-label="Vehicle type"
-          value={typeSlug}
-          options={typeOptions}
-          onChange={setTypeSlug}
-        />
-        <FlatSelect
-          isLight={isLight}
+    <div data-om-vehicles-form="1" className="flex min-h-0 flex-1 flex-col">
+      <div className="space-y-3">
+        <OnaField label="Select vehicle">
+          {({ id, describedBy }) => (
+            <OnaSelect
+              id={id}
+              aria-describedby={describedBy}
+              value={typeSlug}
+              onChange={(e) => setTypeSlug(e.target.value)}
+            >
+              <Options options={typeOptions} />
+            </OnaSelect>
+          )}
+        </OnaField>
+        <OnaSelect
           aria-label="Make"
           value={makeId}
-          options={makeOptions}
-          placeholder="Make"
-          onChange={setMakeId}
-        />
-        <FlatSelect
-          isLight={isLight}
-          aria-label="Model"
-          value={modelId}
-          options={modelOptions}
-          placeholder="Model"
-          disabled={!makeId}
-          onChange={setModelId}
-        />
-        <FlatSelect
-          isLight={isLight}
-          aria-label="Year"
-          value={year === "" ? "" : String(year)}
-          options={yearOptions}
-          placeholder="Year (optional)"
-          disabled={!modelId}
-          onChange={(v) => setYear(v ? Number(v) : "")}
-        />
+          onChange={(e) => setMakeId(e.target.value)}
+        >
+          <Options options={makeOptions} placeholder="Make" />
+        </OnaSelect>
+        <OnaField label="Model">
+          {({ id }) => (
+            <OnaSelect
+              id={id}
+              value={modelId}
+              disabled={!makeId}
+              onChange={(e) => setModelId(e.target.value)}
+            >
+              <Options options={modelOptions} placeholder="Select" />
+            </OnaSelect>
+          )}
+        </OnaField>
+        <OnaField label="Year (optional)">
+          {({ id }) => (
+            <OnaSelect
+              id={id}
+              value={year === "" ? "" : String(year)}
+              disabled={!modelId}
+              onChange={(e) =>
+                setYear(e.target.value ? Number(e.target.value) : "")
+              }
+            >
+              <Options options={yearOptions} placeholder="Select" />
+            </OnaSelect>
+          )}
+        </OnaField>
       </div>
       {msg ? (
-        <p className="mt-2 text-[12px] font-semibold text-red-500">{msg}</p>
+        <p
+          role="alert"
+          className="mt-2 text-[12px] font-semibold text-ona-danger"
+        >
+          {msg}
+        </p>
       ) : null}
-      <div className="mt-3 flex gap-2">
-        <button
-          type="button"
-          disabled={busy || !makeId || !modelId}
+      <div className="mt-6 flex flex-col gap-2">
+        {isAuthenticated ? (
+          <Button
+            variant="ona"
+            size="ona"
+            busy={busy}
+            disabled={busy || incomplete}
+            onClick={() => void applyVehicle(true)}
+          >
+            Save &amp; browse
+          </Button>
+        ) : null}
+        <Button
+          variant={isAuthenticated ? "onaOutline" : "ona"}
+          size="ona"
+          disabled={busy || incomplete}
           onClick={() => void applyVehicle(false)}
-          className="h-11 flex-1 rounded-md border-0 text-[13px] font-bold text-white shadow-none outline-none ring-0 disabled:opacity-50"
-          style={{
-            backgroundColor: "#FF6B35",
-            backgroundImage: "none",
-            border: "none",
-            boxShadow: "none",
-          }}
         >
           Browse ALL PARTS
-        </button>
-        {isAuthenticated ? (
-          <button
-            type="button"
-            disabled={busy || !makeId || !modelId}
-            onClick={() => void applyVehicle(true)}
-            className={cn(
-              "h-11 flex-1 rounded-md border-0 text-[13px] font-bold shadow-none outline-none ring-0 disabled:opacity-50",
-              isLight ? "text-slate-900" : "text-white",
-            )}
-            style={{
-              backgroundColor: isLight ? "#d8d9dd" : "#3a3a3c",
-              backgroundImage: "none",
-              border: "none",
-              boxShadow: "none",
-            }}
-          >
-            {busy ? (
-              <Loader2 className="mx-auto h-4 w-4 animate-spin" />
-            ) : (
-              "Save & browse"
-            )}
-          </button>
-        ) : null}
+        </Button>
       </div>
     </div>
   );

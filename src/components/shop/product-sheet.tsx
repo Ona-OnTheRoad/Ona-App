@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, ShoppingBag } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { CartSheet } from "@/components/shop/cart-sheet";
 import { ProductSheetOptions } from "@/components/shop/product-sheet/product-sheet-options";
@@ -12,7 +13,6 @@ import { useProductSheetData } from "@/components/shop/product-sheet/use-product
 import { formatShopPrice } from "@/components/shop/shared/format-shop-price";
 import { shopAddToCart } from "@/lib/shop/client";
 import { useApp } from "@/lib/store";
-import { cn } from "@/lib/utils";
 
 type Props = {
   slug: string | null;
@@ -21,8 +21,7 @@ type Props = {
 
 export function ProductSheet({ slug, onClose }: Props) {
   const router = useRouter();
-  const { theme, accountType, isAuthenticated } = useApp();
-  const isLight = theme === "light";
+  const { accountType, isAuthenticated } = useApp();
   const {
     loading,
     product,
@@ -68,8 +67,6 @@ export function ProductSheet({ slug, onClose }: Props) {
     setQty((q) => (available > 0 ? clampQty(q) : 1));
   }, [selectedVariantId, available, clampQty, setQty]);
 
-  const muted = isLight ? "text-slate-600" : "text-white/55";
-  const border = isLight ? "border-black/10" : "border-white/10";
   const price = selectedPrice
     ? formatShopPrice(selectedPrice.amount_minor)
     : "";
@@ -85,23 +82,20 @@ export function ProductSheet({ slug, onClose }: Props) {
         titleId="product-sheet-title"
         heightPercent={55}
         growToPercent={82}
+        surface="ona"
+        className="ona2"
       >
         {loading ? (
           <div className="flex justify-center py-10">
-            <Loader2 className="h-8 w-8 animate-spin text-[#FF6B35]" />
+            <Loader2 className="h-8 w-8 animate-spin text-ona-brand-ink" />
           </div>
         ) : !product ? (
-          <p className={cn("pt-6 text-center text-[13px]", muted)}>
+          <p className="pt-6 text-center text-[13px] text-ona-muted">
             Product not found.
           </p>
         ) : (
           <div>
-            <div
-              className={cn(
-                "flex h-40 items-center justify-center overflow-hidden rounded-2xl",
-                isLight ? "bg-white" : "bg-black/40",
-              )}
-            >
+            <div className="flex h-40 items-center justify-center overflow-hidden rounded-ona-card bg-ona-field">
               {images[0]?.url || product.primary_image_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -112,7 +106,7 @@ export function ProductSheet({ slug, onClose }: Props) {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <ShoppingBag className="h-12 w-12 text-[#FF6B35]" />
+                <ShoppingBag aria-hidden className="h-12 w-12 text-ona-muted" />
               )}
             </div>
             {images.length > 1 ? (
@@ -125,40 +119,34 @@ export function ProductSheet({ slug, onClose }: Props) {
                     key={`${img.url}-${i}`}
                     src={img.url}
                     alt=""
-                    className={cn(
-                      "h-14 w-14 shrink-0 rounded-lg object-cover",
-                      isLight ? "bg-white" : "bg-black/40",
-                    )}
+                    className="h-14 w-14 shrink-0 rounded-ona-ctl bg-ona-field object-cover"
                   />
                 ))}
               </div>
             ) : null}
             <h1
               id="product-sheet-title"
-              className="mt-3 text-[17px] font-black leading-tight"
+              className="mt-3 text-[16px] font-semibold leading-tight text-ona-ink"
             >
               {String(product.name)}
             </h1>
             {product.subtitle && product.subtitle !== "Fits most vehicles" ? (
-              <p className={cn("mt-1 text-[13px]", muted)}>
+              <p className="mt-1 text-[13px] text-ona-muted">
                 {String(product.subtitle)}
               </p>
             ) : null}
             <div className="mt-2 flex items-baseline gap-2">
-              <p className="text-[20px] font-black text-[#FF6B35]">{price}</p>
+              <p className="text-[18px] font-semibold tabular-nums text-ona-brand-ink">
+                {price}
+              </p>
               {compareAt ? (
-                <p
-                  className={cn(
-                    "text-[13px] font-semibold line-through",
-                    muted,
-                  )}
-                >
+                <p className="text-[13px] font-semibold text-ona-muted line-through">
                   {compareAt}
                 </p>
               ) : null}
             </div>
             {product.description ? (
-              <p className={cn("mt-2 text-[13px] leading-relaxed", muted)}>
+              <p className="mt-2 text-[13px] leading-relaxed text-ona-muted">
                 {String(product.description)}
               </p>
             ) : null}
@@ -167,8 +155,6 @@ export function ProductSheet({ slug, onClose }: Props) {
               <ProductSheetOptions
                 variants={variants}
                 selectedVariantId={selectedVariantId}
-                border={border}
-                muted={muted}
                 priceFor={priceFor}
                 onSelect={(id) => {
                   setSelectedVariantId(id);
@@ -179,7 +165,6 @@ export function ProductSheet({ slug, onClose }: Props) {
 
             {!outOfStock ? (
               <ProductSheetQuantity
-                isLight={isLight}
                 qty={qty}
                 onDecrement={() => setQty((q) => clampQty(q - 1))}
                 onIncrement={() => setQty((q) => clampQty(q + 1))}
@@ -188,17 +173,21 @@ export function ProductSheet({ slug, onClose }: Props) {
 
             {msg ? (
               <p
-                className={cn(
-                  "mt-3 text-center text-[12px] font-semibold",
-                  msg.includes("Added") ? "text-emerald-600" : "text-red-500",
-                )}
+                role="status"
+                className={
+                  msg.includes("Added")
+                    ? "mt-3 text-center text-[12px] font-semibold text-ona-success"
+                    : "mt-3 text-center text-[12px] font-semibold text-ona-danger"
+                }
               >
                 {msg}
               </p>
             ) : null}
 
-            <button
-              type="button"
+            <Button
+              variant="ona"
+              size="ona"
+              className="mt-3"
               disabled={adding || outOfStock}
               onClick={async () => {
                 if (!isAuthenticated) {
@@ -225,26 +214,21 @@ export function ProductSheet({ slug, onClose }: Props) {
                   setAdding(false);
                 }
               }}
-              className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border-0 bg-[#FF6B35] text-[13px] font-bold text-white disabled:opacity-60"
             >
               {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {outOfStock ? "Out of stock" : `Add ${qty} to cart`}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="onaOutline"
+              size="ona"
+              className="mt-2"
               onClick={() => {
                 onClose();
                 setCartOpen(true);
               }}
-              className={cn(
-                "mt-2 h-10 w-full rounded-xl border-0 text-[12px] font-bold",
-                isLight
-                  ? "bg-black/10 text-slate-900"
-                  : "bg-white/10 text-white",
-              )}
             >
               View cart
-            </button>
+            </Button>
           </div>
         )}
       </BottomSheet>

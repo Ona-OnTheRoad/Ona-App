@@ -1,9 +1,8 @@
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { ShopHomeProductList } from "./shop-home-product-list";
-import type { ShopHomeProduct, ShopHomeTone } from "./shop-home-types";
+import type { ShopHomeProduct } from "./shop-home-types";
 
 type Props = {
-  tone: ShopHomeTone;
   q: string;
   results: ShopHomeProduct[];
   intentLabel: string | null;
@@ -14,7 +13,7 @@ type Props = {
   onJumpToTrade: () => void;
   listProps: Omit<
     React.ComponentProps<typeof ShopHomeProductList>,
-    "items" | "tint" | "onAdded"
+    "items" | "horizontal" | "onAdded"
   >;
 };
 
@@ -31,7 +30,6 @@ function postProductRequest(
 }
 
 export function ShopHomeResults({
-  tone,
   q,
   results,
   intentLabel,
@@ -42,48 +40,40 @@ export function ShopHomeResults({
   onJumpToTrade,
   listProps,
 }: Props) {
-  const { isLight, accentText, accentBg, muted } = tone;
   return (
     <>
-      <div className="flex items-center justify-between px-3 py-3">
-        <p className="text-[13px] font-bold">{intentLabel || "Results"}</p>
+      <div className="flex items-center justify-between py-3">
+        <p className="text-[13px] font-semibold text-ona-ink">
+          {intentLabel || "Results"}
+        </p>
         <button
           type="button"
-          className={`border-0 bg-transparent text-[12px] font-semibold ${accentText}`}
+          className="border-0 bg-transparent text-[12px] font-semibold text-ona-brand-ink"
           onClick={onClear}
         >
           Clear
         </button>
       </div>
       {suggestedTrade ? (
-        <div className="px-3 pb-2">
-          <button
-            type="button"
-            onClick={onJumpToTrade}
-            className={cn(
-              "w-full rounded-xl border-0 px-3 py-2.5 text-left text-[12px] font-bold",
-              isLight
-                ? "bg-[#E85A28]/15 text-slate-900"
-                : "bg-[#FF6B35]/20 text-white",
-            )}
-          >
-            Jump to <span className={accentText}>{suggestedTrade}</span> shop
-            search →
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onJumpToTrade}
+          className="mb-2 w-full rounded-ona-ctl border border-ona-brand/40 bg-ona-brand-soft px-3 py-2.5 text-left text-[12px] font-semibold text-ona-ink"
+        >
+          Jump to <span className="text-ona-brand-ink">{suggestedTrade}</span>{" "}
+          shop search →
+        </button>
       ) : null}
       {results.length === 0 ? (
-        <div className="px-4 py-4">
-          <p className={cn("text-[13px] font-semibold", muted)}>
+        <div className="py-4">
+          <p className="text-[13px] font-semibold text-ona-muted">
             No matching product found.
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              className={cn(
-                "rounded-lg border-0 px-3 py-2 text-[12px] font-bold text-white",
-                accentBg,
-              )}
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Button
+              variant="ona"
+              size="ona"
+              className="w-auto"
               onClick={() =>
                 postProductRequest(
                   q.trim(),
@@ -93,15 +83,11 @@ export function ShopHomeResults({
               }
             >
               Request Product
-            </button>
-            <button
-              type="button"
-              className={cn(
-                "rounded-lg border-0 px-3 py-2 text-[12px] font-bold",
-                isLight
-                  ? "bg-black/10 text-slate-900"
-                  : "bg-white/10 text-white",
-              )}
+            </Button>
+            <Button
+              variant="onaOutline"
+              size="ona"
+              className="w-auto"
               onClick={() =>
                 postProductRequest(
                   q.trim(),
@@ -111,10 +97,10 @@ export function ShopHomeResults({
               }
             >
               Notify Me
-            </button>
+            </Button>
             <button
               type="button"
-              className={`border-0 bg-transparent text-[12px] font-semibold ${accentText}`}
+              className="border-0 bg-transparent text-[12px] font-semibold text-ona-brand-ink"
               onClick={onTryAnother}
             >
               Try Another Search

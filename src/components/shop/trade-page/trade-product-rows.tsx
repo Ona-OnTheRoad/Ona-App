@@ -19,7 +19,6 @@ export function TradeProductRows({
       {items.map((p) => (
         <ShopProductCard
           key={p.id}
-          tint
           cartQty={cartQtyById[p.id]}
           onOptimisticAdd={() => optimisticAdd(p.id)}
           onOptimisticRevert={optimisticRevert}

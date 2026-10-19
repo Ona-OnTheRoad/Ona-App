@@ -5,6 +5,7 @@ import { AlertCircle, Check, Loader2, Plus, ShoppingBag } from "lucide-react";
 import { ProductSheet } from "@/components/shop/product-sheet";
 import { detectCurrency, formatMoney, fromMinorUnits } from "@/lib/pricing";
 import { shopAddToCart } from "@/lib/shop/client";
+import { Badge } from "@/components/ui/badge";
 import { useApp } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -37,8 +38,8 @@ type Props = {
   onOptimisticAdd?: () => void;
   /** Called if the background add fails so the optimistic UI can revert */
   onOptimisticRevert?: () => void;
-  /** Question-flow 2% tint (bg-black/[0.02] / bg-white/[0.02]) instead of the white/gray card. */
-  tint?: boolean;
+  /** Narrow card for horizontal rows (New arrivals). */
+  compact?: boolean;
 };
 
 function formatPrice(minor: number | null, priceOnRequest?: boolean): string {
@@ -67,10 +68,9 @@ export function ShopProductCard({
   cartQty,
   onOptimisticAdd,
   onOptimisticRevert,
-  tint = false,
+  compact = false,
 }: Props) {
-  const { theme, isAuthenticated, accountType } = useApp();
-  const isLight = theme === "light";
+  const { isAuthenticated, accountType } = useApp();
   const [adding, setAdding] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
   const [addFailed, setAddFailed] = useState(false);
@@ -82,15 +82,6 @@ export function ShopProductCard({
   const stockLabel =
     product.stockLabel || (inStock ? "In Stock" : "Out of Stock");
   const badge = fitmentBadge(product.fitmentStatus, product.fitmentBadge);
-
-  const card = tint
-    ? isLight
-      ? "bg-black/[0.02] text-slate-900"
-      : "bg-white/[0.02] text-white"
-    : isLight
-      ? "bg-white/90 text-slate-900"
-      : "bg-[#1c1c1e] text-white";
-  const muted = isLight ? "text-slate-600" : "text-white/55";
 
   const addToCart = async () => {
     if (!isAuthenticated) {
@@ -134,17 +125,11 @@ export function ShopProductCard({
           }
         }}
         className={cn(
-          "relative flex w-full cursor-pointer items-center gap-3 rounded-xl border-0 p-2.5 text-left",
-          card,
+          "relative flex cursor-pointer items-center gap-3 rounded-ona-card border border-ona-border bg-ona-surface p-2.5 text-left text-ona-ink",
+          compact ? "w-[270px] shrink-0" : "w-full",
         )}
       >
-        {/* Image left */}
-        <div
-          className={cn(
-            "flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg",
-            isLight ? "bg-black/5" : "bg-white/5",
-          )}
-        >
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-ona-ctl bg-ona-field">
           {product.primaryImageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -155,25 +140,19 @@ export function ShopProductCard({
               className="h-full w-full object-cover"
             />
           ) : (
-            <ShoppingBag className="h-6 w-6 text-[#FF6B35]/80" />
+            <ShoppingBag aria-hidden className="h-5 w-5 text-ona-muted" />
           )}
         </div>
 
-        {/* Name + price */}
         <div className="min-w-0 flex-1">
-          <p className="line-clamp-1 text-[13px] font-bold leading-snug">
+          <p className="line-clamp-1 text-[12px] font-semibold leading-snug">
             {typeof cartQty === "number" && cartQty > 0 ? (
-              <span
-                className="mr-1.5"
-                style={{ color: isLight ? "#475569" : "rgba(255,255,255,0.75)" }}
-              >
-                x{cartQty}
-              </span>
+              <span className="mr-1.5 text-ona-muted">x{cartQty}</span>
             ) : null}
             {product.name}
           </p>
           {product.subtitle && product.subtitle !== "Fits most vehicles" ? (
-            <p className={cn("mt-0.5 line-clamp-1 text-[11px]", muted)}>
+            <p className="mt-0.5 line-clamp-1 text-[11px] text-ona-muted">
               {product.subtitle}
             </p>
           ) : null}
@@ -182,12 +161,7 @@ export function ShopProductCard({
               {product.vehicleTags.slice(0, 3).map((tag) => (
                 <span
                   key={tag}
-                  className={cn(
-                    "rounded-full px-1.5 py-px text-[9px] font-semibold",
-                    isLight
-                      ? "bg-black/8 text-slate-700"
-                      : "bg-white/10 text-white/80",
-                  )}
+                  className="rounded-full bg-ona-field px-1.5 py-px text-[9px] font-semibold text-ona-muted"
                 >
                   {tag}
                 </span>
@@ -195,30 +169,26 @@ export function ShopProductCard({
             </div>
           ) : null}
           {badge ? (
-            <p className="mt-0.5 text-[10px] font-semibold text-emerald-600">
+            <p className="mt-0.5 text-[10px] font-semibold text-ona-success">
               {badge}
             </p>
           ) : null}
           <div className="mt-1 flex items-center gap-2">
-            <p className="text-[14px] font-black text-[#FF6B35]">
+            <p className="text-[12px] font-semibold tabular-nums">
               {formatPrice(product.fromPriceMinor, product.priceOnRequest)}
             </p>
-            <span
+            <Badge
+              variant="matched"
               className={cn(
-                "rounded-full px-1.5 py-px text-[9px] font-bold",
-                inStock
-                  ? "bg-emerald-500/15 text-emerald-700"
-                  : isLight
-                    ? "bg-black/10 text-slate-500"
-                    : "bg-white/10 text-white/55",
+                "px-1.5 py-px text-[9px] normal-case",
+                !inStock && "bg-ona-field text-ona-muted",
               )}
             >
               {stockLabel}
-            </span>
+            </Badge>
           </div>
         </div>
 
-        {/* Tiny add-to-cart icon at far right */}
         <button
           type="button"
           aria-label={canAdd ? "Add to cart" : "Out of stock"}
@@ -228,19 +198,14 @@ export function ShopProductCard({
             void addToCart();
           }}
           className={cn(
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-0 bg-transparent transition-colors active:bg-black/[0.06]",
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-0 bg-transparent transition-colors active:bg-ona-field",
             justAdded
-              ? "text-emerald-500"
+              ? "text-ona-success"
               : addFailed
-                ? "text-red-500"
+                ? "text-ona-danger"
                 : canAdd
-                  ? isLight
-                    ? "text-[#E85A28]"
-                    : "text-[#FF6B35]"
-                  : cn(
-                      isLight ? "text-slate-300" : "text-white/30",
-                      "disabled:opacity-60",
-                    ),
+                  ? "text-ona-brand-ink"
+                  : "text-ona-disabled-ink disabled:opacity-60",
           )}
           title={
             justAdded
@@ -266,25 +231,10 @@ export function ShopProductCard({
 
       {justAdded ? (
         <div
-          style={{
-            position: "fixed",
-            top: 10,
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 9999,
-            background: "#1f2937",
-            color: "#fff",
-            borderRadius: 999,
-            padding: "8px 16px",
-            fontSize: 12,
-            fontWeight: 700,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-          }}
+          role="status"
+          className="fixed left-1/2 top-2.5 z-[9999] flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-ona-dark px-4 py-2 text-[12px] font-semibold text-ona-on-dark shadow-lg"
         >
-          <Check className="h-3.5 w-3.5 text-emerald-400" strokeWidth={3} />
+          <Check className="h-3.5 w-3.5 text-ona-success" strokeWidth={3} />
           Added to cart
         </div>
       ) : null}

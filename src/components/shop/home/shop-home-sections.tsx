@@ -1,10 +1,9 @@
+import { onaEyebrowClass } from "@/components/ui/ona-field";
 import { PRO_TRADE_OPTIONS } from "@/lib/services";
-import { cn } from "@/lib/utils";
 import { ShopHomeProductList } from "./shop-home-product-list";
-import type { ShopHomeProduct, ShopHomeTone } from "./shop-home-types";
+import type { ShopHomeProduct } from "./shop-home-types";
 
 type Props = {
-  tone: ShopHomeTone;
   allowedTradeKeys: string[] | null;
   popular: ShopHomeProduct[];
   newArrivals: ShopHomeProduct[];
@@ -12,12 +11,11 @@ type Props = {
   refreshCartCount: () => Promise<void>;
   listProps: Omit<
     React.ComponentProps<typeof ShopHomeProductList>,
-    "items" | "tint" | "onAdded"
+    "items" | "horizontal" | "onAdded"
   >;
 };
 
 export function ShopHomeSections({
-  tone,
   allowedTradeKeys,
   popular,
   newArrivals,
@@ -25,13 +23,13 @@ export function ShopHomeSections({
   refreshCartCount,
   listProps,
 }: Props) {
-  const { isLight, accentText } = tone;
   return (
     <>
-      <p className="px-3 pt-4 pb-2 text-[13px] font-black tracking-tight">
-        Enter shop
-      </p>
-      <div className="grid grid-cols-4 gap-2 px-3">
+      <div
+        role="group"
+        aria-label="Enter shop"
+        className="mt-4 grid grid-cols-4 gap-px overflow-hidden rounded-ona-card border border-ona-border bg-ona-border"
+      >
         {PRO_TRADE_OPTIONS.filter(
           (t) => !allowedTradeKeys || allowedTradeKeys.includes(t.id),
         ).map((opt) => {
@@ -41,15 +39,10 @@ export function ShopHomeSections({
               key={opt.id}
               type="button"
               onClick={() => onEnterTrade(opt.id)}
-              className={cn(
-                "flex flex-col items-center gap-1 rounded-xl border-0 px-1 py-2.5",
-                isLight
-                  ? "bg-black/[0.02] text-slate-900"
-                  : "bg-white/[0.02] text-white",
-              )}
+              className="flex min-h-[64px] min-w-0 flex-col items-center justify-center gap-1.5 border-0 bg-ona-surface px-1 py-2.5 text-ona-ink active:bg-ona-field-strong"
             >
-              <Icon className={`h-5 w-5 ${accentText}`} strokeWidth={2.2} />
-              <span className="truncate text-[10px] font-bold">
+              <Icon className="h-[18px] w-[18px]" strokeWidth={1.8} />
+              <span className="max-w-full truncate text-[10px] font-medium leading-none">
                 {opt.homeLabel}
               </span>
             </button>
@@ -59,10 +52,9 @@ export function ShopHomeSections({
 
       {popular.length > 0 ? (
         <>
-          <p className="px-3 pt-5 pb-2 text-[13px] font-black">Popular</p>
+          <p className={`${onaEyebrowClass} pb-2 pt-5`}>Popular</p>
           <ShopHomeProductList
             items={popular}
-            tint
             onAdded={() => void refreshCartCount()}
             {...listProps}
           />
@@ -71,10 +63,10 @@ export function ShopHomeSections({
 
       {newArrivals.length > 0 ? (
         <>
-          <p className="px-3 pt-5 pb-2 text-[13px] font-black">New arrivals</p>
+          <p className={`${onaEyebrowClass} pb-2 pt-5`}>New arrivals</p>
           <ShopHomeProductList
             items={newArrivals}
-            tint
+            horizontal
             onAdded={() => void refreshCartCount()}
             {...listProps}
           />
