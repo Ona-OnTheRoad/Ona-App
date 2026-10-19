@@ -14,11 +14,3 @@ export type ShopHomeProduct = {
   stockLabel?: string;
   stockQty?: number;
 };
-
-/** Theme-derived class names shared by the shop home sections. */
-export type ShopHomeTone = {
-  isLight: boolean;
-  accentText: string;
-  accentBg: string;
-  muted: string;
-};

@@ -23,7 +23,7 @@ export function PayTimer({
     <p
       className={cn(
         "text-[13px] font-bold tabular-nums",
-        urgent ? "text-red-500" : "text-[#FF6B35]",
+        urgent ? "text-ona-danger" : "text-ona-brand-ink",
       )}
     >
       Time left · {label}

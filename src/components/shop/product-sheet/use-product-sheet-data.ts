@@ -15,14 +15,12 @@ export function useProductSheetData(
     null,
   );
   const [qty, setQty] = useState(1);
-  const [msg, setMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!slug) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
-      setMsg(null);
       setQty(1);
       setProduct(null);
       setVariants([]);
@@ -73,7 +71,5 @@ export function useProductSheetData(
     setSelectedVariantId,
     qty,
     setQty,
-    msg,
-    setMsg,
   };
 }

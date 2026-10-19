@@ -9,6 +9,8 @@ export function useMotoristVehicles() {
   const [draftMake, setDraftMake] = useState("");
   const [draftModel, setDraftModel] = useState("");
   const [draftYear, setDraftYear] = useState("");
+  /** Set while the sheet edits an existing row (Save replaces it instead of adding). */
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   /** Real vehicle only when make + model are chosen */
   const draftReady = Boolean(draftMake.trim() && draftModel.trim());
@@ -18,18 +20,37 @@ export function useMotoristVehicles() {
     setDraftMake("");
     setDraftModel("");
     setDraftYear("");
+    setEditingId(null);
+  };
+
+  const startEdit = (v: MotoristVehicle) => {
+    setEditingId(v.id);
+    setDraftVehicleType(v.vehicleType ?? "");
+    setDraftMake(v.make);
+    setDraftModel(v.model);
+    setDraftYear(v.year ?? "");
+  };
+
+  const removeEditing = () => {
+    if (editingId)
+      setVehicles((prev) => prev.filter((x) => x.id !== editingId));
+    resetDraft();
   };
 
   const addDraftVehicle = (): boolean => {
     if (!draftReady) return false;
     const v: MotoristVehicle = {
-      id: `veh-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      id:
+        editingId ??
+        `veh-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       vehicleType: draftVehicleType.trim() || undefined,
       make: draftMake.trim(),
       model: draftModel.trim(),
       year: draftYear.trim() || undefined,
     };
-    setVehicles((prev) => [...prev, v]);
+    setVehicles((prev) =>
+      editingId ? prev.map((x) => (x.id === editingId ? v : x)) : [...prev, v],
+    );
     resetDraft();
     return true;
   };
@@ -52,6 +73,9 @@ export function useMotoristVehicles() {
     setDraftYear,
     draftReady,
     resetDraft,
+    editingId,
+    startEdit,
+    removeEditing,
     addDraftVehicle,
     vehicleTypeOptions,
   };

@@ -16,12 +16,12 @@ export function CancelChooser({
   onCancelRequest: () => void;
   onKeepPaying: () => void;
 }) {
-  const { isLight, card, ink } = tone;
+  const { card, ink } = tone;
   return (
-    <div className="absolute inset-0 z-50 flex items-end justify-center bg-black/50 p-3">
+    <div className="absolute inset-0 z-50 flex items-end justify-center bg-ona-overlay p-3">
       <div
         className={cn(
-          "w-full max-w-md overflow-hidden rounded-2xl shadow-2xl",
+          "w-full max-w-md overflow-hidden rounded-ona-sheet shadow-2xl",
           card,
         )}
         role="dialog"
@@ -38,9 +38,7 @@ export function CancelChooser({
           onClick={onCancelPayment}
           className={cn(
             "flex h-12 w-full items-center justify-center border-0 text-[14px] font-bold",
-            isLight
-              ? "bg-transparent text-slate-900"
-              : "bg-transparent text-white",
+            "bg-transparent text-ona-ink",
           )}
         >
           Cancel payment
@@ -50,7 +48,7 @@ export function CancelChooser({
           disabled={busyCancel}
           onClick={onCancelRequest}
           className={cn(
-            "flex h-12 w-full items-center justify-center border-0 text-[14px] font-bold text-red-500",
+            "flex h-12 w-full items-center justify-center border-0 text-[14px] font-bold text-ona-danger",
           )}
         >
           {busyCancel ? "Cancelling…" : "Cancel request"}
@@ -61,7 +59,7 @@ export function CancelChooser({
           onClick={onKeepPaying}
           className={cn(
             "flex h-11 w-full items-center justify-center border-0 text-[13px] font-semibold",
-            isLight ? "text-slate-500" : "text-white/50",
+            "text-ona-muted",
           )}
         >
           Keep paying

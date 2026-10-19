@@ -2,15 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
-import {
-  AuthPlate,
-  authBackBtnClass,
-  authLabelClass,
-  authPrimaryBtnClass,
-  authPrimaryBtnStyle,
-} from "@/components/auth/auth-plate";
-import { PasswordField } from "@/components/auth/password-field";
+import { Button } from "@/components/ui/button";
+import { OnaField, OnaPasswordInput } from "@/components/ui/ona-field";
+import { OnaRuleList } from "@/components/ui/ona-rule-list";
+import { passwordChecklist, passwordError } from "@/lib/signup-validation";
+import { OnaScreen, OnaTitle } from "@/components/ui/ona-screen";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 
 /**
  * Landing page from Supabase recovery email.
@@ -25,6 +22,7 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
+  useFeedbackToast(info, error);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -54,8 +52,9 @@ export default function ResetPasswordPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    const policyErr = passwordError(password);
+    if (policyErr) {
+      setError(policyErr);
       return;
     }
     if (password !== confirm) {
@@ -89,75 +88,68 @@ export default function ResetPasswordPage() {
     }
   }
 
+  // Same policy as signup (passwordChecklist) plus the match check onSubmit runs.
+  const rules = [
+    ...passwordChecklist(password),
+    {
+      ok: confirm.length > 0 && password === confirm,
+      text: "Both passwords match",
+    },
+  ];
+
   return (
-    <AuthPlate>
-      <div className="flex min-h-0 flex-1 flex-col px-4 pb-5 pt-5">
-        <button
-          type="button"
-          onClick={() => router.push("/login/signin")}
-          className={authBackBtnClass}
-        >
-          <ChevronLeft className="h-4 w-4" strokeWidth={2.25} />
-          Back to log in
-        </button>
-
-        <h1 className="text-[22px] font-bold tracking-tight text-[#1e293b]">
-          Set new password
-        </h1>
-        <p className="mt-1 text-[13px] text-[#475569]">
-          Choose a new password for your Ona account.
-        </p>
-
-        <form onSubmit={onSubmit} className="mt-6 flex flex-1 flex-col gap-3.5">
-          <label htmlFor="reset-new-password" className="block">
-            <span className={authLabelClass}>New password</span>
-            <PasswordField
-              id="reset-new-password"
+    <OnaScreen
+      wordmark
+      onBack={() => router.push("/login/signin")}
+      backLabel="Back to log in"
+    >
+      <OnaTitle
+        className="pt-5"
+        title="Create a new password"
+        subtitle="Choose a new password for your Ona account."
+      />
+      <form onSubmit={onSubmit} className="mt-5 flex flex-col gap-4">
+        <OnaField label="New password" required>
+          {({ id, describedBy }) => (
+            <OnaPasswordInput
+              id={id}
+              aria-describedby={describedBy}
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Min 6 characters"
+              placeholder="Create a password"
               required
               disabled={!ready}
             />
-          </label>
-          <label htmlFor="reset-confirm-password" className="block">
-            <span className={authLabelClass}>Confirm password</span>
-            <PasswordField
-              id="reset-confirm-password"
+          )}
+        </OnaField>
+        <OnaRuleList title="Password requirements:" rules={rules} />
+        <OnaField label="Confirm password" required>
+          {({ id, describedBy }) => (
+            <OnaPasswordInput
+              id={id}
+              aria-describedby={describedBy}
               autoComplete="new-password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              placeholder="Repeat password"
+              placeholder="Re-enter your password"
               required
               disabled={!ready}
             />
-          </label>
-
-          {error ? (
-            <p className="text-[12px] font-medium text-red-600" role="alert">
-              {error}
-            </p>
-          ) : null}
-          {info ? (
-            <p
-              className="text-[12px] font-medium text-emerald-700"
-              role="status"
-            >
-              {info}
-            </p>
-          ) : null}
-
-          <button
-            type="submit"
-            disabled={busy || !ready}
-            className={`${authPrimaryBtnClass} mt-auto h-11 rounded-md text-[14px] font-bold`}
-            style={authPrimaryBtnStyle}
-          >
-            {busy ? "Saving…" : "Update password"}
-          </button>
-        </form>
-      </div>
-    </AuthPlate>
+          )}
+        </OnaField>
+        <Button
+          size="ona"
+          variant="ona"
+          type="submit"
+          busy={busy}
+          busyLabel="Saving…"
+          disabled={!ready}
+          className="mt-2"
+        >
+          Update password
+        </Button>
+      </form>
+    </OnaScreen>
   );
 }

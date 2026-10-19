@@ -10,7 +10,6 @@ import {
   useAutoCalloutUrgency,
 } from "@/lib/callout/use-auto-urgency";
 import type { ProService } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import {
   canFindPro,
   canOpenEmergencyCard,
@@ -19,6 +18,7 @@ import {
 } from "@/components/home/need-help-steps";
 import { isAutomotiveTrade } from "@/lib/artisan/catalog";
 import { useSavedVehicles } from "@/components/home/shared/use-saved-vehicles";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { NeedHelpActions } from "./need-help-dialogue/need-help-actions";
 import { NeedHelpStepBody } from "./need-help-dialogue/need-help-step-body";
 
@@ -56,6 +56,7 @@ export function NeedHelpDialogue({ isLight }: { isLight: boolean }) {
   const [vehicleLabel, setVehicleLabel] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  useFeedbackToast("", error ?? "");
 
   const { savedVehicles, saveVehicle } = useSavedVehicles();
 
@@ -177,12 +178,7 @@ export function NeedHelpDialogue({ isLight }: { isLight: boolean }) {
   };
 
   return (
-    <div
-      className={cn(
-        "flex h-full min-h-0 flex-col overflow-hidden rounded-t-lg px-3 pb-2 pt-1.5",
-        isLight ? "bg-[#d8dce4]/90 backdrop-blur-sm" : "bg-black",
-      )}
-    >
+    <div className="ona2 flex h-full min-h-0 flex-col overflow-hidden px-4 pb-4 pt-3">
       <NeedHelpStepBody
         isLight={isLight}
         step={step}
@@ -202,12 +198,6 @@ export function NeedHelpDialogue({ isLight }: { isLight: boolean }) {
         urgency={urgency}
         setUrgency={setUrgency}
       />
-
-      {error ? (
-        <p className="mt-1 shrink-0 text-[12px] font-semibold text-red-500">
-          {error}
-        </p>
-      ) : null}
 
       <div className="mt-auto shrink-0 pt-2">
         <NeedHelpActions

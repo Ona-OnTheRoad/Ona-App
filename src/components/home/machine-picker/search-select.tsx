@@ -50,18 +50,13 @@ export function SearchSelect({
     setHighlight(0);
   }, [query, open]);
 
-  const fieldClass = isLight
-    ? "h-11 w-full rounded-md border-0 bg-black/8 px-3 text-[14px] font-medium text-slate-900 outline-none placeholder:text-slate-500"
-    : "h-11 w-full rounded-md border-0 bg-[#2c2c2e] px-3 text-[14px] font-medium text-white outline-none placeholder:text-white/50";
-  const listClass = isLight
-    ? "absolute z-50 mt-1 max-h-44 w-full overflow-y-auto overscroll-contain rounded-md border border-black/10 bg-white shadow-lg"
-    : "absolute z-50 mt-1 max-h-44 w-full overflow-y-auto overscroll-contain rounded-md border border-white/10 bg-[#1c1c1e] shadow-lg";
-  const itemBase = isLight
-    ? "px-3 py-2 text-left text-[13px] text-slate-900"
-    : "px-3 py-2 text-left text-[13px] text-white";
-  const labelClass = isLight
-    ? "mb-1 block text-[12px] font-semibold text-slate-700"
-    : "mb-1 block text-[12px] font-semibold text-white/70";
+  void isLight;
+  const fieldClass =
+    "h-12 w-full rounded-ona-ctl border border-ona-border bg-ona-field px-3.5 text-[14px] font-medium text-ona-ink outline-none transition-colors focus:border-ona-ink disabled:opacity-60";
+  const listClass =
+    "absolute z-50 mt-1 max-h-44 w-full overflow-y-auto overscroll-contain rounded-ona-ctl border border-ona-border bg-ona-surface shadow-lg";
+  const itemBase = "px-3 py-2.5 text-left text-[13px] text-ona-ink";
+  const labelClass = "mb-1.5 block text-[13px] font-semibold text-ona-ink";
 
   const pick = (v: string) => {
     onChange(v);
@@ -130,10 +125,8 @@ export function SearchSelect({
                     itemBase,
                     "w-full border-0 bg-transparent",
                     i === highlight
-                      ? isLight
-                        ? "bg-[#FF6B35]/15"
-                        : "bg-white/10"
-                      : "hover:bg-black/5",
+                      ? "bg-ona-brand-soft"
+                      : "hover:bg-ona-field",
                   )}
                   onMouseEnter={() => setHighlight(i)}
                   onMouseDown={(e) => {

@@ -11,10 +11,9 @@ type Vehicles = ReturnType<typeof useExpressVehicles>;
 type Props = {
   theme: ExpressTheme;
   vehicles: Vehicles;
-  error: string | null;
 };
 
-export function VehicleView({ theme, vehicles: vs, error }: Props) {
+export function VehicleView({ theme, vehicles: vs }: Props) {
   const { isLight, ink, rowCard } = theme;
   const { draft } = vs;
   return (
@@ -130,11 +129,6 @@ export function VehicleView({ theme, vehicles: vs, error }: Props) {
           >
             Continue
           </button>
-          {error ? (
-            <p className="mt-1 text-center text-[12px] font-semibold text-red-500">
-              {error}
-            </p>
-          ) : null}
         </div>
       ) : null}
     </div>

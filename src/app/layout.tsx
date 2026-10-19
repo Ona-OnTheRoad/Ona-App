@@ -62,7 +62,11 @@ export const metadata: Metadata = {
   },
   icons: {
     apple: [
-      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      {
+        url: "/icons/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
     ],
   },
   appleWebApp: {
@@ -100,10 +104,23 @@ export default function RootLayout({
     <html
       lang="en"
       data-theme="light"
+      suppressHydrationWarning
       data-ona-build={ONA_BUILD_ID}
       className={`${interSans.variable} ${geistMono.variable} h-full max-h-full overflow-hidden antialiased`}
       style={{ height: "100%", maxHeight: "100%" }}
     >
+      <head>
+        {/*
+          First paint follows the user's saved theme, else the OS theme (the
+          store re-applies the same rule after hydration), so dark-mode users
+          never see a light flash.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem("ona-theme");if(t!=="light"&&t!=="dark"){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t}catch(e){}`,
+          }}
+        />
+      </head>
       {/* Inline stage color so first paint is never browser-default white */}
       <body
         className="h-full max-h-full overflow-hidden text-white"

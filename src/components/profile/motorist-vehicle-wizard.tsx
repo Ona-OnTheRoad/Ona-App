@@ -11,6 +11,7 @@ import { VehicleCascadeFields } from "@/components/vehicles/vehicle-cascade-fiel
 import { compressImageFile } from "@/lib/image-compress";
 import { COMMON_VEHICLE_ISSUES } from "@/lib/profile-system";
 import type { MotoristVehicle } from "@/lib/types";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { cn } from "@/lib/utils";
 
 type Step = 1 | 2 | 3 | 4;
@@ -39,6 +40,7 @@ export function MotoristVehicleWizard({
   const [photo, setPhoto] = useState("");
   const [issues, setIssues] = useState<string[]>([]);
   const [err, setErr] = useState<string | null>(null);
+  useFeedbackToast("", err ?? "");
 
   const field = isLight
     ? "h-11 w-full rounded-md border-0 bg-black/8 px-3 text-[14px] font-medium text-slate-900 outline-none placeholder:text-slate-500 placeholder:opacity-100"
@@ -199,10 +201,6 @@ export function MotoristVehicleWizard({
             );
           })}
         </div>
-      )}
-
-      {err && (
-        <p className="mt-2 text-[11px] font-semibold text-red-500">{err}</p>
       )}
 
       <div className="mt-4 flex gap-2">

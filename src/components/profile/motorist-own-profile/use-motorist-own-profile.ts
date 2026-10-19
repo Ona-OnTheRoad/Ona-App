@@ -7,6 +7,7 @@ import {
 } from "@/components/profile/motorist-own-profile/helpers";
 import { useAccessToken } from "@/components/profile/shared/use-access-token";
 import { useApp } from "@/lib/store";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import type { MotoristVehicle, UserProfile } from "@/lib/types";
 
 /** State, sync, save and vehicle persistence for the motorist own profile. */
@@ -18,6 +19,7 @@ export function useMotoristOwnProfile() {
   const [editing, setEditing] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  useFeedbackToast(msg ?? "", err ?? "");
 
   const [avatarUrl, setAvatarUrl] = useState(userProfile?.avatarUrl || "");
   const [vehicles, setVehicles] = useState<MotoristVehicle[]>(() =>

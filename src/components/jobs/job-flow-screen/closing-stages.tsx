@@ -137,7 +137,7 @@ export function renderCancelledStage(
   c: JobFlowCtx,
   job: JobRecord,
 ): ReactElement {
-  const { isLight, viewer, goJobsList, router, muted, flash } = c;
+  const { isLight, viewer, goJobsList, router, muted } = c;
   return (
     <JobShell
       isLight={isLight}
@@ -174,12 +174,11 @@ export function renderCancelledStage(
     >
       <JobCard isLight={isLight}>
         <p className={cn("text-[14px] font-medium", muted)}>
-          {flash ||
-            (job.status === "cancelled" || job.status === "refunded"
-              ? job.escrowStatus === "refunded" || job.status === "refunded"
-                ? "This job was cancelled. The full amount was refunded to the customer. Booked jobs must be completed within 6 hours of payment."
-                : "This job was cancelled. If escrow was held, the full amount returns to the customer."
-              : "This job has ended.")}
+          {job.status === "cancelled" || job.status === "refunded"
+            ? job.escrowStatus === "refunded" || job.status === "refunded"
+              ? "This job was cancelled. The full amount was refunded to the customer. Booked jobs must be completed within 6 hours of payment."
+              : "This job was cancelled. If escrow was held, the full amount returns to the customer."
+            : "This job has ended."}
         </p>
       </JobCard>
     </JobShell>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { profileTheme } from "@/lib/profile-system";
@@ -11,7 +12,6 @@ import {
 import { ChangeFlowHeader } from "./shared/change-flow-header";
 import { DiscardChangesSheet } from "./shared/discard-sheet";
 import { changeFlowFieldClass } from "./shared/field-class";
-import { FlowBanner } from "./shared/flow-banner";
 import { OtpCodeStep } from "./shared/otp-code-step";
 import type { BankChangeFlowProps, Step } from "./bank-change-types";
 
@@ -33,6 +33,7 @@ export function BankChangeFlow({
   const [bankCode, setBankCode] = useState(currentBank?.bankCode || "");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  useFeedbackToast(msg ?? "", err ?? "");
   const [busy, setBusy] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const t = profileTheme(isLight);
@@ -180,8 +181,6 @@ export function BankChangeFlow({
         onDone={reset}
         onCancel={() => setConfirmCancel(true)}
       />
-
-      <FlowBanner msg={msg} err={err} />
 
       {step === "send_otp" && (
         <div className="space-y-2">

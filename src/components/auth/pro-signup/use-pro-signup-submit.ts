@@ -1,5 +1,6 @@
 import { checkIdentityAvailable } from "@/lib/account-registry";
 import { verifySignupIds } from "@/lib/ng-id-verify-client";
+import { clearSignupDraft } from "@/lib/signup-draft";
 import type { UserProfile } from "@/lib/types";
 import { buildProProfile } from "./build-pro-profile";
 import type { ProSignupFlow } from "./use-pro-signup-flow";
@@ -123,6 +124,7 @@ export function useProSignupSubmit({
       );
       return;
     }
+    clearSignupDraft();
     setDone(true);
     setBusy(false);
   };

@@ -6,6 +6,8 @@ import {
   splitStoredPhone,
 } from "@/lib/phone-codes";
 import { getVaultProfile } from "@/lib/profiles-vault";
+import { loadSignupDraft } from "@/lib/signup-draft";
+import { composeFullName } from "../motorist-signup/name-utils";
 import type { SignupGender } from "@/lib/signup-validation";
 import type { UserProfile } from "@/lib/types";
 
@@ -66,6 +68,24 @@ export function useProSignupForm({
   const [serviceRadiusKm, setServiceRadiusKm] = useState(5);
 
   const fullPhone = formatInternationalPhone(phoneDial, phoneNational);
+
+  /**
+   * Details collected at /signup (editable, never locked). Runs before the
+   * dual-role effect below so an existing Customer profile still wins.
+   */
+  useEffect(() => {
+    const d = loadSignupDraft();
+    if (!d) return;
+    setFullName(composeFullName(d.firstName, d.lastName));
+    setGender(d.gender);
+    setDateOfBirth(d.dateOfBirth);
+    if (d.phoneIso) setPhoneIso(d.phoneIso);
+    if (d.phoneDial) setPhoneDial(d.phoneDial);
+    setPhoneNational(d.phoneNational);
+    setEmail(d.email);
+    setIdNumber(d.idNumber);
+    setBvn(d.bvn);
+  }, []);
 
   /**
    * Prefill from existing Customer lock only fields that already have values.

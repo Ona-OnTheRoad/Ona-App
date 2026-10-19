@@ -1,5 +1,5 @@
 import { authLabelClass } from "@/components/auth/auth-plate";
-import { passwordRules } from "@/lib/signup-validation";
+import { passwordChecklist } from "@/lib/signup-validation";
 import { cn } from "@/lib/utils";
 
 export function RequiredMark() {
@@ -49,13 +49,7 @@ export function PasswordRules({
   password: string;
   inline?: boolean;
 }) {
-  const r = passwordRules(password);
-  const rows: { ok: boolean; text: string }[] = [
-    { ok: r.length, text: "At least 8 characters" },
-    { ok: r.upper, text: "At least 1 capital letter" },
-    { ok: r.digit, text: "At least 1 number" },
-    { ok: true, text: "You can add symbols if you want" },
-  ];
+  const rows = passwordChecklist(password);
   return (
     <ul className={cn("mt-1 space-y-0.5", inline && "mb-0.5")}>
       {rows.map((row) => (

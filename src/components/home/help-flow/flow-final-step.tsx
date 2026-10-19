@@ -1,11 +1,17 @@
 "use client";
 
 import type { Dispatch, RefObject, SetStateAction } from "react";
-import { ChevronRight } from "lucide-react";
 import { VoiceNoteRecorder } from "@/components/jobs/voice-note-recorder";
 import type { JobMedia } from "@/lib/jobs/types";
 import type { CalloutUrgencyKind } from "@/lib/callout/urgency";
 import { cn } from "@/lib/utils";
+import { formatMoney } from "@/lib/pricing";
+import { Button } from "@/components/ui/button";
+import { OnaFlowHeader } from "@/components/ui/ona-flow-header";
+import type { ProService } from "@/lib/types";
+import { CALLOUT_URGENCY_OPTIONS } from "@/lib/callout/urgency";
+import { FlowCalloutCard, previewCallout } from "./flow-callout-card";
+import { FlowUrgencyList } from "./flow-urgency-list";
 import { AddressAutocomplete } from "@/components/map/address-autocomplete";
 import type { PickedLocation } from "@/components/map/location-picker-map";
 import type { ExtraSnapshot, HelpFlowConfig } from "../help-flow-configs";
@@ -15,6 +21,9 @@ export function FlowFinalStep({
   config,
   isLight,
   styles,
+  tag,
+  tradeId,
+  distanceKm,
   finalStep,
   photos,
   setPhotos,
@@ -32,7 +41,6 @@ export function FlowFinalStep({
   extraState,
   setExtraState,
   answers,
-  error,
   setError,
   busy,
   canSend,
@@ -43,6 +51,9 @@ export function FlowFinalStep({
   config: HelpFlowConfig;
   isLight: boolean;
   styles: FlowStyles;
+  tag: string;
+  tradeId: ProService;
+  distanceKm: number | null;
   finalStep: string;
   photos: JobMedia[];
   setPhotos: Dispatch<SetStateAction<JobMedia[]>>;
@@ -60,7 +71,6 @@ export function FlowFinalStep({
   extraState: ExtraSnapshot;
   setExtraState: Dispatch<SetStateAction<ExtraSnapshot>>;
   answers: Record<string, string>;
-  error: string | null;
   setError: Dispatch<SetStateAction<string | null>>;
   busy: boolean;
   canSend: boolean;
@@ -69,202 +79,174 @@ export function FlowFinalStep({
   send: () => Promise<void>;
 }) {
   const { ink, muted, field, rowCard, chipIdle, actionFlat } = styles;
+  const steps = config.finalSteps;
+  const isUrgency = finalStep === "urgency";
+  const isLast = finalStep === steps[steps.length - 1];
+  const hasNext = !isLast && steps.indexOf(finalStep) >= 0;
+  const preview = isUrgency
+    ? previewCallout(tradeId, urgency, distanceKm)
+    : null;
+  const urgencyLabel =
+    CALLOUT_URGENCY_OPTIONS.find((o) => o.id === urgency)?.label ?? "Normal";
+  const sendText = busy
+    ? `${config.busyLabel}…`
+    : preview
+      ? `${config.sendLabel} · ${formatMoney(preview.fee.calloutFee, preview.fee.currency)}`
+      : config.sendLabel;
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      <OnaFlowHeader
+        tag={tag}
+        onBack={finalBack}
+        title={config.finalCopy[finalStep] ?? finalStep}
+        subtitle={
+          isUrgency
+            ? "Your call-out price is fixed before dispatch. Labour is agreed separately with your professional."
+            : undefined
+        }
+      />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-hide">
-        {/* Title */}
-        <div className="mb-1 mt-2 flex items-center gap-1 px-0.5">
-          {finalStep !== "urgency" &&
-          finalStep !== config.finalSteps[config.finalSteps.length - 1] ? (
-            <button
-              type="button"
-              onClick={nextFinal}
-              disabled={
-                finalStep === "photos" && photos.length < config.minPhotos
-              }
-              aria-label="Next"
-              className="border-0 bg-transparent p-1 text-[#FF6B35] disabled:opacity-30"
-            >
-              <ChevronRight className="h-6 w-6" strokeWidth={2.5} />
-            </button>
-          ) : null}
-          <p
-            className={cn("text-[14px] font-bold capitalize leading-snug", ink)}
-          >
-            {config.finalCopy[finalStep] ?? finalStep}
-          </p>
-        </div>
-
-        <div className={cn("rounded-[4px] px-3 py-2.5", rowCard)}>
-          {/* Urgency */}
-          {finalStep === "urgency" ? (
-            <div className="flex flex-col gap-1.5">
-              {config.urgencyChips.map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => {
-                    setUrgency(opt.id);
-                    setError(null);
-                    nextFinal();
-                  }}
-                  className={cn(
-                    "flex w-full items-center justify-between gap-2 rounded-md border-0 px-3 py-2.5 text-left transition-transform duration-150 active:scale-[0.985]",
-                    urgency === opt.id ? "bg-[#FF6B35]/10" : "bg-transparent",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "text-[13px] font-bold",
-                      urgency === opt.id ? "text-[#FF6B35]" : ink,
-                    )}
-                  >
-                    {opt.label}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-[11px] font-semibold",
-                      urgency === opt.id ? "text-[#FF6B35]" : muted,
-                    )}
-                  >
-                    {opt.fee}
-                  </span>
-                </button>
-              ))}
-            </div>
-          ) : null}
-
-          {/* Photos */}
-          {finalStep === "photos" ? (
-            <div>
-              <div className="flex flex-wrap gap-1.5">
-                {photos.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() =>
-                      setPhotos((prev) => prev.filter((x) => x.id !== p.id))
-                    }
-                    className="h-12 w-12 overflow-hidden rounded-lg border-0 p-0"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      loading="lazy"
-                      decoding="async"
-                      src={p.url}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  </button>
-                ))}
-                {photos.length < config.maxPhotos ? (
-                  <button
-                    type="button"
-                    onClick={() => photoRef.current?.click()}
-                    className={cn(
-                      "h-12 w-12 rounded-lg border-0 text-[18px] font-bold",
-                      chipIdle,
-                    )}
-                  >
-                    +
-                  </button>
-                ) : null}
-              </div>
-              <input
-                ref={photoRef}
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={(e) => {
-                  void onPhotos(e.target.files);
-                  e.target.value = "";
-                }}
-              />
-            </div>
-          ) : null}
-
-          {/* Voice */}
-          {finalStep === "voice" ? (
-            <VoiceNoteRecorder
-              value={voiceNote}
-              onChange={setVoiceNote}
-              userId={voiceUserId}
-              isLight={isLight}
-              leading={
-                <button
-                  type="button"
-                  onClick={nextFinal}
-                  aria-label="Next"
-                  className="border-0 bg-transparent p-1 text-[#FF6B35]"
-                >
-                  <ChevronRight className="h-6 w-6" strokeWidth={2.5} />
-                </button>
-              }
+        {isUrgency ? (
+          <>
+            <FlowUrgencyList
+              chips={config.urgencyChips}
+              urgency={urgency}
+              onSelect={(u) => {
+                setUrgency(u);
+                setError(null);
+              }}
             />
-          ) : null}
-
-          {/* Location */}
-          {finalStep === "location" ? (
-            <div className="space-y-2">
-              <AddressAutocomplete
-                className="-mx-3"
-                value={pickedLoc}
-                onChange={(loc) => {
-                  setPickedLoc(loc);
-                  setLandmark(loc.label || landmark);
-                }}
-              />
-            </div>
-          ) : null}
-
-          {/* Extra final steps delegated to config */}
-          {!["urgency", "photos", "voice", "location"].includes(finalStep) &&
-          config.renderExtraFinalStep
-            ? config.renderExtraFinalStep({
-                finalStep,
-                extraState,
-                setExtraState,
-                setError,
-                answers,
-                isLight,
-                ink,
-                muted,
-                field,
-                rowCard,
-                chipIdle,
-                actionFlat,
-              })
-            : null}
-        </div>
-
-        {error ? (
-          <p className="mt-1 text-[12px] font-semibold text-red-500">{error}</p>
-        ) : null}
-      </div>
-
-      {/* Footer buttons */}
-      <div className="flex shrink-0 flex-col gap-2 pt-2">
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={finalBack}
+            {preview ? (
+              <FlowCalloutCard preview={preview} urgencyLabel={urgencyLabel} />
+            ) : null}
+          </>
+        ) : (
+          <div
             className={cn(
-              "h-11 flex-1 rounded-md border-0 text-[14px] font-bold",
-              actionFlat,
+              "rounded-ona-card border border-ona-border px-3 py-3",
+              rowCard,
             )}
           >
-            Back
-          </button>
-          <button
-            type="button"
-            disabled={busy || !canSend}
-            onClick={() => void send()}
-            className="h-11 flex-1 rounded-md border-0 bg-brand text-[14px] font-bold text-white disabled:opacity-50"
+            {/* Photos */}
+            {finalStep === "photos" ? (
+              <div>
+                <div className="flex flex-wrap gap-1.5">
+                  {photos.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() =>
+                        setPhotos((prev) => prev.filter((x) => x.id !== p.id))
+                      }
+                      className="h-12 w-12 overflow-hidden rounded-ona-ctl border-0 p-0"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        loading="lazy"
+                        decoding="async"
+                        src={p.url}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    </button>
+                  ))}
+                  {photos.length < config.maxPhotos ? (
+                    <button
+                      type="button"
+                      onClick={() => photoRef.current?.click()}
+                      className={cn(
+                        "h-12 w-12 rounded-ona-ctl border-0 text-[18px] font-bold",
+                        chipIdle,
+                      )}
+                    >
+                      +
+                    </button>
+                  ) : null}
+                </div>
+                <input
+                  ref={photoRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    void onPhotos(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+              </div>
+            ) : null}
+
+            {/* Voice */}
+            {finalStep === "voice" ? (
+              <VoiceNoteRecorder
+                value={voiceNote}
+                onChange={setVoiceNote}
+                userId={voiceUserId}
+                isLight={isLight}
+              />
+            ) : null}
+
+            {/* Location */}
+            {finalStep === "location" ? (
+              <div className="space-y-2">
+                <AddressAutocomplete
+                  className="-mx-3"
+                  value={pickedLoc}
+                  onChange={(loc) => {
+                    setPickedLoc(loc);
+                    setLandmark(loc.label || landmark);
+                  }}
+                />
+              </div>
+            ) : null}
+
+            {/* Extra final steps delegated to config */}
+            {!["urgency", "photos", "voice", "location"].includes(finalStep) &&
+            config.renderExtraFinalStep
+              ? config.renderExtraFinalStep({
+                  finalStep,
+                  extraState,
+                  setExtraState,
+                  setError,
+                  answers,
+                  isLight,
+                  ink,
+                  muted,
+                  field,
+                  rowCard,
+                  chipIdle,
+                  actionFlat,
+                })
+              : null}
+          </div>
+        )}
+      </div>
+
+      {/* Pinned footer */}
+      <div className="flex shrink-0 flex-col gap-2 pt-3">
+        <Button
+          size="ona"
+          variant="ona"
+          disabled={busy || !canSend}
+          busy={busy}
+          onClick={() => void send()}
+        >
+          {sendText}
+        </Button>
+        {hasNext ? (
+          <Button
+            size="ona"
+            variant="onaOutline"
+            onClick={nextFinal}
+            aria-label="Next"
+            disabled={
+              finalStep === "photos" && photos.length < config.minPhotos
+            }
           >
-            {busy ? `${config.busyLabel}…` : config.sendLabel}
-          </button>
-        </div>
+            {isUrgency ? "Add photos or details" : "Next"}
+          </Button>
+        ) : null}
       </div>
     </div>
   );

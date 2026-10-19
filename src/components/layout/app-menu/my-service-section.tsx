@@ -3,8 +3,6 @@ import { useT } from "@/lib/i18n";
 import { isProService } from "@/lib/pro-service-id";
 import { PRO_TRADE_OPTIONS } from "@/lib/services";
 import type { ProService } from "@/lib/types";
-import { cn } from "@/lib/utils";
-import { MenuIcon, rowIdleClass } from "./menu-item-row";
 import { TRADE_ICON_GLYPH, TRADE_LABEL_KEY } from "./menu-nav";
 
 function TradeIcon({ service }: { service: ProService }) {
@@ -21,48 +19,21 @@ function TradeIcon({ service }: { service: ProService }) {
 }
 
 export function MyServiceSection({
-  isLight,
   proServices,
 }: {
-  isLight: boolean;
   proServices: ProService[];
 }) {
   const t = useT();
+  const first = proServices[0];
   return (
-    <div
-      className={cn(
-        "mb-1.5 border-t pt-1.5",
-        isLight ? "border-black/10" : "border-white/10",
-      )}
-    >
-      <div
-        className={cn(
-          "flex w-full items-center gap-3.5 border-0 px-3 py-2.5 text-left text-[16px] font-medium tracking-[-0.01em]",
-          rowIdleClass(isLight),
-        )}
-      >
-        <MenuIcon name="service" isLight={isLight} />
-        <span className="min-w-0 flex-1 leading-none">
-          {t("menu.myService")}
-        </span>
-      </div>
-      <div className="flex w-full items-center gap-2 px-3 py-0.5">
-        <span
-          className={cn(
-            "min-w-0 flex-1 text-[12px] font-medium",
-            isLight ? "text-black" : "text-white",
-          )}
-        >
-          {isProService(proServices[0])
-            ? t(TRADE_LABEL_KEY[proServices[0]])
-            : proServices[0]}
-        </span>
-        {isProService(proServices[0]) ? (
-          <TradeIcon service={proServices[0]} />
-        ) : (
-          <TradeIcon service="mechanic" />
-        )}
-      </div>
+    <div className="flex items-center gap-2 rounded-ona-ctl bg-ona-field px-3 py-2.5">
+      <span className="text-[12px] font-semibold text-ona-muted">
+        {t("menu.myService")}
+      </span>
+      <span className="min-w-0 flex-1 truncate text-right text-[13px] font-semibold text-ona-ink">
+        {isProService(first) ? t(TRADE_LABEL_KEY[first]) : first}
+      </span>
+      <TradeIcon service={isProService(first) ? first : "mechanic"} />
     </div>
   );
 }

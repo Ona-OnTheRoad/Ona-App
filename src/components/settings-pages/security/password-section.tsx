@@ -6,6 +6,7 @@ import {
   SettingsSaveBar,
   settingsInputClass,
 } from "@/components/settings/settings-ui";
+import { passwordChecklist } from "@/lib/signup-validation";
 import { cn } from "@/lib/utils";
 import type { useChangePassword } from "./use-change-password";
 
@@ -24,8 +25,6 @@ export function PasswordSection({ isLight, card, ink, pw }: Props) {
     setNext,
     confirm,
     setConfirm,
-    msg,
-    err,
     busy,
     rules,
     changePassword,
@@ -54,13 +53,7 @@ export function PasswordSection({ isLight, card, ink, pw }: Props) {
         />
       </SettingsField>
       <ul className="space-y-0.5 px-3 pb-1 text-[10px] font-medium">
-        {(
-          [
-            ["8+ characters", rules.length],
-            ["A capital letter", rules.upper],
-            ["A number", rules.digit],
-          ] as const
-        ).map(([label, ok]) => (
+        {passwordChecklist(next).map(({ text: label, ok }) => (
           <li
             key={label}
             className={
@@ -85,10 +78,7 @@ export function PasswordSection({ isLight, card, ink, pw }: Props) {
         />
       </SettingsField>
       <SettingsSaveBar
-        isLight={isLight}
         busy={busy}
-        msg={msg}
-        err={err}
         onSave={changePassword}
         label="Update password"
       />

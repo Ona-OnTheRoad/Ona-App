@@ -1,14 +1,15 @@
 import type { ReactElement } from "react";
 import { CheckCircle2 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { OnaScreen, OnaTitle } from "@/components/ui/ona-screen";
 import { CountdownTimer } from "@/components/jobs/countdown-timer";
-import { JobCard, JobShell } from "@/components/jobs/job-shell";
 import {
   COMPLETED_AUTO_RELEASE_WINDOW_MS,
   satisfiedReleaseEndsAtIso,
 } from "@/lib/jobs/constants";
 import type { JobRecord } from "@/lib/jobs/types";
-import { formatMoney } from "@/lib/pricing";
-import { cn } from "@/lib/utils";
+import { PRO_SERVICE_LABELS } from "@/lib/services";
 import { CompletedFooter } from "./completed-footer";
 import { computeReleaseAmounts } from "./release-amounts";
 import {
@@ -29,8 +30,6 @@ export function renderCompletedStage(
     viewer,
     isLight,
     actorId,
-    ink,
-    muted,
     err,
     setErr,
     busy,
@@ -115,85 +114,109 @@ export function renderCompletedStage(
     />
   );
 
+  const proName = (job.repairProName || "").trim() || "Your Repair Pro";
+  const proFirst = proName.split(/\s+/)[0];
+  const proPhotoSrc = job.repairProPhoto || undefined;
+
   return (
-    <JobShell
-      isLight={isLight}
-      title={
-        showSatisfiedCta ? "Release payment" : payoutDone ? "Paid" : "Completed"
-      }
-      compactHeader
-      onBack={goJobsList}
-      footer={
-        <CompletedFooter
-          showSatisfiedCta={showSatisfiedCta}
-          payoutDone={payoutDone}
-          muted={muted}
-          isLight={isLight}
-          busy={busy}
-          motoristActor={motoristActor}
-          releaseBanner={releaseBanner}
-          showEgressHint={showEgressHint}
-          onCopyError={copyReleaseErr}
-          onDismissError={dismissReleaseErr}
-          onSatisfied={onSatisfied}
-          onOpenDispute={() => setDisputeOpen(true)}
-        />
-      }
-    >
-      <JobCard isLight={isLight} className="text-center">
-        <CheckCircle2 className="mx-auto h-14 w-14 text-emerald-500" />
-        <p className={cn("mt-3 text-[18px] font-black", ink)}>
-          {showSatisfiedCta
-            ? "Release payment"
-            : payoutDone
-              ? "Released"
-              : "Work complete"}
-        </p>
-        {!showSatisfiedCta ? (
-          <p className={cn("mt-1 text-[13px] leading-snug", muted)}>
-            {payoutDone ? "Payment released" : "Awaiting customer confirm"}
-          </p>
-        ) : null}
-        {releaseTotalMajor != null && (
-          <p className={cn("mt-4 text-[24px] font-black tabular-nums", ink)}>
-            {formatMoney(releaseTotalMajor, job.currency)}
-          </p>
-        )}
-        {/* Split breakdown Repair Pro only (customers never see 95/5) */}
-        {viewer === "repair_pro" &&
-        releaseProMajor != null &&
-        releasePlatformMajor != null ? (
-          <ReleaseSplitCard
-            job={job}
+    <>
+      <OnaScreen
+        onBack={goJobsList}
+        footer={
+          <CompletedFooter
+            showSatisfiedCta={showSatisfiedCta}
+            payoutDone={payoutDone}
             isLight={isLight}
-            ink={ink}
-            muted={muted}
-            releaseProMajor={releaseProMajor}
-            releasePlatformMajor={releasePlatformMajor}
-            releaseVatMajor={releaseVatMajor}
+            busy={busy}
+            motoristActor={motoristActor}
+            releaseBanner={releaseBanner}
+            showEgressHint={showEgressHint}
+            onCopyError={copyReleaseErr}
+            onDismissError={dismissReleaseErr}
+            onSatisfied={onSatisfied}
+            onOpenDispute={() => setDisputeOpen(true)}
           />
-        ) : null}
-        {showSatisfiedCta && autoReleaseEndsAt ? (
-          <div className="mt-4 px-1">
-            <p className="mb-1 text-center text-[11px] font-semibold text-black">
-              Auto-release in
-            </p>
-            <CountdownTimer
-              endsAt={autoReleaseEndsAt}
-              totalMs={COMPLETED_AUTO_RELEASE_WINDOW_MS}
-              className={ink}
+        }
+      >
+        <div className="space-y-4 pt-3">
+          <OnaTitle
+            title={
+              showSatisfiedCta
+                ? "Everything sorted?"
+                : payoutDone
+                  ? "Payment released"
+                  : "Work complete"
+            }
+            subtitle={
+              showSatisfiedCta
+                ? `Confirm only when you're satisfied. This releases ${proFirst}'s payment from escrow.`
+                : payoutDone
+                  ? undefined
+                  : "Awaiting customer confirm"
+            }
+          />
+          {viewer !== "repair_pro" ? (
+            <div className="flex items-center gap-3 rounded-ona-card border border-ona-border bg-ona-surface p-3">
+              <Avatar className="h-10 w-10">
+                {proPhotoSrc ? <AvatarImage src={proPhotoSrc} alt="" /> : null}
+                <AvatarFallback className="bg-ona-field text-ona-ink">
+                  {proName.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[14px] font-semibold text-ona-ink">
+                  {proName}
+                </p>
+                <p className="truncate text-[11px] text-ona-muted">
+                  {PRO_SERVICE_LABELS[job.serviceType] || "Repair Pro"}
+                </p>
+              </div>
+              <Badge variant="matched">Matched</Badge>
+            </div>
+          ) : null}
+          {payoutDone ? (
+            <CheckCircle2
+              className="mx-auto h-12 w-12 text-ona-success"
+              strokeWidth={1.75}
+              aria-hidden
             />
-          </div>
-        ) : null}
-        {releaseBanner && showSatisfiedCta ? (
-          <ReleaseErrorCardBanner
-            message={releaseBanner}
-            onCopy={copyReleaseErr}
-            onDismiss={dismissReleaseErr}
-          />
-        ) : null}
-      </JobCard>
+          ) : null}
+          {/* Split breakdown Repair Pro only (customers never see 95/5) */}
+          {viewer === "repair_pro" &&
+          releaseProMajor != null &&
+          releasePlatformMajor != null ? (
+            <ReleaseSplitCard
+              job={job}
+              releaseProMajor={releaseProMajor}
+              releasePlatformMajor={releasePlatformMajor}
+              releaseVatMajor={releaseVatMajor}
+              releaseTotalMajor={releaseTotalMajor}
+            />
+          ) : releaseTotalMajor != null ? (
+            <ReleaseSplitCard job={job} releaseTotalMajor={releaseTotalMajor} />
+          ) : null}
+          {showSatisfiedCta && autoReleaseEndsAt ? (
+            <div className="px-1">
+              <p className="mb-1 text-center text-[11px] font-semibold text-ona-muted">
+                Auto-release in
+              </p>
+              <CountdownTimer
+                endsAt={autoReleaseEndsAt}
+                totalMs={COMPLETED_AUTO_RELEASE_WINDOW_MS}
+                className="text-ona-ink"
+              />
+            </div>
+          ) : null}
+          {releaseBanner && showSatisfiedCta ? (
+            <ReleaseErrorCardBanner
+              message={releaseBanner}
+              onCopy={copyReleaseErr}
+              onDismiss={dismissReleaseErr}
+            />
+          ) : null}
+        </div>
+      </OnaScreen>
       {completedDisputeSheet}
-    </JobShell>
+    </>
   );
 }

@@ -32,10 +32,6 @@ export function buildOnboardingStyles(isLight: boolean): OnboardingStyles {
         ? "border-black/20 bg-transparent text-slate-800"
         : "border-white/25 bg-transparent text-white",
     ),
-    errBox: isLight ? "bg-red-50 text-red-700" : "bg-red-950/50 text-red-300",
-    msgBox: isLight
-      ? "bg-emerald-50 text-emerald-800"
-      : "bg-emerald-950/40 text-emerald-300",
     warnBox: isLight
       ? "bg-[#FF6B35]/15 text-[#FF6B35]"
       : "bg-amber-950/40 text-[#FF6B35]",

@@ -1,5 +1,6 @@
 "use client";
 
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { profileTheme } from "@/lib/profile-system";
@@ -22,6 +23,7 @@ export function NameChangeForm({
   const [reason, setReason] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  useFeedbackToast(msg ?? "", err ?? "");
   const [busy, setBusy] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [livenessPassed, setLivenessPassed] = useState(false);
@@ -94,19 +96,6 @@ export function NameChangeForm({
     <div className="space-y-3">
       <p className={cn("text-[11px] font-semibold", t.muted)}>Current name</p>
       <p className={cn("text-[13px] font-semibold", t.ink)}>{currentName}</p>
-
-      {(msg || err) && (
-        <p
-          className={cn(
-            "rounded-xl px-3 py-2 text-[12px] font-semibold",
-            err
-              ? "bg-red-500/15 text-red-400"
-              : "bg-emerald-500/15 text-emerald-500",
-          )}
-        >
-          {err || msg}
-        </p>
-      )}
 
       <input
         className={field}

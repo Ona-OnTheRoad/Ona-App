@@ -1,16 +1,22 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthNavigate } from "@/components/auth/auth-transition";
-import { checkIdentityAvailable } from "@/lib/account-registry";
 import { formatInternationalPhone } from "@/lib/phone-codes";
 import { verifySignupIds } from "@/lib/ng-id-verify-client";
+import {
+  clearSignupDraft,
+  loadSignupDraft,
+  signupHref,
+} from "@/lib/signup-draft";
 import { normalizeDobIso, type SignupGender } from "@/lib/signup-validation";
 import { useApp } from "@/lib/store";
 import type { MotoristVehicle, UserProfile } from "@/lib/types";
 import {
   isDualPasswordOk,
+  identityConflict,
   isStep1Ok,
   isStep2Ok,
+  validateDetails as validateAccountDetails,
   validateStep1 as validateAccount,
   type AccountValues,
 } from "./motorist-validation";
@@ -64,6 +70,22 @@ export function useMotoristSignup() {
   } = vehicleState;
 
   const fromMenu = searchParams.get("from") === "menu";
+  const { urlRef, refInput, setRefInput } = fields;
+  /** /signup with the current query (ref, from/attach/next) and an optional error text. */
+  const detailsHref = (err?: string) => {
+    const q = new URLSearchParams(searchParams.toString());
+    q.delete("err");
+    if (err) q.set("err", err);
+    const qs = q.toString();
+    return qs ? `/signup?${qs}` : "/signup";
+  };
+
+  // Details are collected at /signup first. Without them, send the user there
+  // (dual/attach flows return here after /signup, keeping their query).
+  useEffect(() => {
+    if (!loadSignupDraft()) router.replace(detailsHref());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fullPhone = formatInternationalPhone(phoneDial, phoneNational);
 
@@ -85,6 +107,8 @@ export function useMotoristSignup() {
   const step1Ok = isStep1Ok(accountValues);
   const step2Ok = isStep2Ok(city, area);
   const validateStep1 = (): string | null => validateAccount(accountValues);
+  const validateDetails = (): string | null =>
+    validateAccountDetails(accountValues);
 
   const goBack = () => {
     if (step === 1) {
@@ -92,27 +116,32 @@ export function useMotoristSignup() {
         router.replace("/dashboard");
         return;
       }
-      go("/login/role");
+      go(signupHref("/login/role", { ref: urlRef }));
       return;
     }
     setStep((s) => (s - 1) as Step);
   };
 
-  const guardIdentity = (): string | null => {
-    // Dual role (same person): Motorist + Repair Pro share one phone/email/NIN/BVN
-    if (dualSignup) return null;
-    const check = checkIdentityAvailable({
-      phone: fullPhone,
-      email: email.trim(),
-      nin: idNumber.trim() || undefined,
-      bvn: bvn.trim() || undefined,
-      accountType: "motorist",
-    });
-    return check.ok ? null : check.message;
+  const guardIdentity = (): string | null =>
+    identityConflict(accountValues, fullPhone);
+
+  /** Details live on /signup; dual/attach users have no such screen to edit, so stay put. */
+  const backToDetails = (msg: string) => {
+    if (dualSignup) {
+      setFormError(msg);
+      setStep(1);
+      return;
+    }
+    go(detailsHref(msg));
   };
 
   const finish = async (opts?: { skipVehicle?: boolean }) => {
     if (busy) return;
+    const detailsErr = validateDetails();
+    if (detailsErr) {
+      backToDetails(detailsErr);
+      return;
+    }
     const v = validateStep1();
     if (v) {
       setFormError(v);
@@ -151,9 +180,8 @@ export function useMotoristSignup() {
 
     const identityErr = guardIdentity();
     if (identityErr) {
-      setFormError(identityErr);
       setBusy(false);
-      setStep(1);
+      backToDetails(identityErr);
       return;
     }
 
@@ -169,9 +197,8 @@ export function useMotoristSignup() {
         requireBoth: false,
       });
       if (!verified.ok) {
-        setFormError(verified.message);
         setBusy(false);
-        setStep(1);
+        backToDetails(verified.message);
         return;
       }
     }
@@ -197,7 +224,7 @@ export function useMotoristSignup() {
       vehicleModel: first?.model,
       vehicleYear: first?.year,
       registeredAt: new Date().toISOString(),
-      refCode: searchParams.get("ref") || undefined,
+      refCode: refInput.trim() || undefined,
     };
 
     // Service area text → home map session label (Lagos default coords until GPS)
@@ -214,6 +241,7 @@ export function useMotoristSignup() {
       );
       return;
     }
+    clearSignupDraft();
     setDone(true);
     setBusy(false);
   };
@@ -226,12 +254,8 @@ export function useMotoristSignup() {
         setFormError(err);
         return;
       }
-      const identityErr = guardIdentity();
-      if (identityErr) {
-        setFormError(identityErr);
-        return;
-      }
     } else if (!step2Ok) {
+      setFormError("Enter your city and area.");
       return;
     }
     setFormError("");
@@ -240,6 +264,7 @@ export function useMotoristSignup() {
 
   return {
     exiting,
+    go,
     router,
     step,
     done,
@@ -249,6 +274,9 @@ export function useMotoristSignup() {
     fields,
     vehicleState,
     dualPasswordOk,
+    urlRef,
+    refInput,
+    setRefInput,
     step1Ok,
     step2Ok,
     goBack,

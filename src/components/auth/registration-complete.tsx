@@ -2,11 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
-import {
-  AUTH_BG,
-  authPrimaryBtnClass,
-  authPrimaryBtnStyle,
-} from "@/components/auth/auth-plate";
+import { Button } from "@/components/ui/button";
 import { playAppSound, unlockAudio } from "@/lib/sound-tone";
 import { cn } from "@/lib/utils";
 
@@ -66,44 +62,46 @@ export function RegistrationComplete({
   return (
     <div
       className={cn(
-        "absolute inset-0 z-[400] flex items-center justify-center px-6 transition-opacity duration-200 ease-out",
-        visible && !exiting
-          ? "bg-black/30 opacity-100"
-          : "bg-black/0 opacity-0",
+        "ona2 absolute inset-0 z-[400] flex items-center justify-center bg-transparent px-6 transition-opacity duration-200 ease-out",
+        visible && !exiting ? "opacity-100" : "opacity-0",
       )}
       role="dialog"
       aria-modal
       aria-labelledby="reg-complete-title"
     >
+      <div aria-hidden className="absolute inset-0 bg-ona-overlay" />
       <div
         className={cn(
-          "w-full max-w-[280px] rounded-md p-5 text-center shadow-[0_8px_30px_rgba(15,23,42,0.12)] ring-1 ring-black/10 transition-all duration-200 ease-out",
+          "relative w-full max-w-[300px] rounded-ona-sheet bg-ona-surface p-6 text-center shadow-[0_8px_30px_rgba(15,23,42,0.18)] transition-all duration-200 ease-out",
           visible && !exiting
             ? "translate-y-0 scale-100 opacity-100"
             : "translate-y-3 scale-95 opacity-0",
         )}
-        style={{ backgroundColor: AUTH_BG }}
       >
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#e8f8ef]">
-          <CheckCircle2 className="h-7 w-7 text-[#34c759]" strokeWidth={2} />
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-ona-success-soft">
+          <CheckCircle2
+            aria-hidden
+            className="h-7 w-7 text-ona-success"
+            strokeWidth={2}
+          />
         </div>
         <h2
           id="reg-complete-title"
-          className="mt-2.5 text-[16px] font-bold text-[#1e293b]"
+          className="mt-3 text-[18px] font-bold text-ona-ink"
         >
           You&apos;re all set
         </h2>
-        <p className="mt-1 text-[12px] leading-snug text-[#475569]">
+        <p className="mt-1 text-[13px] leading-snug text-ona-muted">
           Your {accountLabel} account is ready. You can start using Ona now.
         </p>
-        <button
-          type="button"
+        <Button
+          size="ona"
+          variant="ona"
           onClick={handleContinue}
-          className={`${authPrimaryBtnClass} mt-4 h-10 rounded-md text-[13px] font-bold transition-transform duration-150 active:scale-[0.98]`}
-          style={authPrimaryBtnStyle}
+          className="mt-5"
         >
           Continue
-        </button>
+        </Button>
       </div>
     </div>
   );

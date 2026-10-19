@@ -8,6 +8,7 @@
  * under ./artisan-onboarding/.
  */
 
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { tierProgressPercent } from "@/lib/artisan/status";
@@ -17,7 +18,6 @@ import { cn } from "@/lib/utils";
 import { STEPS } from "./artisan-onboarding/constants";
 import { deriveViewFlags } from "./artisan-onboarding/derive-view-flags";
 import { EmbedFooter } from "./artisan-onboarding/embed-footer";
-import { FlashBanners } from "./artisan-onboarding/flash-banners";
 import { EssentialsStep } from "./artisan-onboarding/essentials-step";
 import { resolveOnboardingUserId } from "./artisan-onboarding/helpers";
 import { OnboardingHeader } from "./artisan-onboarding/onboarding-header";
@@ -64,6 +64,7 @@ export function ArtisanOnboarding({
   const { otp, setOtp, otpSent, busy, setBusy, idBusy } = state;
   const { showLiveness, setShowLiveness, msg, setMsg } = state;
   const { err, setErr, toolDraft, setToolDraft, setTradeLockOpen } = state;
+  useFeedbackToast(msg ?? "", err ?? "");
   const { gatePopup, setGatePopup, idTypeMenuOpen, setIdTypeMenuOpen } = state;
 
   const {
@@ -165,8 +166,6 @@ export function ArtisanOnboarding({
         }}
         data-pro-sheet-scroll={embedInSheet ? "1" : undefined}
       >
-        <FlashBanners err={err} msg={msg} styles={styles} />
-
         {step === "trade" && (
           <TradeStep
             {...base}

@@ -1,5 +1,6 @@
 "use client";
 
+import { toastError } from "@/lib/toast";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/layout/page-header";
@@ -41,7 +42,7 @@ export default function SettingsDeleteAccountPage() {
       });
       const json = await res.json();
       if (!json.ok) {
-        setErr(json.error?.message || "Deletion failed");
+        toastError(json.error?.message || "Deletion failed");
         setBusy(false);
         return;
       }
@@ -54,7 +55,7 @@ export default function SettingsDeleteAccountPage() {
         router.replace("/");
       }
     } catch {
-      setErr("Could not complete deactivation. Contact care.");
+      toastError("Could not complete deactivation. Contact care.");
       setBusy(false);
     }
   };

@@ -70,7 +70,7 @@ describe("MechanicHelpFlow auto-highlights the best-fit urgency bar", () => {
     render(<MechanicHelpFlow isLight={false} />);
 
     // 1. Vehicle step pick the saved vehicle.
-    fireEvent.click(screen.getByText("Toyota · Corolla · 2018"));
+    fireEvent.click(screen.getByText("Toyota Corolla"));
 
     // 2. Start screen branch C (strange noise).
     fireEvent.click(screen.getByText("Strange noise coming from the vehicle"));
@@ -84,12 +84,12 @@ describe("MechanicHelpFlow auto-highlights the best-fit urgency bar", () => {
     fireEvent.click(screen.getByText("No"));
 
     // 5. Route confirm (towing) → Yes.
-    fireEvent.click(screen.getByText("Yes"));
+    fireEvent.click(screen.getByText("Continue"));
 
-    // 6. Urgency bars Emergency must be the highlighted one.
-    const emergency = screen.getByText("Emergency").closest("button")!;
-    const normal = screen.getByText("Normal").closest("button")!;
-    expect(emergency.className).toContain("bg-[#FF6B35]/10");
-    expect(normal.className).not.toContain("bg-[#FF6B35]/10");
+    // 6. Urgency radios: Emergency must be the checked one.
+    const emergency = screen.getByRole("radio", { name: /Emergency/ });
+    const normal = screen.getByRole("radio", { name: /Normal/ });
+    expect(emergency.getAttribute("aria-checked")).toBe("true");
+    expect(normal.getAttribute("aria-checked")).toBe("false");
   });
 });

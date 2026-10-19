@@ -1,6 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
+import { Car, ChevronRight, Plus } from "lucide-react";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { Button } from "@/components/ui/button";
+import { OnaFlowHeader } from "@/components/ui/ona-flow-header";
 import { VehicleCascadeFields } from "@/components/vehicles/vehicle-cascade-fields";
 import {
   canUseVehicleLabel,
@@ -8,6 +12,7 @@ import {
   profileVehiclesOf,
 } from "@/components/home/job-vehicle-helpers";
 import type { MotoristVehicle } from "@/lib/types";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { cn } from "@/lib/utils";
 
 export { canUseVehicleLabel, formatVehicleLabel, profileVehiclesOf };
@@ -20,8 +25,11 @@ export function JobVehicleStep({
   onPick,
   onSaveVehicle,
   onBack,
+  tag,
 }: {
   isLight: boolean;
+  /** Coral request tag shown above the title (e.g. "Mechanic request"). */
+  tag?: string;
   vehicles: MotoristVehicle[];
   label: string;
   onChange: (label: string) => void;
@@ -39,8 +47,7 @@ export function JobVehicleStep({
   const [year, setYear] = useState("");
   const [powertrain, setPowertrain] = useState("");
   const [saveError, setSaveError] = useState<string | null>(null);
-
-  const ink = isLight ? "text-slate-900" : "text-white";
+  useFeedbackToast("", saveError ?? "");
 
   const savedMatch = useMemo(
     () => vehicles.find((v) => formatVehicleLabel(v) === label),
@@ -94,165 +101,181 @@ export function JobVehicleStep({
     onPick?.(text, picked);
   };
 
-  const nextGray = isLight
-    ? "bg-[#4a4d53] text-white"
-    : "bg-[#5c5c60] text-white";
-  const actionFlat = isLight ? "text-slate-700" : "text-white/85";
-  const rowCard = isLight ? "bg-black/[0.02]" : "bg-white/[0.02]";
-  const insetLine = isLight
-    ? "relative after:absolute after:bottom-0 after:left-1 after:right-0 after:h-px after:bg-black/[0.08]"
-    : "relative after:absolute after:bottom-0 after:left-1 after:right-0 after:h-px after:bg-white/[0.08]";
+  const titleId = useId();
+  const hasSaved = vehicles.length > 0;
+  /** Saved vehicles: "Enter another" opens a sheet. None saved: inline form. */
+  const sheetOpen = manual && hasSaved;
+  const inlineForm = manual && !hasSaved;
+  const ctaVehicle = savedMatch ?? vehicles[0];
 
-  const heading = (
-    <p
-      className={cn("mt-2 px-0.5 pb-2 text-[14px] font-bold leading-snug", ink)}
+  const saveButton = (
+    <Button
+      size="ona"
+      variant="ona"
+      disabled={!make.trim() || !model.trim()}
+      onClick={handleSave}
     >
-      {vehicles.length && !manual ? "Which vehicle?" : "Enter your vehicle"}
-    </p>
+      Save vehicle
+    </Button>
   );
 
-  const body =
-    vehicles.length > 0 && !manual ? (
-      <div className="flex flex-col gap-1">
-        {vehicles.map((v) => {
-          const text = formatVehicleLabel(v);
-          const on = savedMatch?.id === v.id;
-          return (
-            <button
-              key={v.id}
-              type="button"
-              onClick={() => pickVehicle(text)}
-              className={cn(
-                "flex w-full items-center gap-2 rounded-[4px] border-0 px-1 py-3 text-left transition-transform duration-150 active:scale-[0.985]",
-                rowCard,
-                insetLine,
-              )}
-            >
-              <span
-                className={cn(
-                  "min-w-0 flex-1 text-[13px] font-semibold capitalize leading-snug",
-                  on ? "text-brand" : ink,
-                )}
-              >
-                {text}
-              </span>
-            </button>
-          );
-        })}
-        <button
-          type="button"
-          onClick={() => {
-            setManual(true);
-            setSaveError(null);
-            onChange("");
-          }}
-          className={cn(
-            "w-full rounded-[4px] border-0 px-1 py-3 text-left text-[13px] font-semibold",
-            rowCard,
-            ink,
-          )}
-        >
-          Enter another vehicle
-        </button>
-      </div>
-    ) : (
-      <div>
-        <VehicleCascadeFields
-          variant="profile"
-          isLight={isLight}
-          makeLabel="Brand"
-          vehicleType={vehicleType}
-          onVehicleTypeChange={(v) => {
-            setVehicleType(v);
-            pushManual(v, make, model, year);
-          }}
-          powertrain={powertrain}
-          onPowertrainChange={(v) => {
-            setPowertrain(v);
-            pushManual(vehicleType, make, model, year);
-          }}
-          make={make}
-          model={model}
-          year={year}
-          onMakeChange={(v) => {
-            setMake(v);
-            pushManual(vehicleType, v, "", "");
-          }}
-          onModelChange={(v) => {
-            setModel(v);
-            pushManual(vehicleType, make, v, "");
-          }}
-          onYearChange={(v) => {
-            setYear(v);
-            pushManual(vehicleType, make, model, v);
-          }}
-        />
-        {!onBack ? (
+  const form = (
+    <VehicleCascadeFields
+      variant="ona"
+      isLight={isLight}
+      makeLabel="Brand"
+      vehicleType={vehicleType}
+      onVehicleTypeChange={(v) => {
+        setVehicleType(v);
+        pushManual(v, make, model, year);
+      }}
+      powertrain={powertrain}
+      onPowertrainChange={(v) => {
+        setPowertrain(v);
+        pushManual(vehicleType, make, model, year);
+      }}
+      make={make}
+      model={model}
+      year={year}
+      onMakeChange={(v) => {
+        setMake(v);
+        pushManual(vehicleType, v, "", "");
+      }}
+      onModelChange={(v) => {
+        setModel(v);
+        pushManual(vehicleType, make, v, "");
+      }}
+      onYearChange={(v) => {
+        setYear(v);
+        pushManual(vehicleType, make, model, v);
+      }}
+    />
+  );
+
+  const list = (
+    <div className="flex flex-col gap-2.5 pb-2">
+      {vehicles.map((v) => {
+        const on = savedMatch?.id === v.id;
+        const meta = [v.year, v.powertrain, v.plate]
+          .filter(Boolean)
+          .join(" · ");
+        return (
           <button
+            key={v.id}
             type="button"
-            disabled={!make.trim() || !model.trim()}
-            onClick={handleSave}
+            onClick={() => pickVehicle(formatVehicleLabel(v))}
             className={cn(
-              "mt-3 h-11 w-full rounded-md border-0 text-[14px] font-bold disabled:opacity-50",
-              nextGray,
+              "flex min-h-16 w-full items-center gap-3 rounded-ona-card border bg-ona-surface px-3 py-2.5 text-left",
+              on ? "border-ona-brand" : "border-ona-border",
             )}
           >
-            Save vehicle
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-ona-ctl bg-ona-brand-soft text-ona-brand-ink">
+              <Car className="h-5 w-5" aria-hidden />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[14px] font-semibold text-ona-ink">
+                {[v.make, v.model].filter(Boolean).join(" ") ||
+                  formatVehicleLabel(v)}
+              </span>
+              {meta ? (
+                <span className="block truncate text-[12px] font-medium text-ona-muted">
+                  {meta}
+                </span>
+              ) : null}
+            </span>
+            <ChevronRight
+              className="h-4 w-4 shrink-0 text-ona-muted"
+              aria-hidden
+            />
           </button>
-        ) : null}
-        {!onBack && saveError ? (
-          <p className="mt-1 text-[12px] font-semibold text-red-500">
-            {saveError}
-          </p>
-        ) : null}
-      </div>
-    );
+        );
+      })}
+      <button
+        type="button"
+        onClick={() => {
+          setManual(true);
+          setSaveError(null);
+          onChange("");
+        }}
+        className="mx-auto mt-1 flex min-h-11 items-center gap-1.5 rounded-full border border-ona-border bg-ona-surface px-4 text-[13px] font-semibold text-ona-ink"
+      >
+        <Plus className="h-4 w-4" aria-hidden />
+        Enter another vehicle
+      </button>
+    </div>
+  );
+
+  const header = (
+    <OnaFlowHeader
+      tag={tag}
+      onBack={onBack}
+      title={inlineForm ? "Enter your vehicle" : "Which vehicle needs help?"}
+      subtitle={
+        inlineForm ? undefined : "This helps your professional arrive prepared."
+      }
+    />
+  );
+
+  const sheet = (
+    <BottomSheet
+      open={sheetOpen}
+      onClose={() => {
+        setManual(false);
+        setSaveError(null);
+      }}
+      titleId={titleId}
+      className="ona2"
+      surface="ona"
+      heightPercent={55}
+      growToPercent={90}
+    >
+      <h2 id={titleId} className="text-[16px] font-bold text-ona-ink">
+        Enter vehicle
+      </h2>
+      <div className="mt-4">{form}</div>
+      <div className="mt-4">{saveButton}</div>
+    </BottomSheet>
+  );
 
   if (onBack) {
     return (
       <div className="flex h-full min-h-0 flex-col">
+        {header}
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-hide">
-          {heading}
-          {body}
+          {inlineForm ? form : list}
         </div>
-        {saveError ? (
-          <p className="mt-1 shrink-0 text-[12px] font-semibold text-red-500">
-            {saveError}
-          </p>
-        ) : null}
-        <div className="flex shrink-0 gap-2 pt-2">
-          <button
-            type="button"
-            onClick={onBack}
-            className={cn(
-              "h-11 flex-1 rounded-md border-0 text-[14px] font-bold",
-              actionFlat,
+        {inlineForm || (hasSaved && ctaVehicle) ? (
+          <div className="shrink-0 pt-3">
+            {inlineForm ? (
+              saveButton
+            ) : (
+              <Button
+                size="ona"
+                variant="ona"
+                onClick={() => pickVehicle(formatVehicleLabel(ctaVehicle))}
+              >
+                {`Continue with ${[ctaVehicle.make, ctaVehicle.model].filter(Boolean).join(" ")}`}
+              </Button>
             )}
-          >
-            Back
-          </button>
-          {manual ? (
-            <button
-              type="button"
-              disabled={!make.trim() || !model.trim()}
-              onClick={handleSave}
-              className={cn(
-                "h-11 flex-1 rounded-md border-0 text-[14px] font-bold disabled:opacity-50",
-                nextGray,
-              )}
-            >
-              Save vehicle
-            </button>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
+        {sheet}
       </div>
     );
   }
 
   return (
     <div>
-      {heading}
-      {body}
+      {header}
+      {inlineForm ? (
+        <div>
+          {form}
+          <div className="mt-3">{saveButton}</div>
+        </div>
+      ) : (
+        list
+      )}
+      {sheet}
     </div>
   );
 }

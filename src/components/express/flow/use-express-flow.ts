@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { expressAssignedTitle, isExpressTrade } from "@/lib/express/pricing";
 import { useApp } from "@/lib/store";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import type { Stage } from "./types";
 import { useExpressEntry } from "./use-express-entry";
 import { useExpressPayment } from "./use-express-payment";
@@ -18,6 +19,7 @@ export function useExpressFlow() {
   const [stage, setStage] = useState<Stage>("categories");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  useFeedbackToast("", error ?? "");
 
   const questions = useExpressQuestions({ setStage, setError });
   const vehicles = useExpressVehicles({

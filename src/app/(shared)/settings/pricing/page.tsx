@@ -1,5 +1,6 @@
 "use client";
 
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import {
@@ -20,6 +21,7 @@ export default function SettingsPricingPage() {
   const [prices, setPrices] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  useFeedbackToast(msg ?? "", err ?? "");
 
   const skills = (userProfile?.services || []).filter(isProService);
 
@@ -124,12 +126,7 @@ export default function SettingsPricingPage() {
               </SettingsField>
             ))
           )}
-          <SettingsSaveBar
-            isLight={isLight}
-            msg={msg}
-            err={err}
-            onSave={save}
-          />
+          <SettingsSaveBar onSave={save} />
         </div>
       </div>
     </div>

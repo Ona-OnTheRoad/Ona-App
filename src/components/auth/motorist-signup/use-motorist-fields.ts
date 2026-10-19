@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   DEFAULT_PHONE_DIAL,
   DEFAULT_PHONE_ISO,
@@ -8,12 +9,17 @@ import {
 import { getCountryIdPack } from "@/lib/country-id-rules";
 import { getVaultProfile } from "@/lib/profiles-vault";
 import type { SignupGender } from "@/lib/signup-validation";
+import { loadSignupDraft } from "@/lib/signup-draft";
 import { useApp } from "@/lib/store";
+import { composeFullName } from "./name-utils";
 
 /** Account + service-area form state, including the Repair Pro prefill/lock effect. */
 export function useMotoristFields() {
   const { userProfile, isAuthenticated } = useApp();
   const phoneCodes = useMemo(() => getPhoneCodeOptions(), []);
+  // Referral: read-only when it came from ?ref=, otherwise optional input.
+  const urlRef = useSearchParams().get("ref") || "";
+  const [refInput, setRefInput] = useState(urlRef);
   /** Per-field errors shown on blur when leaving a field */
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
@@ -55,6 +61,24 @@ export function useMotoristFields() {
   const [emailLocked, setEmailLocked] = useState(false);
   const [ninLocked, setNinLocked] = useState(false);
   const [bvnLocked, setBvnLocked] = useState(false);
+
+  // Shared "Create account" draft (sessionStorage; no password). Runs before the
+  // dual-signup prefill below so locked profile values still win.
+  useEffect(() => {
+    const d = loadSignupDraft();
+    if (!d) return;
+    setFullName(composeFullName(d.firstName, d.lastName));
+    setEmail(d.email);
+    if (d.phoneIso) setPhoneIso(d.phoneIso);
+    if (d.phoneDial) setPhoneDial(d.phoneDial);
+    setPhoneNational(d.phoneNational);
+    setGender(d.gender);
+    setDateOfBirth(d.dateOfBirth);
+    setIdNumber(d.idNumber);
+    setBvn(d.bvn);
+    if (!urlRef && d.referral) setRefInput(d.referral);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Prefill from existing Repair Pro lock only fields that already have values
   useEffect(() => {
@@ -161,6 +185,9 @@ export function useMotoristFields() {
 
   return {
     phoneCodes,
+    urlRef,
+    refInput,
+    setRefInput,
     fieldErrors,
     setFieldError,
     fullName,

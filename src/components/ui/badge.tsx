@@ -13,6 +13,9 @@ const badgeVariants = cva(
         warn: "bg-[#FF6B35]/15 text-[#FF6B35]",
         soft: "bg-orange-50 text-brand",
         danger: "bg-red-50 text-red-600",
+        ona: "rounded-full border border-ona-brand/40 bg-ona-brand-soft px-2.5 py-1 leading-none text-ona-brand-ink",
+        matched:
+          "gap-1 rounded-full bg-ona-success-soft py-1 text-[10px] font-bold uppercase tracking-wide text-ona-success",
       },
     },
     defaultVariants: {

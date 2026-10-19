@@ -1,5 +1,6 @@
 "use client";
 
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import {
@@ -31,6 +32,7 @@ export default function SettingsAvailabilityPage() {
   );
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  useFeedbackToast(msg ?? "", err ?? "");
 
   useEffect(() => {
     if (userProfile?.serviceRadiusKm != null) {
@@ -212,12 +214,7 @@ export default function SettingsAvailabilityPage() {
               }
             />
           </SettingsField>
-          <SettingsSaveBar
-            isLight={isLight}
-            msg={msg}
-            err={err}
-            onSave={save}
-          />
+          <SettingsSaveBar onSave={save} />
         </div>
       </div>
     </div>

@@ -5,6 +5,7 @@
  * Same bank is used for Customer refunds and Repair Pro payouts on one login.
  */
 
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { useEffect, useState } from "react";
 import { Building2 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
@@ -34,6 +35,7 @@ export default function PaymentsBankPage() {
   });
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  useFeedbackToast(msg ?? "", err ?? "");
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
@@ -180,17 +182,6 @@ export default function PaymentsBankPage() {
                 signupFullName={userProfile?.fullName}
                 countryIso={userProfile?.identityCountryIso || "NG"}
               />
-
-              {err ? (
-                <p className="mt-2 text-center text-[12px] font-semibold text-red-500">
-                  {err}
-                </p>
-              ) : null}
-              {msg ? (
-                <p className="mt-2 text-center text-[12px] font-semibold text-emerald-600">
-                  {msg}
-                </p>
-              ) : null}
 
               <div className="mt-3 flex gap-2">
                 {complete ? (

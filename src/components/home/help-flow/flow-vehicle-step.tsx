@@ -6,6 +6,7 @@ import type { MotoristVehicle } from "@/lib/types";
 
 export function FlowVehicleStep({
   isLight,
+  tag,
   savedVehicles,
   saveVehicle,
   vehicleLabel,
@@ -16,6 +17,7 @@ export function FlowVehicleStep({
   onBack,
 }: {
   isLight: boolean;
+  tag: string;
   savedVehicles: MotoristVehicle[];
   saveVehicle: (v: MotoristVehicle) => string | null;
   vehicleLabel: string;
@@ -28,6 +30,7 @@ export function FlowVehicleStep({
   return (
     <JobVehicleStep
       isLight={isLight}
+      tag={tag}
       vehicles={savedVehicles}
       label={vehicleLabel}
       onChange={(next) => {

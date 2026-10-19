@@ -1,54 +1,38 @@
 import { ShoppingBag, ShoppingCart } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 type Props = {
-  isLight: boolean;
-  accentText: string;
   cartCount: number;
   onOrders: () => void;
   onCart: () => void;
 };
 
-export function ShopHomeHeaderActions({
-  isLight,
-  accentText,
-  cartCount,
-  onOrders,
-  onCart,
-}: Props) {
+const iconBtn =
+  "relative inline-flex h-9 w-9 items-center justify-center rounded-full border-0 bg-ona-field text-ona-ink active:bg-ona-field-strong";
+
+/** Orders + cart icon buttons shown beside the Shop title. */
+export function ShopHomeHeaderActions({ cartCount, onOrders, onCart }: Props) {
   return (
-    <div className="flex justify-end gap-1 px-3 pt-1">
+    <div className="flex gap-2">
       <button
         type="button"
         aria-label="Orders"
         onClick={onOrders}
-        className={cn(
-          "inline-flex h-8 w-8 items-center justify-center rounded-lg border-0 bg-transparent active:opacity-70",
-          isLight ? "text-slate-800" : "text-white",
-        )}
+        className={iconBtn}
       >
         <ShoppingBag className="h-[18px] w-[18px]" />
       </button>
       <button
         type="button"
-        aria-label="Cart"
+        aria-label={cartCount > 0 ? `Cart, ${cartCount} items` : "Cart"}
         onClick={onCart}
-        className={cn(
-          "relative inline-flex h-8 w-8 items-center justify-center rounded-lg border-0 bg-transparent active:opacity-70",
-          isLight ? "text-slate-800" : "text-white",
-        )}
+        className={iconBtn}
       >
-        <span className="relative inline-flex">
-          <ShoppingCart className="h-[18px] w-[18px]" />
-          {cartCount > 0 ? (
-            <span
-              className="absolute -right-2 -top-1.5 text-[10px] font-black"
-              style={{ color: accentText }}
-            >
-              {cartCount > 99 ? "99+" : cartCount}
-            </span>
-          ) : null}
-        </span>
+        <ShoppingCart className="h-[18px] w-[18px] text-ona-brand-ink" />
+        {cartCount > 0 ? (
+          <span className="absolute -right-1 -top-1 min-w-4 rounded-full bg-ona-brand-btn px-1 text-center text-[10px] font-bold leading-4 text-white">
+            {cartCount > 99 ? "99+" : cartCount}
+          </span>
+        ) : null}
       </button>
     </div>
   );

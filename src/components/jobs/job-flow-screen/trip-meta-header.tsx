@@ -9,6 +9,7 @@ import {
 import type { JobRecord } from "@/lib/jobs/types";
 import { formatMoney } from "@/lib/pricing";
 import { PRO_SERVICE_LABELS } from "@/lib/services";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import type { JobViewer } from "./types";
 import { TRIP_STATUS_LABEL } from "./trip-pro-advance";
@@ -17,8 +18,6 @@ interface Props {
   job: JobRecord;
   viewer: JobViewer;
   isLight: boolean;
-  ink: string;
-  muted: string;
   calloutQuote: CalloutQuote | null | undefined;
 }
 
@@ -31,27 +30,23 @@ export function TripMetaHeader({
   job,
   viewer,
   isLight,
-  ink,
-  muted,
   calloutQuote,
 }: Props): ReactElement {
   const statusLabel = TRIP_STATUS_LABEL;
-  // Status / skill / name / ₦ solid lower panel only (never map overlay).
-  // en_route uses mixed-case "OnTheRoad" no CSS uppercase.
+  const tradeLabel = PRO_SERVICE_LABELS[job.serviceType] || job.serviceType;
+  // Pro-only status chip (en_route keeps mixed-case "OnTheRoad").
   const statusChip = (
     <span
       className={cn(
-        "rounded px-1.5 py-0.5 text-[9px] font-black text-white",
+        "rounded-full px-2 py-1 text-[10px] font-bold",
         job.status === "en_route"
           ? "tracking-normal"
           : "uppercase tracking-wide",
         job.status === "paid_booked"
-          ? "bg-emerald-600"
+          ? "bg-ona-success-soft text-ona-success"
           : job.status === "en_route" || job.status === "in_progress"
-            ? "bg-[#FF6B35]"
-            : isLight
-              ? "bg-slate-800"
-              : "bg-[#3a3a3c]",
+            ? "bg-ona-brand-soft text-ona-brand-ink"
+            : "bg-ona-field-strong text-ona-ink",
       )}
     >
       {job.status === "paid_booked"
@@ -61,87 +56,89 @@ export function TripMetaHeader({
   );
 
   const skillChip = (
-    <span
-      className={cn(
-        "rounded px-1.5 py-0.5 text-[9px] font-bold",
-        isLight ? "bg-[#a8a9ae] text-slate-900" : "bg-[#2c2c2e] text-white",
-      )}
-    >
-      {PRO_SERVICE_LABELS[job.serviceType] || job.serviceType}
+    <span className="rounded-full bg-ona-field-strong px-2 py-1 text-[10px] font-semibold text-ona-ink">
+      {tradeLabel}
     </span>
   );
 
-  // Pro: vehicle details (not customer name). Customer: pro name.
+  // Customer ETA bar: server etaMinutes while the pro is en route.
+  const etaBar =
+    viewer === "motorist" && job.status === "en_route" ? (
+      <p
+        role="status"
+        className="rounded-ona-ctl bg-ona-dark px-3 py-2.5 text-center text-[12px] font-semibold text-ona-on-dark"
+      >
+        {job.etaMinutes != null
+          ? `Arrival ETA ${job.etaMinutes} min.`
+          : `${tradeLabel} is OnTheRoad`}
+      </p>
+    ) : null;
+
   const vehicleLabel = (job.motoristVehicle || "").trim();
+  const total =
+    job.agreedMajor != null
+      ? formatMoney(
+          getDisplayTotalMajor({
+            agreedMajor: job.agreedMajor,
+            amountMinor: jobEscrowAmountMinor(job),
+            quote: calloutQuote ?? job.calloutQuote,
+            fallbackQuote: job.calloutQuote,
+          }) ?? job.agreedMajor,
+          job.currency,
+        )
+      : null;
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex flex-wrap items-center gap-1.5">
-        {viewer === "repair_pro" ? statusChip : null}
-        {skillChip}
-        {viewer === "motorist" ? (
-          <p
-            className={cn(
-              "min-w-0 flex-1 truncate text-[16px] font-black",
-              ink,
-            )}
-          >
-            {job.repairProName}
-          </p>
-        ) : null}
-        {job.agreedMajor != null ? (
-          <p
-            className={cn(
-              "ml-auto shrink-0 text-[15px] font-black tabular-nums",
-              isLight ? "text-black" : "text-white",
-            )}
-          >
-            {formatMoney(
-              getDisplayTotalMajor({
-                agreedMajor: job.agreedMajor,
-                amountMinor: jobEscrowAmountMinor(job),
-                quote: calloutQuote ?? job.calloutQuote,
-                fallbackQuote: job.calloutQuote,
-              }) ?? job.agreedMajor,
-              job.currency,
-            )}
-          </p>
-        ) : null}
-      </div>
-      <div className="mt-1">
-        <JobChargeLines
-          agreedMajor={job.agreedMajor}
-          amountMinor={jobEscrowAmountMinor(job)}
-          quote={calloutQuote ?? job.calloutQuote}
-          fallbackQuote={job.calloutQuote}
-          currency={job.currency}
-          ink={ink}
-          muted={muted}
-          compact
-          isLight={isLight}
-        />
-      </div>
+    <div className="flex flex-col gap-3">
+      {etaBar}
+      {viewer === "motorist" ? (
+        <div className="flex items-center gap-3 rounded-ona-card border border-ona-border bg-ona-surface p-3">
+          <Avatar className="h-11 w-11">
+            <AvatarImage src={job.repairProPhoto} alt="" />
+            <AvatarFallback>
+              {(job.repairProName || "?").trim().charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[15px] font-semibold text-ona-ink">
+              {job.repairProName}
+            </p>
+            <div className="mt-1">{skillChip}</div>
+          </div>
+          {total ? (
+            <p className="shrink-0 text-[15px] font-bold tabular-nums text-ona-ink">
+              {total}
+            </p>
+          ) : null}
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {statusChip}
+          {skillChip}
+          {total ? (
+            <p className="ml-auto shrink-0 text-[15px] font-bold tabular-nums text-ona-ink">
+              {total}
+            </p>
+          ) : null}
+        </div>
+      )}
+      <JobChargeLines
+        agreedMajor={job.agreedMajor}
+        amountMinor={jobEscrowAmountMinor(job)}
+        quote={calloutQuote ?? job.calloutQuote}
+        fallbackQuote={job.calloutQuote}
+        currency={job.currency}
+        ink="text-ona-ink"
+        muted="text-ona-muted"
+        compact
+        isLight={isLight}
+      />
       {viewer === "repair_pro" && isAutomotiveTrade(job.serviceType) ? (
-        <div
-          className={cn(
-            "rounded-xl px-3 py-2.5",
-            isLight ? "bg-black/[0.05]" : "bg-white/[0.06]",
-          )}
-        >
-          <p
-            className={cn(
-              "text-[10px] font-bold uppercase tracking-[0.08em]",
-              muted,
-            )}
-          >
+        <div className="rounded-ona-card border border-ona-border bg-ona-field px-3 py-2.5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-ona-muted">
             Vehicle
           </p>
-          <p
-            className={cn(
-              "mt-0.5 text-[15px] font-black leading-snug tracking-tight",
-              ink,
-            )}
-          >
+          <p className="mt-0.5 text-[15px] font-semibold leading-snug tracking-tight text-ona-ink">
             {vehicleLabel || "Vehicle details not set"}
           </p>
         </div>

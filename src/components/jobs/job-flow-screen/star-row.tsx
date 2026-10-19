@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 interface Props {
   value: number;
   interactive: boolean;
-  isLight: boolean;
   /** Currently selected rating (interactive row only). */
   rating: number;
   alreadyLeft: boolean;
@@ -16,14 +15,13 @@ interface Props {
 export function StarRow({
   value,
   interactive,
-  isLight,
   rating,
   alreadyLeft,
   setRating,
 }: Props): ReactElement {
   return (
     <div
-      className="flex items-center justify-center gap-2"
+      className="flex items-center justify-center gap-1.5"
       role={interactive ? "radiogroup" : "img"}
       aria-label={
         interactive
@@ -42,10 +40,8 @@ export function StarRow({
               className={cn(
                 "h-8 w-8",
                 on
-                  ? "fill-[#FF6B35] text-[#FF6B35]"
-                  : isLight
-                    ? "fill-transparent text-slate-400"
-                    : "fill-transparent text-white/35",
+                  ? "fill-ona-brand text-ona-brand"
+                  : "fill-transparent text-ona-disabled-ink",
               )}
               strokeWidth={1.75}
               aria-hidden
@@ -67,10 +63,8 @@ export function StarRow({
               className={cn(
                 "h-9 w-9",
                 on
-                  ? "fill-[#FF6B35] text-[#FF6B35]"
-                  : isLight
-                    ? "fill-transparent text-slate-400"
-                    : "fill-transparent text-white/35",
+                  ? "fill-ona-brand text-ona-brand"
+                  : "fill-transparent text-ona-disabled-ink",
               )}
               strokeWidth={1.75}
             />

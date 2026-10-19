@@ -78,11 +78,6 @@ export default function ShopCheckoutPage() {
               Pay now to Ona Shop (retail). This is not job escrow no Repair Pro
               hold/release. Stock is reserved after successful payment.
             </p>
-            {c.error ? (
-              <p className="mt-2 text-[12px] font-semibold text-red-500">
-                {c.error}
-              </p>
-            ) : null}
           </>
         )}
       </div>

@@ -5,6 +5,7 @@ import { ChevronLeft, MapPin, X } from "lucide-react";
 import { knownPlaceToPick, matchKnownPlaces } from "@/lib/known-places";
 import type { HelpSomeone } from "@/components/home/home-panel/use-help-someone";
 import { useT } from "@/lib/i18n";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { cn } from "@/lib/utils";
 
 /** Quiet “Where are they?” field that replaces the top trade strip. */
@@ -36,6 +37,7 @@ export function HelpAddressBar({
   const onSubmit = () => void submitHelpAddress();
   const swipeStartX = useRef<number | null>(null);
   const t = useT();
+  useFeedbackToast("", error ?? "");
   return (
     <div
       className="px-3 pb-1 pt-1"
@@ -184,11 +186,6 @@ export function HelpAddressBar({
           )}
         </div>
       </div>
-      {error && (
-        <p className="mt-1 pl-9 text-[10px] font-medium text-red-500">
-          {error}
-        </p>
-      )}
       {busy && (
         <p
           className={cn(

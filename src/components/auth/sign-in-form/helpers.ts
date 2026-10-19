@@ -1,3 +1,6 @@
+/** How the user logs in: SMS code to a phone, or email + password. */
+export type LoginMethod = "phone" | "email";
+
 /** Live countdown only after 4 failed OTP attempts */
 export const FAIL_THRESHOLD = 4;
 export const COOLDOWN_SEC = 45;

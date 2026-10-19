@@ -49,14 +49,11 @@ export function NeedHelpStepBody({
   urgency: CalloutUrgencyKind;
   setUrgency: (u: CalloutUrgencyKind) => void;
 }) {
-  const ink = isLight ? "text-slate-900" : "text-white";
-  const field = isLight
-    ? "bg-white text-slate-900 placeholder:text-slate-400"
-    : "bg-[#2c2c2e] text-white placeholder:text-white/40";
-  const card = isLight ? "bg-white/80" : "bg-[#1c1c1e]";
-  const chipIdle = isLight
-    ? "bg-black/8 text-slate-700"
-    : "bg-[#2c2c2e] text-white/75";
+  const ink = "text-ona-ink";
+  const field =
+    "border border-ona-border bg-ona-field text-ona-ink placeholder:text-ona-muted focus:border-ona-ink";
+  const card = "border border-ona-border bg-ona-surface";
+  const chipIdle = "bg-ona-field-strong text-ona-ink";
 
   return (
     <>
@@ -81,7 +78,7 @@ export function NeedHelpStepBody({
       ) : null}
 
       {step === "help" ? (
-        <div className={cn("shrink-0 rounded-xl px-3 py-2", card)}>
+        <div className={cn("shrink-0 rounded-ona-card px-3 py-3", card)}>
           <label
             htmlFor="need-help-problem"
             className={cn("block text-[13px] font-bold", ink)}
@@ -98,7 +95,7 @@ export function NeedHelpStepBody({
             rows={2}
             placeholder={problemPlaceholderForTrade(statedTrade)}
             className={cn(
-              "mt-1 w-full resize-none rounded-xl border-0 px-2.5 py-2 text-[13px] font-medium leading-snug outline-none",
+              "mt-2 w-full resize-none rounded-ona-ctl px-3 py-2.5 text-[13px] font-medium leading-snug outline-none",
               field,
             )}
           />
@@ -106,7 +103,7 @@ export function NeedHelpStepBody({
       ) : null}
 
       {step === "confirm" ? (
-        <div className={cn("shrink-0 rounded-xl px-3 py-2", card)}>
+        <div className={cn("shrink-0 rounded-ona-card px-3 py-3", card)}>
           <p className={cn("text-[13px] font-bold", ink)}>
             This sounds like {PRO_SERVICE_LABELS[decision.suggested]}. Continue?
           </p>
@@ -114,7 +111,7 @@ export function NeedHelpStepBody({
             <button
               type="button"
               onClick={acceptSuggested}
-              className="rounded-full border-0 bg-brand px-3 py-1.5 text-[12px] font-bold text-white"
+              className="min-h-11 rounded-full border-0 bg-ona-brand-btn px-4 text-[12px] font-bold text-white"
             >
               Yes
             </button>
@@ -122,7 +119,7 @@ export function NeedHelpStepBody({
               type="button"
               onClick={keepTappedTrade}
               className={cn(
-                "rounded-full border-0 px-3 py-1.5 text-[12px] font-bold",
+                "min-h-11 rounded-full border-0 px-4 text-[12px] font-bold",
                 chipIdle,
               )}
             >
@@ -133,7 +130,7 @@ export function NeedHelpStepBody({
       ) : null}
 
       {step === "urgency" ? (
-        <div className={cn("shrink-0 rounded-xl px-3 py-2", card)}>
+        <div className={cn("shrink-0 rounded-ona-card px-3 py-3", card)}>
           <p className={cn("text-[13px] font-bold", ink)}>
             How urgent is this?
           </p>
@@ -144,8 +141,8 @@ export function NeedHelpStepBody({
                 type="button"
                 onClick={() => setUrgency(opt.id)}
                 className={cn(
-                  "rounded-full border-0 px-3 py-1.5 text-[12px] font-bold",
-                  urgency === opt.id ? "bg-brand text-white" : chipIdle,
+                  "min-h-11 rounded-full border-0 px-4 text-[12px] font-bold",
+                  urgency === opt.id ? "bg-ona-brand-btn text-white" : chipIdle,
                 )}
               >
                 {opt.label} {opt.multiplier === 1 ? "1x" : `${opt.multiplier}x`}
@@ -156,14 +153,9 @@ export function NeedHelpStepBody({
       ) : null}
 
       {step === "send" ? (
-        <div className={cn("shrink-0 rounded-xl px-3 py-2", card)}>
+        <div className={cn("shrink-0 rounded-ona-card px-3 py-3", card)}>
           <p className={cn("text-[13px] font-bold", ink)}>Ready to send</p>
-          <p
-            className={cn(
-              "mt-1 text-[12px] font-medium",
-              isLight ? "text-slate-600" : "text-white/55",
-            )}
-          >
+          <p className={cn("mt-1 text-[12px] font-medium", "text-ona-muted")}>
             {
               PRO_SERVICE_LABELS[
                 chosenTrade || statedTrade || decision.suggested

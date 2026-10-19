@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { JobShell } from "@/components/jobs/job-shell";
+import { OnaScreen } from "@/components/ui/ona-screen";
 import { isWithinArrivalProximity } from "@/lib/callout/arrival";
 import { isJobEndedStatus } from "@/lib/chat-expired";
 import { PRO_TRIP_STATUS_COPY, TRIP_STATUS_COPY } from "@/lib/jobs/constants";
@@ -25,9 +25,7 @@ export function renderTrackingStage(
     actorId,
     ink,
     muted,
-    err,
     busy,
-    flash,
     locHint,
     goJobsList,
     calloutQuote,
@@ -110,8 +108,6 @@ export function renderTrackingStage(
       job={job}
       viewer={viewer}
       isLight={isLight}
-      ink={ink}
-      muted={muted}
       calloutQuote={calloutQuote}
     />
   );
@@ -142,11 +138,8 @@ export function renderTrackingStage(
       job={job}
       viewer={viewer}
       isLight={isLight}
-      tradeLabel={tradeLabel}
       showMap={showMap}
       busy={busy}
-      err={err}
-      flash={flash}
       locHint={locHint}
       chatGateOpen={chatGateOpen}
       setChatGateOpen={setChatGateOpen}
@@ -179,21 +172,17 @@ export function renderTrackingStage(
   if (isSwipeTrip) {
     return (
       <>
-        <JobShell
-          isLight={isLight}
-          title={trackTripTitle}
-          subtitle={undefined}
-          compactHeader
+        <OnaScreen
           onBack={goJobsList}
-          fullBleed
-          fillBody
           footer={footerBlock}
+          className="min-h-0"
+          bodyClassName="flex flex-col overflow-hidden p-0"
         >
+          <h1 className="sr-only">{trackTripTitle}</h1>
           <TripSwipeBody
             job={job}
             viewer={viewer}
             isLight={isLight}
-            muted={muted}
             tripSheetExpanded={tripSheetExpanded}
             setTripSheetExpanded={setTripSheetExpanded}
             gestureYRef={tripGestureY}
@@ -202,7 +191,7 @@ export function renderTrackingStage(
             callMessageRow={callMessageRow}
           />
           {disputeNode}
-        </JobShell>
+        </OnaScreen>
 
         {/* Reroute notification overlay for motorist */}
         {rerouteAlert && viewer === "motorist" && (
@@ -219,23 +208,18 @@ export function renderTrackingStage(
 
   /* ── Ready to go only (no map) details stay on solid stage panel ── */
   return (
-    <JobShell
-      isLight={isLight}
-      title={
-        viewer === "motorist"
+    <OnaScreen onBack={goJobsList} footer={footerBlock}>
+      <h1 className="pt-2 text-[22px] font-bold leading-tight tracking-tight text-ona-ink">
+        {viewer === "motorist"
           ? PRO_SERVICE_LABELS[job.serviceType] || "Booked"
-          : copy.title
-      }
-      compactHeader
-      onBack={goJobsList}
-      footer={footerBlock}
-    >
-      <div className="space-y-4 px-0 pb-2 pt-1">
+          : copy.title}
+      </h1>
+      <div className="space-y-4 pb-2 pt-3">
         {tripMetaHeader}
         {tripDetails}
         {callMessageRow}
       </div>
       {disputeNode}
-    </JobShell>
+    </OnaScreen>
   );
 }

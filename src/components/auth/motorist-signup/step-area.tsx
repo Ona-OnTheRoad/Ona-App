@@ -1,7 +1,6 @@
-import { authFieldClass as fieldClass } from "@/components/auth/auth-plate";
-import { Field } from "./form-parts";
+import { OnaField, OnaInput } from "@/components/ui/ona-field";
 
-/** Step 2: service area. */
+/** Step 3: service area (City / Area inputs). */
 export function StepArea({
   city,
   setCity,
@@ -14,25 +13,29 @@ export function StepArea({
   setArea: (v: string) => void;
 }) {
   return (
-    <div className="flex flex-col gap-2.5">
-      <Field label="City" required>
-        <input
-          className={fieldClass}
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-          placeholder="Lagos"
-          autoComplete="address-level2"
-        />
-      </Field>
-      <Field label="Area" required>
-        <input
-          className={fieldClass}
-          value={area}
-          onChange={(e) => setArea(e.target.value)}
-          placeholder="e.g. Yaba, Lekki"
-          autoComplete="address-level3"
-        />
-      </Field>
+    <div className="flex flex-col gap-4">
+      <OnaField label="City" required>
+        {({ id }) => (
+          <OnaInput
+            id={id}
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            placeholder="Lagos"
+            autoComplete="address-level2"
+          />
+        )}
+      </OnaField>
+      <OnaField label="Area" required>
+        {({ id }) => (
+          <OnaInput
+            id={id}
+            value={area}
+            onChange={(e) => setArea(e.target.value)}
+            placeholder="e.g. Yaba, Lekki"
+            autoComplete="address-level3"
+          />
+        )}
+      </OnaField>
     </div>
   );
 }

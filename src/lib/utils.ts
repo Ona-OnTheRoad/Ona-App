@@ -1,5 +1,14 @@
 import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { extendTailwindMerge } from "tailwind-merge";
+
+/** Knows the Ona v2 radius tokens (globals.css @theme) so they override rounded-md etc. */
+const twMerge = extendTailwindMerge({
+  extend: {
+    classGroups: {
+      rounded: [{ rounded: ["ona-ctl", "ona-card", "ona-sheet"] }],
+    },
+  },
+});
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

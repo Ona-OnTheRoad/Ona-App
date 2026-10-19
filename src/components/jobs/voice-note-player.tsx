@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Pause, Play } from "lucide-react";
+import { toastError } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 /**
@@ -25,7 +26,6 @@ export function VoiceNotePlayer({
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(durationSec ?? 0);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const audio = new Audio();
@@ -35,7 +35,6 @@ export function VoiceNotePlayer({
     audioRef.current = audio;
     setPlaying(false);
     setCurrent(0);
-    setError(null);
     if (durationSec) setDuration(durationSec);
 
     let lastPaint = 0;
@@ -59,7 +58,7 @@ export function VoiceNotePlayer({
     };
     const onErr = () => {
       setPlaying(false);
-      setError("Could not play this voice note");
+      toastError("Could not play this voice note");
     };
 
     audio.addEventListener("timeupdate", onTime);
@@ -80,7 +79,6 @@ export function VoiceNotePlayer({
   const toggle = async () => {
     const audio = audioRef.current;
     if (!audio) return;
-    setError(null);
     try {
       if (playing) {
         audio.pause();
@@ -95,7 +93,7 @@ export function VoiceNotePlayer({
       setPlaying(true);
       await p;
     } catch {
-      setError("Tap play again or check sound is on");
+      toastError("Tap play again or check sound is on");
       setPlaying(false);
     }
   };
@@ -156,9 +154,6 @@ export function VoiceNotePlayer({
           {total > 0 && !playing && current === 0 ? `s` : ""}
         </span>
       </div>
-      {error && (
-        <p className="text-[11px] font-semibold text-red-500">{error}</p>
-      )}
     </div>
   );
 }

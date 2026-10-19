@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { PageHeader } from "@/components/layout/page-header";
+import { OnaScreen, OnaTitle } from "@/components/ui/ona-screen";
 import { detectCurrency, formatMoney, fromMinorUnits } from "@/lib/pricing";
 import { shopListOrders } from "@/lib/shop/client";
 import { useApp } from "@/lib/store";
-import { cn } from "@/lib/utils";
+import { orderStatusTone } from "@/components/shop/shared/order-status-tone";
 
 function formatPrice(minor: number | null | undefined): string {
   if (minor == null) return "";
@@ -15,8 +15,7 @@ function formatPrice(minor: number | null | undefined): string {
 }
 
 export default function ShopOrdersPage() {
-  const { theme, isAuthenticated, accountType } = useApp();
-  const isLight = theme === "light";
+  const { isAuthenticated, accountType } = useApp();
   const router = useRouter();
   const [orders, setOrders] = useState<Array<Record<string, unknown>>>([]);
   const [loading, setLoading] = useState(true);
@@ -43,51 +42,53 @@ export default function ShopOrdersPage() {
     };
   }, [isAuthenticated, ctx]);
 
-  const bg = isLight ? "bg-[#c8c9cd]" : "bg-black";
-  const card = isLight ? "bg-white/90" : "bg-[#1c1c1e]";
-  const muted = isLight ? "text-slate-600" : "text-white/55";
-
   return (
-    <div className={cn("flex h-full min-h-0 flex-col overflow-hidden", bg)}>
-      <PageHeader title="Shop orders" backHref="/shop" />
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-6 pt-2">
-        {loading ? (
-          <div className="flex justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-[#FF6B35]" />
-          </div>
-        ) : orders.length === 0 ? (
-          <p className={cn("py-10 text-center text-[13px]", muted)}>
-            No shop orders yet.
-          </p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {orders.map((o) => (
-              <button
-                key={String(o.id)}
-                type="button"
-                onClick={() => router.push(`/shop/orders/${o.id}`)}
-                className={cn(
-                  "rounded-xl border-0 p-3 text-left",
-                  card,
-                  isLight ? "text-slate-900" : "text-white",
-                )}
-              >
-                <div className="flex justify-between gap-2">
-                  <p className="text-[13px] font-black">
-                    {String(o.order_number)}
-                  </p>
-                  <p className="text-[12px] font-bold capitalize text-[#FF6B35]">
-                    {String(o.status).replace(/_/g, " ")}
-                  </p>
-                </div>
-                <p className={cn("mt-1 text-[12px]", muted)}>
-                  {formatPrice(Number(o.total_minor))}
-                </p>
-              </button>
-            ))}
-          </div>
-        )}
+    <OnaScreen onBack={() => router.push("/shop")}>
+      <div className="pt-3">
+        <OnaTitle title="Shop orders" />
+        <div className="mt-4">
+          {loading ? (
+            <div className="flex justify-center py-16">
+              <Loader2
+                aria-label="Loading orders"
+                className="h-8 w-8 animate-spin text-ona-brand-ink"
+              />
+            </div>
+          ) : orders.length === 0 ? (
+            <p className="py-10 text-center text-[13px] text-ona-muted">
+              No shop orders yet.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {orders.map((o) => {
+                const status = String(o.status);
+                return (
+                  <button
+                    key={String(o.id)}
+                    type="button"
+                    onClick={() => router.push(`/shop/orders/${o.id}`)}
+                    className="rounded-ona-card border border-ona-border bg-ona-surface p-3 text-left text-ona-ink"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-[12px] font-semibold">
+                        {String(o.order_number)}
+                      </p>
+                      <p
+                        className={`text-[11px] font-semibold capitalize ${orderStatusTone(status)}`}
+                      >
+                        {status.replace(/_/g, " ")}
+                      </p>
+                    </div>
+                    <p className="mt-1 text-[12px] font-semibold tabular-nums">
+                      {formatPrice(Number(o.total_minor))}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </OnaScreen>
   );
 }

@@ -3,6 +3,7 @@
 import { Loader2, X } from "lucide-react";
 import { ConfirmCancelSheet } from "@/components/ui/confirm-cancel-sheet";
 import { useApp } from "@/lib/store";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { cn } from "@/lib/utils";
 import { BankPayView } from "./bank-pay-view";
 import { CancelChooser } from "./cancel-chooser";
@@ -18,17 +19,19 @@ export function CheckoutInner() {
   const isLight = theme === "light";
   const c = useCheckout();
   const { router, jobId, phase } = c;
+  // The expired view keeps its error inline (it explains the failed attempt).
+  useFeedbackToast("", phase === "expired" ? "" : (c.err ?? ""));
 
-  const sheet = isLight ? "bg-[#e8e9ed]" : "bg-[#0a0a0a]";
-  const card = isLight ? "bg-white" : "bg-[#1c1c1e]";
-  const ink = isLight ? "text-slate-900" : "text-white";
-  const muted = isLight ? "text-slate-500" : "text-white/55";
+  const sheet = "ona2 bg-ona-bg";
+  const card = "bg-ona-surface border border-ona-border";
+  const ink = "text-ona-ink";
+  const muted = "text-ona-muted";
   const tone: CheckoutTone = { isLight, card, ink, muted };
 
   if (!authReady) {
     return (
       <div className={cn("flex h-full items-center justify-center", sheet)}>
-        <Loader2 className="h-7 w-7 animate-spin text-[#FF6B35]" />
+        <Loader2 className="h-7 w-7 animate-spin text-ona-brand" />
       </div>
     );
   }
@@ -45,7 +48,7 @@ export function CheckoutInner() {
         <button
           type="button"
           onClick={() => router.push("/login")}
-          className="h-11 rounded-xl bg-[#FF6B35] px-6 text-[13px] font-bold text-white"
+          className="h-12 rounded-ona-ctl bg-ona-brand-btn px-6 text-[14px] font-semibold text-white"
         >
           Sign in
         </button>
@@ -54,20 +57,19 @@ export function CheckoutInner() {
   }
 
   return (
-    <div className={cn("relative flex h-full flex-col", sheet)}>
+    <div className={cn("relative flex h-full min-h-0 flex-col", sheet)}>
       {/* Header */}
       <div className="flex shrink-0 items-center justify-between px-4 pb-2 pt-3">
         <div className="min-w-0">
-          <h1 className={cn("text-[18px] font-black tracking-tight", ink)}>
-            Pay
+          <h1 className={cn("text-[18px] font-bold tracking-tight", ink)}>
+            {phase === "summary" ? "Secure your booking" : "Pay"}
           </h1>
         </div>
         <button
           type="button"
           onClick={() => c.setCancelOpen(true)}
           className={cn(
-            "inline-flex h-9 items-center gap-1 rounded-full border-0 px-3 text-[13px] font-bold",
-            isLight ? "bg-black/8 text-slate-800" : "bg-white/10 text-white",
+            "inline-flex h-11 items-center gap-1 rounded-full border-0 bg-ona-field px-3 text-[13px] font-semibold text-ona-ink",
           )}
         >
           <X className="h-4 w-4" strokeWidth={2.25} />
@@ -123,7 +125,6 @@ export function CheckoutInner() {
           chargeParts={c.chargeParts}
           agreedMajor={c.agreedMajor}
           calloutQuote={c.calloutQuote}
-          err={c.err}
           onPay={() => void c.startPay()}
         />
       )}

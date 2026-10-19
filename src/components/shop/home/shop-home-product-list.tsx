@@ -1,11 +1,10 @@
 import { ShopProductCard } from "@/components/shop/product-card";
-import { cn } from "@/lib/utils";
 import type { ShopHomeProduct } from "./shop-home-types";
 
 type Props = {
   items: ShopHomeProduct[];
-  tint?: boolean;
-  muted: string;
+  /** Horizontal scrolling row (New arrivals) instead of a vertical list. */
+  horizontal?: boolean;
   cartQtyById: Record<string, number>;
   optimisticAdd: (productId: string) => void;
   optimisticRevert: (productId: string) => void;
@@ -13,11 +12,10 @@ type Props = {
   onAdded?: () => void;
 };
 
-/** Full-width listing rows easy vertical scroll (not a grid of boxes). */
+/** Listing rows (vertical) or a horizontal scroll row. */
 export function ShopHomeProductList({
   items,
-  tint = false,
-  muted,
+  horizontal = false,
   cartQtyById,
   optimisticAdd,
   optimisticRevert,
@@ -25,9 +23,15 @@ export function ShopHomeProductList({
   onAdded,
 }: Props) {
   return (
-    <div className="flex flex-col gap-2 px-3">
+    <div
+      className={
+        horizontal
+          ? "-mx-5 flex gap-2 overflow-x-auto px-5 scrollbar-hide"
+          : "flex flex-col gap-2"
+      }
+    >
       {items.length === 0 ? (
-        <p className={cn("px-1 py-2 text-[12px] italic", muted)}>
+        <p className="px-1 py-2 text-[12px] italic text-ona-muted">
           Nothing here matches the filter.
         </p>
       ) : null}
@@ -47,7 +51,7 @@ export function ShopHomeProductList({
             priceOnRequest: p.priceOnRequest,
             stockLabel: p.stockLabel,
           }}
-          tint={tint}
+          compact={horizontal}
           cartQty={cartQtyById[p.id]}
           onOptimisticAdd={() => optimisticAdd(p.id)}
           onOptimisticRevert={() => optimisticRevert(p.id)}

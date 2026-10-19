@@ -1,13 +1,12 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   canOpenEmergencyCard,
   type HelpStep,
 } from "@/components/home/need-help-steps";
 
 export function NeedHelpActions({
-  isLight,
   step,
   needsVehicle,
   problem,
@@ -27,58 +26,44 @@ export function NeedHelpActions({
   goToSend: () => void;
   send: () => Promise<void>;
 }) {
-  const nextGray = isLight
-    ? "bg-[#4a4d53] text-white"
-    : "bg-[#5c5c60] text-white";
-
   return (
     <div className="flex gap-2">
       {step !== "vehicle" && (step !== "help" || needsVehicle) ? (
-        <button
-          type="button"
+        <Button
+          size="ona"
+          variant="onaOutline"
           onClick={goBack}
-          className={cn(
-            "h-11 flex-1 rounded-md border-0 text-[14px] font-bold",
-            nextGray,
-          )}
+          className="flex-1"
         >
           Back
-        </button>
+        </Button>
       ) : null}
       {step === "help" ? (
-        <button
-          type="button"
+        <Button
+          size="ona"
+          variant="ona"
           disabled={!canOpenEmergencyCard(problem)}
           onClick={goAfterHelp}
-          className={cn(
-            "h-11 w-full rounded-md border-0 text-[14px] font-bold disabled:opacity-50",
-            nextGray,
-          )}
         >
           Next
-        </button>
+        </Button>
       ) : null}
       {step === "urgency" ? (
-        <button
-          type="button"
-          onClick={goToSend}
-          className={cn(
-            "h-11 flex-1 rounded-md border-0 text-[14px] font-bold",
-            nextGray,
-          )}
-        >
+        <Button size="ona" variant="ona" onClick={goToSend} className="flex-1">
           Next
-        </button>
+        </Button>
       ) : null}
       {step === "send" ? (
-        <button
-          type="button"
+        <Button
+          size="ona"
+          variant="ona"
           disabled={busy}
+          busy={busy}
           onClick={() => void send()}
-          className="h-11 flex-1 rounded-md border-0 bg-brand text-[14px] font-bold text-white disabled:opacity-50"
+          className="flex-1"
         >
           {busy ? "Finding help…" : "Find a Repair Pro"}
-        </button>
+        </Button>
       ) : null}
     </div>
   );

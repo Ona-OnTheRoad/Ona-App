@@ -1,6 +1,8 @@
 "use client";
 
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { useState } from "react";
+import { passwordError } from "@/lib/signup-validation";
 import { cn } from "@/lib/utils";
 import { profileTheme } from "@/lib/profile-system";
 import { SecurityField } from "./security-field";
@@ -25,6 +27,7 @@ export function PasswordChangeFlow({
   const [confirmPwd, setConfirmPwd] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  useFeedbackToast(msg ?? "", err ?? "");
   const [busy, setBusy] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const t = profileTheme(isLight);
@@ -47,24 +50,9 @@ export function PasswordChangeFlow({
   }
 
   const doChange = async () => {
-    if (newPwd.length < 8) {
-      setErr("Password must be at least 8 characters.");
-      return;
-    }
-    if (!/[A-Z]/.test(newPwd)) {
-      setErr("Include an uppercase letter.");
-      return;
-    }
-    if (!/[a-z]/.test(newPwd)) {
-      setErr("Include a lowercase letter.");
-      return;
-    }
-    if (!/[0-9]/.test(newPwd)) {
-      setErr("Include a number.");
-      return;
-    }
-    if (!/[^A-Za-z0-9]/.test(newPwd)) {
-      setErr("Include a special character.");
+    const policyErr = passwordError(newPwd);
+    if (policyErr) {
+      setErr(policyErr);
       return;
     }
     if (newPwd !== confirmPwd) {
@@ -154,19 +142,6 @@ export function PasswordChangeFlow({
         )}
       </div>
 
-      {(msg || err) && (
-        <p
-          className={cn(
-            "rounded-xl px-3 py-2 text-[12px] font-semibold",
-            err
-              ? "bg-red-500/15 text-red-400"
-              : "bg-emerald-500/15 text-emerald-500",
-          )}
-        >
-          {err || msg}
-        </p>
-      )}
-
       {step === "form" && (
         <div className="space-y-2">
           <PasswordInput
@@ -191,8 +166,8 @@ export function PasswordChangeFlow({
             isLight={isLight}
           />
           <p className={cn("text-[10px] leading-snug", t.muted)}>
-            Minimum 8 characters with upper, lower, number, and special
-            character.
+            Minimum 10 characters with an uppercase letter, a lowercase letter,
+            a number and a symbol.
           </p>
           <button
             type="button"

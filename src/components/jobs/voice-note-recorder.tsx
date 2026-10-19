@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { VoiceNotePlayer } from "@/components/jobs/voice-note-player";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { VOICE_MAX_SEC } from "@/lib/voice-record";
 import { cn } from "@/lib/utils";
 import type { JobMedia } from "@/lib/jobs/types";
@@ -31,6 +32,7 @@ export function VoiceNoteRecorder({
 }) {
   const { phase, error, elapsed, elapsedEl, start, stop, reset } =
     useVoiceRecorder({ onChange, userId, onPhaseChange });
+  useFeedbackToast("", error ?? "");
 
   const recording = phase === "recording";
 
@@ -84,9 +86,6 @@ export function VoiceNoteRecorder({
         </div>
       )}
 
-      {error && (
-        <p className="mt-2 text-[12px] font-semibold text-red-500">{error}</p>
-      )}
       <p
         className={cn(
           "mt-2 text-[11px]",

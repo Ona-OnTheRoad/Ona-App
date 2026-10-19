@@ -1,105 +1,72 @@
-import {
-  authSecondaryBtnClass,
-  authSelectClass as selectClass,
-} from "@/components/auth/auth-plate";
-import { VehicleCascadeFields } from "@/components/vehicles/vehicle-cascade-fields";
-import { cn } from "@/lib/utils";
+"use client";
+
+import { useState } from "react";
+import { Car, ChevronRight, Plus } from "lucide-react";
+import { VehicleSheet } from "./vehicle-sheet";
 import type { MotoristVehiclesState } from "./use-motorist-vehicles";
 
-/** Step 3: optional vehicles. */
-export function StepVehicles({
-  v: vs,
-  setFormError,
-}: {
-  v: MotoristVehiclesState;
-  setFormError: (msg: string) => void;
-}) {
-  const {
-    vehicles,
-    setVehicles,
-    draftVehicleType,
-    setDraftVehicleType,
-    draftMake,
-    setDraftMake,
-    draftModel,
-    setDraftModel,
-    draftYear,
-    setDraftYear,
-    draftReady,
-    addDraftVehicle,
-    vehicleTypeOptions,
-  } = vs;
+/** Step 4: optional vehicles (empty state → sheet → list). */
+export function StepVehicles({ v: vs }: { v: MotoristVehiclesState }) {
+  const [open, setOpen] = useState(false);
+  const { vehicles } = vs;
+  const addLabel = vehicles.length ? "Enter another vehicle" : "Enter vehicle";
   return (
     <div className="flex flex-col gap-3">
-      {vehicles.length > 0 && (
-        <ul className="flex flex-col gap-1.5">
-          {vehicles.map((v) => (
-            <li
-              key={v.id}
-              className="flex items-center justify-between gap-2 rounded-md border border-[#9A9EA6]/50 bg-white/60 px-2.5 py-2 text-[12px] text-[#0f172a]"
-            >
-              <span className="min-w-0 flex-1 font-semibold">
-                {[v.vehicleType, v.make, v.model, v.year]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </span>
+      {vehicles.length > 0 ? (
+        <ul className="flex flex-col gap-2">
+          {vehicles.map((x) => (
+            <li key={x.id}>
               <button
                 type="button"
-                className="shrink-0 border-0 bg-transparent text-[11px] font-semibold text-red-600"
-                onClick={() =>
-                  setVehicles((prev) => prev.filter((x) => x.id !== v.id))
-                }
+                onClick={() => {
+                  vs.startEdit(x);
+                  setOpen(true);
+                }}
+                className="flex min-h-14 w-full items-center gap-3 rounded-ona-card border border-ona-border bg-ona-surface p-3 text-left"
               >
-                Remove
+                <span
+                  aria-hidden
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ona-brand-soft text-ona-brand-ink"
+                >
+                  <Car className="h-4 w-4" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[13px] font-semibold">
+                    {[x.make, x.model].filter(Boolean).join(" ")}
+                  </span>
+                  <span className="block truncate text-[12px] text-ona-muted">
+                    {[x.year, x.vehicleType].filter(Boolean).join(" · ") ||
+                      "Vehicle"}
+                  </span>
+                </span>
+                <ChevronRight
+                  aria-hidden
+                  className="h-4 w-4 shrink-0 text-ona-muted"
+                />
+                <span className="sr-only">Edit</span>
               </button>
             </li>
           ))}
         </ul>
+      ) : (
+        <hr className="border-0 border-t border-ona-border" />
       )}
-
-      {/* Full catalog one-line searchable dropdowns (not full-page) */}
-      <label className="block">
-        <span className="mb-0.5 block text-[11px] font-semibold text-[#475569]">
-          Vehicle type
-        </span>
-        <select
-          className={selectClass}
-          value={draftVehicleType}
-          onChange={(e) => setDraftVehicleType(e.target.value)}
-        >
-          <option value="">Any / not specified</option>
-          {vehicleTypeOptions.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
-      </label>
-      <VehicleCascadeFields
-        make={draftMake}
-        model={draftModel}
-        year={draftYear}
-        onMakeChange={setDraftMake}
-        onModelChange={setDraftModel}
-        onYearChange={setDraftYear}
-        variant="auth"
-        isLight
-      />
-
       <button
         type="button"
-        className={cn(authSecondaryBtnClass, "text-[12px] font-semibold")}
-        disabled={!draftReady}
-        onClick={() => {
-          if (!addDraftVehicle()) {
-            setFormError("Pick make and model to add a vehicle.");
-            return;
-          }
-          setFormError("");
-        }}
+        onClick={() => setOpen(true)}
+        className="mx-auto flex h-11 items-center gap-1.5 border-0 bg-transparent px-3 text-[13px] font-semibold text-ona-brand-ink"
       >
-        + Add vehicle
+        <Plus className="h-4 w-4" strokeWidth={2.25} />
+        {addLabel}
       </button>
+      <VehicleSheet
+        open={open}
+        v={vs}
+        onClose={() => {
+          vs.resetDraft();
+          setOpen(false);
+        }}
+      />
     </div>
   );
 }

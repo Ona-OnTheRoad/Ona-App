@@ -8,6 +8,7 @@ import {
 } from "@/components/shop/shop-vehicle-bar";
 import { authFetch } from "@/lib/api-auth-headers";
 import { useApp } from "@/lib/store";
+import { toastError } from "@/lib/toast";
 import { FALLBACK_TYPES } from "./constants";
 import type { GarageV, Make, Model, VehicleType } from "./types";
 
@@ -24,7 +25,6 @@ export function useVehiclesPage() {
   const [modelId, setModelId] = useState("");
   const [year, setYear] = useState<number | "">("");
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
 
   const loadGarage = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -138,7 +138,7 @@ export function useVehiclesPage() {
 
   const applyVehicle = async (save: boolean) => {
     if (!makeName || !modelName) {
-      setMsg("Pick make and model");
+      toastError("Pick make and model");
       return;
     }
     const v: ActiveVehicle = {
@@ -152,7 +152,6 @@ export function useVehiclesPage() {
     writeSessionVehicle(v);
     if (save && isAuthenticated) {
       setBusy(true);
-      setMsg(null);
       const res = await authFetch("/api/shop/vehicles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -172,7 +171,7 @@ export function useVehiclesPage() {
       };
       setBusy(false);
       if (!json.ok) {
-        setMsg(json.error?.message || "Could not save");
+        toastError(json.error?.message || "Could not save");
         return;
       }
       await loadGarage();
@@ -213,7 +212,6 @@ export function useVehiclesPage() {
     year,
     setYear,
     busy,
-    msg,
     typeOptions,
     makeOptions,
     modelOptions,

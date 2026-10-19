@@ -1,21 +1,13 @@
-import {
-  LayoutGrid,
-  MessageCircle,
-  Settings2,
-  Wallet,
-  Wrench,
-  type LucideIcon,
-} from "lucide-react";
 import type { NotificationFilter } from "@/lib/notifications/types";
 
+/** Filter chips (Ona UI v2 labels; ids are the existing categories). */
 export const FILTERS: {
   id: NotificationFilter;
   label: string;
-  icon: LucideIcon;
 }[] = [
-  { id: "all", label: "All", icon: LayoutGrid },
-  { id: "requests", label: "Requests", icon: Wrench },
-  { id: "messages", label: "Messages", icon: MessageCircle },
-  { id: "payments", label: "Payments", icon: Wallet },
-  { id: "system", label: "System", icon: Settings2 },
+  { id: "all", label: "All" },
+  { id: "requests", label: "Service" },
+  { id: "messages", label: "Comment" },
+  { id: "payments", label: "Wallet" },
+  { id: "system", label: "System" },
 ];

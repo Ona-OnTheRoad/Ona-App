@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { JobShell } from "@/components/jobs/job-shell";
+import { OnaScreen } from "@/components/ui/ona-screen";
 import { apiOpenAppeal } from "@/lib/jobs/client";
 import {
   canOpenDisputeNow,
@@ -21,13 +21,9 @@ export function renderReleasedStage(
     viewer,
     isLight,
     router,
-    ink,
-    muted,
-    err,
     setErr,
     busy,
     setBusy,
-    flash,
     setFlash,
     calloutQuote,
     goHome,
@@ -69,18 +65,7 @@ export function renderReleasedStage(
   const showJobComplete = viewer === "motorist" ? alreadyLeft : true;
 
   return (
-    <JobShell
-      isLight={isLight}
-      title={
-        showReviewForm
-          ? "Rate & review"
-          : payoutPending
-            ? "Job complete"
-            : job.status === "released"
-              ? "Job complete"
-              : "Job complete"
-      }
-      compactHeader
+    <OnaScreen
       onBack={
         viewer === "repair_pro"
           ? () => router.replace("/settings/payments")
@@ -89,7 +74,6 @@ export function renderReleasedStage(
       footer={
         <ReleasedFooter
           viewer={viewer}
-          muted={muted}
           busy={busy}
           rating={rating}
           showReviewForm={showReviewForm}
@@ -106,10 +90,6 @@ export function renderReleasedStage(
       {showReviewForm ? (
         <ReviewForm
           job={job}
-          isLight={isLight}
-          ink={ink}
-          muted={muted}
-          err={err}
           payoutPending={payoutPending}
           rating={rating}
           setRating={setRating}
@@ -122,11 +102,6 @@ export function renderReleasedStage(
         <JobCompleteBody
           job={job}
           viewer={viewer}
-          isLight={isLight}
-          ink={ink}
-          muted={muted}
-          err={err}
-          flash={flash}
           calloutQuote={calloutQuote}
           payoutPending={payoutPending}
           hasRating={hasRating}
@@ -143,7 +118,7 @@ export function renderReleasedStage(
       {job.dispute?.decision && !job.dispute.appeal && (
         <button
           type="button"
-          className="mt-8 w-full text-center text-[12px] font-bold text-[#FF6B35]"
+          className="mt-8 w-full text-center text-[12px] font-bold text-ona-brand-ink"
           onClick={() =>
             void run(() =>
               apiOpenAppeal({
@@ -157,6 +132,6 @@ export function renderReleasedStage(
           Appeal decision (48h window)
         </button>
       )}
-    </JobShell>
+    </OnaScreen>
   );
 }

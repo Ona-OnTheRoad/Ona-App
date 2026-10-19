@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PageHeader } from "@/components/layout/page-header";
+import { ReceiptText } from "lucide-react";
 import {
   ClosedJobDialog,
   useClosedJobDialog,
@@ -73,10 +73,6 @@ export default function HistoryPage() {
   const closedDialog = useClosedJobDialog();
   const { setClosedOpen, setViewHref } = closedDialog;
 
-  const ink = isLight ? "text-slate-900" : "text-white";
-  const muted = isLight ? "text-slate-700" : "text-white/75";
-  const stage = isLight ? "bg-[#c8c9cd]" : "bg-black";
-
   const load = useCallback(async () => {
     if (!backendUserId) {
       setJobs([]);
@@ -115,94 +111,99 @@ export default function HistoryPage() {
   );
 
   return (
-    <div className={cn("relative flex h-full min-h-0 flex-col", stage)}>
-      <PageHeader
-        title="History"
-        subtitle="Past bookings · view only"
-        backHref={isPro ? "/dashboard" : "/"}
-      />
+    <div className="ona2 relative flex h-full min-h-0 flex-col">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-hide">
+        <h1 className="px-5 pt-5 text-[22px] font-bold leading-tight tracking-tight text-ona-ink">
+          Booking History
+        </h1>
 
-      {/* All filters + content on one continuous scrollable page */}
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 scrollbar-hide">
-        <div className="mb-3 flex w-full items-stretch overflow-hidden rounded-xl">
-          {FILTERS.map((f, i) => {
+        <div
+          role="group"
+          aria-label="Filter bookings"
+          className="mt-3 flex gap-2 overflow-x-auto px-5 scrollbar-hide"
+        >
+          {FILTERS.map((f) => {
             const on = filter === f.id;
             return (
               <button
                 key={f.id}
                 type="button"
+                aria-pressed={on}
                 onClick={() => setFilter(filter === f.id ? null : f.id)}
-                className={cn(
-                  "flex-1 border-0 px-1 py-2 text-[11px] font-semibold transition",
-                  i > 0 &&
-                    (isLight
-                      ? "border-l border-black/20"
-                      : "border-l border-white/20"),
-                  on
-                    ? "bg-[#FF6B35] text-white"
-                    : isLight
-                      ? "bg-black/[0.06] text-slate-700"
-                      : "bg-white/10 text-white/80",
-                )}
+                className="flex h-11 shrink-0 items-center border-0 bg-transparent px-0.5"
               >
-                {f.label}
+                <span
+                  className={cn(
+                    "rounded-full px-3 py-1.5 text-[12px] font-semibold",
+                    on ? "bg-ona-brand-btn text-white" : "text-ona-muted",
+                  )}
+                >
+                  {f.label}
+                </span>
               </button>
             );
           })}
         </div>
 
-        <p className={cn("mb-3 text-[11px] font-medium leading-snug", muted)}>
-          You can still dispute a closed job within 48 hours after job Finished.
-        </p>
+        <div className="space-y-3 px-5 pb-6 pt-2">
+          <p className="text-[12px] leading-snug text-ona-muted">
+            You can still dispute a closed job within 48 hours after job
+            Finished.
+          </p>
 
-        {loading && <JobListLoading />}
-        {err && <JobListError message={err} />}
-        {!loading && filtered.length === 0 && (
-          <div className="py-14 text-center">
-            <p className={cn("text-[15px] font-semibold", ink)}>
-              No history yet
-            </p>
-            <p className={cn("mt-1 text-[12px] font-medium", muted)}>
-              {filter == null
-                ? "Finished and cancelled jobs will appear here."
-                : `No ${FILTERS.find((x) => x.id === filter)?.label.toLowerCase()} jobs yet.`}
-            </p>
-          </div>
-        )}
+          {loading && <JobListLoading />}
+          {err && <JobListError message={err} />}
+          {!loading && filtered.length === 0 && (
+            <div className="flex flex-col items-center rounded-ona-card border border-ona-border bg-ona-surface px-6 py-14 text-center">
+              <span
+                aria-hidden
+                className="flex h-24 w-24 items-center justify-center rounded-full bg-ona-field-strong text-ona-muted"
+              >
+                <ReceiptText className="h-10 w-10" strokeWidth={1.5} />
+              </span>
+              <p className="mt-5 text-[15px] font-semibold text-ona-ink">
+                No history yet
+              </p>
+              <p className="mt-1 text-[13px] text-ona-muted">
+                {filter == null
+                  ? "Finished and cancelled jobs will appear here."
+                  : `No ${FILTERS.find((x) => x.id === filter)?.label.toLowerCase()} jobs yet.`}
+              </p>
+            </div>
+          )}
 
-        {!loading &&
-          filtered.map((j) => (
-            <JobRow
-              key={j.id}
-              j={j}
-              name={jobRowName(j, isPro)}
-              skill={jobRowSkill(j)}
-              when={formatWhenWithYear(j.updatedAt || j.createdAt)}
-              suffix={
-                canOpenDisputeNow(j)
-                  ? " · Dispute available (48h)"
-                  : " · View only"
-              }
-              badgeClass={
-                isLight
-                  ? "text-slate-800 ring-1 ring-black/15"
-                  : "text-white/90 ring-1 ring-white/25"
-              }
-              statusText={jobRowStatusLabel(j.status, isPro)}
-              isLight={isLight}
-              ink={ink}
-              muted={muted}
-              onClick={() => {
-                // Within 48h of satisfied: open live job for dispute; else read-only
-                if (canOpenDisputeNow(j)) {
-                  router.push(`/jobs/${j.id}`);
-                  return;
+          {!loading &&
+            filtered.map((j) => (
+              <JobRow
+                key={j.id}
+                variant="card"
+                j={j}
+                photoUrl={isPro ? j.motoristPhoto : j.repairProPhoto}
+                name={jobRowName(j, isPro)}
+                skill={jobRowSkill(j)}
+                when={formatWhenWithYear(j.updatedAt || j.createdAt)}
+                suffix={
+                  canOpenDisputeNow(j)
+                    ? " · Dispute available (48h)"
+                    : " · View only"
                 }
-                setViewHref(`/requests/${j.id}`);
-                setClosedOpen(true);
-              }}
-            />
-          ))}
+                badgeClass=""
+                statusText={jobRowStatusLabel(j.status, isPro)}
+                isLight={isLight}
+                ink=""
+                muted=""
+                onClick={() => {
+                  // Within 48h of satisfied: open live job for dispute; else read-only
+                  if (canOpenDisputeNow(j)) {
+                    router.push(`/jobs/${j.id}`);
+                    return;
+                  }
+                  setViewHref(`/requests/${j.id}`);
+                  setClosedOpen(true);
+                }}
+              />
+            ))}
+        </div>
       </div>
 
       <ClosedJobDialog {...closedDialog} isLight={isLight} />

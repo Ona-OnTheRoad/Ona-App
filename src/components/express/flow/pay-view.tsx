@@ -10,7 +10,6 @@ type Props = {
   quote: Quote;
   bankPay: BankPay | null;
   busy: boolean;
-  copiedKey: string | null;
   onCopyNumber: (accountNumber: string) => void;
   cancelAsk: boolean;
   cancelBusy: boolean;
@@ -24,7 +23,6 @@ export function PayView({
   quote,
   bankPay,
   busy,
-  copiedKey,
   onCopyNumber,
   cancelAsk,
   cancelBusy,
@@ -47,7 +45,6 @@ export function PayView({
           <BankTransferCard
             theme={theme}
             bankPay={bankPay}
-            copiedKey={copiedKey}
             onCopyNumber={onCopyNumber}
           />
         ) : null}

@@ -25,16 +25,10 @@ function PayCountdown({ deadline }: { deadline: string }) {
 type Props = {
   theme: ExpressTheme;
   bankPay: BankPay;
-  copiedKey: string | null;
   onCopyNumber: (accountNumber: string) => void;
 };
 
-export function BankTransferCard({
-  theme,
-  bankPay,
-  copiedKey,
-  onCopyNumber,
-}: Props) {
+export function BankTransferCard({ theme, bankPay, onCopyNumber }: Props) {
   const { ink, muted, rowCard } = theme;
   return (
     <div className={cn("rounded-[4px] px-3 py-3", rowCard)}>
@@ -69,14 +63,6 @@ export function BankTransferCard({
           >
             {bankPay.accountNumber}
           </span>
-        </span>
-        <span
-          className={cn(
-            "shrink-0 text-[11px] font-bold",
-            copiedKey === "number" ? "text-[#FF6B35]" : muted,
-          )}
-        >
-          {copiedKey === "number" ? "Copied" : ""}
         </span>
       </button>
       <DetailRow label="Bank" value={bankPay.bankName} ink={ink} />

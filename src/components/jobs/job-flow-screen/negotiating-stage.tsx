@@ -1,11 +1,13 @@
 import type { ReactElement } from "react";
-import { Minimize2 } from "lucide-react";
+import { Info } from "lucide-react";
 import { CountdownTimer } from "@/components/jobs/countdown-timer";
-import { JobShell } from "@/components/jobs/job-shell";
+import { OnaScreen, OnaTitle } from "@/components/ui/ona-screen";
+import { Badge } from "@/components/ui/badge";
 import { apiTransition } from "@/lib/jobs/client";
 import { isNegotiationTimerArmed } from "@/lib/jobs/constants";
 import type { JobRecord } from "@/lib/jobs/types";
-import { cn } from "@/lib/utils";
+import { PRO_SERVICE_LABELS } from "@/lib/services";
+import { NegotiationCounterCard } from "./negotiation-counter-card";
 import { NegotiationFooter } from "./negotiation-footer";
 import { NegotiationSummary } from "./negotiation-summary";
 import { CancelConfirmFromState, RerouteAlertOverlay } from "./shared-pieces";
@@ -22,7 +24,6 @@ export function renderNegotiatingStage(
     actorId,
     ink,
     muted,
-    err,
     setErr,
     busy,
     offerInput,
@@ -38,6 +39,10 @@ export function renderNegotiatingStage(
     commitJob,
     jobRef,
   } = c;
+  const skillTag =
+    (PRO_SERVICE_LABELS[job.serviceType] || "Repair")
+      .replace(/\s*Pro$/i, "")
+      .trim() || "Repair";
   const last = job.offers[job.offers.length - 1];
   const mySide = viewer === "motorist" ? "motorist" : "repair_pro";
   const canOffer =
@@ -51,21 +56,13 @@ export function renderNegotiatingStage(
 
   return (
     <>
-      <JobShell
-        isLight={isLight}
-        title="Negotiate labour"
-        compactHeader
+      <OnaScreen
         onBack={goJobsList}
-        backIcon={
-          viewer === "motorist" ? <Minimize2 className="h-4 w-4" /> : undefined
-        }
         footer={
           <NegotiationFooter
             job={job}
             viewer={viewer}
             actorId={actorId}
-            isLight={isLight}
-            ink={ink}
             busy={busy}
             offerInput={offerInput}
             setOfferInput={setOfferInput}
@@ -79,19 +76,47 @@ export function renderNegotiatingStage(
           />
         }
       >
-        {/* Top: vehicle/service/problem + offers · Middle: ring timer */}
-        <div className="flex min-h-0 flex-col bg-transparent px-0.5 pt-1">
+        <div className="flex min-h-0 flex-col space-y-4 pt-3">
+          <div>
+            <Badge variant="ona">{skillTag} request</Badge>
+            <OnaTitle
+              className="mt-3"
+              title="Agree the labour fee"
+              subtitle={
+                viewer === "motorist"
+                  ? "Your call-out price is already fixed. Agree labour directly with your pro, with every change recorded."
+                  : "Agree labour directly with the customer, with every change recorded."
+              }
+            />
+          </div>
           <NegotiationSummary
             job={job}
             viewer={viewer}
             isLight={isLight}
-            ink={ink}
-            muted={muted}
             calloutQuote={calloutQuote}
             theirOffer={theirOffer}
           />
 
-          <div className="flex min-h-[42vh] flex-1 flex-col items-center justify-center bg-transparent py-5">
+          {canOffer ? (
+            <NegotiationCounterCard
+              mySide={mySide}
+              offerInput={offerInput}
+              setOfferInput={setOfferInput}
+            />
+          ) : null}
+
+          <div className="flex items-start gap-2.5 rounded-ona-card border border-ona-brand/40 bg-ona-brand-soft p-3">
+            <Info
+              aria-hidden
+              className="mt-0.5 h-4 w-4 shrink-0 text-ona-brand-ink"
+            />
+            <p className="text-[12px] leading-snug text-ona-ink">
+              <span className="font-semibold">Escrow protection. </span>
+              Ona protects both sides by holding the agreed total in escrow.
+            </p>
+          </div>
+
+          <div className="flex flex-col items-center justify-center py-3">
             {isNegotiationTimerArmed(job) ? (
               <CountdownTimer
                 variant="ring"
@@ -125,10 +150,10 @@ export function renderNegotiatingStage(
                       /* optimistic expired already applied */
                     });
                 }}
-                className={ink}
+                className="text-ona-ink"
               />
             ) : (
-              <p className={cn("text-center text-[13px] font-semibold", muted)}>
+              <p className="text-center text-[13px] font-semibold text-ona-muted">
                 {viewer === "repair_pro"
                   ? "Accept the request to start the 20‑min negotiate timer"
                   : "Waiting for Repair Pro to accept this request…"}
@@ -136,12 +161,7 @@ export function renderNegotiatingStage(
             )}
           </div>
         </div>
-        {err && (
-          <p className="mt-1 text-center text-[12px] font-medium text-red-500">
-            {err}
-          </p>
-        )}
-      </JobShell>
+      </OnaScreen>
 
       {/* Reroute notification overlay for motorist */}
       {rerouteAlert && viewer === "motorist" && (

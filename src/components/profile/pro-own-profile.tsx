@@ -19,7 +19,6 @@ import {
   ContactSecuritySection,
   NameSection,
 } from "@/components/profile/shared/security-sections";
-import { StatusMessage } from "@/components/profile/shared/status-message";
 import { ProDocsBanner } from "@/components/profile/pro-own-profile/docs-banner";
 import {
   BioSection,
@@ -104,8 +103,6 @@ export function ProOwnProfile({ isLight }: { isLight: boolean }) {
         )
       }
     >
-      <StatusMessage msg={p.msg} err={p.err} />
-
       <ProDocsBanner isLight={isLight} userProfile={userProfile} />
 
       <ProfileIdentityHeader

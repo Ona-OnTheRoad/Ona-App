@@ -1,16 +1,28 @@
+import { PRO_SERVICE_LABELS } from "@/lib/pro-service-id";
+import type { ProService } from "@/lib/types";
 import type { FlowStyles } from "./types";
 
-/** Theme-dependent class tokens shared by every help-flow view. */
+/** Coral tag text, e.g. "Mechanic request" / "A/C (air conditioning) request". */
+export function flowTag(trade: ProService): string {
+  const label =
+    trade === "ac" ? "A/C (air conditioning)" : PRO_SERVICE_LABELS[trade];
+  return `${label} request`;
+}
+
+/**
+ * Class tokens shared by every help-flow view. They read the `.ona2` CSS
+ * variables, so light/dark both work; `isLight` is kept only so callers and
+ * trade configs do not have to change.
+ */
 export function flowStyles(isLight: boolean): FlowStyles {
-  const ink = isLight ? "text-slate-900" : "text-white";
-  const muted = isLight ? "text-slate-500" : "text-white/50";
-  const field = isLight
-    ? "bg-transparent text-slate-900 placeholder:text-slate-400"
-    : "bg-transparent text-white placeholder:text-white/40";
-  const rowCard = isLight ? "bg-black/[0.02]" : "bg-white/[0.02]";
-  const actionFlat = isLight ? "text-slate-700" : "text-white/85";
-  const chipIdle = isLight
-    ? "bg-black/8 text-slate-700"
-    : "bg-[#2c2c2e] text-white/75";
-  return { ink, muted, field, rowCard, actionFlat, chipIdle };
+  void isLight;
+  return {
+    ink: "text-ona-ink",
+    muted: "text-ona-muted",
+    field:
+      "border border-ona-border bg-ona-field text-ona-ink placeholder:text-ona-muted focus:border-ona-ink",
+    rowCard: "bg-ona-field",
+    actionFlat: "text-ona-ink",
+    chipIdle: "bg-ona-field-strong text-ona-ink",
+  };
 }

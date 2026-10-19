@@ -73,12 +73,6 @@ export default function VerifyIdentityPage() {
       </div>
 
       <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 pb-3 scrollbar-hide">
-        {v.error ? (
-          <p className="rounded-lg bg-red-500/15 px-3 py-2 text-[11px] font-medium text-red-600">
-            {v.error}
-          </p>
-        ) : null}
-
         <PhoneTierCard
           card={card}
           ink={ink}

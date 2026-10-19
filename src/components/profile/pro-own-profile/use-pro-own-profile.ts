@@ -9,6 +9,7 @@ import {
   isExperienceUnset,
 } from "@/lib/profile-system";
 import { useApp } from "@/lib/store";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import type { UserProfile } from "@/lib/types";
 
 /** State, sync, save and live toggle for the Repair Pro own profile. */
@@ -42,6 +43,7 @@ export function useProOwnProfile() {
   const [showLiveness, setShowLiveness] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  useFeedbackToast(msg ?? "", err ?? "");
   const [liveBusy, setLiveBusy] = useState(false);
 
   const [businessName, setBusinessName] = useState(

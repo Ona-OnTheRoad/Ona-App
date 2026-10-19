@@ -19,7 +19,6 @@ export function HomeTopStrip({
   expanded,
   onExpand,
   onCollapse,
-  menuOpen,
   help,
 }: {
   isLight: boolean;
@@ -29,7 +28,6 @@ export function HomeTopStrip({
   expanded: boolean;
   onExpand: () => void;
   onCollapse: () => void;
-  menuOpen: boolean;
   help: HelpSomeone;
 }) {
   if (help.helpMode) {
@@ -47,7 +45,6 @@ export function HomeTopStrip({
             expanded={expanded}
             onExpand={onExpand}
             onCollapse={onCollapse}
-            menuOpen={menuOpen}
           />
         )}
       </>
@@ -61,7 +58,6 @@ export function HomeTopStrip({
       onCollapse={onCollapse}
       onSwipeLeft={isMotorist ? help.openHelpSomeone : undefined}
       onOpenHelp={isMotorist ? help.openHelpSomeone : undefined}
-      menuOpen={menuOpen}
     />
   );
 }

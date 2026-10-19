@@ -16,7 +16,6 @@ export function renderAgreedStage(c: JobFlowCtx, job: JobRecord): ReactElement {
     isLight,
     ink,
     muted,
-    err,
     busy,
     router,
     goJobsList,
@@ -43,7 +42,6 @@ export function renderAgreedStage(c: JobFlowCtx, job: JobRecord): ReactElement {
           viewer={viewer}
           isLight={isLight}
           busy={busy}
-          err={err}
           router={router}
           setPayCancelOpen={setPayCancelOpen}
         />
@@ -76,11 +74,6 @@ export function renderAgreedStage(c: JobFlowCtx, job: JobRecord): ReactElement {
         showBreakdown={showBreakdown}
         setShowBreakdown={setShowBreakdown}
       />
-      {err && (
-        <p className="mt-3 text-center text-[12px] font-semibold text-red-500">
-          {err}
-        </p>
-      )}
       {payCancelOpen ? (
         <PayCancelDialog
           isLight={isLight}

@@ -28,7 +28,7 @@ export function WelcomeLayer({
     >
       <BrandEntryScreen
         onLogIn={() => finishEntry("/login/signin")}
-        onSignUp={() => finishEntry("/login/role")}
+        onSignUp={() => finishEntry("/signup")}
         animateIn={animateIn}
       />
     </div>

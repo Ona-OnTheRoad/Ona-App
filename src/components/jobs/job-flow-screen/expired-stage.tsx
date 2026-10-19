@@ -5,7 +5,6 @@ import { apiRetrySearch } from "@/lib/jobs/client";
 import { PRO_SERVICE_LABELS } from "@/lib/services";
 import { cn } from "@/lib/utils";
 import { JOB_CLOSED_MESSAGE } from "@/lib/chat-expired";
-import { HeaderMenu } from "../job-flow/header-menu";
 import type { JobFlowCtx } from "./use-job-flow-controller";
 
 /**
@@ -86,7 +85,6 @@ export function renderExpiredStage(
           : "Negotiation expired"
       }
       compactHeader
-      rightSlot={<HeaderMenu isLight={isLight} />}
       footer={
         !isRerouteExhausted ? undefined : (
           <div className="space-y-2">

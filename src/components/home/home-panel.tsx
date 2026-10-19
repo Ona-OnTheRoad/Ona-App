@@ -31,7 +31,6 @@ import { HomeTopStrip } from "@/components/home/home-panel/home-top-strip";
 import { SheetPill } from "@/components/home/home-panel/sheet-pill";
 import { ProTechList } from "@/components/home/home-panel/pro-tech-list";
 import { useHelpSomeone } from "@/components/home/home-panel/use-help-someone";
-import { useMenuOpen } from "@/components/home/home-panel/use-menu-open";
 import { usePagedTechnicians } from "@/components/home/home-panel/use-paged-technicians";
 import { usePendingExpress } from "@/components/home/home-panel/use-pending-express";
 import { useSheetGestures } from "@/components/home/home-panel/use-sheet-gestures";
@@ -84,12 +83,14 @@ export function HomePanel({
 
   const isMotorist = isAuthenticated && accountType === "motorist";
 
-  /** Repair Pro in professional mode market shows ONLY their primary trade. */
+  /** Repair Pro: market shows ONLY their primary trade. */
   const isProMode = accountType === "professional";
 
   /** Talk box only after they tap a trade. Never for Repair Pro. */
   const tradeChosen = talkBoxAfterTradePick(category);
   const isFlow = hasHelpFlow(category, isProMode);
+  /** Trade grid showing: its block scrolls inside the sheet on short phones. */
+  const gridMode = !isProMode && category === "none" && expanded;
   const showTalkBox = !isProMode && tradeChosen && !isFlow;
 
   /**
@@ -142,23 +143,14 @@ export function HomePanel({
   const help = useHelpSomeone({ isMotorist, mapsLoaded, liveMaps });
   const { onSheetWheel, onPillTouchStart, onPillTouchMove, onPillClick } =
     useSheetGestures({ expanded, onExpand, onCollapse });
-  const menuOpen = useMenuOpen();
 
   return (
-    <div
-      className={cn("relative z-30 flex min-h-0 flex-col", className)}
-      style={{
-        transition: "transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
-        // Same split as .om-x-drawer / .om-x-rail chips land in the capsule tube
-        transform: menuOpen
-          ? "translateX(var(--om-menu-split, 80%))"
-          : "translateX(0%)",
-        willChange: "transform",
-      }}
-    >
-      <div onWheel={onSheetWheel} className="shrink-0">
+    <div className={cn("relative z-30 flex min-h-0 flex-col", className)}>
+      <div
+        onWheel={onSheetWheel}
+        className={gridMode ? "flex min-h-0 flex-col" : "shrink-0"}
+      >
         <SheetPill
-          isLight={isLight}
           expanded={expanded}
           onExpand={onExpand}
           onCollapse={onCollapse}
@@ -167,22 +159,29 @@ export function HomePanel({
           onTouchMove={onPillTouchMove}
         />
 
-        <HomeTopStrip
-          isLight={isLight}
-          isProMode={isProMode}
-          isMotorist={isMotorist}
-          addressConfirmed={Boolean(addressConfirmed)}
-          expanded={expanded}
-          onExpand={onExpand}
-          onCollapse={onCollapse}
-          menuOpen={menuOpen}
-          help={help}
-        />
+        <div
+          className={
+            gridMode
+              ? "min-h-0 overflow-y-auto overscroll-contain scrollbar-hide"
+              : undefined
+          }
+        >
+          <HomeTopStrip
+            isLight={isLight}
+            isProMode={isProMode}
+            isMotorist={isMotorist}
+            addressConfirmed={Boolean(addressConfirmed)}
+            expanded={expanded}
+            onExpand={onExpand}
+            onCollapse={onCollapse}
+            help={help}
+          />
 
-        {/* Mechanic / Vulcanizer / Tow / Battery / A/C / Body / Electric / Scan / Fashion / Plumber / Carpenter / Painter / Solar / Generator: no radius Repair Pro is found by urgency. */}
-        {isProMode || (tradeChosen && !isFlow) ? <RadiusSlider /> : null}
-        {isProMode && specialtyPickerOpen ? <SpecialtyFilterBar /> : null}
-        {isProMode ? <FilterChips /> : null}
+          {/* Mechanic / Vulcanizer / Tow / Battery / A/C / Body / Electric / Scan / Fashion / Plumber / Carpenter / Painter / Solar / Generator: no radius Repair Pro is found by urgency. */}
+          {isProMode || (tradeChosen && !isFlow) ? <RadiusSlider /> : null}
+          {isProMode && specialtyPickerOpen ? <SpecialtyFilterBar /> : null}
+          {isProMode ? <FilterChips /> : null}
+        </div>
       </div>
 
       {locationError && (
@@ -191,7 +190,6 @@ export function HomePanel({
 
       {isProMode && list.length === 0 && !showVerifyPanel && (
         <ProEmptyState
-          isLight={isLight}
           refreshing={refreshingPros}
           onRefresh={() => {
             setRefreshingPros(true);
@@ -207,7 +205,7 @@ export function HomePanel({
       {/* Talk box: no scroll. Repair Pro list may scroll. */}
       <div
         className={cn(
-          "min-h-0 flex-1 px-3 pb-0",
+          "min-h-0 flex-1 px-4 pb-0",
           showTalkBox || isFlow
             ? "flex flex-col overflow-hidden"
             : "overflow-y-auto overscroll-contain scrollbar-hide",
@@ -219,15 +217,11 @@ export function HomePanel({
           </div>
         ) : null}
         {!isProMode && openNotice ? (
-          <OpenRequestNotice
-            isLight={isLight}
-            onDismiss={() => setOpenNotice(false)}
-          />
+          <OpenRequestNotice onDismiss={() => setOpenNotice(false)} />
         ) : null}
 
         {!isProMode && pendingExpress ? (
           <ExpressResumeCard
-            isLight={isLight}
             pending={pendingExpress}
             onResume={openExpressResume}
           />
@@ -256,7 +250,6 @@ export function HomePanel({
           isProMode &&
           list.length > 0 && (
             <ProTechList
-              isLight={isLight}
               list={list}
               total={total}
               canShowMore={canShowMore}
@@ -272,12 +265,7 @@ export function HomePanel({
         )}
 
         {isProMode && !expanded && list.length > 0 && (
-          <p
-            className={cn(
-              "py-2 text-center text-[10px]",
-              isLight ? "text-slate-400" : "text-white/45",
-            )}
-          >
+          <p className="py-2 text-center text-[11px] text-ona-muted">
             {t("home.swipeHint")}
           </p>
         )}

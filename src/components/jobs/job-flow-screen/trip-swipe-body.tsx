@@ -14,7 +14,6 @@ interface Props {
   job: JobRecord;
   viewer: JobViewer;
   isLight: boolean;
-  muted: string;
   tripSheetExpanded: boolean;
   setTripSheetExpanded: (v: boolean | ((prev: boolean) => boolean)) => void;
   gestureYRef: MutableRefObject<number | null>;
@@ -31,7 +30,6 @@ export function TripSwipeBody({
   job,
   viewer,
   isLight,
-  muted,
   tripSheetExpanded,
   setTripSheetExpanded,
   gestureYRef,
@@ -89,9 +87,9 @@ export function TripSwipeBody({
         className={cn(
           "om-sheet-spring z-30 flex min-h-0 flex-col overflow-hidden",
           tripSheetExpanded ? "flex-1" : "flex-[0_0_58%]",
-          isLight ? "bg-[#c8c9cd]" : "bg-black",
+          "bg-ona-bg",
           !tripSheetExpanded &&
-            "rounded-t-[1.5rem] shadow-[0_-6px_24px_rgba(0,0,0,0.18)]",
+            "rounded-t-ona-sheet shadow-[0_-6px_24px_rgba(0,0,0,0.18)]",
         )}
         style={{ touchAction: "pan-y" }}
         onWheel={onSheetWheel}
@@ -123,39 +121,24 @@ export function TripSwipeBody({
                 setTripSheetExpanded(false);
               }
             }}
-            className="flex cursor-grab justify-center pb-1.5 pt-2.5 active:cursor-grabbing"
+            className="flex h-6 cursor-grab items-center justify-center active:cursor-grabbing"
             style={{ touchAction: "pan-y" }}
           >
-            <span
-              className={cn(
-                "h-1.5 w-11 rounded-full border-0",
-                isLight ? "bg-[#6b7280]" : "bg-white/40",
-              )}
-            />
+            <span className="h-1 w-10 rounded-full border-0 bg-ona-border" />
           </div>
         </div>
 
-        <div
-          className={cn(
-            "flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-3 pb-3 scrollbar-hide",
-            isLight ? "bg-[#c8c9cd]" : "bg-black",
-          )}
-        >
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain bg-ona-bg px-5 pb-3 scrollbar-hide">
           {/* Meta (OnTheRoad · skill · name · ₦) lives only in this solid sheet */}
           <div className="space-y-3 pt-0.5">
             {metaHeader}
             {details}
           </div>
           {/* Push Call / Message / swipe hint lower on the sheet */}
-          <div className="mt-auto space-y-2 pt-10">
+          <div className="mt-auto space-y-2 pt-4">
             {callMessageRow}
             {!tripSheetExpanded && (
-              <p
-                className={cn(
-                  "pb-1 pt-2 text-center text-[10px] font-semibold",
-                  muted,
-                )}
-              >
+              <p className="pb-1 pt-2 text-center text-[11px] font-medium text-ona-muted">
                 Swipe up to expand swipe down to collapse
               </p>
             )}

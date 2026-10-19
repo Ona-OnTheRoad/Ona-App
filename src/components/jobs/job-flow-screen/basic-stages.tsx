@@ -1,6 +1,5 @@
 import type { ReactElement } from "react";
 import { Loader2 } from "lucide-react";
-import { HeaderMenu } from "../job-flow/header-menu";
 import { ScheduledDispatchScreen } from "../job-flow/scheduled-dispatch-screen";
 import { SearchingScreen } from "../job-flow/searching-screen";
 import { JobShell } from "@/components/jobs/job-shell";
@@ -49,7 +48,6 @@ export function renderRedirectingStage(c: JobFlowCtx): ReactElement {
           ? () => router.replace("/dashboard")
           : () => router.replace("/")
       }
-      rightSlot={<HeaderMenu isLight={isLight} />}
     >
       <p className={cn("px-0.5 pt-4 text-[14px] font-medium", ink)}>
         {JOB_CLOSED_MESSAGE}
@@ -102,15 +100,13 @@ export function renderSearchingStage(
   c: JobFlowCtx,
   job: JobRecord,
 ): ReactElement {
-  const { viewer, backendUserId, isLight, err, goJobsList, nearbyLiveCount } =
-    c;
+  const { viewer, backendUserId, isLight, goJobsList, nearbyLiveCount } = c;
   return (
     <SearchingScreen
       job={job}
       viewer={viewer}
       backendUserId={backendUserId}
       isLight={isLight}
-      err={err}
       onBack={goJobsList}
       nearbyLine={
         viewer === "motorist"

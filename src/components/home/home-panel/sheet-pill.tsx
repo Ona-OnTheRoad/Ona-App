@@ -1,11 +1,9 @@
 "use client";
 
 import { useT } from "@/lib/i18n";
-import { cn } from "@/lib/utils";
 
 /** Drag / tap handle that expands or collapses the home sheet. */
 export function SheetPill({
-  isLight,
   expanded,
   onExpand,
   onCollapse,
@@ -13,7 +11,6 @@ export function SheetPill({
   onTouchStart,
   onTouchMove,
 }: {
-  isLight: boolean;
   expanded: boolean;
   onExpand: () => void;
   onCollapse: () => void;
@@ -44,17 +41,10 @@ export function SheetPill({
           onCollapse();
         }
       }}
-      className="flex cursor-grab justify-center pb-1.5 pt-2.5 active:cursor-grabbing"
+      className="flex cursor-grab justify-center pb-1 pt-3 active:cursor-grabbing"
       style={{ touchAction: "pan-y" }}
     >
-      <span
-        className={cn(
-          "h-1.5 w-11 rounded-full",
-          isLight
-            ? "bg-[#6b7280] shadow-sm ring-1 ring-black/10"
-            : "bg-white/40",
-        )}
-      />
+      <span className="h-1 w-10 rounded-full bg-ona-border" />
     </div>
   );
 }

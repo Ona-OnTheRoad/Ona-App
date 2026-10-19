@@ -22,6 +22,7 @@ import { createPortal } from "react-dom";
 import { useApp } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { SPRING, SWIPE_DOWN_DY } from "./bottom-sheet/constants";
+import { shouldIgnoreSheetGesture } from "./bottom-sheet/gesture-guard";
 import { useOnaPhoneMount } from "./bottom-sheet/use-ona-phone-mount";
 import { useSheetPointerWheelClose } from "./bottom-sheet/use-sheet-pointer-wheel-close";
 
@@ -39,6 +40,8 @@ export type BottomSheetProps = {
    * pinned to a fixed height. Omit for fixed-height behavior.
    */
   growToPercent?: number;
+  /** "ona" paints the panel with the redesigned surface token (pair with className="ona2"). */
+  surface?: "default" | "ona";
 };
 
 export function BottomSheet({
@@ -49,6 +52,7 @@ export function BottomSheet({
   className,
   heightPercent = 25,
   growToPercent,
+  surface = "default",
 }: BottomSheetProps) {
   const { theme } = useApp();
   const isLight = theme === "light";
@@ -124,7 +128,9 @@ export function BottomSheet({
    * Trackpad (natural scroll): fingers move down → deltaY < 0 → close.
    */
   const onTouchStart = (e: ReactTouchEvent) => {
-    gestureY.current = e.touches[0].clientY;
+    gestureY.current = shouldIgnoreSheetGesture(e.target, sheetRef.current)
+      ? null
+      : e.touches[0].clientY;
   };
 
   const onTouchMove = (e: ReactTouchEvent) => {
@@ -144,9 +150,20 @@ export function BottomSheet({
 
   useSheetPointerWheelClose(present, sheetRef, closingRef, finishClose);
 
+  // Escape closes the sheet (keyboard users never reach the scrim).
+  useEffect(() => {
+    if (!present) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") finishClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [present, finishClose]);
+
   if (!present || !mount) return null;
 
-  const sheetBg = isLight ? "#d4d5d9" : "#1c1c1e";
+  const sheetBg =
+    surface === "ona" ? "var(--o-surface)" : isLight ? "#d4d5d9" : "#1c1c1e";
 
   return createPortal(
     <div
