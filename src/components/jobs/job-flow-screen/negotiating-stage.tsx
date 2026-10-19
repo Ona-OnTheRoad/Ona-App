@@ -24,7 +24,6 @@ export function renderNegotiatingStage(
     actorId,
     ink,
     muted,
-    err,
     setErr,
     busy,
     offerInput,
@@ -161,14 +160,6 @@ export function renderNegotiatingStage(
               </p>
             )}
           </div>
-          {err && (
-            <p
-              role="alert"
-              className="text-center text-[12px] font-medium text-ona-danger"
-            >
-              {err}
-            </p>
-          )}
         </div>
       </OnaScreen>
 

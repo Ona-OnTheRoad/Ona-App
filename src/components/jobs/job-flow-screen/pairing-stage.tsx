@@ -28,7 +28,6 @@ export function renderPairingStage(
     muted,
     nearbyLiveCount,
     backendUserId,
-    err,
     goJobsList,
     busy,
     setConfirmCancel,
@@ -70,7 +69,6 @@ export function renderPairingStage(
         viewer={viewer}
         backendUserId={backendUserId}
         isLight={isLight}
-        err={err}
         onBack={goJobsList}
         nearbyLine={nearbyLine}
       />
@@ -141,11 +139,6 @@ export function renderPairingStage(
 
   const footer = (
     <div className="space-y-2">
-      {err && (
-        <p className="text-center text-[12px] font-semibold text-ona-danger">
-          {err}
-        </p>
-      )}
       <Button
         size="ona"
         variant="onaOutline"

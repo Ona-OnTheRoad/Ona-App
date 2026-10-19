@@ -21,7 +21,6 @@ export function SummaryView({
   chargeParts,
   agreedMajor,
   calloutQuote,
-  err,
   onPay,
 }: {
   tone: CheckoutTone;
@@ -30,7 +29,6 @@ export function SummaryView({
   chargeParts: unknown;
   agreedMajor: number | null;
   calloutQuote: ChargeLinesProps["quote"];
-  err: string | null;
   onPay: () => void;
 }) {
   const { card, ink, muted } = tone;
@@ -142,15 +140,6 @@ export function SummaryView({
             </dl>
           )}
         </div>
-
-        {err ? (
-          <p
-            role="alert"
-            className="mt-3 text-center text-[12px] font-semibold text-ona-danger"
-          >
-            {err}
-          </p>
-        ) : null}
       </div>
 
       {/* Pay bar pinned to the bottom of the page */}

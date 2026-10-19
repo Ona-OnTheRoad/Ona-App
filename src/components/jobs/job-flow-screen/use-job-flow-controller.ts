@@ -1,9 +1,11 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useInAppCall } from "@/components/call/in-app-call";
 import { useNotificationsOptional } from "@/components/notifications/notification-provider";
 import { useJobCallout } from "@/lib/callout/use-job-callout";
 import { useApp } from "@/lib/store";
+import { toastInfo } from "@/lib/toast";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import type { JobViewer } from "./types";
 import { useJobActions } from "./use-job-actions";
 import { useJobAutoClose } from "./use-job-auto-close";
@@ -52,7 +54,13 @@ export function useJobFlowController({
     setCategory,
   } = useApp();
   const s = useJobFlowState(jobId);
-  const { job, setFlash, setChatGateOpen, setChatGateViewHref } = s;
+  const { job, err, flash, setFlash, setChatGateOpen, setChatGateViewHref } = s;
+  // Action outcomes are toasts. Kept inline: the load-failure message while
+  // there is no job yet, and the release banner on the completed stage.
+  useFeedbackToast("", job && job.status !== "completed" ? (err ?? "") : "");
+  useEffect(() => {
+    if (flash) toastInfo(flash);
+  }, [flash]);
 
   const { openJobChat, startJobCall } = useJobChatCall({
     router,

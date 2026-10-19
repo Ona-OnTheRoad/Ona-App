@@ -12,8 +12,6 @@ import type { JobViewer } from "./types";
 interface Props {
   job: JobRecord;
   viewer: JobViewer;
-  err: string | null;
-  flash: string | null;
   calloutQuote: CalloutQuote | null | undefined;
   payoutPending: boolean;
   hasRating: boolean;
@@ -30,8 +28,6 @@ interface Props {
 export function JobCompleteBody({
   job,
   viewer,
-  err,
-  flash,
   calloutQuote,
   payoutPending,
   hasRating,
@@ -128,23 +124,6 @@ export function JobCompleteBody({
             {viewer === "repair_pro"
               ? "Waiting for the motorist to rate and review this job."
               : "Review saved."}
-          </p>
-        )}
-
-        {flash && (
-          <p
-            role="status"
-            className="mt-2 text-center text-[12px] font-semibold text-ona-brand-ink"
-          >
-            {flash}
-          </p>
-        )}
-        {err && (
-          <p
-            role="alert"
-            className="mt-2 text-center text-[12px] font-semibold text-ona-danger"
-          >
-            {err}
           </p>
         )}
       </div>

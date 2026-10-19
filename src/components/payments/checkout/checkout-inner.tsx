@@ -3,6 +3,7 @@
 import { Loader2, X } from "lucide-react";
 import { ConfirmCancelSheet } from "@/components/ui/confirm-cancel-sheet";
 import { useApp } from "@/lib/store";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { cn } from "@/lib/utils";
 import { BankPayView } from "./bank-pay-view";
 import { CancelChooser } from "./cancel-chooser";
@@ -18,6 +19,8 @@ export function CheckoutInner() {
   const isLight = theme === "light";
   const c = useCheckout();
   const { router, jobId, phase } = c;
+  // The expired view keeps its error inline (it explains the failed attempt).
+  useFeedbackToast("", phase === "expired" ? "" : (c.err ?? ""));
 
   const sheet = "ona2 bg-ona-bg";
   const card = "bg-ona-surface border border-ona-border";
@@ -122,7 +125,6 @@ export function CheckoutInner() {
           chargeParts={c.chargeParts}
           agreedMajor={c.agreedMajor}
           calloutQuote={c.calloutQuote}
-          err={c.err}
           onPay={() => void c.startPay()}
         />
       )}

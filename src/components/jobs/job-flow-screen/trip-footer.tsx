@@ -10,8 +10,6 @@ interface Props {
   isLight: boolean;
   showMap: boolean;
   busy: boolean;
-  err: string | null;
-  flash: string | null;
   locHint: string | null;
   chatGateOpen: boolean;
   setChatGateOpen: (v: boolean) => void;
@@ -23,15 +21,13 @@ interface Props {
   cancelRequestInstant: (actor: JobViewer) => void;
 }
 
-/** Trip footer: status flashes, pro advance CTA, customer cancel, dispute. */
+/** Trip footer: pro advance CTA, customer cancel, dispute. */
 export function TripFooter({
   job,
   viewer,
   isLight,
   showMap,
   busy,
-  err,
-  flash,
   locHint,
   chatGateOpen,
   setChatGateOpen,
@@ -56,28 +52,12 @@ export function TripFooter({
         setChatGateOpen={setChatGateOpen}
         setChatGateViewHref={setChatGateViewHref}
       />
-      {flash && (
-        <p
-          role="status"
-          className="text-center text-[12px] font-semibold text-ona-brand-ink"
-        >
-          {flash}
-        </p>
-      )}
       {locHint && showMap && (
         <p
           role="status"
           className="rounded-ona-ctl bg-ona-dark px-3 py-2 text-center text-[12px] font-semibold text-ona-on-dark"
         >
           {locHint}
-        </p>
-      )}
-      {err && (
-        <p
-          role="alert"
-          className="text-center text-[12px] font-semibold text-ona-danger"
-        >
-          {err}
         </p>
       )}
       {viewer === "repair_pro" && nextPro && (

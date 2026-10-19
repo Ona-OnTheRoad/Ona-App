@@ -36,7 +36,6 @@ export function SearchingScreen({
   job,
   viewer,
   isLight,
-  err,
   onBack,
   nearbyLine,
 }: {
@@ -44,7 +43,6 @@ export function SearchingScreen({
   viewer: "motorist" | "repair_pro";
   backendUserId?: string | null;
   isLight: boolean;
-  err: string | null;
   onBack: () => void;
   /** e.g. "2 Mechanics are near you" under the search feedback */
   nearbyLine?: string | null;
@@ -165,11 +163,6 @@ export function SearchingScreen({
             Auto-moving to the next pro if unavailable
           </p>
         </div>
-        {err && (
-          <p className="mt-3 text-center text-[12px] font-medium text-[#ff9d9d]">
-            {err}
-          </p>
-        )}
       </div>
       <div className="shrink-0 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-1">
         <button

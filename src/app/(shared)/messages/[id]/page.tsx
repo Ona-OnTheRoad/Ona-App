@@ -88,14 +88,8 @@ function ChatThreadInner({ params }: { params: Promise<{ id: string }> }) {
     thread?.requestId,
     intentionalViewOnly,
   );
-  const {
-    recPhase,
-    pendingVoice,
-    setPendingVoice,
-    recError,
-    startRec,
-    stopRec,
-  } = useVoiceRecorder(chatClosed);
+  const { recPhase, pendingVoice, setPendingVoice, startRec, stopRec } =
+    useVoiceRecorder(chatClosed);
   const bottomRef = useRef<HTMLDivElement>(null);
   const { otherTyping, broadcastTyping } = useTypingChannel(
     id,
@@ -213,14 +207,6 @@ function ChatThreadInner({ params }: { params: Promise<{ id: string }> }) {
             Discard voice
           </button>
         </div>
-      )}
-      {!chatClosed && recError && (
-        <p
-          role="alert"
-          className="px-4 text-[11px] font-semibold text-ona-danger"
-        >
-          {recError}
-        </p>
       )}
       {chatClosed ? (
         <div className="shrink-0 border-t border-ona-border px-4 py-3 text-center text-[12px] font-medium text-ona-muted">

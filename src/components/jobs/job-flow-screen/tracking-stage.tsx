@@ -25,9 +25,7 @@ export function renderTrackingStage(
     actorId,
     ink,
     muted,
-    err,
     busy,
-    flash,
     locHint,
     goJobsList,
     calloutQuote,
@@ -142,8 +140,6 @@ export function renderTrackingStage(
       isLight={isLight}
       showMap={showMap}
       busy={busy}
-      err={err}
-      flash={flash}
       locHint={locHint}
       chatGateOpen={chatGateOpen}
       setChatGateOpen={setChatGateOpen}

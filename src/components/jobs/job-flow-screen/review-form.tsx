@@ -9,7 +9,6 @@ import { StarRow } from "./star-row";
 
 interface Props {
   job: JobRecord;
-  err: string | null;
   payoutPending: boolean;
   rating: number;
   setRating: (n: number) => void;
@@ -21,7 +20,6 @@ interface Props {
 /** Step 1: customer review (stars + text). */
 export function ReviewForm({
   job,
-  err,
   payoutPending,
   rating,
   setRating,
@@ -83,14 +81,6 @@ export function ReviewForm({
           {reviewChars}/{REVIEW_MAX}
         </p>
       </div>
-      {err && (
-        <p
-          role="alert"
-          className="text-center text-[12px] font-semibold text-ona-danger"
-        >
-          {err}
-        </p>
-      )}
     </div>
   );
 }

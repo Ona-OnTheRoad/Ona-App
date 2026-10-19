@@ -100,15 +100,13 @@ export function renderSearchingStage(
   c: JobFlowCtx,
   job: JobRecord,
 ): ReactElement {
-  const { viewer, backendUserId, isLight, err, goJobsList, nearbyLiveCount } =
-    c;
+  const { viewer, backendUserId, isLight, goJobsList, nearbyLiveCount } = c;
   return (
     <SearchingScreen
       job={job}
       viewer={viewer}
       backendUserId={backendUserId}
       isLight={isLight}
-      err={err}
       onBack={goJobsList}
       nearbyLine={
         viewer === "motorist"

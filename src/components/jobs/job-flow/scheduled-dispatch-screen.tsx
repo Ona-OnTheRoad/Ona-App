@@ -34,12 +34,10 @@ export function ScheduledDispatchScreen({
   const proLabel = PRO_SERVICE_LABELS[job.serviceType] || job.serviceType;
   const [picked, setPicked] = useState<PickedLocation | null>(null);
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
 
   const send = async () => {
     if (!picked) return;
     setBusy(true);
-    setErr(null);
     const res = await apiDispatchScheduled({
       jobId: job.id,
       locationLabel: picked.label,
@@ -48,7 +46,6 @@ export function ScheduledDispatchScreen({
     });
     setBusy(false);
     if (!res.ok) {
-      setErr(res.message || "Could not dispatch. Try again.");
       onError(res.message || "Could not dispatch. Try again.");
       return;
     }
@@ -63,11 +60,6 @@ export function ScheduledDispatchScreen({
       onBack={onBack}
       footer={
         <div className="space-y-2">
-          {err && (
-            <p className="text-center text-[12px] font-semibold text-red-500">
-              {err}
-            </p>
-          )}
           <CopperButton disabled={busy || !picked} onClick={() => void send()}>
             {busy ? "Booking…" : "Send"}
           </CopperButton>

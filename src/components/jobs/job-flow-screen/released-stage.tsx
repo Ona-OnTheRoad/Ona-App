@@ -21,11 +21,9 @@ export function renderReleasedStage(
     viewer,
     isLight,
     router,
-    err,
     setErr,
     busy,
     setBusy,
-    flash,
     setFlash,
     calloutQuote,
     goHome,
@@ -92,7 +90,6 @@ export function renderReleasedStage(
       {showReviewForm ? (
         <ReviewForm
           job={job}
-          err={err}
           payoutPending={payoutPending}
           rating={rating}
           setRating={setRating}
@@ -105,8 +102,6 @@ export function renderReleasedStage(
         <JobCompleteBody
           job={job}
           viewer={viewer}
-          err={err}
-          flash={flash}
           calloutQuote={calloutQuote}
           payoutPending={payoutPending}
           hasRating={hasRating}

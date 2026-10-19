@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import {
   blobToDataUrl,
   createMediaRecorder,
@@ -22,6 +23,7 @@ export function useVoiceRecorder(chatClosed: boolean) {
   const [recPhase, setRecPhase] = useState<RecPhase>("idle");
   const [pendingVoice, setPendingVoice] = useState<PendingVoice | null>(null);
   const [recError, setRecError] = useState<string | null>(null);
+  useFeedbackToast("", recError ?? "");
   const mediaRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunks = useRef<Blob[]>([]);
@@ -159,7 +161,6 @@ export function useVoiceRecorder(chatClosed: boolean) {
     recPhase,
     pendingVoice,
     setPendingVoice,
-    recError,
     startRec,
     stopRec,
   };

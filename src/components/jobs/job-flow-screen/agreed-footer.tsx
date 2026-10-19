@@ -11,7 +11,6 @@ interface Props {
   viewer: JobViewer;
   isLight: boolean;
   busy: boolean;
-  err: string | null;
   router: ReturnType<typeof useRouter>;
   setPayCancelOpen: (v: boolean) => void;
 }
@@ -22,17 +21,11 @@ export function AgreedFooter({
   viewer,
   isLight,
   busy,
-  err,
   router,
   setPayCancelOpen,
 }: Props): ReactElement {
   return viewer === "motorist" ? (
     <div className="flex w-full flex-col gap-2">
-      {err && (
-        <p className="text-center text-[12px] font-semibold text-red-500">
-          {err}
-        </p>
-      )}
       <StageButton
         isLight={isLight}
         disabled={busy}
