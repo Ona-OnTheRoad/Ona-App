@@ -15,6 +15,7 @@ import { NotificationCenter } from "@/components/notifications/notification-cent
 import { NotificationProvider } from "@/components/notifications/notification-provider";
 import { NotificationToasts } from "@/components/notifications/notification-toasts";
 import { clearPageExitClass, recordNavigation } from "@/lib/navigation";
+import { useSignupDraftCleanup } from "@/lib/use-signup-draft-cleanup";
 import { installAudioUnlockOnce } from "@/lib/sound-tone";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/lib/store";
@@ -26,6 +27,7 @@ export function AppFrame({ children }: { children: ReactNode }) {
   const { switchingRole, theme } = useApp();
   const isLight = theme === "light";
   const dockVisible = useDockVisible();
+  useSignupDraftCleanup();
 
   // iOS/Safari: unlock Web Audio on first tap so event sounds can play later
   useEffect(() => {
