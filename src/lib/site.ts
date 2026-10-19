@@ -15,10 +15,35 @@ export const SITE_LOCALE = "en_NG";
 /** Production consumer app (see docs/VERCEL_DEPLOY.md). Override with NEXT_PUBLIC_APP_URL. */
 export const DEFAULT_SITE_URL = "https://ona-dev-app.netlify.app";
 
-/** Origin without a trailing slash. */
+const LOCAL_ORIGIN =
+  /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])(:\d+)?(\/|$)/i;
+
+/** The public origin the host platform itself reports (Netlify `URL`, Vercel production URL). */
+function platformUrl(): string | undefined {
+  const e = process.env;
+  const v =
+    e.URL?.trim() ||
+    (e.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${e.VERCEL_PROJECT_PRODUCTION_URL.trim()}`
+      : "");
+  return v || undefined;
+}
+
+/**
+ * Origin without a trailing slash: NEXT_PUBLIC_APP_URL, else the host platform's own URL,
+ * else DEFAULT_SITE_URL. On Netlify/Vercel a localhost value is ignored: it is a copied
+ * `.env.local`, and it would point share cards, the sitemap and canonical links at an
+ * address crawlers can never reach (no preview image, no description).
+ */
 export function siteUrl(): string {
-  const raw = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  return (raw || DEFAULT_SITE_URL).replace(/\/+$/, "");
+  const onPlatform = Boolean(process.env.NETLIFY || process.env.VERCEL);
+  let raw = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (raw && onPlatform && LOCAL_ORIGIN.test(raw)) raw = undefined;
+  return (
+    raw ||
+    (onPlatform ? platformUrl() : undefined) ||
+    DEFAULT_SITE_URL
+  ).replace(/\/+$/, "");
 }
 
 export function absoluteUrl(path: string): string {

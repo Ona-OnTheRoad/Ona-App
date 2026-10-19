@@ -27,6 +27,8 @@ export default function manifest(): MetadataRoute.Manifest {
     related_applications: [
       { platform: "webapp", url: absoluteUrl("/manifest.webmanifest") },
     ],
+    // Only PNG icons with real sizes: an `sizes: "any"` favicon.ico entry makes Chrome report
+    // "no-acceptable-icon" and never offer installation.
     icons: [
       {
         src: "/icons/icon-192.png",
@@ -46,7 +48,6 @@ export default function manifest(): MetadataRoute.Manifest {
         type: "image/png",
         purpose: "maskable",
       },
-      { src: "/favicon.ico", sizes: "any", type: "image/x-icon" },
     ],
   };
 }
