@@ -9,7 +9,6 @@ import {
 import { useSavedVehicles } from "@/components/home/shared/use-saved-vehicles";
 import { useApp } from "@/lib/store";
 import type { ProService } from "@/lib/types";
-import { PRO_SERVICE_LABELS } from "@/lib/pro-service-id";
 import type { PickedLocation } from "@/components/map/location-picker-map";
 import type {
   HelpFlowConfig,
@@ -20,7 +19,7 @@ import { FlowFinalStep } from "./help-flow/flow-final-step";
 import { FlowProgressBar } from "./help-flow/flow-progress-bar";
 import { FlowVehicleStep } from "./help-flow/flow-vehicle-step";
 import { FlowQuestionStep } from "./help-flow/flow-question-step";
-import { flowStyles } from "./help-flow/flow-styles";
+import { flowStyles, flowTag } from "./help-flow/flow-styles";
 import type { FlowDir } from "./help-flow/types";
 import { useAdvanceTimer } from "./help-flow/use-advance-timer";
 import { useFlowNavigation } from "./help-flow/use-flow-navigation";
@@ -87,7 +86,7 @@ export function HelpFlow({
   const step = stack[stack.length - 1] || "start";
   const screen = config.screen(step);
   const styles = flowStyles(isLight);
-  const tag = `${PRO_SERVICE_LABELS[chosenTrade]} request`;
+  const tag = flowTag(chosenTrade);
 
   useEffect(() => {
     setLandmark((prev) => prev || location.label || "");

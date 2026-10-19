@@ -84,7 +84,7 @@ describe("MechanicHelpFlow auto-highlights the best-fit urgency bar", () => {
     fireEvent.click(screen.getByText("No"));
 
     // 5. Route confirm (towing) → Yes.
-    fireEvent.click(screen.getByText("Yes"));
+    fireEvent.click(screen.getByText("Continue"));
 
     // 6. Urgency radios: Emergency must be the checked one.
     const emergency = screen.getByRole("radio", { name: /Emergency/ });

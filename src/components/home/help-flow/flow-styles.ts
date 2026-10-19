@@ -1,4 +1,13 @@
+import { PRO_SERVICE_LABELS } from "@/lib/pro-service-id";
+import type { ProService } from "@/lib/types";
 import type { FlowStyles } from "./types";
+
+/** Coral tag text, e.g. "Mechanic request" / "A/C (air conditioning) request". */
+export function flowTag(trade: ProService): string {
+  const label =
+    trade === "ac" ? "A/C (air conditioning)" : PRO_SERVICE_LABELS[trade];
+  return `${label} request`;
+}
 
 /**
  * Class tokens shared by every help-flow view. They read the `.ona2` CSS

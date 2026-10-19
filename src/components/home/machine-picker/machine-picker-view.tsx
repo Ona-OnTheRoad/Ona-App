@@ -59,12 +59,12 @@ export function MachinePickerView({
   onNone,
   onOtherMode,
 }: MachinePickerViewProps) {
-  const ink = isLight ? "text-slate-900" : "text-white";
-  const muted = isLight ? "text-slate-500" : "text-white/50";
-  const rowCard = isLight ? "bg-black/[0.02]" : "bg-white/[0.02]";
-  const field = isLight
-    ? "bg-transparent text-slate-900 placeholder:text-slate-400"
-    : "bg-transparent text-white placeholder:text-white/40";
+  void isLight;
+  const ink = "text-ona-ink";
+  const muted = "text-ona-muted";
+  const rowCard = "bg-ona-field-strong";
+  const field =
+    "border border-ona-border bg-ona-field text-ona-ink placeholder:text-ona-muted focus:border-ona-ink";
 
   return (
     <div>
@@ -74,7 +74,7 @@ export function MachinePickerView({
           disabled={!canNext}
           onClick={onNext}
           aria-label="Next"
-          className="border-0 bg-transparent p-0.5 text-[#FF6B35] disabled:opacity-40"
+          className="border-0 bg-transparent p-0.5 text-ona-brand-ink disabled:opacity-40"
         >
           <ChevronRight className="h-6 w-6" strokeWidth={2.5} />
         </button>
@@ -122,18 +122,18 @@ export function MachinePickerView({
           rows={3}
           placeholder={otherPlaceholder}
           className={cn(
-            "w-full resize-none rounded-xl border-0 px-3 py-2 text-[13px] font-medium leading-snug outline-none",
+            "w-full resize-none rounded-ona-ctl px-3.5 py-3 text-[13px] font-medium leading-snug outline-none",
             field,
           )}
         />
       )}
 
-      <div className="mt-3 flex flex-col overflow-hidden rounded-[4px]">
+      <div className="mt-3 flex flex-col gap-2">
         <button
           type="button"
           onClick={onNone}
           className={cn(
-            "flex w-full items-center border-0 px-1 py-3 text-left transition-transform duration-150 active:scale-[0.985]",
+            "flex w-full min-h-12 items-center rounded-ona-ctl border-0 px-3.5 py-3 text-left transition-transform duration-150 active:scale-[0.985]",
             rowCard,
           )}
         >
@@ -145,7 +145,7 @@ export function MachinePickerView({
           type="button"
           onClick={onOtherMode}
           className={cn(
-            "flex w-full items-center border-0 px-1 py-3 text-left transition-transform duration-150 active:scale-[0.985]",
+            "flex w-full min-h-12 items-center rounded-ona-ctl border-0 px-3.5 py-3 text-left transition-transform duration-150 active:scale-[0.985]",
             rowCard,
           )}
         >

@@ -16,6 +16,10 @@ export const onaControlClass =
 export const onaLabelClass =
   "mb-1.5 block text-[13px] font-semibold text-ona-ink";
 
+/** Small uppercase section label used on cards (e.g. "ESCROW RELEASE BREAKDOWN"). */
+export const onaEyebrowClass =
+  "text-[10px] font-bold uppercase tracking-[0.08em] text-ona-muted";
+
 type FieldProps = {
   label: string;
   /** Appends a red asterisk that is hidden from assistive tech (use `required` on the control). */

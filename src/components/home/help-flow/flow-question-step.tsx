@@ -3,6 +3,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import { Button } from "@/components/ui/button";
 import { OnaFlowHeader } from "@/components/ui/ona-flow-header";
+import { PRO_SERVICE_LABELS } from "@/lib/pro-service-id";
 import type { ProService } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { BaseRoute, HelpFlowConfig } from "../help-flow-configs";
@@ -58,6 +59,11 @@ export function FlowQuestionStep({
       <OnaFlowHeader
         tag={tag}
         title={title}
+        subtitle={
+          isConfirm
+            ? "Based on your answers, a different trade may be the better fit."
+            : "A few quick answers help us match you with the right professional."
+        }
         onBack={stackLength > 1 ? goBack : undefined}
       />
       <div
@@ -68,7 +74,7 @@ export function FlowQuestionStep({
         )}
       >
         {screen?.kind === "choice" ? (
-          <div className="flex flex-col gap-2 pb-2">
+          <div className="flex flex-col gap-2 rounded-ona-card border border-ona-border bg-ona-surface p-2">
             {(screen.options || []).map((opt) => (
               <button
                 key={opt.id}
@@ -100,16 +106,19 @@ export function FlowQuestionStep({
         ) : null}
 
         {isConfirm ? (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-3">
+            <p className="rounded-ona-card border border-ona-border bg-ona-surface px-3.5 py-3 text-[13px] font-medium leading-snug text-ona-ink">
+              {`Continue to a ${PRO_SERVICE_LABELS[chosenTrade].toLowerCase()} request, or cancel to stay with your ${PRO_SERVICE_LABELS[config.defaultTrade].toLowerCase()} request.`}
+            </p>
             <Button size="ona" variant="ona" onClick={() => acceptRoute(true)}>
-              Yes
+              Continue
             </Button>
             <Button
               size="ona"
               variant="onaOutline"
               onClick={() => acceptRoute(false)}
             >
-              No
+              Cancel
             </Button>
           </div>
         ) : null}

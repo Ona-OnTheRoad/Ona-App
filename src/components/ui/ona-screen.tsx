@@ -22,6 +22,7 @@ export function OnaScreen({
   exiting,
   className,
   bodyClassName,
+  footerClassName,
 }: {
   children: ReactNode;
   footer?: ReactNode;
@@ -31,6 +32,7 @@ export function OnaScreen({
   exiting?: boolean;
   className?: string;
   bodyClassName?: string;
+  footerClassName?: string;
 }) {
   return (
     <div
@@ -71,7 +73,12 @@ export function OnaScreen({
           {children}
         </div>
         {footer ? (
-          <div className="shrink-0 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2">
+          <div
+            className={cn(
+              "shrink-0 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2",
+              footerClassName,
+            )}
+          >
             {footer}
           </div>
         ) : null}
