@@ -10,6 +10,7 @@ import { RoleBootstrap } from "@/components/home/role-bootstrap";
 import { AppDock, useDockVisible } from "@/components/layout/app-dock";
 import { InboundBanner } from "@/components/layout/inbound-banner";
 import { PhoneShell } from "@/components/layout/phone-shell";
+import { Toaster } from "@/components/ui/sonner";
 import { NotificationCenter } from "@/components/notifications/notification-center";
 import { NotificationProvider } from "@/components/notifications/notification-provider";
 import { NotificationToasts } from "@/components/notifications/notification-toasts";
@@ -98,6 +99,7 @@ export function AppFrame({ children }: { children: ReactNode }) {
                   </span>
                 </div>
               ) : null}
+              <Toaster />
               <AppDock />
               <NotificationCenter />
             </div>

@@ -40,7 +40,8 @@
 
 .ona2,
 [data-rfd-theme],
-.rfd-bar {
+.rfd-bar,
+[data-sonner-toaster] {
   --o-bg: #ffffff;
   --o-surface: #ffffff;
   --o-field: #f9fafb;
@@ -76,7 +77,8 @@
 
 [data-theme="dark"] .ona2,
 [data-theme="dark"] [data-rfd-theme],
-[data-theme="dark"] .rfd-bar {
+[data-theme="dark"] .rfd-bar,
+[data-theme="dark"] [data-sonner-toaster] {
   --o-bg: #120a08;
   --o-surface: #1a100c;
   --o-field: #22140f;
