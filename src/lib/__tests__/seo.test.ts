@@ -75,6 +75,57 @@ describe("site URL", () => {
   });
 });
 
+describe("site URL on a hosting platform", () => {
+  const keys = [
+    "NEXT_PUBLIC_APP_URL",
+    "NETLIFY",
+    "VERCEL",
+    "URL",
+    "VERCEL_PROJECT_PRODUCTION_URL",
+  ] as const;
+  const saved: Record<string, string | undefined> = {};
+  const clear = () => keys.forEach((k) => delete process.env[k]);
+  afterEach(() => {
+    clear();
+    keys.forEach((k) => {
+      if (saved[k] !== undefined) process.env[k] = saved[k];
+    });
+  });
+  const stash = () => keys.forEach((k) => (saved[k] = process.env[k]));
+
+  it("ignores a copied localhost NEXT_PUBLIC_APP_URL on Netlify and uses the platform URL", () => {
+    stash();
+    clear();
+    process.env.NETLIFY = "true";
+    process.env.URL = "https://ona.example.ng";
+    process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000";
+    expect(siteUrl()).toBe("https://ona.example.ng");
+    expect(absoluteUrl("/brand/og-image.png")).toBe(
+      "https://ona.example.ng/brand/og-image.png",
+    );
+  });
+
+  it("falls back to the default when the platform gives no URL either", () => {
+    stash();
+    clear();
+    process.env.VERCEL = "1";
+    process.env.NEXT_PUBLIC_APP_URL = "http://127.0.0.1:3000/";
+    expect(siteUrl()).toBe(DEFAULT_SITE_URL);
+  });
+
+  it("still honours a real NEXT_PUBLIC_APP_URL on the platform, and localhost off-platform", () => {
+    stash();
+    clear();
+    process.env.NETLIFY = "true";
+    process.env.URL = "https://other.example.ng";
+    process.env.NEXT_PUBLIC_APP_URL = "https://app.example.ng/";
+    expect(siteUrl()).toBe("https://app.example.ng");
+    clear();
+    process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000";
+    expect(siteUrl()).toBe("http://localhost:3000");
+  });
+});
+
 describe("robots and sitemap", () => {
   it("lists only crawlable, indexable pages in the sitemap", () => {
     const urls = sitemap().map((e) => e.url);
@@ -88,8 +139,12 @@ describe("robots and sitemap", () => {
       allow?: string | string[];
       disallow?: string | string[];
     };
-    expect(rule.disallow).toEqual(expect.arrayContaining(["/admin", "/api", "/shop"]));
-    expect(rule.allow).toEqual(expect.arrayContaining(["/", "/settings/legal"]));
+    expect(rule.disallow).toEqual(
+      expect.arrayContaining(["/admin", "/api", "/shop"]),
+    );
+    expect(rule.allow).toEqual(
+      expect.arrayContaining(["/", "/settings/legal"]),
+    );
     expect(isCrawlable("/settings/legal/terms")).toBe(true);
     expect(isCrawlable("/settings/security")).toBe(false);
     expect(isCrawlable("/shop/p/abc")).toBe(false);
@@ -114,7 +169,9 @@ describe("private pages stay out of search results", () => {
   it("every non-indexable page sits under a noindex layout", () => {
     const missing = pageFiles()
       .map((f) => ({ f, url: stripGroups(dirname(f)) }))
-      .filter(({ url }) => !(INDEXABLE_PATHS as readonly string[]).includes(url))
+      .filter(
+        ({ url }) => !(INDEXABLE_PATHS as readonly string[]).includes(url),
+      )
       .filter(({ url }) => url !== "/settings/legal") // hub inherits the settings noindex
       .filter(({ f }) => !underNoindexLayout(f))
       .map(({ url }) => url);
