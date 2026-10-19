@@ -71,7 +71,7 @@ export function CountdownTimer({
         )}
         style={{ width: size, height: size }}
         role="timer"
-        aria-live="polite"
+        aria-live="off"
         aria-label={`Time left ${timeLabel}`}
       >
         <svg

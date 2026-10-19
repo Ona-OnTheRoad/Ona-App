@@ -1,27 +1,40 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import dynamic from "next/dynamic";
+import { useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Minimize2 } from "lucide-react";
 import { JobShell } from "@/components/jobs/job-shell";
+import { OnaRadar } from "@/components/ui/ona-radar";
 import { apiTransition } from "@/lib/jobs/client";
+import { useExactCountdown } from "@/lib/jobs/use-exact-countdown";
+import { secondsLeftFloor } from "@/lib/jobs/countdown-math";
+import { serverNow } from "@/lib/jobs/server-clock";
 import type { JobRecord } from "@/lib/jobs/types";
 import { PRO_SERVICE_LABELS } from "@/lib/services";
-import { cn } from "@/lib/utils";
+import { cn, firstNameOnly } from "@/lib/utils";
 import { SEARCH_REROUTE_WINDOW_MS } from "./job-utils";
 
-// Lazy-load the searching map so the timer page paints instantly; the Google
-// map mounts after the ring timer and bottom sheet are visible.
-const SearchingMap = dynamic(
-  () => import("@/components/jobs/searching-map").then((m) => m.SearchingMap),
-  { ssr: false, loading: () => null },
-);
+/** Display-only chip for the server pairing deadline (no per-second announcements). */
+function PairingChip({ endsAt }: { endsAt: string }) {
+  useExactCountdown(endsAt);
+  const sec = Math.max(
+    0,
+    secondsLeftFloor(new Date(endsAt).getTime(), serverNow()),
+  );
+  return (
+    <span
+      role="timer"
+      aria-label={`Time left for this pro ${sec} seconds`}
+      className="inline-flex min-h-7 items-center rounded-full border border-white/25 bg-white/10 px-3 text-[12px] font-semibold tabular-nums text-ona-on-dark"
+    >
+      {sec}s
+    </span>
+  );
+}
 
 export function SearchingScreen({
   job,
   viewer,
-  backendUserId,
   isLight,
   err,
   onBack,
@@ -37,29 +50,21 @@ export function SearchingScreen({
   nearbyLine?: string | null;
 }) {
   const router = useRouter();
-  const ink = isLight ? "text-slate-900" : "text-white";
   const muted = isLight ? "text-slate-700" : "text-white/75";
   const skillLabel =
     (PRO_SERVICE_LABELS[job.serviceType] || "Pro")
       .replace(/\s*Pro$/i, "")
       .trim() || "Pro";
-  const [idx, setIdx] = useState(0);
-  const messages = useMemo(
-    () => [
-      `Searching for the nearest ${skillLabel} near you…`,
-      `Checking ${skillLabel}s available right now…`,
-      `Still looking for an available ${skillLabel}…`,
-      `Widening the search to more ${skillLabel}s…`,
-    ],
-    [skillLabel],
-  );
-  useEffect(() => {
-    const id = window.setInterval(
-      () => setIdx((i) => (i + 1) % messages.length),
-      2600,
-    );
-    return () => window.clearInterval(id);
-  }, [messages.length]);
+  const proKnown =
+    !!job.repairProName && job.repairProName.trim() !== "Repair Pro";
+  const proName = proKnown ? firstNameOnly(job.repairProName, "") : "";
+  const distance =
+    typeof job.distanceKm === "number" && job.distanceKm > 0
+      ? `${job.distanceKm.toFixed(1)} km away`
+      : null;
+  const requesting = proName
+    ? `Requesting ${proName}${distance ? ` · ${distance}` : ""}`
+    : `Looking for the nearest ${skillLabel}`;
 
   const cancelSearch = useCallback(
     (auto: boolean) => {
@@ -116,73 +121,65 @@ export function SearchingScreen({
   }
 
   return (
-    <JobShell
-      isLight={isLight}
-      title={`Finding ${skillLabel} near you`}
-      compactHeader
-      fullBleed
-      fillBody
-      onBack={onBack}
-      backIcon={<Minimize2 className="h-4 w-4" />}
-    >
-      <div className="relative flex h-full min-h-0 flex-1 flex-col">
-        {/* 60% real Google Map anchored on the motorist location */}
-        <div className="relative min-h-0 flex-[3]">
-          <SearchingMap job={job} isLight={isLight} />
-        </div>
-
-        {/* 40% bottom sheet with live searching feedback */}
-        <div
-          className={cn(
-            "relative z-20 flex min-h-0 flex-[2] flex-col rounded-t-[2rem] px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2.5",
-            "shadow-[0_-10px_30px_rgba(0,0,0,0.35)]",
-            isLight ? "bg-[#c8c9cd] text-slate-900" : "bg-black text-white",
-          )}
-        >
-          <div
-            className={cn(
-              "mx-auto h-1 w-10 shrink-0 rounded-full",
-              isLight ? "bg-black/15" : "bg-white/20",
-            )}
-          />
-          <p className="mt-3 text-center text-[10px] font-black uppercase tracking-[0.14em] text-[#FF6B35]">
-            Searching for the nearest {skillLabel}
-          </p>
-          {nearbyLine ? (
-            <p className={cn("mt-2 text-center text-[14px] font-bold", ink)}>
-              {nearbyLine}
-            </p>
-          ) : null}
-          <h2
-            key={idx}
-            className={cn(
-              "mt-2 text-center text-[15px] font-bold leading-snug",
-              ink,
-            )}
+    <div className="ona2 relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-ona-dark text-ona-on-dark">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-5 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] scrollbar-hide">
+        <div className="flex shrink-0 items-center justify-between">
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Back to my requests"
+            className="-ml-2 flex h-11 w-11 items-center justify-center rounded-full border-0 bg-transparent text-ona-on-dark"
           >
-            {messages[idx]}
-          </h2>
-          <div className="mt-auto pb-2">
-            <button
-              type="button"
-              onClick={() => void handleCancelSearch()}
-              className={cn(
-                "h-11 w-full rounded-xl border-0 text-[13px] font-bold transition-colors",
-                isLight
-                  ? "bg-red-500/15 text-red-700 hover:bg-red-500/25"
-                  : "bg-red-500/20 text-red-400 hover:bg-red-500/30",
-              )}
-            >
-              Cancel Request
-            </button>
-          </div>
+            <Minimize2 className="h-5 w-5" />
+          </button>
         </div>
+        <div className="flex flex-col items-center text-center">
+          <span className="inline-flex rounded-full border border-ona-brand/50 bg-ona-brand/20 px-3 py-1 text-[11px] font-semibold leading-none text-[#ffc2b3]">
+            Sequential dispatch
+          </span>
+          <h1 className="mt-3 text-[22px] font-bold leading-tight tracking-tight">
+            Finding your nearest {skillLabel.toLowerCase()}
+          </h1>
+          <p className="mt-2 max-w-[300px] text-[13px] leading-snug text-ona-on-dark-muted">
+            We contact one verified pro at a time so you get a committed
+            response, not a bidding crowd.
+          </p>
+        </div>
+        <div className="my-4 flex flex-1 items-center justify-center">
+          <OnaRadar
+            photoUrl={proKnown ? job.repairProPhoto : null}
+            name={job.repairProName}
+          />
+        </div>
+        <div className="flex shrink-0 flex-col items-center gap-2 text-center">
+          {job.pairingDeadline ? (
+            <PairingChip endsAt={job.pairingDeadline} />
+          ) : null}
+          <div role="status" aria-live="polite" className="space-y-1">
+            <p className="text-[14px] font-semibold">{requesting}</p>
+            {nearbyLine ? (
+              <p className="text-[12px] text-ona-on-dark-muted">{nearbyLine}</p>
+            ) : null}
+          </div>
+          <p className="text-[12px] text-ona-on-dark-muted">
+            Auto-moving to the next pro if unavailable
+          </p>
+        </div>
+        {err && (
+          <p className="mt-3 text-center text-[12px] font-medium text-[#ff9d9d]">
+            {err}
+          </p>
+        )}
       </div>
-      {err && (
-        <p className="mt-4 text-center text-[12px] font-medium text-red-500">
-          {err}
-        </p>
-      )}
-    </JobShell>
+      <div className="shrink-0 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-1">
+        <button
+          type="button"
+          onClick={() => void handleCancelSearch()}
+          className="flex h-12 w-full items-center justify-center rounded-ona-ctl border-0 bg-transparent text-[15px] font-semibold text-ona-on-dark underline-offset-4 active:bg-white/10"
+        >
+          Cancel search
+        </button>
+      </div>
+    </div>
   );
 }

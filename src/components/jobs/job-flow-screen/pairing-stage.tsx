@@ -5,6 +5,9 @@ import { nearbyProsStatusLine, PAIRING_WINDOW_MS } from "@/lib/jobs/constants";
 import type { JobRecord } from "@/lib/jobs/types";
 import { PRO_SERVICE_LABELS } from "@/lib/services";
 import { cn, firstNameOnly } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { OnaScreen, OnaTitle } from "@/components/ui/ona-screen";
+import { Badge } from "@/components/ui/badge";
 import { SearchingScreen } from "../job-flow/searching-screen";
 import { CancelConfirmFromState } from "./shared-pieces";
 import type { JobFlowCtx } from "./use-job-flow-controller";
@@ -22,7 +25,6 @@ export function renderPairingStage(
   const {
     viewer,
     isLight,
-    ink,
     muted,
     nearbyLiveCount,
     backendUserId,
@@ -96,88 +98,70 @@ export function renderPairingStage(
           : "A pro is checking your request.";
 
   const body = (
-    <div className="flex min-h-0 flex-col bg-transparent px-0.5 pt-1">
-      <div className="shrink-0 space-y-3 bg-transparent">
-        <div className="flex flex-col items-center justify-center bg-transparent py-3">
-          {deadline && !finding ? (
-            <CountdownTimer
-              variant="ring"
-              endsAt={deadline}
-              totalMs={PAIRING_WINDOW_MS}
-              onExpire={() => {
-                void (async () => {
-                  try {
-                    const { apiPairingSweep } =
-                      await import("@/lib/jobs/client");
-                    await apiPairingSweep();
-                  } catch {
-                    /* */
-                  }
-                  await load();
-                })();
-              }}
-              className={ink}
-            />
-          ) : (
-            <div className="mb-4 h-10 w-10 animate-spin rounded-full border-2 border-[#FF6B35] border-t-transparent" />
-          )}
-          {viewer === "motorist" && nearbyLine ? (
-            <p
-              className={cn(
-                "mt-3 max-w-[280px] text-center text-[13px] font-bold leading-snug",
-                ink,
-              )}
-            >
-              {nearbyLine}
-            </p>
-          ) : null}
+    <div className="flex min-h-0 flex-col pt-3">
+      <Badge variant="ona">{proLabel} request</Badge>
+      <OnaTitle className="mt-3" title={title} subtitle={subtitle} />
+      <div className="flex flex-col items-center justify-center py-8">
+        {deadline && !finding ? (
+          <CountdownTimer
+            variant="ring"
+            endsAt={deadline}
+            totalMs={PAIRING_WINDOW_MS}
+            onExpire={() => {
+              void (async () => {
+                try {
+                  const { apiPairingSweep } = await import("@/lib/jobs/client");
+                  await apiPairingSweep();
+                } catch {
+                  /* */
+                }
+                await load();
+              })();
+            }}
+            className="text-ona-ink"
+          />
+        ) : (
+          <div
+            role="status"
+            aria-label="Searching"
+            className="mb-4 h-10 w-10 animate-spin rounded-full border-2 border-ona-brand border-t-transparent motion-reduce:animate-none"
+          />
+        )}
+        {viewer === "motorist" && nearbyLine ? (
           <p
-            className={cn(
-              "mt-2 max-w-[280px] text-center text-[13px] font-semibold leading-snug",
-              muted,
-            )}
+            role="status"
+            className="mt-4 max-w-[280px] text-center text-[13px] font-semibold leading-snug text-ona-ink"
           >
-            {subtitle}
+            {nearbyLine}
           </p>
-        </div>
+        ) : null}
       </div>
-
-      <div className="flex-1" />
     </div>
   );
 
   const footer = (
     <div className="space-y-2">
       {err && (
-        <p className="text-center text-[12px] font-semibold text-red-500">
+        <p className="text-center text-[12px] font-semibold text-ona-danger">
           {err}
         </p>
       )}
-      <button
-        type="button"
+      <Button
+        size="ona"
+        variant="onaOutline"
         disabled={busy}
         onClick={() => setConfirmCancel({ actor: "motorist" })}
-        className={cn(
-          "inline-flex h-11 w-full items-center justify-center rounded-md border-0 text-[13px] font-semibold",
-          isLight ? "bg-black/10 text-slate-900" : "bg-[#2c2c2e] text-white",
-        )}
       >
         Cancel request
-      </button>
+      </Button>
     </div>
   );
 
   return (
     <>
-      <JobShell
-        isLight={isLight}
-        title={title}
-        compactHeader
-        onBack={goJobsList}
-        footer={footer}
-      >
+      <OnaScreen onBack={goJobsList} footer={footer}>
         {body}
-      </JobShell>
+      </OnaScreen>
 
       <CancelConfirmFromState
         isLight={isLight}
