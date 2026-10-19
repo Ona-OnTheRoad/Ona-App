@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { passwordError } from "@/lib/signup-validation";
 import { cn } from "@/lib/utils";
 import { profileTheme } from "@/lib/profile-system";
 import { SecurityField } from "./security-field";
@@ -47,24 +48,9 @@ export function PasswordChangeFlow({
   }
 
   const doChange = async () => {
-    if (newPwd.length < 8) {
-      setErr("Password must be at least 8 characters.");
-      return;
-    }
-    if (!/[A-Z]/.test(newPwd)) {
-      setErr("Include an uppercase letter.");
-      return;
-    }
-    if (!/[a-z]/.test(newPwd)) {
-      setErr("Include a lowercase letter.");
-      return;
-    }
-    if (!/[0-9]/.test(newPwd)) {
-      setErr("Include a number.");
-      return;
-    }
-    if (!/[^A-Za-z0-9]/.test(newPwd)) {
-      setErr("Include a special character.");
+    const policyErr = passwordError(newPwd);
+    if (policyErr) {
+      setErr(policyErr);
       return;
     }
     if (newPwd !== confirmPwd) {
@@ -191,8 +177,8 @@ export function PasswordChangeFlow({
             isLight={isLight}
           />
           <p className={cn("text-[10px] leading-snug", t.muted)}>
-            Minimum 8 characters with upper, lower, number, and special
-            character.
+            Minimum 10 characters with an uppercase letter, a lowercase letter,
+            a number and a symbol.
           </p>
           <button
             type="button"

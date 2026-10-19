@@ -170,7 +170,7 @@ export function StepContact({
                 }
               }}
               onBlur={() => setFieldError("password", passwordError(password))}
-              placeholder="At least 8 characters"
+              placeholder="Create a password"
               autoComplete="new-password"
             />
             <PasswordRules password={password} inline />

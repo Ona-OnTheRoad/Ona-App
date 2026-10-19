@@ -67,18 +67,24 @@ export function confirmPasswordError(
   return null;
 }
 
+export const PASSWORD_MIN_LENGTH = 10;
+
 /**
- * Password: 8+ chars, 1 uppercase, 1 number.
- * Symbols are allowed.
+ * Password policy (one source for signup, reset, settings and the API):
+ * 10+ characters, a number, a lowercase letter, an uppercase letter, a symbol.
  */
 export function passwordError(password: string, emptyOk = false): FieldError {
   if (!password) return emptyOk ? null : "Please create a password.";
-  if (password.length < 8) return "Password needs at least 8 characters.";
-  if (!/[A-Z]/.test(password)) {
-    return "Add at least one capital letter (A to Z).";
+  if (password.length < PASSWORD_MIN_LENGTH) {
+    return `Password needs at least ${PASSWORD_MIN_LENGTH} characters.`;
   }
-  if (!/[0-9]/.test(password)) {
-    return "Add at least one number (0 to 9).";
+  if (!/[0-9]/.test(password)) return "Add at least one number (0 to 9).";
+  if (!/[a-z]/.test(password)) return "Add at least one lowercase letter.";
+  if (!/[A-Z]/.test(password)) {
+    return "Add at least one uppercase letter (A to Z).";
+  }
+  if (!/[^A-Za-z0-9]/.test(password)) {
+    return "Add at least one symbol (for example ! @ # $).";
   }
   return null;
 }
@@ -249,14 +255,34 @@ export function dobInputMin(_minAge = SIGNUP_MIN_AGE): string {
   return localIsoDate(d);
 }
 
-export type PasswordRuleId = "length" | "upper" | "digit";
+export type PasswordRuleId = "length" | "digit" | "lower" | "upper" | "symbol";
 
 export function passwordRules(
   password: string,
 ): Record<PasswordRuleId, boolean> {
   return {
-    length: password.length >= 8,
-    upper: /[A-Z]/.test(password),
+    length: password.length >= PASSWORD_MIN_LENGTH,
     digit: /[0-9]/.test(password),
+    lower: /[a-z]/.test(password),
+    upper: /[A-Z]/.test(password),
+    symbol: /[^A-Za-z0-9]/.test(password),
   };
+}
+
+/** The requirement list as shown under every "new password" field, in design order. */
+export function passwordChecklist(
+  password: string,
+): { id: PasswordRuleId; ok: boolean; text: string }[] {
+  const r = passwordRules(password);
+  return [
+    {
+      id: "length",
+      ok: r.length,
+      text: `At least ${PASSWORD_MIN_LENGTH} characters`,
+    },
+    { id: "digit", ok: r.digit, text: "At least a number" },
+    { id: "lower", ok: r.lower, text: "At least one lowercase letter" },
+    { id: "upper", ok: r.upper, text: "At least one uppercase letter" },
+    { id: "symbol", ok: r.symbol, text: "At least one symbol" },
+  ];
 }

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { passwordError } from "@/lib/signup-validation";
 import {
   getSupabaseAnonKey,
   getSupabaseUrl,
@@ -13,7 +14,10 @@ export const dynamic = "force-dynamic";
 const bodySchema = z.object({
   access_token: z.string().min(10),
   refresh_token: z.string().min(10),
-  password: z.string().min(6),
+  password: z.string().superRefine((v, ctx) => {
+    const err = passwordError(v);
+    if (err) ctx.addIssue({ code: "custom", message: err });
+  }),
 });
 
 /**
@@ -35,7 +39,7 @@ export async function POST(req: Request) {
   const parsed = bodySchema.safeParse(json);
   if (!parsed.success) {
     return apiFail(
-      "Invalid reset session or password (min 6 characters).",
+      parsed.error.issues[0]?.message || "Invalid reset session or password.",
       400,
     );
   }

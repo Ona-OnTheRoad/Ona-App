@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { OnaField, OnaPasswordInput } from "@/components/ui/ona-field";
 import { OnaRuleList } from "@/components/ui/ona-rule-list";
+import { passwordChecklist, passwordError } from "@/lib/signup-validation";
 import { OnaScreen, OnaTitle } from "@/components/ui/ona-screen";
 import { FeedbackLines } from "@/components/auth/sign-in-form/feedback-lines";
 
@@ -50,8 +51,9 @@ export default function ResetPasswordPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    const policyErr = passwordError(password);
+    if (policyErr) {
+      setError(policyErr);
       return;
     }
     if (password !== confirm) {
@@ -85,9 +87,9 @@ export default function ResetPasswordPage() {
     }
   }
 
-  // Mirrors the real checks in onSubmit (min 6 chars, passwords match).
+  // Same policy as signup (passwordChecklist) plus the match check onSubmit runs.
   const rules = [
-    { ok: password.length >= 6, text: "At least 6 characters" },
+    ...passwordChecklist(password),
     {
       ok: confirm.length > 0 && password === confirm,
       text: "Both passwords match",

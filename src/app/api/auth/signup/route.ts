@@ -9,6 +9,7 @@ import {
   detectMergeCandidatesForUser,
   runIdentitySync,
 } from "@/lib/server/identity/identity-sync";
+import { passwordError } from "@/lib/signup-validation";
 import { isProService } from "@/lib/services";
 import type { ProService } from "@/lib/types";
 import type { UserRole } from "@/lib/supabase/types";
@@ -456,6 +457,9 @@ export async function POST(req: Request) {
     userId = attachUserId;
     createdNew = false;
   } else {
+    // New accounts must meet the password policy (dual-role attach reuses the existing one).
+    const weak = passwordError(input.password);
+    if (weak) return apiFail(weak, 400, "weak_password");
     const created = await supabase.auth.admin.createUser({
       email,
       password: input.password,
