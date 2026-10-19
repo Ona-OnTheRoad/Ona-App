@@ -1,11 +1,9 @@
 import type { ReactElement } from "react";
-import { CopperButton } from "@/components/jobs/job-shell";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import type { JobViewer } from "./types";
 
 interface Props {
   viewer: JobViewer;
-  muted: string;
   busy: boolean;
   rating: number;
   showReviewForm: boolean;
@@ -20,7 +18,6 @@ interface Props {
 /** Released/satisfied footer: submit review, dispute, done / payment status. */
 export function ReleasedFooter({
   viewer,
-  muted,
   busy,
   rating,
   showReviewForm,
@@ -34,37 +31,35 @@ export function ReleasedFooter({
   return (
     <div className="flex w-full flex-col gap-2">
       {showReviewForm ? (
-        <CopperButton disabled={busy || rating < 1} onClick={onSubmitReview}>
+        <Button
+          variant="ona"
+          size="ona"
+          busy={busy}
+          disabled={busy || rating < 1}
+          onClick={onSubmitReview}
+        >
           {busy ? "Saving…" : "Submit review"}
-        </CopperButton>
+        </Button>
+      ) : null}
+      {showJobComplete && viewer === "motorist" ? (
+        <Button variant="ona" size="ona" onClick={onDone}>
+          Book another service
+        </Button>
       ) : null}
       {canDisputeClosed ? (
         <button
           type="button"
           disabled={busy}
           onClick={onOpenDispute}
-          className="w-full text-center text-[12px] font-bold text-red-500"
+          className="w-full border-0 bg-transparent py-1 text-center text-[12px] font-semibold text-ona-danger"
         >
           Open a dispute (48h window)
         </button>
       ) : null}
-      {showJobComplete && viewer === "motorist" ? (
-        <button
-          type="button"
-          onClick={onDone}
-          className="inline-flex h-12 w-full items-center justify-center rounded-md border-0 bg-[#FF6B35] text-[14px] font-black text-white"
-        >
-          Done · Home
-        </button>
-      ) : null}
       {viewer === "repair_pro" ? (
-        <button
-          type="button"
-          onClick={onPaymentStatus}
-          className={cn("w-full text-center text-[12px] font-semibold", muted)}
-        >
+        <Button variant="onaGhost" size="ona" onClick={onPaymentStatus}>
           Payment status
-        </button>
+        </Button>
       ) : null}
     </div>
   );

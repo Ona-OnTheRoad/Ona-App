@@ -23,14 +23,14 @@ export function ReleaseErrorFooterBanner({
 }: BannerProps & { showEgressHint: boolean }): ReactElement {
   return (
     <div
-      className="z-20 max-h-48 overflow-y-auto rounded-lg border border-red-500/40 bg-red-50 px-3 py-2.5 text-left dark:bg-red-950/40"
+      className="z-20 max-h-48 overflow-y-auto rounded-ona-ctl border border-ona-danger/40 bg-ona-surface px-3 py-2.5 text-left"
       role="alert"
     >
-      <p className="text-[12px] font-semibold leading-snug text-red-700 dark:text-red-300">
+      <p className="text-[12px] font-semibold leading-snug text-ona-danger">
         {message}
       </p>
       {showEgressHint ? (
-        <p className="mt-2 text-[11px] font-medium leading-snug text-red-800/90 dark:text-red-200/90">
+        <p className="mt-2 text-[11px] font-medium leading-snug text-ona-danger">
           Optional: if Flutterwave IP Whitelisting is ON, check{" "}
           <a
             href="/api/payments/egress-ip"
@@ -49,14 +49,14 @@ export function ReleaseErrorFooterBanner({
         <button
           type="button"
           onClick={onCopy}
-          className="rounded-md border-0 bg-red-600/15 px-2.5 py-1 text-[11px] font-bold text-red-700"
+          className="rounded-md border-0 bg-ona-field px-2.5 py-1 text-[11px] font-bold text-ona-danger"
         >
           Copy
         </button>
         <button
           type="button"
           onClick={onDismiss}
-          className="rounded-md border-0 bg-black/5 px-2.5 py-1 text-[11px] font-bold text-red-800"
+          className="rounded-md border-0 bg-ona-field px-2.5 py-1 text-[11px] font-bold text-ona-danger"
         >
           Dismiss
         </button>
@@ -73,24 +73,24 @@ export function ReleaseErrorCardBanner({
 }: BannerProps): ReactElement {
   return (
     <div
-      className="mt-3 max-h-40 overflow-y-auto rounded-lg border border-red-500/30 bg-red-50 px-3 py-2 text-left dark:bg-red-950/30"
+      className="mt-3 max-h-40 overflow-y-auto rounded-ona-ctl border border-ona-danger/40 bg-ona-surface px-3 py-2 text-left"
       role="alert"
     >
-      <p className="text-[12px] font-semibold leading-snug text-red-600 dark:text-red-300">
+      <p className="text-[12px] font-semibold leading-snug text-ona-danger">
         {message}
       </p>
       <div className="mt-1.5 flex gap-3">
         <button
           type="button"
           onClick={onCopy}
-          className="text-[11px] font-bold text-red-700 underline"
+          className="text-[11px] font-bold text-ona-danger underline"
         >
           Copy error
         </button>
         <button
           type="button"
           onClick={onDismiss}
-          className="text-[11px] font-bold text-red-700 underline"
+          className="text-[11px] font-bold text-ona-danger underline"
         >
           Dismiss
         </button>

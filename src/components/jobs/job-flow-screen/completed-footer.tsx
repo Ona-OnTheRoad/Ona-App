@@ -1,12 +1,10 @@
 import type { ReactElement } from "react";
 import { SwipeToRelease } from "@/components/jobs/motorist-release-pay-gate";
-import { cn } from "@/lib/utils";
 import { ReleaseErrorFooterBanner } from "./release-error-banners";
 
 interface Props {
   showSatisfiedCta: boolean;
   payoutDone: boolean;
-  muted: string;
   isLight: boolean;
   busy: boolean;
   motoristActor: string;
@@ -22,7 +20,6 @@ interface Props {
 export function CompletedFooter({
   showSatisfiedCta,
   payoutDone,
-  muted,
   isLight,
   busy,
   motoristActor,
@@ -52,20 +49,20 @@ export function CompletedFooter({
         type="button"
         disabled={busy}
         onClick={onOpenDispute}
-        className="w-full text-center text-[12px] font-bold text-red-500"
+        className="w-full text-center text-[12px] font-bold text-ona-danger"
       >
         Open a dispute
       </button>
-      <p className={cn("text-center text-[11px] font-medium", muted)}>
+      <p className="text-center text-[11px] font-medium text-ona-muted">
         Cannot close this job · auto-releases after 6 hours if no dispute
       </p>
     </div>
   ) : payoutDone ? (
-    <p className={cn("text-center text-[13px] font-semibold", muted)}>
+    <p className="text-center text-[13px] font-semibold text-ona-muted">
       Released
     </p>
   ) : (
-    <p className={cn("text-center text-[13px] font-semibold", muted)}>
+    <p className="text-center text-[13px] font-semibold text-ona-muted">
       Waiting for customer…
     </p>
   );

@@ -37,7 +37,7 @@ export function TripDetails({
  */}
       {viewer === "repair_pro" && !isReadyToGo && !isPostArrival && (
         <div className="flex items-start gap-2">
-          <Navigation className="mt-0.5 h-4 w-4 shrink-0 text-[#FF6B35]" />
+          <Navigation className="mt-0.5 h-4 w-4 shrink-0 text-ona-brand-ink" />
           <div className="min-w-0">
             <p className={cn("text-[13px] font-semibold break-words", ink)}>
               {job.locationLabel || "Location on map"}

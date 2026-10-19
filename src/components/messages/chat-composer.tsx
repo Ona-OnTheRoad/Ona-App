@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 import type { PendingVoice, RecPhase } from "./use-voice-recorder";
 
 export function ChatComposer({
-  isLight,
   recPhase,
   draft,
   setDraft,
@@ -15,7 +14,7 @@ export function ChatComposer({
   send,
   broadcastTyping,
 }: {
-  isLight: boolean;
+  isLight?: boolean;
   recPhase: RecPhase;
   draft: string;
   setDraft: (v: string) => void;
@@ -28,19 +27,16 @@ export function ChatComposer({
   const recording = recPhase === "recording";
   const recBusy = recPhase === "arming" || recPhase === "saving";
   return (
-    <div
-      className={cn(
-        "flex shrink-0 items-center gap-2 border-t px-3 py-2",
-        isLight ? "border-black/10 bg-[#c8c9cd]" : "border-white/10 bg-black",
-      )}
-    >
+    <div className="flex shrink-0 items-center gap-2 border-t border-ona-border bg-ona-bg px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
       <button
         type="button"
         disabled={recBusy}
         onClick={() => (recording ? stopRec() : void startRec())}
         className={cn(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 text-white disabled:opacity-70",
-          recording || recPhase === "saving" ? "bg-red-500" : "bg-[#FF6B35]",
+          "flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-0 text-white disabled:opacity-70",
+          recording || recPhase === "saving"
+            ? "bg-ona-danger"
+            : "bg-ona-brand-btn",
         )}
         aria-label={
           recording
@@ -85,18 +81,14 @@ export function ChatComposer({
                 : "Type a message…"
         }
         disabled={recording || recBusy}
-        className={cn(
-          "h-10 min-w-0 flex-1 rounded-full border-0 px-4 text-[13px] outline-none",
-          isLight
-            ? "bg-[#bebfc4] text-slate-900 placeholder:text-slate-500"
-            : "bg-neutral-900 text-white placeholder:text-white/40",
-        )}
+        className="h-11 min-w-0 flex-1 rounded-ona-ctl border border-ona-border bg-ona-field px-4 text-[14px] text-ona-ink"
+        aria-label="Message"
       />
       <button
         type="button"
         onClick={send}
         disabled={recording || recBusy || (!draft.trim() && !pendingVoice)}
-        className="flex h-10 w-10 items-center justify-center rounded-full border-0 bg-brand text-white disabled:opacity-40"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-ona-ctl border-0 bg-ona-brand-btn text-white disabled:bg-ona-disabled-bg disabled:text-ona-disabled-ink"
         aria-label="Send"
       >
         <Send className="h-4 w-4" />

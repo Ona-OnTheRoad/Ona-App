@@ -1,25 +1,30 @@
 "use client";
 
 import { Suspense, use, useCallback, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Lock } from "lucide-react";
-import { PageHeader } from "@/components/layout/page-header";
 import { VoiceNotePlayer } from "@/components/jobs/voice-note-player";
 import { ChatComposer } from "@/components/messages/chat-composer";
 import { ChatThreadMissing } from "@/components/messages/chat-thread-missing";
+import { ChatPeerHeader } from "@/components/messages/chat-peer-header";
 import { ChatMessageBubble } from "@/components/messages/chat-message-bubble";
 import { useChatJobStatus } from "@/components/messages/use-chat-job-status";
 import { useTypingChannel } from "@/components/messages/use-typing-channel";
 import { useVoiceRecorder } from "@/components/messages/use-voice-recorder";
 import { useNotificationsOptional } from "@/components/notifications/notification-provider";
 import { ExpiredDialog } from "@/components/ui/expired-dialog";
+import { OnaScreen } from "@/components/ui/ona-screen";
+import {
+  clearPageExitClass,
+  navigateBack,
+  resolveBackHref,
+} from "@/lib/navigation";
 import {
   CONVERSATION_ENDED_MESSAGE,
   isReadOnlyChatUrl,
 } from "@/lib/chat-expired";
 import { PRO_SERVICE_LABELS } from "@/lib/services";
 import { useApp } from "@/lib/store";
-import { cn } from "@/lib/utils";
 import {
   backendSubscribeMessages,
   type MessageRow,
@@ -41,8 +46,8 @@ export default function ChatThreadPage({
   return (
     <Suspense
       fallback={
-        <div className="flex h-full items-center justify-center bg-[#c8c9cd]">
-          <p className="text-sm font-semibold text-slate-700">Loading chat…</p>
+        <div className="ona2 flex h-full items-center justify-center">
+          <p className="text-sm font-semibold text-ona-muted">Loading chat…</p>
         </div>
       }
     >
@@ -54,6 +59,7 @@ export default function ChatThreadPage({
 function ChatThreadInner({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const pathname = usePathname() || "/";
   const searchParams = useSearchParams();
   const intentionalViewOnly = isReadOnlyChatUrl(searchParams);
   const {
@@ -180,58 +186,19 @@ function ChatThreadInner({ params }: { params: Promise<{ id: string }> }) {
     setPendingVoice(null);
   };
 
-  return (
-    <div
-      className={cn(
-        "relative flex h-full min-h-0 flex-col overflow-hidden",
-        isLight ? "bg-[#c8c9cd]" : "bg-black",
-      )}
-    >
-      <PageHeader
-        title={title}
-        subtitle={subtitle}
-        backHref={requestBackHref}
-      />
+  const handleBack = () => {
+    clearPageExitClass();
+    navigateBack(
+      router,
+      resolveBackHref(pathname, accountType, requestBackHref),
+      accountType,
+    );
+  };
 
-      {chatClosed && (intentionalViewOnly || !expiredOpen) && (
-        <div
-          className={cn(
-            "flex shrink-0 items-start gap-2 px-3 py-2",
-            isLight ? "text-slate-800" : "text-white/85",
-          )}
-        >
-          <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#FF6B35]" />
-          <p className="text-[11px] font-medium leading-snug">
-            {CONVERSATION_ENDED_MESSAGE}
-          </p>
-        </div>
-      )}
-
-      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-3 py-2 scrollbar-hide">
-        {thread.messages.map((msg: ChatMessage) => (
-          <ChatMessageBubble
-            key={msg.id}
-            msg={msg}
-            isPro={isPro}
-            isLight={isLight}
-          />
-        ))}
-        {otherTyping && !chatClosed && (
-          <p
-            className={cn(
-              "px-2 text-[12px] italic transition-opacity duration-200",
-              isLight ? "text-slate-600" : "text-white/65",
-            )}
-            aria-live="polite"
-          >
-            Typing…
-          </p>
-        )}
-        <div ref={bottomRef} />
-      </div>
-
+  const composer = (
+    <>
       {!chatClosed && pendingVoice && (
-        <div className="px-3 pb-1">
+        <div className="px-4 pb-1">
           <VoiceNotePlayer
             url={pendingVoice.url}
             durationSec={pendingVoice.durationSec}
@@ -241,32 +208,26 @@ function ChatThreadInner({ params }: { params: Promise<{ id: string }> }) {
           <button
             type="button"
             onClick={() => setPendingVoice(null)}
-            className="mt-1 border-0 bg-transparent text-[11px] font-bold text-[#FF6B35]"
+            className="mt-1 h-11 border-0 bg-transparent text-[12px] font-semibold text-ona-brand-ink"
           >
             Discard voice
           </button>
         </div>
       )}
       {!chatClosed && recError && (
-        <p className="px-3 text-[11px] font-semibold text-red-500">
+        <p
+          role="alert"
+          className="px-4 text-[11px] font-semibold text-ona-danger"
+        >
           {recError}
         </p>
       )}
-
       {chatClosed ? (
-        <div
-          className={cn(
-            "shrink-0 border-t px-3 py-3 text-center text-[12px] font-medium",
-            isLight
-              ? "border-black/10 text-slate-700"
-              : "border-white/10 text-white/70",
-          )}
-        >
+        <div className="shrink-0 border-t border-ona-border px-4 py-3 text-center text-[12px] font-medium text-ona-muted">
           Chat closed · view only
         </div>
       ) : (
         <ChatComposer
-          isLight={isLight}
           recPhase={recPhase}
           draft={draft}
           setDraft={setDraft}
@@ -277,6 +238,53 @@ function ChatThreadInner({ params }: { params: Promise<{ id: string }> }) {
           broadcastTyping={broadcastTyping}
         />
       )}
+    </>
+  );
+
+  return (
+    <>
+      <OnaScreen
+        onBack={handleBack}
+        bodyClassName="px-0 pb-0"
+        footer={composer}
+        footerClassName="p-0"
+      >
+        <ChatPeerHeader
+          title={title}
+          subtitle={subtitle}
+          photo={thread.photo}
+        />
+
+        {chatClosed && (intentionalViewOnly || !expiredOpen) && (
+          <div className="flex items-start gap-2 px-5 pt-3 text-ona-ink">
+            <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ona-brand-ink" />
+            <p className="text-[12px] font-medium leading-snug">
+              {CONVERSATION_ENDED_MESSAGE}
+            </p>
+          </div>
+        )}
+
+        <div className="space-y-3 px-5 py-4">
+          {thread.messages.map((msg: ChatMessage) => (
+            <ChatMessageBubble
+              key={msg.id}
+              msg={msg}
+              isPro={isPro}
+              isLight={isLight}
+              senderName={title}
+            />
+          ))}
+          {otherTyping && !chatClosed && (
+            <p
+              className="px-2 text-[12px] italic text-ona-muted transition-opacity duration-200"
+              aria-live="polite"
+            >
+              Typing…
+            </p>
+          )}
+          <div ref={bottomRef} />
+        </div>
+      </OnaScreen>
 
       <ExpiredDialog
         open={expiredOpen}
@@ -285,6 +293,6 @@ function ChatThreadInner({ params }: { params: Promise<{ id: string }> }) {
         onClose={onExpiredOk}
         okLabel="OK"
       />
-    </div>
+    </>
   );
 }

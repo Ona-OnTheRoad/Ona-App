@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
-import { CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
+import { Check, ChevronDown, ChevronUp } from "lucide-react";
 import { JobChargeLines } from "@/components/jobs/callout-fee-lines";
+import { onaEyebrowClass } from "@/components/ui/ona-field";
 import type { CalloutQuote } from "@/lib/callout/constants";
 import { jobEscrowAmountMinor } from "@/lib/callout/payable";
 import type { JobRecord } from "@/lib/jobs/types";
@@ -11,9 +12,6 @@ import type { JobViewer } from "./types";
 interface Props {
   job: JobRecord;
   viewer: JobViewer;
-  isLight: boolean;
-  ink: string;
-  muted: string;
   err: string | null;
   flash: string | null;
   calloutQuote: CalloutQuote | null | undefined;
@@ -28,13 +26,10 @@ interface Props {
   setReceiptOpen: (fn: (o: boolean) => boolean) => void;
 }
 
-/** Step 2: job completion / execution complete (+ receipt and review result). */
+/** Step 2: payment released / job complete (+ receipt and review result). */
 export function JobCompleteBody({
   job,
   viewer,
-  isLight,
-  ink,
-  muted,
   err,
   flash,
   calloutQuote,
@@ -49,31 +44,38 @@ export function JobCompleteBody({
   setReceiptOpen,
 }: Props): ReactElement {
   return (
-    <div className="flex flex-col items-center px-2 pt-6 text-center">
-      <CheckCircle2
-        className="h-14 w-14 text-emerald-500"
-        strokeWidth={1.75}
+    <div className="flex flex-col items-center px-1 pt-10 text-center">
+      <span
+        className="flex h-20 w-20 items-center justify-center rounded-full bg-ona-success-soft text-ona-success"
         aria-hidden
-      />
-      <p className={cn("mt-4 text-[22px] font-black tracking-tight", ink)}>
-        Job complete
+      >
+        <Check className="h-9 w-9" strokeWidth={2} />
+      </span>
+      <p className={cn(onaEyebrowClass, "mt-8 text-ona-ink")}>
+        {payoutPending ? "Payment confirmed" : "Payment released"}
       </p>
-      <p className={cn("mt-1.5 text-[13px] font-medium leading-snug", muted)}>
+      <h1 className="mt-2 text-[22px] font-bold leading-tight tracking-tight text-ona-ink">
+        You&apos;re back on the road.
+      </h1>
+      <p className="mt-2 max-w-[280px] text-[13px] leading-snug text-ona-muted">
         {payoutPending
-          ? "Thanks your payment is confirmed. Payout is processing."
-          : "Thanks payment released and job closed."}
+          ? "Thanks, your payment is confirmed. Payout is processing."
+          : "Thanks, payment released and job closed."}
+      </p>
+      <p className="mt-4 text-[12px] text-ona-muted">
+        Thanks for choosing local help through Ona.
       </p>
       {job.agreedMajor != null ? (
-        <div className="mt-3 w-full text-left">
+        <div className="mt-4 w-full text-left">
           <JobChargeLines
             agreedMajor={job.agreedMajor}
             amountMinor={jobEscrowAmountMinor(job)}
             quote={calloutQuote ?? job.calloutQuote}
             fallbackQuote={job.calloutQuote}
             currency={job.currency}
-            ink={ink}
-            muted={muted}
-            isLight={isLight}
+            ink="text-ona-ink"
+            muted="text-ona-muted"
+            isLight
           />
         </div>
       ) : null}
@@ -81,10 +83,8 @@ export function JobCompleteBody({
       <button
         type="button"
         onClick={() => setReceiptOpen((o) => !o)}
-        className={cn(
-          "mt-6 inline-flex items-center gap-1 border-0 bg-transparent px-0 text-[13px] font-bold",
-          isLight ? "text-slate-800" : "text-white",
-        )}
+        aria-expanded={receiptOpen}
+        className="mt-6 inline-flex items-center gap-1 border-0 bg-transparent px-0 text-[13px] font-semibold text-ona-ink"
       >
         Receipt
         {receiptOpen ? (
@@ -94,55 +94,37 @@ export function JobCompleteBody({
         )}
       </button>
       {receiptOpen && (
-        <div className={cn("mt-2 space-y-1 text-[12px] font-medium", muted)}>
+        <div className="mt-2 space-y-1 text-[12px] font-medium text-ona-muted">
           <p>Ref {job.paymentReference || job.id}</p>
           <p>Escrow {job.escrowStatus || "released"}</p>
         </div>
       )}
 
-      <div className="mt-10 w-full max-w-md text-left">
+      <div className="mt-8 w-full text-left">
         {hasRating || alreadyLeft ? (
           <>
-            <p className={cn("mb-3 text-center text-[14px] font-bold", ink)}>
+            <p className={cn(onaEyebrowClass, "mb-3 text-center")}>
               {viewer === "repair_pro" ? "Customer rating" : "Your review"}
             </p>
             <StarRow
               value={displayRating}
               interactive={false}
-              isLight={isLight}
               rating={rating}
               alreadyLeft={alreadyLeft}
               setRating={setRating}
             />
             {displayNote ? (
-              <p
-                className={cn(
-                  "mt-4 rounded-md px-3 py-2.5 text-[13px] font-medium leading-snug break-words",
-                  isLight
-                    ? "bg-[#bebfc4]/60 text-slate-900"
-                    : "bg-[#1a1a1a] text-white/90",
-                )}
-              >
+              <p className="mt-4 break-words rounded-ona-ctl bg-ona-field px-3 py-2.5 text-[13px] font-medium leading-snug text-ona-ink">
                 “{displayNote}”
               </p>
             ) : viewer === "motorist" ? (
-              <p
-                className={cn(
-                  "mt-3 text-center text-[12px] font-semibold",
-                  muted,
-                )}
-              >
+              <p className="mt-3 text-center text-[12px] font-semibold text-ona-muted">
                 No written review
               </p>
             ) : null}
           </>
         ) : (
-          <p
-            className={cn(
-              "text-center text-[13px] font-semibold leading-snug",
-              muted,
-            )}
-          >
+          <p className="text-center text-[13px] font-semibold leading-snug text-ona-muted">
             {viewer === "repair_pro"
               ? "Waiting for the motorist to rate and review this job."
               : "Review saved."}
@@ -150,12 +132,18 @@ export function JobCompleteBody({
         )}
 
         {flash && (
-          <p className="mt-2 text-center text-[12px] font-bold text-[#FF6B35]">
+          <p
+            role="status"
+            className="mt-2 text-center text-[12px] font-semibold text-ona-brand-ink"
+          >
             {flash}
           </p>
         )}
         {err && (
-          <p className="mt-2 text-center text-[12px] font-semibold text-red-500">
+          <p
+            role="alert"
+            className="mt-2 text-center text-[12px] font-semibold text-ona-danger"
+          >
             {err}
           </p>
         )}
