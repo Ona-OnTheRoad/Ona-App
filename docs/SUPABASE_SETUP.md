@@ -63,25 +63,24 @@ admin profile. Re-running it is safe. To seed only the admin later: `npm run db:
 
 The admin signs in at `/admin/login` with `ADMIN_SEED_EMAIL` and `ADMIN_SEED_PASSWORD`. Role: `admin` (super admin).
 
-## 6. Start admin backend
+## 6. Open the admin
 
 ```bash
-npm run dev:admin
-open http://localhost:4500/admin/login
+npm run dev
+open http://localhost:3000/admin/login
 ```
 
 ## 7. Vercel
 
 | Project | Domain | Notes |
 |---------|--------|--------|
-| **`ona`** (primary) | https://ona-mi.vercel.app | Public app **and** `/admin` + all APIs |
-| `ona-backend` (optional) | https://ona-backend.vercel.app | Same codebase; avoid if possible (extra bandwidth) |
+| **`ona`** | https://ona-mi.vercel.app | Public app **and** `/admin` + all APIs |
 
 Put the **same** Supabase + Maps env on `ona`, including:
 
 - `SUPABASE_SERVICE_ROLE_KEY` (needed for server APIs and admin — not backend-only)
 - `NEXT_PUBLIC_APP_URL=https://ona-mi.vercel.app`
 
-If production shows **“This deployment is temporarily paused”**, the team is soft-blocked (Hobby fair use / Fast Origin Transfer) — see `docs/VERCEL_DEPLOY.md`. Local `npm run dev` / `npm run dev:admin` still works with `.env.local`.
+If production shows **“This deployment is temporarily paused”**, the team is soft-blocked (Hobby fair use / Fast Origin Transfer) — see `docs/VERCEL_DEPLOY.md`. Local `npm run dev` still works with `.env.local`.
 
 You must run `npx vercel login` once before deploy.

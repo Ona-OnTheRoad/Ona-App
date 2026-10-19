@@ -11,10 +11,12 @@ import { AppDock, useDockVisible } from "@/components/layout/app-dock";
 import { InboundBanner } from "@/components/layout/inbound-banner";
 import { PhoneShell } from "@/components/layout/phone-shell";
 import { Toaster } from "@/components/ui/sonner";
+import { InstallNudge } from "@/components/pwa/install-nudge";
 import { NotificationCenter } from "@/components/notifications/notification-center";
 import { NotificationProvider } from "@/components/notifications/notification-provider";
 import { NotificationToasts } from "@/components/notifications/notification-toasts";
 import { clearPageExitClass, recordNavigation } from "@/lib/navigation";
+import { useSignupDraftCleanup } from "@/lib/use-signup-draft-cleanup";
 import { installAudioUnlockOnce } from "@/lib/sound-tone";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/lib/store";
@@ -26,6 +28,7 @@ export function AppFrame({ children }: { children: ReactNode }) {
   const { switchingRole, theme } = useApp();
   const isLight = theme === "light";
   const dockVisible = useDockVisible();
+  useSignupDraftCleanup();
 
   // iOS/Safari: unlock Web Audio on first tap so event sounds can play later
   useEffect(() => {
@@ -100,6 +103,7 @@ export function AppFrame({ children }: { children: ReactNode }) {
                 </div>
               ) : null}
               <Toaster />
+              <InstallNudge enabled={dockVisible} />
               <AppDock />
               <NotificationCenter />
             </div>

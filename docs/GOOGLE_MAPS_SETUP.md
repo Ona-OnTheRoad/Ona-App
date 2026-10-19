@@ -34,11 +34,9 @@ npm run dev
      |----------|---------|
      | `http://localhost:3000/*` | Local public app |
      | `https://ona-mi.vercel.app/*` | Production public app |
-     | `https://ona-backend.vercel.app/*` | Production backend / admin |
 
      Optional (only if you need them later):
      - `http://127.0.0.1:3000/*` — same as localhost via IP
-     - `http://localhost:4500/*` — local admin (`npm run dev:admin`)
 
    - Google needs the `/*` suffix so all paths under each site work (home, signup, admin, etc.).
    - **Do not** leave “None” if you want the key locked to Ona only.
@@ -61,7 +59,6 @@ npm run dev
 ```
 http://localhost:3000/*
 https://ona-mi.vercel.app/*
-https://ona-backend.vercel.app/*
 ```
 
 6. **Save**

@@ -80,13 +80,16 @@ export function SignInForm() {
       backLabel={t("common.back")}
       footer={
         codeStep || forgot ? null : (
-          <button
-            type="button"
-            onClick={() => go("/signup")}
-            className="mx-auto flex min-h-[44px] items-center border-0 bg-transparent text-[14px] font-semibold text-ona-brand-ink underline underline-offset-2"
-          >
-            {t("auth.newHere")}
-          </button>
+          <p className="flex flex-wrap items-center justify-center gap-x-2 text-[14px] text-ona-ink">
+            {t("auth.newToOna")}
+            <button
+              type="button"
+              onClick={() => go("/signup")}
+              className="flex min-h-[44px] items-center border-0 bg-transparent p-0 font-semibold text-ona-brand-ink underline underline-offset-2"
+            >
+              {t("auth.createAnAccount")}
+            </button>
+          </p>
         )
       }
     >

@@ -24,3 +24,23 @@ export function publicMessage(
   if (!s || /demo/i.test(s) || /not configured/i.test(s)) return fallback;
   return s;
 }
+
+const LAST_ROLE_KEY = "ona-last-login-role";
+
+/** Role used for the last successful login on this device (survives logout). */
+export function readLastLoginRole(): "motorist" | "professional" | null {
+  try {
+    const v = localStorage.getItem(LAST_ROLE_KEY);
+    return v === "motorist" || v === "professional" ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeLastLoginRole(role: "motorist" | "professional"): void {
+  try {
+    localStorage.setItem(LAST_ROLE_KEY, role);
+  } catch {
+    /* private mode: the default still works */
+  }
+}

@@ -10,6 +10,8 @@ import {
   COOLDOWN_SEC,
   FAIL_THRESHOLD,
   publicMessage,
+  readLastLoginRole,
+  writeLastLoginRole,
   type LoginMethod,
 } from "./helpers";
 
@@ -19,7 +21,8 @@ export function useSignInForm() {
   const t = useT();
   const { sendLoginOtp, signInWithLoginOtp, signInWithPassword } = useApp();
 
-  const [preferType, setPreferType] = useState<AccountType | "">("");
+  // Customer is preselected; a returning Repair Pro gets their last role back.
+  const [preferType, setPreferType] = useState<AccountType | "">("motorist");
   const [method, setMethod] = useState<LoginMethod>("phone");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,6 +39,11 @@ export function useSignInForm() {
 
   const showPhone = Boolean(preferType);
   const inCooldown = cooldownLeft > 0;
+
+  useEffect(() => {
+    const last = readLastLoginRole();
+    if (last) setPreferType(last);
+  }, []);
 
   // Live countdown tick
   useEffect(() => {
@@ -137,6 +145,7 @@ export function useSignInForm() {
   }
 
   function finishLogin(type: AccountType) {
+    writeLastLoginRole(type);
     unlockAudio();
     playAppSound("login_success");
     window.setTimeout(() => {

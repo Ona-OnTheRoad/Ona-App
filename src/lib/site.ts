@@ -13,7 +13,7 @@ export const SITE_DESCRIPTION =
 export const SITE_LOCALE = "en_NG";
 
 /** Production consumer app (see docs/VERCEL_DEPLOY.md). Override with NEXT_PUBLIC_APP_URL. */
-export const DEFAULT_SITE_URL = "https://ona-mi.vercel.app";
+export const DEFAULT_SITE_URL = "https://ona-dev-app.netlify.app";
 
 /** Origin without a trailing slash. */
 export function siteUrl(): string {

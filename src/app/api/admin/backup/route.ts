@@ -40,7 +40,7 @@ export async function POST() {
     if (!result.ok) {
       return apiFail(
         result.error ||
-          "Backup failed. Run admin on this Mac (npm run dev:admin) with SUPABASE_DB_PASSWORD set, or use npm run backup:local.",
+          "Backup failed. Run the app on this Mac (npm run dev) with SUPABASE_DB_PASSWORD set, or use npm run backup:local.",
         500,
         "backup_failed",
       );

@@ -20,7 +20,7 @@ differs from the mock-up and changing it would change functionality. **Protected
 | City / Area selects | Backend | Design shows dropdowns; there is no city/area list in the code, so they are text inputs. |
 | Signup footer line ("Protected by Ona escrow… Flutterwave") | Code | Not built. |
 | Create-account button needs a vehicle | Decision | "Create my account" is disabled until a vehicle is added; "Skip vehicle. Finish" covers the empty case. Before, the button worked with no vehicle. |
-| Role cards illustrations | Design | Cards use a coral icon tile; the design has illustrations (assets not provided). Labels stay "Customer" / "Repair Pro" (existing i18n), not "Car Owner". |
+| Role card labels | Design | Cards use the supplied illustrations (`public/brand/role-customer.png`, `role-pro.png`): full colour when selected, muted otherwise (icon-tile fallback if a file fails to load). Labels stay "Customer" / "Repair Pro" (existing i18n), not "Car Owner". |
 | Login role default | Code | Design shows Customer pre-selected; the app requires an explicit pick (existing rule). |
 
 ## 2. Home and navigation

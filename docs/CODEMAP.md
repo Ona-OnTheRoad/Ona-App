@@ -130,8 +130,7 @@ The list of files that must not be regenerated or changed without human review i
 ## 7. Commands
 
 ```bash
-npm run dev          # http://localhost:3000
-npm run dev:admin    # http://localhost:4500/admin
+npm run dev          # http://localhost:3000 (admin: /admin)
 npm run build        # production build
 npm run lint && npm run typecheck && npm run test   # pre-merge gate
 npm run db:apply     # apply migrations

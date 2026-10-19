@@ -72,7 +72,7 @@ This is **evidence + restore aid**, not a full managed DR platform. Keep the Mac
 
 ### A. Customer Care (admin)
 
-1. Open Care desk: `/admin` (local: `npm run dev:admin` → http://localhost:4500/admin)  
+1. Open Care desk: `/admin` (local: http://localhost:3000/admin)  
 2. Click **Backup now**  
 3. Snapshot appears under `Local BackUp/snapshots/`  
 

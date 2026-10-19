@@ -107,7 +107,7 @@ async function main() {
   console.log("[seed-admin] Admin ready:");
   console.log("  email:", email);
   console.log("  role: admin");
-  console.log("  login: http://localhost:4500/admin/login");
+  console.log("  login: http://localhost:3000/admin/login");
 }
 
 main().catch((err) => {

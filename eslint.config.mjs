@@ -20,14 +20,12 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
-    ".next-admin/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
     // Local scratch / backups — not app source
     "tmp-audit/**",
     "tmp-db-transfer/**",
-    "scripts/scratch/**",
     "Local BackUp/**",
     ".opencode-tmp/**",
     "node_modules/**",
