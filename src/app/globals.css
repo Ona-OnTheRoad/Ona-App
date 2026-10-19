@@ -1,5 +1,157 @@
 @import "tailwindcss";
 
+/*
+ * Ona UI v2 — Tailwind tokens for the redesigned screens (white surfaces, coral
+ * accent). Use the generated utilities: bg-ona-field, text-ona-ink,
+ * border-ona-border, rounded-ona-ctl … The values live on `.ona2` (add it to the
+ * root of a redesigned screen, never to #ona-phone) so screens that are not
+ * redesigned yet keep the frozen #c8c9cd look (docs/UI.md), and dark theme flips
+ * them. `rounded-ona-*` avoids the named rounded-lg…3xl that globals.css forces
+ * back to 6px inside #ona-phone.
+ */
+@theme inline {
+  --color-ona-bg: var(--o-bg);
+  --color-ona-surface: var(--o-surface);
+  --color-ona-field: var(--o-field);
+  --color-ona-field-strong: var(--o-field-strong);
+  --color-ona-border: var(--o-border);
+  --color-ona-ink: var(--o-ink);
+  --color-ona-muted: var(--o-muted);
+  --color-ona-brand: var(--o-brand);
+  --color-ona-brand-btn: var(--o-brand-btn);
+  --color-ona-brand-press: var(--o-brand-press);
+  --color-ona-brand-ink: var(--o-brand-ink);
+  --color-ona-brand-soft: var(--o-brand-soft);
+  --color-ona-disabled-bg: var(--o-disabled-bg);
+  --color-ona-disabled-ink: var(--o-disabled-ink);
+  --color-ona-success: var(--o-success);
+  --color-ona-success-soft: var(--o-success-soft);
+  --color-ona-danger: var(--o-danger);
+  --color-ona-dark: var(--o-dark);
+  --color-ona-dark-2: var(--o-dark-2);
+  --color-ona-on-dark: var(--o-on-dark);
+  --color-ona-on-dark-muted: var(--o-on-dark-muted);
+  --color-ona-map: var(--o-map);
+  --color-ona-overlay: var(--o-overlay);
+  --radius-ona-ctl: 10px;
+  --radius-ona-card: 12px;
+  --radius-ona-sheet: 20px;
+}
+
+.ona2 {
+  --o-bg: #ffffff;
+  --o-surface: #ffffff;
+  --o-field: #f9fafb;
+  --o-field-strong: #f3f4f6;
+  --o-border: #e5e7eb;
+  --o-ink: #111827;
+  --o-muted: #5b6472;
+  /* Coral from the design file (#E2654F) for accents. White text on it is only
+     ~3.3:1, so filled buttons use --o-brand-btn (>=4.5:1, same hue, a shade
+     deeper) and coral TEXT on white uses --o-brand-ink. */
+  --o-brand: #e2654f;
+  --o-brand-btn: #cb4a34;
+  --o-brand-press: #b63f2b;
+  --o-brand-ink: #b3402c;
+  --o-brand-soft: #fdeeea;
+  --o-disabled-bg: #dadada;
+  --o-disabled-ink: #6b7280;
+  --o-success: #347858;
+  --o-success-soft: #ecfbf4;
+  --o-danger: #dc2626;
+  --o-dark: #0d2920;
+  --o-dark-2: #143a2e;
+  --o-on-dark: #ffffff;
+  --o-on-dark-muted: rgba(255, 255, 255, 0.72);
+  --o-map: #efefef;
+  --o-overlay: rgba(17, 24, 39, 0.5);
+
+  background-color: var(--o-bg);
+  color: var(--o-ink);
+}
+
+[data-theme="dark"] .ona2 {
+  --o-bg: #120a08;
+  --o-surface: #1a100c;
+  --o-field: #22140f;
+  --o-field-strong: #2a1812;
+  --o-border: #2e1a14;
+  --o-ink: #ffffff;
+  --o-muted: #c4b0a4;
+  --o-brand-ink: #ff9d85;
+  --o-brand-soft: rgba(226, 101, 79, 0.16);
+  --o-disabled-bg: #2e1a14;
+  --o-disabled-ink: #c4b0a4;
+  --o-success: #4cc38a;
+  --o-success-soft: rgba(76, 195, 138, 0.14);
+  --o-danger: #f87171;
+  --o-map: #1a100c;
+}
+
+/*
+ * The light theme force-paints slate/black utilities in #ona-phone. Redesigned
+ * screens read colour from tokens, so reset that for anything inside `.ona2`.
+ */
+[data-theme="light"] #ona-phone .ona2 {
+  color: var(--o-ink);
+}
+
+.ona2 input::placeholder,
+.ona2 textarea::placeholder {
+  color: var(--o-muted) !important;
+  opacity: 1;
+}
+
+.ona2 .o-focus:focus-visible,
+.ona2 button:focus-visible,
+.ona2 a:focus-visible,
+.ona2 input:focus-visible,
+.ona2 select:focus-visible,
+.ona2 textarea:focus-visible {
+  outline: 2px solid var(--o-brand);
+  outline-offset: 2px;
+}
+
+/* Native <select>/<input> carry no stock chrome inside redesigned screens */
+.ona2 select,
+.ona2 input,
+.ona2 textarea {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Radar visual for the sequential-dispatch search screen (dark in both themes). */
+@keyframes o-radar-sweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes o-radar-pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+.o-radar-sweep {
+  animation: o-radar-sweep 4s linear infinite;
+}
+.o-radar-pulse {
+  animation: o-radar-pulse 2.4s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .o-radar-sweep,
+  .o-radar-pulse {
+    animation: none !important;
+  }
+  .o-radar-pulse {
+    opacity: 0;
+  }
+}
+
 /* Lock document to one viewport — UI must not grow the page and “lap” outside */
 html,
 body {
@@ -927,7 +1079,9 @@ textarea.om-auth-field {
   color: #0f172a !important;
   -webkit-text-fill-color: #0f172a;
   box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.05) !important;
-  transition: background-color 0.12s ease, border-color 0.12s ease;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease;
 }
 .om-auth-field:focus,
 input.om-auth-field:focus,
@@ -996,7 +1150,8 @@ select.om-auth-field::placeholder,
 }
 
 /* Repair Pro signup shell — same sheet gray as Motorist Your account */
-.om-pro-signup-fields input:not([type="file"]):not([type="range"]):not(.sr-only),
+.om-pro-signup-fields
+  input:not([type="file"]):not([type="range"]):not(.sr-only),
 .om-pro-signup-fields select,
 .om-pro-signup-fields textarea {
   background-color: #e2e3e7 !important;
@@ -1007,7 +1162,8 @@ select.om-auth-field::placeholder,
   -webkit-text-fill-color: #0f172a;
   box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.05) !important;
 }
-.om-pro-signup-fields input:not([type="file"]):not([type="range"]):not(.sr-only):focus,
+.om-pro-signup-fields
+  input:not([type="file"]):not([type="range"]):not(.sr-only):focus,
 .om-pro-signup-fields select:focus,
 .om-pro-signup-fields textarea:focus {
   background-color: #e8e9ed !important;
@@ -1100,7 +1256,7 @@ button.om-cta-dark-gray:disabled,
   border-radius: 999px;
 }
 .auth-apple-progress-fill {
-  background: #FF6B35;
+  background: #ff6b35;
   border-radius: 999px;
 }
 
@@ -1108,7 +1264,7 @@ button.om-cta-dark-gray:disabled,
 .auth-apple-tile-active,
 .auth-metal-tile-active {
   border-color: transparent !important;
-  background: #FF6B35 !important;
+  background: #ff6b35 !important;
   color: #fff !important;
   box-shadow: 0 4px 14px rgba(232, 90, 18, 0.25) !important;
 }
@@ -1314,7 +1470,8 @@ button.om-cta-dark-gray:disabled,
 }
 
 .om-bounce-arrow-back {
-  animation: om-bounce-arrow-back 1.35s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  animation: om-bounce-arrow-back 1.35s cubic-bezier(0.45, 0.05, 0.55, 0.95)
+    infinite;
   will-change: transform;
 }
 
@@ -1627,7 +1784,16 @@ button.om-cta-dark-gray:disabled,
  * surfaces. Form fields keep their own focus styling; this covers links, buttons and custom
  * controls, many of which set `outline-none`.
  */
-:where(a[href], button, summary, [role="button"], [role="switch"], [role="tab"], [role="menuitem"], [tabindex]:not([tabindex="-1"])):focus-visible {
+:where(
+  a[href],
+  button,
+  summary,
+  [role="button"],
+  [role="switch"],
+  [role="tab"],
+  [role="menuitem"],
+  [tabindex]:not([tabindex="-1"])
+):focus-visible {
   outline: 2px solid #ffffff;
   outline-offset: 0;
   box-shadow: 0 0 0 4px #ff6b35;

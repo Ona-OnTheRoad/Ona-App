@@ -119,3 +119,13 @@ Source: `bottom-nav.tsx`, `app-menu.tsx`, `src/lib/navigation.ts`, `src/lib/nav-
 6. Desktop **and** the 390×844 shell — the shell is the product.
 
 If the change needs a new colour, a new radius, or a new nav IA, it is a **product decision**, not a polish ticket.
+
+---
+
+## Ona UI v2 (redesigned screens)
+
+The design team is migrating screens one batch at a time. Redesigned screens use white surfaces and the coral accent through Tailwind tokens (`bg-ona-*`, `text-ona-*`, `rounded-ona-*`, defined in `globals.css` under `@theme` and scoped to a `.ona2` root so un-migrated screens keep the frozen look above). Shared pieces live in `src/components/ui/` (`ona-screen`, `ona-field`, `ona-otp-input`, `ona-segmented`, `ona-step-bars`, `ona-rule-list`, `ona-flow-header`, `Button` variants `ona*`, `Badge` `ona`/`matched`, `BottomSheet surface="ona"`). Extend these; do not add parallel copies.
+
+Migrated: role picker, customer signup, login (phone + code), reset password, customer home sheet, help-flow vehicle/question/urgency steps, searching and labour-fee screens.
+
+Rules that still apply: the layout chain, logical back navigation, `ona2` instead of `#ona-phone` overrides, white text only on `bg-ona-brand-btn` (the design coral `#E2654F` is ~3.3:1 with white and fails AA), coral text on white uses `text-ona-brand-ink`. Run `scripts/verify` axe in light and dark after changes.

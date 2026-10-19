@@ -15,12 +15,19 @@ const buttonVariants = cva(
         danger: "bg-red-500 text-white hover:bg-red-600 rounded-md",
         soft: "bg-brand-soft text-brand hover:bg-orange-100 rounded-md",
         navy: "bg-black text-slate-100 rounded-md",
+        /* Ona v2 (redesigned screens, inside `.ona2`) */
+        ona: "bg-ona-brand-btn text-white active:bg-ona-brand-press disabled:bg-ona-disabled-bg disabled:text-ona-disabled-ink disabled:opacity-100",
+        onaOutline:
+          "border border-ona-border bg-ona-surface text-ona-ink active:bg-ona-field",
+        onaDark: "bg-ona-dark text-white active:bg-ona-dark-2",
+        onaGhost: "bg-transparent text-ona-ink active:bg-ona-field",
       },
       size: {
         default: "h-11 px-5 py-2",
         sm: "h-8 px-3 text-xs",
         lg: "h-12 px-5 text-[15px]",
         icon: "h-9 w-9",
+        ona: "h-12 w-full rounded-ona-ctl px-4 text-[15px] leading-none",
       },
     },
     defaultVariants: {
@@ -35,17 +42,40 @@ export interface ButtonProps
     React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
+  /** Blocks taps and shows `busyLabel` (or children) while true. */
+  busy?: boolean;
+  busyLabel?: string;
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  (
+    {
+      className,
+      variant,
+      size,
+      asChild = false,
+      busy,
+      busyLabel,
+      disabled,
+      children,
+      ...props
+    },
+    ref,
+  ) => {
     const Comp = asChild ? Slot : "button";
     return (
       <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
+        className={cn(
+          buttonVariants({ variant, size, className }),
+          busy && "cursor-wait",
+        )}
         ref={ref}
+        disabled={disabled || busy}
+        aria-busy={busy || undefined}
         {...props}
-      />
+      >
+        {busy && busyLabel ? busyLabel : children}
+      </Comp>
     );
   },
 );

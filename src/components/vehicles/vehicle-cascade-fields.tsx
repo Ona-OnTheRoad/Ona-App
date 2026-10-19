@@ -1,9 +1,5 @@
 "use client";
 
-/**
- * Searchable Make → Model → Year cascade for customer vehicles.
- */
-
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   filterOptions,
@@ -13,6 +9,7 @@ import {
 } from "@/lib/vehicle-catalog";
 import { VEHICLE_TYPES } from "@/lib/vehicle-focus/vehicle-types";
 import { cn } from "@/lib/utils";
+import { ONA_CASCADE } from "./vehicle-cascade-ona";
 
 type Props = {
   make: string;
@@ -22,7 +19,7 @@ type Props = {
   onModelChange: (v: string) => void;
   onYearChange: (v: string) => void;
   /** Auth signup gray wells vs profile theme */
-  variant?: "auth" | "profile";
+  variant?: "auth" | "profile" | "ona";
   isLight?: boolean;
   className?: string;
   makeLabel?: string;
@@ -52,7 +49,7 @@ function SearchSelect({
   options: string[];
   disabled?: boolean;
   onChange: (v: string) => void;
-  variant: "auth" | "profile";
+  variant: "auth" | "profile" | "ona";
   isLight?: boolean;
 }) {
   const id = useId();
@@ -61,9 +58,7 @@ function SearchSelect({
   const [query, setQuery] = useState(value);
   const [highlight, setHighlight] = useState(0);
 
-  useEffect(() => {
-    setQuery(value);
-  }, [value]);
+  useEffect(() => setQuery(value), [value]);
 
   useEffect(() => {
     if (!open) return;
@@ -79,36 +74,41 @@ function SearchSelect({
     [options, query, value, open],
   );
 
-  useEffect(() => {
-    setHighlight(0);
-  }, [query, open]);
+  useEffect(() => setHighlight(0), [query, open]);
 
   const fieldClass =
-    variant === "auth"
-      ? "om-auth-field h-10 w-full rounded-md border !border-[#9A9EA6] !bg-[#E2E3E7] px-3 text-[13px] font-medium !text-[#0f172a] outline-none placeholder:!text-[#64748b]"
-      : isLight
-        ? "h-11 w-full rounded-md border-0 bg-black/8 px-3 text-[14px] font-medium text-slate-900 outline-none placeholder:text-slate-500"
-        : "h-11 w-full rounded-md border-0 bg-[#2c2c2e] px-3 text-[14px] font-medium text-white outline-none placeholder:text-white/50";
+    variant === "ona"
+      ? ONA_CASCADE.field
+      : variant === "auth"
+        ? "om-auth-field h-10 w-full rounded-md border !border-[#9A9EA6] !bg-[#E2E3E7] px-3 text-[13px] font-medium !text-[#0f172a] outline-none placeholder:!text-[#64748b]"
+        : isLight
+          ? "h-11 w-full rounded-md border-0 bg-black/8 px-3 text-[14px] font-medium text-slate-900 outline-none placeholder:text-slate-500"
+          : "h-11 w-full rounded-md border-0 bg-[#2c2c2e] px-3 text-[14px] font-medium text-white outline-none placeholder:text-white/50";
 
-  /* Full catalog, compact one-line field + downward list (never full-page) */
   const listClass =
-    variant === "auth"
-      ? "absolute z-50 mt-1 max-h-44 w-full overflow-y-auto overscroll-contain rounded-md border border-[#9A9EA6] bg-white shadow-lg"
-      : isLight
-        ? "absolute z-50 mt-1 max-h-44 w-full overflow-y-auto overscroll-contain rounded-md border border-black/10 bg-white shadow-lg"
-        : "absolute z-50 mt-1 max-h-44 w-full overflow-y-auto overscroll-contain rounded-md border border-white/10 bg-[#1c1c1e] shadow-lg";
+    variant === "ona"
+      ? ONA_CASCADE.list
+      : variant === "auth"
+        ? "absolute z-50 mt-1 max-h-44 w-full overflow-y-auto overscroll-contain rounded-md border border-[#9A9EA6] bg-white shadow-lg"
+        : isLight
+          ? "absolute z-50 mt-1 max-h-44 w-full overflow-y-auto overscroll-contain rounded-md border border-black/10 bg-white shadow-lg"
+          : "absolute z-50 mt-1 max-h-44 w-full overflow-y-auto overscroll-contain rounded-md border border-white/10 bg-[#1c1c1e] shadow-lg";
 
   const itemBase =
-    variant === "auth" || isLight
-      ? "px-3 py-2 text-left text-[13px] text-slate-900"
-      : "px-3 py-2 text-left text-[13px] text-white";
+    variant === "ona"
+      ? ONA_CASCADE.item
+      : variant === "auth" || isLight
+        ? "px-3 py-2 text-left text-[13px] text-slate-900"
+        : "px-3 py-2 text-left text-[13px] text-white";
 
   const labelClass =
-    variant === "auth"
-      ? "mb-0.5 block text-[11px] font-semibold text-[#475569]"
-      : isLight
-        ? "mb-1 block text-[12px] font-semibold text-slate-700"
-        : "mb-1 block text-[12px] font-semibold text-white/70";
+    variant === "ona"
+      ? ONA_CASCADE.label
+      : variant === "auth"
+        ? "mb-0.5 block text-[11px] font-semibold text-[#475569]"
+        : isLight
+          ? "mb-1 block text-[12px] font-semibold text-slate-700"
+          : "mb-1 block text-[12px] font-semibold text-white/70";
 
   const pick = (v: string) => {
     onChange(v);
@@ -161,6 +161,7 @@ function SearchSelect({
             e.preventDefault();
             if (filtered[highlight]) pick(filtered[highlight]);
           } else if (e.key === "Escape") {
+            if (open) e.stopPropagation();
             setOpen(false);
             setQuery(value);
           }
@@ -181,9 +182,11 @@ function SearchSelect({
                     itemBase,
                     "w-full border-0 bg-transparent",
                     i === highlight
-                      ? variant === "auth" || isLight
-                        ? "bg-[#FF6B35]/15"
-                        : "bg-white/10"
+                      ? variant === "ona"
+                        ? ONA_CASCADE.highlight
+                        : variant === "auth" || isLight
+                          ? "bg-[#FF6B35]/15"
+                          : "bg-white/10"
                       : "hover:bg-black/5 dark:hover:bg-white/10",
                   )}
                   onMouseEnter={() => setHighlight(i)}

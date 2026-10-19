@@ -39,6 +39,8 @@ export type BottomSheetProps = {
    * pinned to a fixed height. Omit for fixed-height behavior.
    */
   growToPercent?: number;
+  /** "ona" paints the panel with the redesigned surface token (pair with className="ona2"). */
+  surface?: "default" | "ona";
 };
 
 export function BottomSheet({
@@ -49,6 +51,7 @@ export function BottomSheet({
   className,
   heightPercent = 25,
   growToPercent,
+  surface = "default",
 }: BottomSheetProps) {
   const { theme } = useApp();
   const isLight = theme === "light";
@@ -144,9 +147,20 @@ export function BottomSheet({
 
   useSheetPointerWheelClose(present, sheetRef, closingRef, finishClose);
 
+  // Escape closes the sheet (keyboard users never reach the scrim).
+  useEffect(() => {
+    if (!present) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") finishClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [present, finishClose]);
+
   if (!present || !mount) return null;
 
-  const sheetBg = isLight ? "#d4d5d9" : "#1c1c1e";
+  const sheetBg =
+    surface === "ona" ? "var(--o-surface)" : isLight ? "#d4d5d9" : "#1c1c1e";
 
   return createPortal(
     <div
