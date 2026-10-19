@@ -22,6 +22,7 @@ import { createPortal } from "react-dom";
 import { useApp } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { SPRING, SWIPE_DOWN_DY } from "./bottom-sheet/constants";
+import { shouldIgnoreSheetGesture } from "./bottom-sheet/gesture-guard";
 import { useOnaPhoneMount } from "./bottom-sheet/use-ona-phone-mount";
 import { useSheetPointerWheelClose } from "./bottom-sheet/use-sheet-pointer-wheel-close";
 
@@ -127,7 +128,9 @@ export function BottomSheet({
    * Trackpad (natural scroll): fingers move down → deltaY < 0 → close.
    */
   const onTouchStart = (e: ReactTouchEvent) => {
-    gestureY.current = e.touches[0].clientY;
+    gestureY.current = shouldIgnoreSheetGesture(e.target, sheetRef.current)
+      ? null
+      : e.touches[0].clientY;
   };
 
   const onTouchMove = (e: ReactTouchEvent) => {

@@ -2,6 +2,7 @@
 
 import { useEffect, type MutableRefObject, type RefObject } from "react";
 import { SWIPE_DOWN_DY } from "./constants";
+import { shouldIgnoreSheetGesture } from "./gesture-guard";
 
 /** Pointer + trackpad: swipe DOWN only closes the sheet. */
 export function useSheetPointerWheelClose(
@@ -24,6 +25,7 @@ export function useSheetPointerWheelClose(
       if (e.pointerType === "mouse" && e.button !== 0) return;
       const t = e.target as Element | null;
       if (t?.closest("a[href]")) return;
+      if (shouldIgnoreSheetGesture(t, sheet)) return;
       startY = e.clientY;
     };
 
@@ -49,6 +51,10 @@ export function useSheetPointerWheelClose(
      */
     const onWheel = (e: WheelEvent) => {
       if (closingRef.current) return;
+      if (shouldIgnoreSheetGesture(e.target, sheet)) {
+        downAccum = 0;
+        return;
+      }
       if (e.deltaY < 0) {
         // Swipe / roll DOWN
         downAccum += -e.deltaY;
