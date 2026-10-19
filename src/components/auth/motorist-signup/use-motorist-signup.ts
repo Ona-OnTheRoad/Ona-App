@@ -11,6 +11,7 @@ import {
   isDualPasswordOk,
   isStep1Ok,
   isStep2Ok,
+  validateDetails as validateAccountDetails,
   validateStep1 as validateAccount,
   type AccountValues,
 } from "./motorist-validation";
@@ -64,6 +65,9 @@ export function useMotoristSignup() {
   } = vehicleState;
 
   const fromMenu = searchParams.get("from") === "menu";
+  // Referral code: prefilled + read-only from ?ref=, otherwise an optional input.
+  const urlRef = searchParams.get("ref") || "";
+  const [refInput, setRefInput] = useState(urlRef);
 
   const fullPhone = formatInternationalPhone(phoneDial, phoneNational);
 
@@ -85,6 +89,8 @@ export function useMotoristSignup() {
   const step1Ok = isStep1Ok(accountValues);
   const step2Ok = isStep2Ok(city, area);
   const validateStep1 = (): string | null => validateAccount(accountValues);
+  const validateDetails = (): string | null =>
+    validateAccountDetails(accountValues);
 
   const goBack = () => {
     if (step === 1) {
@@ -116,12 +122,12 @@ export function useMotoristSignup() {
     const v = validateStep1();
     if (v) {
       setFormError(v);
-      setStep(1);
+      setStep(validateDetails() ? 1 : 2);
       return;
     }
     if (!step2Ok) {
       setFormError("Enter your city and area.");
-      setStep(2);
+      setStep(3);
       return;
     }
 
@@ -197,7 +203,7 @@ export function useMotoristSignup() {
       vehicleModel: first?.model,
       vehicleYear: first?.year,
       registeredAt: new Date().toISOString(),
-      refCode: searchParams.get("ref") || undefined,
+      refCode: refInput.trim() || undefined,
     };
 
     // Service area text → home map session label (Lagos default coords until GPS)
@@ -221,7 +227,7 @@ export function useMotoristSignup() {
   /** Footer "Next": validate the current step, then advance. */
   const goNext = () => {
     if (step === 1) {
-      const err = validateStep1();
+      const err = validateDetails();
       if (err) {
         setFormError(err);
         return;
@@ -231,7 +237,14 @@ export function useMotoristSignup() {
         setFormError(identityErr);
         return;
       }
+    } else if (step === 2) {
+      const err = validateStep1();
+      if (err) {
+        setFormError(err);
+        return;
+      }
     } else if (!step2Ok) {
+      setFormError("Enter your city and area.");
       return;
     }
     setFormError("");
@@ -240,6 +253,7 @@ export function useMotoristSignup() {
 
   return {
     exiting,
+    go,
     router,
     step,
     done,
@@ -249,6 +263,9 @@ export function useMotoristSignup() {
     fields,
     vehicleState,
     dualPasswordOk,
+    urlRef,
+    refInput,
+    setRefInput,
     step1Ok,
     step2Ok,
     goBack,
