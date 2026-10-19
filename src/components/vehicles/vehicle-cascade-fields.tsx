@@ -9,7 +9,7 @@ import {
 } from "@/lib/vehicle-catalog";
 import { VEHICLE_TYPES } from "@/lib/vehicle-focus/vehicle-types";
 import { cn } from "@/lib/utils";
-import { ONA_CASCADE } from "./vehicle-cascade-ona";
+import { cascadePlaceholders, ONA_CASCADE } from "./vehicle-cascade-ona";
 
 type Props = {
   make: string;
@@ -18,7 +18,6 @@ type Props = {
   onMakeChange: (v: string) => void;
   onModelChange: (v: string) => void;
   onYearChange: (v: string) => void;
-  /** Auth signup gray wells vs profile theme */
   variant?: "auth" | "profile" | "ona";
   isLight?: boolean;
   className?: string;
@@ -120,7 +119,7 @@ function SearchSelect({
     <div ref={wrapRef} className="relative block">
       <label htmlFor={id} className={labelClass}>
         {label}
-        {required ? (
+        {required && variant !== "ona" ? (
           <span className="ml-0.5 font-bold text-red-600" aria-label="required">
             *
           </span>
@@ -134,6 +133,7 @@ function SearchSelect({
         placeholder={placeholder}
         autoComplete="off"
         role="combobox"
+        aria-required={required || undefined}
         aria-expanded={open}
         aria-controls={`${id}-list`}
         onFocus={() => {
@@ -145,7 +145,6 @@ function SearchSelect({
         onChange={(e) => {
           setQuery(e.target.value);
           setOpen(true);
-          // Clear committed value while typing so cascade resets cleanly
           if (e.target.value !== value) onChange("");
         }}
         onKeyDown={(e) => {
@@ -233,6 +232,7 @@ export function VehicleCascadeFields({
     [],
   );
 
+  const ph = cascadePlaceholders(variant, make, model);
   return (
     <div className={cn("flex flex-col gap-3", className)}>
       {onVehicleTypeChange ? (
@@ -264,7 +264,7 @@ export function VehicleCascadeFields({
         label="Model"
         required
         value={model}
-        placeholder={make ? "Search model" : "Pick make first"}
+        placeholder={ph.model}
         options={models}
         disabled={!make}
         variant={variant}
@@ -277,9 +277,7 @@ export function VehicleCascadeFields({
       <SearchSelect
         label="Year"
         value={year}
-        placeholder={
-          make && model ? "Search year" : "Pick make and model first"
-        }
+        placeholder={ph.year}
         options={years}
         disabled={!make || !model}
         variant={variant}

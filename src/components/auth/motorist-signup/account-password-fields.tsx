@@ -3,7 +3,7 @@ import { OnaRuleList } from "@/components/ui/ona-rule-list";
 import {
   confirmPasswordError,
   passwordError,
-  passwordRules,
+  passwordChecklist,
 } from "@/lib/signup-validation";
 import type { MotoristFields } from "./use-motorist-fields";
 
@@ -61,10 +61,9 @@ export function AccountPasswordFields({
     );
   }
 
-  const r = passwordRules(password);
   return (
     <>
-      <OnaField label="Password" required error={fieldErrors.password}>
+      <OnaField label="Password" error={fieldErrors.password}>
         {({ id, describedBy, invalid }) => (
           <OnaPasswordInput
             id={id}
@@ -90,14 +89,10 @@ export function AccountPasswordFields({
 
       <OnaRuleList
         title="Password requirements"
-        rules={[
-          { ok: r.length, text: "At least 8 characters" },
-          { ok: r.upper, text: "At least 1 capital letter" },
-          { ok: r.digit, text: "At least 1 number" },
-        ]}
+        rules={passwordChecklist(password)}
       />
 
-      <OnaField label="Confirm password" required error={fieldErrors.confirm}>
+      <OnaField label="Confirm password" error={fieldErrors.confirm}>
         {({ id, describedBy, invalid }) => (
           <OnaPasswordInput
             id={id}

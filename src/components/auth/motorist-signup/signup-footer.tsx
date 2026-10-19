@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import type { Step } from "./types";
 
-/** Footer actions per step. Step 3 keeps Create my account / Skip vehicle. Finish. */
+/** Footer actions per step. Step 3 keeps Create my account / Skip vehicle. */
 export function SignupFooter({
   step,
   busy,
@@ -27,12 +27,13 @@ export function SignupFooter({
       <Button
         size="ona"
         variant="ona"
+        className="disabled:bg-ona-brand/40 disabled:text-white"
         disabled={busy || !hasVehicles}
         busy={busy}
         busyLabel="Please wait…"
         onClick={() => onFinish()}
       >
-        Create my account
+        Continue
       </Button>
       <Button
         size="ona"
@@ -40,7 +41,7 @@ export function SignupFooter({
         disabled={busy}
         onClick={() => onFinish({ skipVehicle: true })}
       >
-        Skip vehicle. Finish
+        Skip vehicle
       </Button>
     </div>
   );

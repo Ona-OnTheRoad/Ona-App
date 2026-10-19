@@ -12,7 +12,32 @@ import { EmailFields } from "./email-fields";
 import { FeedbackLines } from "./feedback-lines";
 import type { LoginMethod } from "./helpers";
 
-/** Screen 1: role tabs, method tabs, then phone row + Send code, or email + password + Log in. */
+/** "Log in with email instead" / "…with phone instead" text switch. */
+function MethodSwitch({
+  method,
+  onPick,
+}: {
+  method: LoginMethod;
+  onPick: (m: LoginMethod) => void;
+}) {
+  const next: LoginMethod = method === "email" ? "phone" : "email";
+  return (
+    <button
+      type="button"
+      onClick={() => onPick(next)}
+      className="mx-auto flex min-h-11 items-center border-0 bg-transparent text-[13px] font-semibold text-ona-brand-ink underline underline-offset-2"
+    >
+      {next === "email"
+        ? "Log in with email instead"
+        : "Log in with phone number instead"}
+    </button>
+  );
+}
+
+/**
+ * Screen 1: role tabs, then phone row + Send code or email + password + Log in.
+ * The method is switched with a text link under the form (one tab row, as designed).
+ */
 export function LoginStep({
   preferType,
   pickRole,
@@ -75,18 +100,6 @@ export function LoginStep({
           ]}
         />
 
-        {showPhone ? (
-          <OnaSegmented<LoginMethod>
-            label="Log in with"
-            value={method}
-            onChange={pickMethod}
-            options={[
-              { value: "phone", label: t("auth.phoneTab") },
-              { value: "email", label: t("auth.emailTab") },
-            ]}
-          />
-        ) : null}
-
         {showPhone && method === "email" ? (
           <>
             <EmailFields
@@ -106,10 +119,11 @@ export function LoginStep({
             >
               {t("auth.logIn")}
             </Button>
+            <MethodSwitch method={method} onPick={pickMethod} />
           </>
         ) : showPhone ? (
           <>
-            <OnaField label={t("auth.phone")} required>
+            <OnaField label={t("auth.phone")}>
               {({ id, describedBy, invalid }) => (
                 <div className="flex gap-2">
                   <OnaSelect
@@ -150,6 +164,7 @@ export function LoginStep({
             >
               Send code
             </Button>
+            <MethodSwitch method={method} onPick={pickMethod} />
           </>
         ) : (
           <FeedbackLines info={info} error={error} />

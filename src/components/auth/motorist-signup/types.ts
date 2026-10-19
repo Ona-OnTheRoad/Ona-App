@@ -9,6 +9,6 @@ export const STEP_TITLES: Record<Step, string> = {
 
 export const STEP_SUBTITLES: Record<Step, string> = {
   1: "Set up your password to secure your account.",
-  2: "City and area where you usually need help.",
-  3: "Optional. Skip if you do not need vehicle services.",
+  2: "We use your location to calculate accurate arrival times and dispatch nearby pros.",
+  3: "This helps your professional arrive with the right tools and parts.",
 };

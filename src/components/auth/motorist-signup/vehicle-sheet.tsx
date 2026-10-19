@@ -41,7 +41,7 @@ export function VehicleSheet({
               value={vs.draftVehicleType}
               onChange={(e) => vs.setDraftVehicleType(e.target.value)}
             >
-              <option value="">Any / not specified</option>
+              <option value="">Select a type</option>
               {vs.vehicleTypeOptions.map((t) => (
                 <option key={t} value={t}>
                   {t}
@@ -52,6 +52,7 @@ export function VehicleSheet({
         </OnaField>
         <VehicleCascadeFields
           variant="ona"
+          className="grid grid-cols-2 gap-x-3 [&>*:first-child]:col-span-2"
           make={vs.draftMake}
           model={vs.draftModel}
           year={vs.draftYear}
@@ -80,9 +81,19 @@ export function VehicleSheet({
           >
             Save changes
           </Button>
-          <Button size="ona" variant="onaOutline" onClick={onClose}>
-            Cancel
-          </Button>
+          {vs.editingId ? (
+            <Button
+              size="ona"
+              variant="onaGhost"
+              className="text-ona-danger"
+              onClick={() => {
+                vs.removeEditing();
+                onClose();
+              }}
+            >
+              Remove vehicle
+            </Button>
+          ) : null}
         </div>
       </div>
     </BottomSheet>

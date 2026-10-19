@@ -24,7 +24,7 @@ export function EmailFields({
   const t = useT();
   return (
     <>
-      <OnaField label={t("auth.email")} required>
+      <OnaField label={t("auth.email")}>
         {({ id, describedBy, invalid }) => (
           <OnaInput
             id={id}
@@ -41,7 +41,7 @@ export function EmailFields({
         )}
       </OnaField>
       <div>
-        <OnaField label={t("auth.password")} required>
+        <OnaField label={t("auth.password")}>
           {({ id, describedBy, invalid }) => (
             <OnaPasswordInput
               id={id}
