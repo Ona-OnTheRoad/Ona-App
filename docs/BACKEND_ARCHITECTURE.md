@@ -219,8 +219,7 @@ Watch: `npm run test:watch`
 
 | Script | Purpose |
 |--------|---------|
-| `npm run dev` | Start dev server on :3000 |
-| `npm run dev:admin` | Start admin panel on :4500 |
+| `npm run dev` | Start dev server on :3000 (admin at `/admin`) |
 | `npm run db:setup` | Apply schema + seed admin + sync DB |
 | `npm run db:apply` | Apply pending migrations |
 | `npm run db:sync` | Sync DB to latest state |

@@ -63,11 +63,11 @@ admin profile. Re-running it is safe. To seed only the admin later: `npm run db:
 
 The admin signs in at `/admin/login` with `ADMIN_SEED_EMAIL` and `ADMIN_SEED_PASSWORD`. Role: `admin` (super admin).
 
-## 6. Start admin backend
+## 6. Open the admin
 
 ```bash
-npm run dev:admin
-open http://localhost:4500/admin/login
+npm run dev
+open http://localhost:3000/admin/login
 ```
 
 ## 7. Vercel

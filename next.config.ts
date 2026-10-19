@@ -26,8 +26,6 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [];
   },
-  // Separate dist for admin dev server (port 4500) vs public (3000)
-  distDir: process.env.NEXT_DIST_DIR || ".next",
   // Allow localhost, 127.0.0.1 and the IPv6 loopback [::1] during local dev (fixes blank UI / blocked HMR;
   // `npm run dev` binds `::`, so browsers often reach it through [::1])
   allowedDevOrigins: ["127.0.0.1", "localhost", "[::1]"],
@@ -43,7 +41,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Smaller client bundles — tree-shake heavy icon/UI packages (no UI change)
   experimental: {
-    optimizePackageImports: ["lucide-react", "@radix-ui/react-avatar", "@radix-ui/react-dialog"],
+    optimizePackageImports: ["lucide-react", "@radix-ui/react-avatar"],
   },
   images: {
     formats: ["image/avif", "image/webp"],

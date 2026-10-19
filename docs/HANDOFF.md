@@ -110,8 +110,7 @@ Do not invent a third ledger. Stub tables `wallet_accounts` stay unused.
 ```bash
 npm install
 cp .env.example .env.local   # fill real values; .env.example lists every variable the code reads
-npm run dev                  # http://localhost:3000
-npm run dev:admin            # http://localhost:4500/admin
+npm run dev                  # http://localhost:3000 (admin at /admin)
 ```
 
 Without `.env.local` the app has no database and the UI stays on its loading state (`/api/sessions` returns `503 no_db`).

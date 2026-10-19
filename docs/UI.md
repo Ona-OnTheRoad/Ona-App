@@ -97,7 +97,7 @@ Source: `bottom-nav.tsx`, `app-menu.tsx`, `src/lib/navigation.ts`, `src/lib/nav-
 - Incoming request panel, negotiation, job shell, I’m Satisfied / release
 - Pro dashboard (including Payment processing section)
 - Shop browse / cart / checkout, Express flow
-- Admin (separate from the phone shell — `/admin`, port 4500 locally)
+- Admin (separate from the phone shell, served at `/admin` on the same server)
 
 **Finish inside the freeze (do not invent a new look)**
 

@@ -7,11 +7,7 @@ import type { NextRequest } from "next/server";
  */
 function isBackendHost(host: string): boolean {
   const h = host.toLowerCase().split(":")[0];
-  if (h === "localhost" || h === "127.0.0.1") {
-    // Local admin dev uses port 4500 only
-    const port = host.includes(":") ? host.split(":")[1] : "";
-    return port === "4500";
-  }
+  // localhost is always the consumer app; the admin is simply /admin on it.
   return (
     h.includes("336699-backend") ||
     h.startsWith("336699-backend") ||
@@ -39,7 +35,9 @@ export function middleware(req: NextRequest) {
 
   const host = req.headers.get("host") || "";
   if (!isBackendHost(host)) {
-    const response = NextResponse.next({ request: { headers: requestHeaders } });
+    const response = NextResponse.next({
+      request: { headers: requestHeaders },
+    });
     response.headers.set("x-request-id", requestId);
     return response;
   }
@@ -51,7 +49,9 @@ export function middleware(req: NextRequest) {
     pathname.startsWith("/_next") ||
     pathname === "/favicon.ico"
   ) {
-    const response = NextResponse.next({ request: { headers: requestHeaders } });
+    const response = NextResponse.next({
+      request: { headers: requestHeaders },
+    });
     response.headers.set("x-request-id", requestId);
     return response;
   }

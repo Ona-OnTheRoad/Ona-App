@@ -7,26 +7,13 @@ Ona is a **single Next.js codebase** (public phone UI + `/admin` + all `/api/*` 
 | `ona-mi` | https://ona-mi.vercel.app | Public consumer app (staff can also use `/admin` here) |
 | `ona-backend` | https://ona-backend.vercel.app | Admin / control centre + APIs |
 
-On backend hostnames `src/middleware.ts` redirects every non-`/admin`, non-`/api` request to `/admin`, so the consumer phone shell never loads there. Local admin dev uses port 4500.
+On backend hostnames `src/middleware.ts` redirects every non-`/admin`, non-`/api` request to `/admin`, so the consumer phone shell never loads there. Locally the admin is the same dev server at `/admin`.
 
 ## Deploy
 
-Log in once, link the repo, and deploy with the repo scripts (they pass the project explicitly):
+Deployment is automatic through the GitHub → Vercel integration: merging to the connected branch deploys it, and every pull request gets a preview. There are no deploy scripts in this repo, so do not run `vercel` from a laptop for releases.
 
-```bash
-npm run vercel:login
-npm run vercel:link          # link this checkout to a project
-
-npm run deploy:frontend      # vercel --prod --yes --project ona-mi
-npm run deploy:backend       # vercel --prod --yes --project ona-backend
-npm run deploy:both          # backend first, then frontend
-```
-
-Pull a project's environment into a local file (never commit it):
-
-```bash
-npm run vercel:env           # writes .env.vercel.local
-```
+To work against a project's settings locally, copy the values from **Vercel → Project → Settings → Environment Variables** into `.env.local` (never commit it).
 
 ## Environment
 
@@ -68,6 +55,6 @@ The dedicated `/api/jobs/deadline-sweep` endpoint requires a configured server s
 | Surface | URL | Command |
 |---------|-----|---------|
 | Public Ona | http://localhost:3000 | `npm run dev` |
-| Admin (same codebase) | http://localhost:4500/admin | `npm run dev:admin` |
+| Admin (same codebase) | http://localhost:3000/admin | `npm run dev` |
 
 If a deployment shows **"This deployment is temporarily paused"**, that is a Vercel account or usage block, not an app error.
