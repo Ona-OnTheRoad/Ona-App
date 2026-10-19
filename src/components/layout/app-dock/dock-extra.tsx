@@ -2,11 +2,9 @@
 
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { MenuHeader } from "@/components/layout/app-menu/menu-header";
 import { MyServiceSection } from "@/components/layout/app-menu/my-service-section";
 import { UseAsSection } from "@/components/layout/app-menu/use-as-section";
 import { useAccountSwitch } from "@/components/layout/app-menu/use-account-switch";
-import { firstAndLastName } from "@/components/layout/app-menu/menu-nav";
 import { useT } from "@/lib/i18n";
 import { useApp } from "@/lib/store";
 import type { AccountType } from "@/lib/types";
@@ -16,21 +14,12 @@ export function closeDockSheet() {
   document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
 }
 
-/**
- * Everything the old drawer carried besides plain links: who you are,
- * Use-as role switch, My Service (Repair Pro) and Log out.
- */
+/** What the More sheet carries besides links: My Service (Repair Pro), Use-as role switch and Log out. */
 export function DockExtra() {
   const t = useT();
   const router = useRouter();
-  const {
-    accountType,
-    proServices,
-    hasMotoristAccount,
-    hasProAccount,
-    displayName,
-    userProfile,
-  } = useApp();
+  const { accountType, proServices, hasMotoristAccount, hasProAccount } =
+    useApp();
   const isPro = accountType === "professional";
   const { warn, signupTarget, switching, onSwitch } = useAccountSwitch(
     true,
@@ -40,22 +29,9 @@ export function DockExtra() {
     hasMotoristAccount && hasProAccount && accountType === "professional"
       ? ["professional", "motorist"]
       : ["motorist", "professional"];
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 12
-      ? t("menu.goodMorning")
-      : hour < 17
-        ? t("menu.goodAfternoon")
-        : t("menu.goodEvening");
 
   return (
     <div className="flex flex-col gap-1 pb-3">
-      <MenuHeader
-        fullNameDisplay={firstAndLastName(
-          userProfile?.fullName || displayName || "",
-        )}
-        timeGreeting={greeting}
-      />
       {isPro && proServices.length > 0 ? (
         <MyServiceSection proServices={proServices} />
       ) : null}

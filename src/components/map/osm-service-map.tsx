@@ -2,7 +2,11 @@
 
 import { useEffect, useMemo } from "react";
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
-import { MAP_STYLE_REVISION, mapThemeForApp } from "@/lib/map-theme";
+import {
+  MAP_STYLE_REVISION,
+  OSM_SATELLITE_ATTRIBUTION,
+  mapThemeForApp,
+} from "@/lib/map-theme";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { tradeIconHtml } from "@/lib/map-trade-icons";
@@ -149,7 +153,10 @@ export function OsmServiceMap({
           opacity: 1,
         }}
       >
-        <TileLayer url={mapTheme.osmTileUrl} />
+        <TileLayer
+          url={mapTheme.osmTileUrl}
+          attribution={OSM_SATELLITE_ATTRIBUTION}
+        />
         <MapSync
           center={center}
           technicians={technicians}

@@ -1,5 +1,7 @@
 /**
- * Customer map theme dark green (light mode) / dark red (black mode).
+ * Map look: satellite imagery with labels (Google "hybrid"; Esri World Imagery on the
+ * Leaflet fallback). Custom road styles do not apply to satellite types, so the old
+ * dark green / dark red style sheets are no longer used for the live maps.
  *
  * IMPORTANT: Export plain helpers first. Avoid evaluating anything that can
  * throw at module load (that made mapContainerStyle look "not a function"
@@ -12,11 +14,14 @@ import {
   MAP_BG_DARK,
   MAP_BG_LIGHT,
   MAP_ROUTE_STROKE,
-  OSM_DARK_TILE_URL,
+  OSM_SATELLITE_TILE_URL,
+  OSM_SATELLITE_ATTRIBUTION,
   type OnaMapStyle,
 } from "./map-theme/palette";
 import { MAP_STYLES_DARK } from "./map-theme/styles-dark";
 import { MAP_STYLES_LIGHT } from "./map-theme/styles-light";
+
+export { OSM_SATELLITE_ATTRIBUTION };
 
 export {
   MAP_BG_DARK,
@@ -31,7 +36,7 @@ export {
   MAP_ROAD_LIGHT_HI,
   MAP_ROUTE_STROKE,
   MAP_STYLE_REVISION,
-  OSM_DARK_TILE_URL,
+  OSM_SATELLITE_TILE_URL,
 } from "./map-theme/palette";
 export type { OnaMapStyle } from "./map-theme/palette";
 export { MAP_STYLES_DARK } from "./map-theme/styles-dark";
@@ -80,7 +85,7 @@ export function mapThemeForApp(isLight: boolean): {
   return {
     styles: isLight ? MAP_STYLES_LIGHT : MAP_STYLES_DARK,
     backgroundColor: isLight ? MAP_BG_LIGHT : MAP_BG_DARK,
-    osmTileUrl: OSM_DARK_TILE_URL,
+    osmTileUrl: OSM_SATELLITE_TILE_URL,
     osmFilter: "none",
   };
 }
@@ -96,22 +101,19 @@ export function mapRenderOptions(isLight: boolean): {
   return {
     styles: theme.styles as google.maps.MapTypeStyle[],
     backgroundColor: theme.backgroundColor,
-    mapTypeId: "roadmap",
+    mapTypeId: "hybrid",
     clickableIcons: false,
   };
 }
 
 /**
- * Apply dark-green / dark-red styles on a live map.
- * Never touches renderingType.
+ * Put a live Google map in satellite ("hybrid") mode. Never touches renderingType.
+ * Kept under the old name so every map surface keeps calling it on theme changes.
  */
 export function applyOnaMapTheme(map: unknown, isLight: boolean): void {
   if (!map || typeof google === "undefined" || !google.maps) return;
   const gmap = map as google.maps.Map;
-  const theme = mapThemeForApp(isLight);
-  const typeId = isLight ? "ona_safe_green_v7" : "ona_safe_red_v7";
-  const bg = theme.backgroundColor;
-
+  const bg = mapThemeForApp(isLight).backgroundColor;
   try {
     const div = gmap.getDiv?.();
     if (div) {
@@ -119,47 +121,10 @@ export function applyOnaMapTheme(map: unknown, isLight: boolean): void {
       div.style.setProperty("opacity", "1", "important");
       div.style.backgroundColor = bg;
     }
+    gmap.setOptions({ backgroundColor: bg });
+    gmap.setMapTypeId(google.maps.MapTypeId.HYBRID);
   } catch {
-    /* ignore */
-  }
-
-  try {
-    const styles = theme.styles as google.maps.MapTypeStyle[];
-    gmap.setOptions({
-      styles,
-      backgroundColor: bg,
-    });
-  } catch {
-    /* ignore */
-  }
-
-  try {
-    const styles = theme.styles as google.maps.MapTypeStyle[];
-    if (typeof google.maps.StyledMapType === "function") {
-      const styled = new google.maps.StyledMapType(styles, {
-        name: isLight ? "Ona Dark Green" : "Ona Dark Red",
-        alt: isLight ? "Dark green map" : "Dark red map",
-      });
-      gmap.mapTypes.set(typeId, styled);
-      gmap.setMapTypeId(typeId as google.maps.MapTypeId);
-      gmap.setOptions({
-        styles,
-        backgroundColor: bg,
-      });
-    } else {
-      gmap.setMapTypeId(google.maps.MapTypeId.ROADMAP);
-    }
-  } catch {
-    try {
-      const styles = theme.styles as google.maps.MapTypeStyle[];
-      gmap.setMapTypeId(google.maps.MapTypeId.ROADMAP);
-      gmap.setOptions({
-        styles,
-        backgroundColor: bg,
-      });
-    } catch {
-      /* ignore */
-    }
+    /* the map keeps its current type */
   }
 }
 

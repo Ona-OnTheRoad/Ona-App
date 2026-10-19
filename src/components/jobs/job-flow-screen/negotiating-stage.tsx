@@ -7,6 +7,7 @@ import { apiTransition } from "@/lib/jobs/client";
 import { isNegotiationTimerArmed } from "@/lib/jobs/constants";
 import type { JobRecord } from "@/lib/jobs/types";
 import { PRO_SERVICE_LABELS } from "@/lib/services";
+import { firstNameOnly } from "@/lib/utils";
 import { NegotiationCounterCard } from "./negotiation-counter-card";
 import { NegotiationFooter } from "./negotiation-footer";
 import { NegotiationSummary } from "./negotiation-summary";
@@ -84,7 +85,7 @@ export function renderNegotiatingStage(
               title="Agree the labour fee"
               subtitle={
                 viewer === "motorist"
-                  ? "Your call-out price is already fixed. Agree labour directly with your pro, with every change recorded."
+                  ? `Your call-out is already fixed. Agree labour directly with ${firstNameOnly(job.repairProName === "Repair Pro" ? null : job.repairProName, "your pro")}, with every change recorded.`
                   : "Agree labour directly with the customer, with every change recorded."
               }
             />
@@ -102,16 +103,17 @@ export function renderNegotiatingStage(
               mySide={mySide}
               offerInput={offerInput}
               setOfferInput={setOfferInput}
+              offerAmount={theirOffer?.amountMajor}
+              currency={job.currency}
             />
           ) : null}
 
-          <div className="flex items-start gap-2.5 rounded-ona-card border border-ona-brand/40 bg-ona-brand-soft p-3">
+          <div className="flex items-start gap-2.5 rounded-ona-card border border-ona-brand/30 bg-ona-brand-soft p-3">
             <Info
               aria-hidden
               className="mt-0.5 h-4 w-4 shrink-0 text-ona-brand-ink"
             />
-            <p className="text-[12px] leading-snug text-ona-ink">
-              <span className="font-semibold">Escrow protection. </span>
+            <p className="text-[12px] leading-snug text-ona-brand-ink">
               Ona protects both sides by holding the agreed total in escrow.
             </p>
           </div>

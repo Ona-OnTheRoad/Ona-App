@@ -1,17 +1,18 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Minimize2 } from "lucide-react";
 import { JobShell } from "@/components/jobs/job-shell";
-import { OnaRadar } from "@/components/ui/ona-radar";
+import { OnaRadar, type OnaRadarDot } from "@/components/ui/ona-radar";
+import { useApp } from "@/lib/store";
 import { apiTransition } from "@/lib/jobs/client";
 import { useExactCountdown } from "@/lib/jobs/use-exact-countdown";
 import { secondsLeftFloor } from "@/lib/jobs/countdown-math";
 import { serverNow } from "@/lib/jobs/server-clock";
 import type { JobRecord } from "@/lib/jobs/types";
 import { PRO_SERVICE_LABELS } from "@/lib/services";
-import { cn, firstNameOnly } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { SEARCH_REROUTE_WINDOW_MS } from "./job-utils";
 
 /** Display-only chip for the server pairing deadline (no per-second announcements). */
@@ -21,13 +22,15 @@ function PairingChip({ endsAt }: { endsAt: string }) {
     0,
     secondsLeftFloor(new Date(endsAt).getTime(), serverNow()),
   );
+  const mm = Math.floor(sec / 60);
+  const ss = String(sec % 60).padStart(2, "0");
   return (
     <span
       role="timer"
-      aria-label={`Time left for this pro ${sec} seconds`}
-      className="inline-flex min-h-7 items-center rounded-full border border-white/25 bg-white/10 px-3 text-[12px] font-semibold tabular-nums text-ona-on-dark"
+      aria-label={`Time left for this pro ${mm} minutes ${ss} seconds`}
+      className="inline-flex min-h-7 items-center rounded-full border border-white/70 px-3 text-[12px] font-medium tabular-nums text-ona-on-dark"
     >
-      {sec}s
+      {mm}:{ss}
     </span>
   );
 }
@@ -55,7 +58,41 @@ export function SearchingScreen({
       .trim() || "Pro";
   const proKnown =
     !!job.repairProName && job.repairProName.trim() !== "Repair Pro";
-  const proName = proKnown ? firstNameOnly(job.repairProName, "") : "";
+  const parts = (job.repairProName || "").trim().split(/\s+/);
+  const proName = proKnown
+    ? parts.length > 1
+      ? `${parts[0]} ${parts[parts.length - 1].charAt(0).toUpperCase()}.`
+      : parts[0]
+    : "";
+  const { visibleTechnicians } = useApp();
+  const dots = useMemo<OnaRadarDot[]>(() => {
+    const out: OnaRadarDot[] = [];
+    if (proKnown) {
+      out.push({
+        id: job.repairProId || "requested",
+        name: job.repairProName,
+        photoUrl: job.repairProPhoto,
+        highlight: true,
+      });
+    }
+    visibleTechnicians
+      .filter(
+        (t) => t.id !== job.repairProId && t.serviceType === job.serviceType,
+      )
+      .sort((a, b) => a.distanceKm - b.distanceKm)
+      .slice(0, 3)
+      .forEach((t) =>
+        out.push({ id: t.id, name: t.name, photoUrl: t.photo || null }),
+      );
+    return out;
+  }, [
+    visibleTechnicians,
+    proKnown,
+    job.repairProId,
+    job.repairProName,
+    job.repairProPhoto,
+    job.serviceType,
+  ]);
   const distance =
     typeof job.distanceKm === "number" && job.distanceKm > 0
       ? `${job.distanceKm.toFixed(1)} km away`
@@ -132,7 +169,7 @@ export function SearchingScreen({
           </button>
         </div>
         <div className="flex flex-col items-center text-center">
-          <span className="inline-flex rounded-full border border-ona-brand/50 bg-ona-brand/20 px-3 py-1 text-[11px] font-semibold leading-none text-[#ffc2b3]">
+          <span className="inline-flex rounded-full border border-ona-brand bg-[#fdeeea] px-3 py-1.5 text-[12px] font-medium leading-none text-[#3a1710]">
             Sequential dispatch
           </span>
           <h1 className="mt-3 text-[22px] font-bold leading-tight tracking-tight">
@@ -144,20 +181,15 @@ export function SearchingScreen({
           </p>
         </div>
         <div className="my-4 flex flex-1 items-center justify-center">
-          <OnaRadar
-            photoUrl={proKnown ? job.repairProPhoto : null}
-            name={job.repairProName}
-          />
+          <OnaRadar dots={dots} />
         </div>
         <div className="flex shrink-0 flex-col items-center gap-2 text-center">
           {job.pairingDeadline ? (
             <PairingChip endsAt={job.pairingDeadline} />
           ) : null}
           <div role="status" aria-live="polite" className="space-y-1">
-            <p className="text-[14px] font-semibold">{requesting}</p>
-            {nearbyLine ? (
-              <p className="text-[12px] text-ona-on-dark-muted">{nearbyLine}</p>
-            ) : null}
+            <p className="text-[14px]">{requesting}</p>
+            {nearbyLine ? <p className="sr-only">{nearbyLine}</p> : null}
           </div>
           <p className="text-[12px] text-ona-on-dark-muted">
             Auto-moving to the next pro if unavailable
@@ -168,7 +200,7 @@ export function SearchingScreen({
         <button
           type="button"
           onClick={() => void handleCancelSearch()}
-          className="flex h-12 w-full items-center justify-center rounded-ona-ctl border-0 bg-transparent text-[15px] font-semibold text-ona-on-dark underline-offset-4 active:bg-white/10"
+          className="flex h-12 w-full items-center justify-center rounded-ona-ctl border-0 bg-transparent text-[16px] font-medium text-white active:bg-white/10"
         >
           Cancel search
         </button>
