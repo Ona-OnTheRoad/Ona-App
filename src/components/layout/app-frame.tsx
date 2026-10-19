@@ -30,6 +30,18 @@ export function AppFrame({ children }: { children: ReactNode }) {
   const dockVisible = useDockVisible();
   useSignupDraftCleanup();
 
+  // Tell the CSS when the floating dock is on screen: page scrollers then keep
+  // their last items clear of it while their content still runs underneath.
+  useEffect(() => {
+    const phone = document.getElementById("ona-phone");
+    if (!phone) return;
+    if (dockVisible) phone.dataset.dock = "1";
+    else delete phone.dataset.dock;
+    return () => {
+      delete phone.dataset.dock;
+    };
+  }, [dockVisible]);
+
   // iOS/Safari: unlock Web Audio on first tap so event sounds can play later
   useEffect(() => {
     installAudioUnlockOnce();
@@ -76,8 +88,6 @@ export function AppFrame({ children }: { children: ReactNode }) {
               <div
                 className={cn(
                   "om-page-enter relative flex h-full min-h-0 flex-1 flex-col overflow-hidden",
-                  // Reserve the floating dock's height so it never covers page content
-                  dockVisible && "ona2 pb-[var(--rfd-height)]",
                 )}
               >
                 {children}
