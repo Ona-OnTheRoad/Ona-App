@@ -5,7 +5,6 @@ import type { AccountType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function UseAsSection({
-  isLight,
   accountType,
   hasMotoristAccount,
   hasProAccount,
@@ -16,7 +15,6 @@ export function UseAsSection({
   onSwitch,
   onClose,
 }: {
-  isLight: boolean;
   accountType: AccountType | null;
   hasMotoristAccount: boolean;
   hasProAccount: boolean;
@@ -32,38 +30,25 @@ export function UseAsSection({
 
   const asBtnClass = (active: boolean) =>
     cn(
-      "rounded-lg border-0 px-2 py-2 text-[12px] font-bold transition-colors",
+      "h-10 rounded-[8px] border-0 px-2 text-[13px] font-semibold transition-colors",
       active
-        ? "bg-[#323231] text-white"
-        : isLight
-          ? "bg-transparent text-black hover:bg-[#b0b1b6]/60"
-          : "bg-transparent text-white/85 hover:bg-white/10",
+        ? "bg-ona-surface text-ona-ink shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
+        : "bg-transparent text-ona-muted",
     );
 
   return (
-    <div
-      className={cn(
-        "mt-3 border-t pt-3",
-        isLight ? "border-black/10" : "border-white/10",
-      )}
-    >
-      <p
-        className={cn(
-          "mb-1 px-2 text-[10px] font-bold uppercase tracking-wide",
-          isLight ? "text-black" : "text-white/55",
-        )}
-      >
+    <div className="mt-2">
+      <p className="mb-1.5 text-[12px] font-semibold text-ona-ink">
         {t("menu.useAs")}
       </p>
       {hasMotoristAccount && hasProAccount ? (
-        <p className="mb-1 px-2 text-[11px] font-bold text-[#FF6B35]">
+        <p className="mb-1.5 text-[12px] font-semibold text-ona-brand-ink">
           Dual Role
         </p>
       ) : null}
       <div
         className={cn(
-          "grid grid-cols-2 gap-1 rounded-xl p-1",
-          isLight ? "bg-[#bebfc4]" : "bg-[#1c1c1e]",
+          "grid grid-cols-2 gap-1 rounded-ona-ctl bg-ona-field-strong p-1",
           switching && "opacity-70 pointer-events-none",
         )}
         role="group"
@@ -86,7 +71,7 @@ export function UseAsSection({
               {switching && !active ? (
                 <span className="inline-flex items-center justify-center gap-1.5">
                   <Loader2
-                    className="h-3.5 w-3.5 animate-spin text-[#FF6B35]"
+                    className="h-3.5 w-3.5 animate-spin text-ona-brand-ink"
                     strokeWidth={2.5}
                     aria-hidden
                   />
@@ -102,16 +87,15 @@ export function UseAsSection({
       {warn ? (
         <div
           className={cn(
-            "mt-1 rounded-lg px-2.5 py-1.5 text-[11px] font-medium leading-snug",
-            isLight ? "bg-black/10 text-black" : "bg-white/10 text-white",
+            "mt-1.5 rounded-ona-ctl bg-ona-field px-3 py-2 text-[12px] font-medium leading-snug text-ona-ink",
           )}
           role="alert"
         >
-          <p className={isLight ? "text-black" : "text-white"}>{warn}</p>
+          <p>{warn}</p>
           {signupTarget && (
             <button
               type="button"
-              className="mt-1 border-0 bg-transparent p-0 text-[11px] font-bold text-[#FF6B35] underline"
+              className="mt-1 border-0 bg-transparent p-0 text-[11px] font-bold text-ona-brand-ink underline"
               onClick={() => {
                 onClose();
                 router.push(
@@ -127,7 +111,7 @@ export function UseAsSection({
           {warn === t("menu.needLogin") && (
             <button
               type="button"
-              className="mt-1 border-0 bg-transparent p-0 text-[11px] font-bold text-[#FF6B35] underline"
+              className="mt-1 border-0 bg-transparent p-0 text-[11px] font-bold text-ona-brand-ink underline"
               onClick={() => {
                 onClose();
                 router.push("/login/signin");
@@ -138,12 +122,7 @@ export function UseAsSection({
           )}
         </div>
       ) : (
-        <p
-          className={cn(
-            "mt-1 px-2 text-[10px] font-medium leading-snug",
-            isLight ? "text-black" : "text-white/55",
-          )}
-        >
+        <p className="mt-1.5 text-[11px] leading-snug text-ona-muted">
           {t("menu.tapToSwitch")}
         </p>
       )}

@@ -1,6 +1,5 @@
 import type { ReactElement } from "react";
 import { Loader2 } from "lucide-react";
-import { HeaderMenu } from "../job-flow/header-menu";
 import { ScheduledDispatchScreen } from "../job-flow/scheduled-dispatch-screen";
 import { SearchingScreen } from "../job-flow/searching-screen";
 import { JobShell } from "@/components/jobs/job-shell";
@@ -49,7 +48,6 @@ export function renderRedirectingStage(c: JobFlowCtx): ReactElement {
           ? () => router.replace("/dashboard")
           : () => router.replace("/")
       }
-      rightSlot={<HeaderMenu isLight={isLight} />}
     >
       <p className={cn("px-0.5 pt-4 text-[14px] font-medium", ink)}>
         {JOB_CLOSED_MESSAGE}

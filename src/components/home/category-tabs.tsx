@@ -30,7 +30,6 @@ export function CategoryTabs({
   onSwipeLeft,
   onSwipeRight,
   onOpenHelp,
-  menuOpen,
   compact,
 }: {
   expanded?: boolean;
@@ -39,7 +38,6 @@ export function CategoryTabs({
   onSwipeLeft?: () => void;
   onSwipeRight?: () => void;
   onOpenHelp?: () => void;
-  menuOpen?: boolean;
   /** Mechanic flow: shrink the trade grid so the card can fill the panel. */
   compact?: boolean;
 }) {
@@ -182,7 +180,7 @@ export function CategoryTabs({
         <div className="flex items-center gap-1">
           <TradeTileGrid
             tiles={TRADE_TILES}
-            active={menuOpen ? "none" : category}
+            active={category}
             compact
             onPick={onPick}
           />
@@ -218,7 +216,7 @@ export function CategoryTabs({
             tabs.length > 0 ? (
               <TradeTileGrid
                 tiles={tabs}
-                active={menuOpen ? "none" : category}
+                active={category}
                 compact={false}
                 onPick={onPick}
               />

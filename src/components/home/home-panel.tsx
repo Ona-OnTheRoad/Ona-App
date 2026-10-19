@@ -31,7 +31,6 @@ import { HomeTopStrip } from "@/components/home/home-panel/home-top-strip";
 import { SheetPill } from "@/components/home/home-panel/sheet-pill";
 import { ProTechList } from "@/components/home/home-panel/pro-tech-list";
 import { useHelpSomeone } from "@/components/home/home-panel/use-help-someone";
-import { useMenuOpen } from "@/components/home/home-panel/use-menu-open";
 import { usePagedTechnicians } from "@/components/home/home-panel/use-paged-technicians";
 import { usePendingExpress } from "@/components/home/home-panel/use-pending-express";
 import { useSheetGestures } from "@/components/home/home-panel/use-sheet-gestures";
@@ -144,20 +143,9 @@ export function HomePanel({
   const help = useHelpSomeone({ isMotorist, mapsLoaded, liveMaps });
   const { onSheetWheel, onPillTouchStart, onPillTouchMove, onPillClick } =
     useSheetGestures({ expanded, onExpand, onCollapse });
-  const menuOpen = useMenuOpen();
 
   return (
-    <div
-      className={cn("relative z-30 flex min-h-0 flex-col", className)}
-      style={{
-        transition: "transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)",
-        // Same split as .om-x-drawer / .om-x-rail chips land in the capsule tube
-        transform: menuOpen
-          ? "translateX(var(--om-menu-split, 80%))"
-          : "translateX(0%)",
-        willChange: "transform",
-      }}
-    >
+    <div className={cn("relative z-30 flex min-h-0 flex-col", className)}>
       <div
         onWheel={onSheetWheel}
         className={gridMode ? "flex min-h-0 flex-col" : "shrink-0"}
@@ -186,7 +174,6 @@ export function HomePanel({
             expanded={expanded}
             onExpand={onExpand}
             onCollapse={onCollapse}
-            menuOpen={menuOpen}
             help={help}
           />
 
