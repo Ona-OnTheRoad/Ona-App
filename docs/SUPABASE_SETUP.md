@@ -74,14 +74,13 @@ open http://localhost:3000/admin/login
 
 | Project | Domain | Notes |
 |---------|--------|--------|
-| **`ona`** (primary) | https://ona-mi.vercel.app | Public app **and** `/admin` + all APIs |
-| `ona-backend` (optional) | https://ona-backend.vercel.app | Same codebase; avoid if possible (extra bandwidth) |
+| **`ona`** | https://ona-mi.vercel.app | Public app **and** `/admin` + all APIs |
 
 Put the **same** Supabase + Maps env on `ona`, including:
 
 - `SUPABASE_SERVICE_ROLE_KEY` (needed for server APIs and admin — not backend-only)
 - `NEXT_PUBLIC_APP_URL=https://ona-mi.vercel.app`
 
-If production shows **“This deployment is temporarily paused”**, the team is soft-blocked (Hobby fair use / Fast Origin Transfer) — see `docs/VERCEL_DEPLOY.md`. Local `npm run dev` / `npm run dev:admin` still works with `.env.local`.
+If production shows **“This deployment is temporarily paused”**, the team is soft-blocked (Hobby fair use / Fast Origin Transfer) — see `docs/VERCEL_DEPLOY.md`. Local `npm run dev` still works with `.env.local`.
 
 You must run `npx vercel login` once before deploy.

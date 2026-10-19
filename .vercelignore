@@ -1,9 +1,0 @@
-node_modules
-.next
-.git
-.vercel-backend
-*.tsbuildinfo
-preview-*.png
-**/*.prev.jpg
-.env*
-.DS_Store

@@ -1,13 +1,6 @@
 # Ona — Vercel deploy
 
-Ona is a **single Next.js codebase** (public phone UI + `/admin` + all `/api/*` routes) deployed to **two Vercel projects** from the same repo:
-
-| Project | Host | Role |
-|---------|------|------|
-| `ona-mi` | https://ona-mi.vercel.app | Public consumer app (staff can also use `/admin` here) |
-| `ona-backend` | https://ona-backend.vercel.app | Admin / control centre + APIs |
-
-On backend hostnames `src/middleware.ts` redirects every non-`/admin`, non-`/api` request to `/admin`, so the consumer phone shell never loads there. Locally the admin is the same dev server at `/admin`.
+Ona is a **single Next.js codebase** (public phone UI + `/admin` + all `/api/*` routes) deployed as **one project**; staff open `/admin` on the same host as the app.
 
 ## Deploy
 

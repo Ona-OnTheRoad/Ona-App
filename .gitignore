@@ -36,8 +36,6 @@ yarn-error.log*
 .env*
 
 # One-off probes / bisects (local only — not product)
-/scripts/scratch/*.mjs
-/scripts/scratch/*.sh
 
 # DB transfer dumps (contain PII — never commit)
 /tmp-db-transfer/
@@ -57,7 +55,6 @@ CLAUDE.md
 
 # Secrets / local-only artefacts (never commit)
 /Local BackUp/*.txt
-.vercel-*/
 /tmp-audit/
 
 # Keep the env template tracked (the .env* rule above would otherwise hide it)

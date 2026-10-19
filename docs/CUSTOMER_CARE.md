@@ -1,7 +1,7 @@
 # Ona Customer Care guide
 
 **Who this is for:** Customer Care, Support, Super Admin  
-**Where:** https://ona-backend.vercel.app/admin or https://ona-mi.vercel.app/admin (local: http://localhost:3000/admin)  
+**Where:** https://ona-mi.vercel.app/admin (local: http://localhost:3000/admin)  
 **Sensitive-unlock password:** set per deployment (`ADMIN_SENSITIVE_PASSWORD`); ask your Super Admin. It is never written in this guide.  
 
 If the site says **“This deployment is temporarily paused”**, that is a Vercel account/usage block — not a bad Care login. Use local admin or fix Vercel usage (see `docs/VERCEL_DEPLOY.md`).

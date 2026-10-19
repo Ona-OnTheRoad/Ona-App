@@ -34,7 +34,6 @@ npm run dev
      |----------|---------|
      | `http://localhost:3000/*` | Local public app |
      | `https://ona-mi.vercel.app/*` | Production public app |
-     | `https://ona-backend.vercel.app/*` | Production backend / admin |
 
      Optional (only if you need them later):
      - `http://127.0.0.1:3000/*` — same as localhost via IP
@@ -60,7 +59,6 @@ npm run dev
 ```
 http://localhost:3000/*
 https://ona-mi.vercel.app/*
-https://ona-backend.vercel.app/*
 ```
 
 6. **Save**

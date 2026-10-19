@@ -12,7 +12,6 @@ This README is how to run, check and ship the app. **Product and UI rules live i
 | Design gaps (what differs from the Figma and why) | [`docs/DESIGN_GAPS.md`](docs/DESIGN_GAPS.md)                                     |
 | Anti-regression rules                             | [`docs/ANTI_REGRESSION.md`](docs/ANTI_REGRESSION.md)                             |
 | Code map                                          | [`docs/CODEMAP.md`](docs/CODEMAP.md)                                             |
-| Deploy and cron                                   | [`docs/VERCEL_DEPLOY.md`](docs/VERCEL_DEPLOY.md)                                 |
 | Accessibility, SEO and offline                    | [`docs/PERFORMANCE_AND_ACCESSIBILITY.md`](docs/PERFORMANCE_AND_ACCESSIBILITY.md) |
 
 ## Stack
@@ -91,9 +90,4 @@ CI runs the same checks plus a fresh-Supabase migration test on pushes and pull 
 - **Strings:** every user-visible string goes through `t("key")` in all 11 languages ([`src/lib/i18n/TRANSLATION.md`](src/lib/i18n/TRANSLATION.md)).
 - **Back navigation** goes to the logical parent, never browser history.
 - **Overlays** portal into `#ona-phone`.
-
-## Deployment
-
-Deploys are automatic through the GitHub → Vercel integration: pull requests get preview deployments and merging to the connected branch deploys it. There are no deploy scripts here. Set environment variables in Vercel (Project → Settings → Environment Variables); `.env.example` is the complete list. Scheduled jobs are defined in `vercel.json`. Details and go-live checklist: [`docs/VERCEL_DEPLOY.md`](docs/VERCEL_DEPLOY.md).
-
-Never commit API keys. `.env.local` is gitignored; `.env.example` is the tracked template. Key handling and the payout proxy: [`docs/HANDOFF_KEYS.md`](docs/HANDOFF_KEYS.md).
+- **Secrets:** never commit API keys. `.env.local` is gitignored; `.env.example` is the tracked template. Key handling and the payout proxy: [`docs/HANDOFF_KEYS.md`](docs/HANDOFF_KEYS.md).
