@@ -70,9 +70,12 @@
   --o-overlay: rgba(17, 24, 39, 0.5);
 }
 
-.ona2 {
-  background-color: var(--o-bg);
-  color: var(--o-ink);
+/* In the base layer so utilities on the same element (bg-ona-dark, text-ona-on-dark) win. */
+@layer base {
+  .ona2 {
+    background-color: var(--o-bg);
+    color: var(--o-ink);
+  }
 }
 
 [data-theme="dark"] .ona2,
@@ -100,8 +103,10 @@
  * The light theme force-paints slate/black utilities in #ona-phone. Redesigned
  * screens read colour from tokens, so reset that for anything inside `.ona2`.
  */
-[data-theme="light"] #ona-phone .ona2 {
-  color: var(--o-ink);
+@layer base {
+  [data-theme="light"] #ona-phone .ona2 {
+    color: var(--o-ink);
+  }
 }
 
 /*

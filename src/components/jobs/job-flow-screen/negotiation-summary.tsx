@@ -9,6 +9,7 @@ import { formatMoney } from "@/lib/pricing";
 import { Check } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { useApp } from "@/lib/store";
 import { cn, firstNameOnly } from "@/lib/utils";
 import type { JobViewer } from "./types";
 
@@ -37,6 +38,17 @@ export function NegotiationSummary({
   const proKnown =
     !!job.repairProName && job.repairProName.trim() !== "Repair Pro";
   const proName = proKnown ? job.repairProName.trim() : "Repair Pro";
+  const { technicians } = useApp();
+  const tech = technicians.find((t) => t.id === job.repairProId);
+  const done = tech?.jobsCompleted ?? 0;
+  const stats = [
+    done > 0
+      ? `${done >= 10 ? `${Math.floor(done / 10) * 10}+` : done} Bookings`
+      : null,
+    tech && tech.rating > 0 ? `${tech.rating.toFixed(1)} rating` : null,
+  ]
+    .filter(Boolean)
+    .join(" \u2022 ");
   const offerLabel =
     theirOffer?.side === "repair_pro"
       ? `${firstNameOnly(proName, "Repair Pro")}\u2019s labour offer`
@@ -50,15 +62,19 @@ export function NegotiationSummary({
             <AvatarImage src={job.repairProPhoto} alt="" />
             <AvatarFallback>{proName.charAt(0).toUpperCase()}</AvatarFallback>
           </Avatar>
-          <p
-            className={cn(
-              "min-w-0 flex-1 truncate text-[15px] font-semibold",
-              ink,
-            )}
+          <div className="min-w-0 flex-1">
+            <p className={cn("truncate text-[15px] font-semibold", ink)}>
+              {proName}
+            </p>
+            {stats ? (
+              <p className={cn("truncate text-[12px]", muted)}>{stats}</p>
+            ) : null}
+          </div>
+          <Badge
+            variant="matched"
+            role="status"
+            className="shrink-0 border border-ona-success/40"
           >
-            {proName}
-          </p>
-          <Badge variant="matched" role="status" className="shrink-0">
             <Check aria-hidden className="h-3 w-3" strokeWidth={3} />
             Matched
           </Badge>
@@ -115,21 +131,11 @@ export function NegotiationSummary({
               <PhotoStrip photos={job.photos} isLight={isLight} />
             </div>
           )}
-          {calloutQuote ? (
-            <div className={CARD}>
-              <CalloutFeeLines
-                quote={calloutQuote}
-                currency={job.currency}
-                ink={ink}
-                muted={muted}
-                compact
-              />
-            </div>
-          ) : null}
         </>
       )}
 
-      {job.offers.length > 0 ? (
+      {/* The first offer is already the big card above; history only helps once there is a back-and-forth. */}
+      {job.offers.length > 1 ? (
         <div className={CARD}>
           <p className={cn(EYEBROW, "mb-2")}>Offer history</p>
           <ul className="space-y-2">
