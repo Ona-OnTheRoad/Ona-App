@@ -9,7 +9,6 @@ import { flagEmoji, getPhoneCodeOptions } from "@/lib/phone-codes";
 import { useT } from "@/lib/i18n";
 import type { AccountType } from "@/lib/types";
 import { EmailFields } from "./email-fields";
-import { FeedbackLines } from "./feedback-lines";
 import type { LoginMethod } from "./helpers";
 
 /** "Log in with email instead" / "…with phone instead" text switch. */
@@ -53,8 +52,6 @@ export function LoginStep({
   onIsoChange,
   onNationalChange,
   showPhone,
-  info,
-  error,
   busy,
 }: {
   preferType: AccountType | "";
@@ -71,8 +68,6 @@ export function LoginStep({
   onIsoChange: (iso: string) => void;
   onNationalChange: (value: string) => void;
   showPhone: boolean;
-  info: string;
-  error: string;
   busy: boolean;
 }) {
   const t = useT();
@@ -109,7 +104,6 @@ export function LoginStep({
               setPassword={setPassword}
               onForgot={onForgot}
             />
-            <FeedbackLines info={info} error={error} />
             <Button
               size="ona"
               variant="ona"
@@ -154,7 +148,6 @@ export function LoginStep({
                 </div>
               )}
             </OnaField>
-            <FeedbackLines info={info} error={error} />
             <Button
               size="ona"
               variant="ona"
@@ -166,9 +159,7 @@ export function LoginStep({
             </Button>
             <MethodSwitch method={method} onPick={pickMethod} />
           </>
-        ) : (
-          <FeedbackLines info={info} error={error} />
-        )}
+        ) : null}
       </div>
     </>
   );

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthNavigate } from "@/components/auth/auth-transition";
 import { Button } from "@/components/ui/button";
 import { OnaScreen, OnaTitle } from "@/components/ui/ona-screen";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { formatInternationalPhone } from "@/lib/phone-codes";
 import {
   clearSignupDraft,
@@ -32,6 +33,7 @@ export function SignupDetails() {
   const params = useSearchParams();
   const fields = useMotoristFields();
   const [formError, setFormError] = useState(params.get("err") || "");
+  useFeedbackToast("", formError);
   const from = params.get("from");
   const dualEntry = from === "menu" || from === "profile";
 
@@ -132,14 +134,6 @@ export function SignupDetails() {
           refInput={fields.refInput}
           setRefInput={fields.setRefInput}
         />
-        {formError ? (
-          <p
-            role="alert"
-            className="mt-4 rounded-ona-ctl bg-ona-brand-soft px-3 py-2 text-[12px] font-medium leading-snug text-ona-danger"
-          >
-            {formError}
-          </p>
-        ) : null}
       </div>
     </OnaScreen>
   );

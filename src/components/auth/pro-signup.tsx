@@ -27,6 +27,7 @@ import { StepReview } from "./pro-signup/step-review";
 import { StepSpecialty } from "./pro-signup/step-specialty";
 import { StepTrade } from "./pro-signup/step-trade";
 import { StepVehicles } from "./pro-signup/step-vehicles";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { useProSignupFlow } from "./pro-signup/use-pro-signup-flow";
 import { useProSignupForm } from "./pro-signup/use-pro-signup-form";
 import { useProSignupNav } from "./pro-signup/use-pro-signup-nav";
@@ -51,6 +52,7 @@ export function ProSignup() {
   const phoneCodes = useMemo(() => getPhoneCodeOptions(), []);
   const flow = useProSignupFlow();
   const { step, done, busy, formError } = flow;
+  useFeedbackToast("", formError);
   /** After signup → artisan verification onboarding (Go Live gated until approved) */
   const fromMenu = searchParams.get("from") === "menu";
   const fromProfile = searchParams.get("from") === "profile";
@@ -185,7 +187,6 @@ export function ProSignup() {
               form={form}
               styles={styles}
               phoneCodes={phoneCodes}
-              formError={formError}
             />
           )}
           {step === 3 && needsVehicleStep && <StepVehicles fix={fix} />}
@@ -199,11 +200,6 @@ export function ProSignup() {
             />
           )}
 
-          {formError && step !== 5 ? (
-            <p className="mb-2 text-center text-[12px] font-medium text-red-700">
-              {formError}
-            </p>
-          ) : null}
         </AppleProBody>
 
         <AppleProFooter

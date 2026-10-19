@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { OnaOtpInput } from "@/components/ui/ona-otp-input";
 import { OnaTitle } from "@/components/ui/ona-screen";
 import { useT } from "@/lib/i18n";
-import { FeedbackLines } from "./feedback-lines";
 import { formatCountdown, maskPhone } from "./phone-input";
 
 /** Screen 2: OTP boxes, existing cooldown countdown / Resend, Verify. */
@@ -14,9 +13,8 @@ export function CodeStep({
   phone,
   otp,
   setOtp,
-  info,
-  error,
   busy,
+  invalid,
   cooldownActive,
   cooldownLeft,
   onResend,
@@ -24,9 +22,9 @@ export function CodeStep({
   phone: string;
   otp: string;
   setOtp: (v: string) => void;
-  info: string;
-  error: string;
   busy: boolean;
+  /** Marks the code boxes as wrong after a failed verify. */
+  invalid: boolean;
   /** True only during the failed-attempt cooldown (resend blocked). */
   cooldownActive: boolean;
   cooldownLeft: number;
@@ -58,7 +56,7 @@ export function CodeStep({
           value={otp}
           onChange={setOtp}
           disabled={busy}
-          invalid={Boolean(error)}
+          invalid={invalid}
           label="SMS code"
           autoFocus
         />
@@ -87,7 +85,6 @@ export function CodeStep({
         <p className="sr-only" role="status">
           {expired && !cooldownActive ? "You can request a new code now." : ""}
         </p>
-        <FeedbackLines info={info} error={error} />
         <Button
           size="ona"
           variant="ona"

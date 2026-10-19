@@ -7,7 +7,7 @@ import { OnaField, OnaPasswordInput } from "@/components/ui/ona-field";
 import { OnaRuleList } from "@/components/ui/ona-rule-list";
 import { passwordChecklist, passwordError } from "@/lib/signup-validation";
 import { OnaScreen, OnaTitle } from "@/components/ui/ona-screen";
-import { FeedbackLines } from "@/components/auth/sign-in-form/feedback-lines";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 
 /**
  * Landing page from Supabase recovery email.
@@ -22,6 +22,7 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
+  useFeedbackToast(info, error);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -137,7 +138,6 @@ export default function ResetPasswordPage() {
             />
           )}
         </OnaField>
-        <FeedbackLines info={info} error={error} />
         <Button
           size="ona"
           variant="ona"

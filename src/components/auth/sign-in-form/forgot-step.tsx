@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { OnaField, OnaInput } from "@/components/ui/ona-field";
 import { OnaTitle } from "@/components/ui/ona-screen";
 import { useT } from "@/lib/i18n";
-import { FeedbackLines } from "./feedback-lines";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 
 /**
  * Asks for the account email and sends the recovery link
@@ -17,6 +17,7 @@ export function ForgotStep({ initialEmail }: { initialEmail: string }) {
   const [busy, setBusy] = useState(false);
   const [info, setInfo] = useState("");
   const [error, setError] = useState("");
+  useFeedbackToast(info, error);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -73,7 +74,6 @@ export function ForgotStep({ initialEmail }: { initialEmail: string }) {
             />
           )}
         </OnaField>
-        <FeedbackLines info={info} error={error} />
         <Button
           size="ona"
           variant="ona"

@@ -11,6 +11,7 @@ import {
   STEP_SUBTITLES as subtitles,
   STEP_TITLES as titles,
 } from "./motorist-signup/types";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { useMotoristSignup } from "./motorist-signup/use-motorist-signup";
 
 export function MotoristSignup() {
@@ -28,6 +29,7 @@ export function MotoristSignup() {
     goNext,
     finish,
   } = useMotoristSignup();
+  useFeedbackToast("", formError);
 
   return (
     <>
@@ -62,14 +64,6 @@ export function MotoristSignup() {
             />
           )}
           {step === 3 && <StepVehicles v={vehicleState} />}
-          {formError ? (
-            <p
-              role="alert"
-              className="mt-4 rounded-ona-ctl bg-ona-brand-soft px-3 py-2 text-[12px] font-medium leading-snug text-ona-danger"
-            >
-              {formError}
-            </p>
-          ) : null}
         </div>
       </OnaScreen>
 

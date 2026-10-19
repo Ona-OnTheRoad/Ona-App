@@ -24,12 +24,10 @@ export function StepContact({
   form,
   styles,
   phoneCodes,
-  formError,
 }: {
   form: ProSignupForm;
   styles: ProFieldStyles;
   phoneCodes: ReturnType<typeof getPhoneCodeOptions>;
-  formError: string;
 }) {
   const {
     dualSignup,
@@ -59,14 +57,6 @@ export function StepContact({
       ) : (
         <p className="text-center text-[10px] leading-snug text-[#475569]">
           {IDENTITY_RULE_COPY}
-        </p>
-      )}
-      {formError && (
-        <p
-          className="rounded-md bg-red-50 px-2 py-1.5 text-[11px] font-medium leading-snug text-red-700"
-          role="alert"
-        >
-          {formError}
         </p>
       )}
       <PhoneField form={form} styles={styles} phoneCodes={phoneCodes} />

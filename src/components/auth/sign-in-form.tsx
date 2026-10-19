@@ -5,6 +5,7 @@ import { OnaScreen } from "@/components/ui/ona-screen";
 import { useAuthNavigate } from "@/components/auth/auth-transition";
 import { dialForIso, DEFAULT_PHONE_ISO } from "@/lib/phone-codes";
 import { useT } from "@/lib/i18n";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { CodeStep } from "./sign-in-form/code-step";
 import { FAIL_THRESHOLD } from "./sign-in-form/helpers";
 import { ForgotStep } from "./sign-in-form/forgot-step";
@@ -32,6 +33,8 @@ export function SignInForm() {
   const error = failCooldown
     ? "Too many incorrect codes. Wait for the timer, then request a new code."
     : form.displayError;
+
+  useFeedbackToast(form.info, error);
 
   function onNationalChange(value: string) {
     const pasted = splitPastedPhone(value);
@@ -96,9 +99,8 @@ export function SignInForm() {
               phone={form.phone}
               otp={form.otp}
               setOtp={form.setOtp}
-              info={form.info}
-              error={error}
               busy={form.busy}
+              invalid={Boolean(error)}
               cooldownActive={failCooldown}
               cooldownLeft={form.cooldownLeft}
               onResend={() => void form.onSendCode()}
@@ -119,8 +121,6 @@ export function SignInForm() {
               onIsoChange={onIsoChange}
               onNationalChange={onNationalChange}
               showPhone={form.showPhone}
-              info={form.info}
-              error={error}
               busy={form.busy}
             />
           )}
