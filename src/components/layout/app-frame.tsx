@@ -11,6 +11,7 @@ import { AppDock, useDockVisible } from "@/components/layout/app-dock";
 import { InboundBanner } from "@/components/layout/inbound-banner";
 import { PhoneShell } from "@/components/layout/phone-shell";
 import { Toaster } from "@/components/ui/sonner";
+import { InstallNudge } from "@/components/pwa/install-nudge";
 import { NotificationCenter } from "@/components/notifications/notification-center";
 import { NotificationProvider } from "@/components/notifications/notification-provider";
 import { NotificationToasts } from "@/components/notifications/notification-toasts";
@@ -102,6 +103,7 @@ export function AppFrame({ children }: { children: ReactNode }) {
                 </div>
               ) : null}
               <Toaster />
+              <InstallNudge enabled={dockVisible} />
               <AppDock />
               <NotificationCenter />
             </div>
