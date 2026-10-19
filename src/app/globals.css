@@ -235,6 +235,9 @@ html[data-a11y-hc="1"] #ona-phone [class*="text-white/65"] {
   max-height: min(844px, calc(100dvh - 1.5rem)) !important;
   min-height: 0;
   overflow: hidden;
+  /* clip (unlike hidden) cannot be scrolled programmatically: focusing a field inside
+     an overlay that is still sliding in used to scroll the whole phone frame up. */
+  overflow: clip;
   /* Kill iOS/Android pull-to-refresh only on the app shell (not the whole browser) */
   overscroll-behavior: none;
   overscroll-behavior-y: none;
