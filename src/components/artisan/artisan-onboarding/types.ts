@@ -14,8 +14,6 @@ export type OnboardingStyles = {
   chipOff: string;
   chipOn: string;
   uploadClass: string;
-  errBox: string;
-  msgBox: string;
   warnBox: string;
   tipBox: string;
   navBack: string;

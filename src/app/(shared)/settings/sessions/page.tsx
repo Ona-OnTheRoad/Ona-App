@@ -5,6 +5,7 @@
  * Lists active sessions from /api/sessions; can revoke other devices.
  */
 
+import { toastError, toastSuccess } from "@/lib/toast";
 import { useCallback, useEffect, useState } from "react";
 import { MonitorSmartphone, Smartphone, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
@@ -47,7 +48,6 @@ export default function SettingsSessionsPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [msg, setMsg] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!backendUserId) {
@@ -127,8 +127,6 @@ export default function SettingsSessionsPage() {
   async function revoke(id: string) {
     if (!backendUserId) return;
     setBusyId(id);
-    setMsg(null);
-    setErr(null);
     try {
       const { authFetch } = await import("@/lib/api-auth-headers");
       const res = await authFetch(
@@ -140,13 +138,13 @@ export default function SettingsSessionsPage() {
         error?: { message?: string };
       } | null;
       if (!res.ok || json?.ok === false) {
-        setErr(json?.error?.message || "Could not sign out device");
+        toastError(json?.error?.message || "Could not sign out device");
       } else {
-        setMsg("Device signed out");
+        toastSuccess("Device signed out");
         setSessions((prev) => prev.filter((s) => s.id !== id));
       }
     } catch {
-      setErr("Network error");
+      toastError("Network error");
     } finally {
       setBusyId(null);
     }
@@ -172,11 +170,6 @@ export default function SettingsSessionsPage() {
         {err ? (
           <p className="rounded-md bg-red-500/10 px-3 py-2 text-[12px] font-semibold text-red-600">
             {err}
-          </p>
-        ) : null}
-        {msg ? (
-          <p className="rounded-md bg-emerald-500/10 px-3 py-2 text-[12px] font-semibold text-emerald-700">
-            {msg}
           </p>
         ) : null}
 

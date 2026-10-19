@@ -15,7 +15,6 @@ import {
   ContactSecuritySection,
   NameSection,
 } from "@/components/profile/shared/security-sections";
-import { StatusMessage } from "@/components/profile/shared/status-message";
 import {
   EmergencyContactSection,
   MotoristStatsSection,
@@ -71,8 +70,6 @@ export function MotoristOwnProfile({ isLight }: { isLight: boolean }) {
         ) : undefined
       }
     >
-      <StatusMessage msg={p.msg} err={p.err} />
-
       <ProfileIdentityHeader
         isLight={isLight}
         name={userProfile.fullName}

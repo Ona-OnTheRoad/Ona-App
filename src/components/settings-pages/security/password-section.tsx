@@ -25,8 +25,6 @@ export function PasswordSection({ isLight, card, ink, pw }: Props) {
     setNext,
     confirm,
     setConfirm,
-    msg,
-    err,
     busy,
     rules,
     changePassword,
@@ -80,10 +78,7 @@ export function PasswordSection({ isLight, card, ink, pw }: Props) {
         />
       </SettingsField>
       <SettingsSaveBar
-        isLight={isLight}
         busy={busy}
-        msg={msg}
-        err={err}
         onSave={changePassword}
         label="Update password"
       />

@@ -1,5 +1,6 @@
 "use client";
 
+import { toastSuccess } from "@/lib/toast";
 import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import {
@@ -60,7 +61,6 @@ export default function SettingsLocationPage() {
   const isLight = theme === "light";
   const isPro = accountType === "professional";
   const uid = backendUserId || userProfile?.email || "guest";
-  const [saved, setSaved] = useState(false);
   const [addresses, setAddresses] = useState<SavedAddress[]>([]);
   const [label, setLabel] = useState<AddressLabel>("Home");
   const [customLabel, setCustomLabel] = useState("");
@@ -85,8 +85,7 @@ export default function SettingsLocationPage() {
       lat: loc.lat,
       lng: loc.lng,
     });
-    setSaved(true);
-    window.setTimeout(() => setSaved(false), 2000);
+    toastSuccess(t("location.saved"));
   };
 
   const addSavedAddress = () => {
@@ -116,8 +115,7 @@ export default function SettingsLocationPage() {
 
   const applySavedAddress = (a: SavedAddress) => {
     setManualLocation(a.text, { lat: a.lat, lng: a.lng });
-    setSaved(true);
-    window.setTimeout(() => setSaved(false), 2000);
+    toastSuccess(t("location.saved"));
   };
 
   return (
@@ -146,11 +144,6 @@ export default function SettingsLocationPage() {
             )}
           >
             Set your base location. Coverage radius is under Availability
-          </p>
-        ) : null}
-        {saved ? (
-          <p className="mb-2 rounded-md bg-emerald-50 px-3 py-2 text-[12px] font-semibold text-emerald-800">
-            {t("location.saved")}
           </p>
         ) : null}
         <LocationPickerMap value={value} onChange={onChange} />

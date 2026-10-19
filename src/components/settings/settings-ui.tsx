@@ -181,28 +181,16 @@ export function SettingsComingSoon({
 }
 
 export function SettingsSaveBar({
-  isLight,
   busy,
-  msg,
-  err,
   onSave,
   label = "Save changes",
 }: {
-  isLight: boolean;
   busy?: boolean;
-  msg?: string | null;
-  err?: string | null;
   onSave: () => void;
   label?: string;
 }) {
   return (
     <div className="space-y-2 px-3 pb-3 pt-1">
-      {err ? (
-        <p className="text-[11px] font-semibold text-red-500">{err}</p>
-      ) : null}
-      {msg ? (
-        <p className="text-[11px] font-semibold text-emerald-600">{msg}</p>
-      ) : null}
       <button
         type="button"
         disabled={busy}

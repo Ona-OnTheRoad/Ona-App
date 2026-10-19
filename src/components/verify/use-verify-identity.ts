@@ -1,5 +1,6 @@
 "use client";
 
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -63,6 +64,7 @@ export function useVerifyIdentity() {
   const [idBackName, setIdBackName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  useFeedbackToast("", error);
   const [submitted, setSubmitted] = useState(false);
 
   const phoneOk = isPhoneVerified(userProfile);

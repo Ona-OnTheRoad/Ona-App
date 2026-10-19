@@ -1,5 +1,6 @@
 "use client";
 
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { useState } from "react";
 import { passwordError, passwordRules } from "@/lib/signup-validation";
 import { useApp } from "@/lib/store";
@@ -11,6 +12,7 @@ export function useChangePassword() {
   const [confirm, setConfirm] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  useFeedbackToast(msg ?? "", err ?? "");
   const [busy, setBusy] = useState(false);
 
   const rules = passwordRules(next);
