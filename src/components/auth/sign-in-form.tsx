@@ -7,7 +7,8 @@ import { dialForIso, DEFAULT_PHONE_ISO } from "@/lib/phone-codes";
 import { useT } from "@/lib/i18n";
 import { CodeStep } from "./sign-in-form/code-step";
 import { FAIL_THRESHOLD } from "./sign-in-form/helpers";
-import { PhoneStep } from "./sign-in-form/phone-step";
+import { ForgotStep } from "./sign-in-form/forgot-step";
+import { LoginStep } from "./sign-in-form/login-step";
 import {
   composeLoginPhone,
   splitPastedPhone,
@@ -15,8 +16,8 @@ import {
 import { useSignInForm } from "./sign-in-form/use-sign-in-form";
 
 /**
- * Phone-only login (email is signup-only).
- * One page, two steps: Role + phone, then the SMS code.
+ * Login by phone (SMS code) or by email + password.
+ * One page: Role + method, then the SMS code, or the forgot-password step.
  */
 export function SignInForm() {
   const t = useT();
@@ -24,6 +25,7 @@ export function SignInForm() {
   const form = useSignInForm();
   const [iso, setIso] = useState(DEFAULT_PHONE_ISO);
   const [national, setNational] = useState("");
+  const [forgot, setForgot] = useState(false);
 
   const failCooldown = form.failedAttempts >= FAIL_THRESHOLD && form.inCooldown;
   // Ticking text must not be re-announced every second: use a stable message.
@@ -59,16 +61,22 @@ export function SignInForm() {
     go("/login");
   }
 
-  const codeStep = form.otpSent;
+  const codeStep = form.otpSent && form.method === "phone";
 
   return (
     <OnaScreen
-      wordmark={!codeStep}
+      wordmark={!codeStep && !forgot}
       exiting={exiting}
-      onBack={codeStep ? () => form.onPhoneChange(form.phone) : leave}
+      onBack={
+        forgot
+          ? () => setForgot(false)
+          : codeStep
+            ? () => form.onPhoneChange(form.phone)
+            : leave
+      }
       backLabel={t("common.back")}
       footer={
-        codeStep ? null : (
+        codeStep || forgot ? null : (
           <button
             type="button"
             onClick={() => go("/login/role")}
@@ -79,34 +87,45 @@ export function SignInForm() {
         )
       }
     >
-      <form onSubmit={form.onSubmit}>
-        {codeStep ? (
-          <CodeStep
-            phone={form.phone}
-            otp={form.otp}
-            setOtp={form.setOtp}
-            info={form.info}
-            error={error}
-            busy={form.busy}
-            cooldownActive={failCooldown}
-            cooldownLeft={form.cooldownLeft}
-            onResend={() => void form.onSendCode()}
-          />
-        ) : (
-          <PhoneStep
-            preferType={form.preferType}
-            pickRole={form.pickRole}
-            iso={iso}
-            national={national}
-            onIsoChange={onIsoChange}
-            onNationalChange={onNationalChange}
-            showPhone={form.showPhone}
-            info={form.info}
-            error={error}
-            busy={form.busy}
-          />
-        )}
-      </form>
+      {forgot ? (
+        <ForgotStep initialEmail={form.email} />
+      ) : (
+        <form onSubmit={form.onSubmit}>
+          {codeStep ? (
+            <CodeStep
+              phone={form.phone}
+              otp={form.otp}
+              setOtp={form.setOtp}
+              info={form.info}
+              error={error}
+              busy={form.busy}
+              cooldownActive={failCooldown}
+              cooldownLeft={form.cooldownLeft}
+              onResend={() => void form.onSendCode()}
+            />
+          ) : (
+            <LoginStep
+              preferType={form.preferType}
+              pickRole={form.pickRole}
+              method={form.method}
+              pickMethod={form.pickMethod}
+              email={form.email}
+              setEmail={form.setEmail}
+              password={form.password}
+              setPassword={form.setPassword}
+              onForgot={() => setForgot(true)}
+              iso={iso}
+              national={national}
+              onIsoChange={onIsoChange}
+              onNationalChange={onNationalChange}
+              showPhone={form.showPhone}
+              info={form.info}
+              error={error}
+              busy={form.busy}
+            />
+          )}
+        </form>
+      )}
     </OnaScreen>
   );
 }

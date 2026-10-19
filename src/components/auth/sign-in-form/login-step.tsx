@@ -8,12 +8,21 @@ import { OnaTitle } from "@/components/ui/ona-screen";
 import { getPhoneCodeOptions } from "@/lib/phone-codes";
 import { useT } from "@/lib/i18n";
 import type { AccountType } from "@/lib/types";
+import { EmailFields } from "./email-fields";
 import { FeedbackLines } from "./feedback-lines";
+import type { LoginMethod } from "./helpers";
 
-/** Screen 1: role tabs, phone row, Send code. */
-export function PhoneStep({
+/** Screen 1: role tabs, method tabs, then phone row + Send code, or email + password + Log in. */
+export function LoginStep({
   preferType,
   pickRole,
+  method,
+  pickMethod,
+  email,
+  setEmail,
+  password,
+  setPassword,
+  onForgot,
   iso,
   national,
   onIsoChange,
@@ -25,6 +34,13 @@ export function PhoneStep({
 }: {
   preferType: AccountType | "";
   pickRole: (t: AccountType) => void;
+  method: LoginMethod;
+  pickMethod: (m: LoginMethod) => void;
+  email: string;
+  setEmail: (v: string) => void;
+  password: string;
+  setPassword: (v: string) => void;
+  onForgot: () => void;
   iso: string;
   national: string;
   onIsoChange: (iso: string) => void;
@@ -42,7 +58,11 @@ export function PhoneStep({
       <OnaTitle
         className="pt-5"
         title={t("auth.logIn")}
-        subtitle="Use the exact phone number you registered at signup. We will text you a code."
+        subtitle={
+          method === "email"
+            ? "Log in with the email and password you signed up with."
+            : "Use the exact phone number you registered at signup. We will text you a code."
+        }
       />
       <div className="mt-5 flex flex-col gap-5">
         <OnaSegmented<AccountType>
@@ -56,6 +76,38 @@ export function PhoneStep({
         />
 
         {showPhone ? (
+          <OnaSegmented<LoginMethod>
+            label="Log in with"
+            value={method}
+            onChange={pickMethod}
+            options={[
+              { value: "phone", label: t("auth.phoneTab") },
+              { value: "email", label: t("auth.emailTab") },
+            ]}
+          />
+        ) : null}
+
+        {showPhone && method === "email" ? (
+          <>
+            <EmailFields
+              email={email}
+              setEmail={setEmail}
+              password={password}
+              setPassword={setPassword}
+              onForgot={onForgot}
+            />
+            <FeedbackLines info={info} error={error} />
+            <Button
+              size="ona"
+              variant="ona"
+              type="submit"
+              busy={busy}
+              busyLabel={t("auth.pleaseWait")}
+            >
+              {t("auth.logIn")}
+            </Button>
+          </>
+        ) : showPhone ? (
           <>
             <OnaField label={t("auth.phone")} required>
               {({ id, describedBy, invalid }) => (

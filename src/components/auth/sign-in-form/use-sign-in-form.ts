@@ -6,15 +6,23 @@ import { useT } from "@/lib/i18n";
 import { useApp } from "@/lib/store";
 import { playAppSound, unlockAudio } from "@/lib/sound-tone";
 import type { AccountType } from "@/lib/types";
-import { COOLDOWN_SEC, FAIL_THRESHOLD, publicMessage } from "./helpers";
+import {
+  COOLDOWN_SEC,
+  FAIL_THRESHOLD,
+  publicMessage,
+  type LoginMethod,
+} from "./helpers";
 
-/** State, countdown and handlers for the phone + OTP login form. */
+/** State, countdown and handlers for the login form: phone + SMS code, or email + password. */
 export function useSignInForm() {
   const router = useRouter();
   const t = useT();
-  const { sendLoginOtp, signInWithLoginOtp } = useApp();
+  const { sendLoginOtp, signInWithLoginOtp, signInWithPassword } = useApp();
 
   const [preferType, setPreferType] = useState<AccountType | "">("");
+  const [method, setMethod] = useState<LoginMethod>("phone");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
@@ -117,11 +125,55 @@ export function useSignInForm() {
     }
   }
 
+  function pickMethod(next: LoginMethod) {
+    if (next === method) return;
+    setMethod(next);
+    ambiguousSendRef.current = false;
+    setOtpSent(false);
+    setOtp("");
+    setFailedAttempts(0);
+    setCooldownUntil(0);
+    clearFeedback();
+  }
+
+  function finishLogin(type: AccountType) {
+    unlockAudio();
+    playAppSound("login_success");
+    window.setTimeout(() => {
+      router.replace(type === "professional" ? "/dashboard" : "/");
+    }, 280);
+  }
+
+  async function onEmailLogin(type: AccountType) {
+    const target = email.trim();
+    if (!target || !password) {
+      setError("Enter your email and password.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const err = await signInWithPassword(target, password, type);
+      if (err) {
+        setError(publicMessage(err, "Email or password is incorrect."));
+        unlockAudio();
+        playAppSound("error");
+        return;
+      }
+      finishLogin(type);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     clearFeedback();
     if (preferType !== "motorist" && preferType !== "professional") {
       setError(t("auth.pickRole"));
+      return;
+    }
+    if (method === "email") {
+      await onEmailLogin(preferType);
       return;
     }
     if (!otpSent) {
@@ -158,11 +210,7 @@ export function useSignInForm() {
       }
       setFailedAttempts(0);
       setCooldownUntil(0);
-      unlockAudio();
-      playAppSound("login_success");
-      window.setTimeout(() => {
-        router.replace(preferType === "professional" ? "/dashboard" : "/");
-      }, 280);
+      finishLogin(preferType);
     } finally {
       setBusy(false);
     }
@@ -186,6 +234,12 @@ export function useSignInForm() {
 
   return {
     preferType,
+    method,
+    pickMethod,
+    email,
+    setEmail,
+    password,
+    setPassword,
     phone,
     otp,
     setOtp,
