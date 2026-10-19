@@ -18,8 +18,7 @@ import type { ProService } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function SpecialtyFilterBar() {
-  const { category, specialtyFilter, setSpecialtyFilter, theme } = useApp();
-  const isLight = theme === "light";
+  const { category, specialtyFilter, setSpecialtyFilter } = useApp();
 
   if (!isSpecialtyPickerTrade(category)) return null;
 
@@ -43,12 +42,10 @@ export function SpecialtyFilterBar() {
             aria-pressed={selected}
             onClick={() => setSpecialtyFilter(opt)}
             className={cn(
-              "inline-flex shrink-0 items-center justify-center rounded-md border-0 px-2.5 py-1.5 text-[10px] font-bold transition-colors",
+              "inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-full border px-3.5 text-[12px] font-bold transition-colors",
               selected
-                ? "bg-[#FF6B35] text-white"
-                : isLight
-                  ? "bg-transparent text-[#475569]"
-                  : "bg-transparent text-white/75",
+                ? "border-ona-brand bg-ona-brand-soft text-ona-brand-ink"
+                : "border-ona-border bg-ona-surface text-ona-ink",
             )}
           >
             {specialtyChipLabel(opt)}

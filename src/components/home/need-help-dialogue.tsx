@@ -10,7 +10,6 @@ import {
   useAutoCalloutUrgency,
 } from "@/lib/callout/use-auto-urgency";
 import type { ProService } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import {
   canFindPro,
   canOpenEmergencyCard,
@@ -177,12 +176,7 @@ export function NeedHelpDialogue({ isLight }: { isLight: boolean }) {
   };
 
   return (
-    <div
-      className={cn(
-        "flex h-full min-h-0 flex-col overflow-hidden rounded-t-lg px-3 pb-2 pt-1.5",
-        isLight ? "bg-[#d8dce4]/90 backdrop-blur-sm" : "bg-black",
-      )}
-    >
+    <div className="ona2 flex h-full min-h-0 flex-col overflow-hidden px-4 pb-4 pt-3">
       <NeedHelpStepBody
         isLight={isLight}
         step={step}
@@ -204,7 +198,7 @@ export function NeedHelpDialogue({ isLight }: { isLight: boolean }) {
       />
 
       {error ? (
-        <p className="mt-1 shrink-0 text-[12px] font-semibold text-red-500">
+        <p className="mt-1 shrink-0 text-[12px] font-semibold text-ona-danger">
           {error}
         </p>
       ) : null}

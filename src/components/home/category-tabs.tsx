@@ -1,56 +1,27 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Car,
-  ChevronRight,
-  CircleDot,
-  Cpu,
-  Fan,
-  Grid2x2,
-  Hammer,
-  Paintbrush,
-  PaintRoller,
-  Plug,
-  Scissors,
-  ShowerHead,
-  Sun,
-  Wrench,
-  Zap,
-} from "lucide-react";
+import { Search, UserPlus } from "lucide-react";
+import { TradeTileGrid } from "@/components/home/trade-tile-grid";
+import { TRADE_TILES } from "@/components/home/trade-tiles";
 import { clearTradeFlowSession } from "@/lib/flow-sessions";
-import { useT, type MessageKey } from "@/lib/i18n";
+import { useT } from "@/lib/i18n";
 import { useApp } from "@/lib/store";
-import { CarBattery } from "@/lib/services";
 import type { ServiceCategory } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
-const ALL_TABS: {
-  id: ServiceCategory;
-  labelKey: MessageKey;
-  icon: typeof Wrench;
-}[] = [
-  { id: "mechanic", labelKey: "trade.mechanic", icon: Wrench },
-  { id: "vulcanizer", labelKey: "trade.vulcanizer", icon: CircleDot },
-  { id: "towing", labelKey: "trade.towing", icon: Car },
-  { id: "battery", labelKey: "trade.battery", icon: CarBattery },
-  { id: "ac", labelKey: "trade.ac", icon: Fan },
-  { id: "body", labelKey: "trade.body", icon: Paintbrush },
-  { id: "electrical", labelKey: "trade.electrical", icon: Plug },
-  { id: "diagnostics", labelKey: "trade.diagnostics", icon: Cpu },
-  { id: "fashion", labelKey: "trade.fashion", icon: Scissors },
-  { id: "plumber", labelKey: "trade.plumber", icon: ShowerHead },
-  { id: "carpenter", labelKey: "trade.carpenter", icon: Hammer },
-  { id: "painter", labelKey: "trade.painter", icon: PaintRoller },
-  { id: "solar", labelKey: "trade.solar", icon: Sun },
-  { id: "generator", labelKey: "trade.generator", icon: Zap },
-  /** Replaces former "All" opens ONA Shop (repair commerce) */
-  { id: "all", labelKey: "trade.shop", icon: Grid2x2 },
-];
+/** Stop sheet gestures (swipe / wheel) from firing while the user types. */
+const stopGesture = {
+  onPointerDown: (e: React.SyntheticEvent) => e.stopPropagation(),
+  onPointerUp: (e: React.SyntheticEvent) => e.stopPropagation(),
+  onTouchStart: (e: React.SyntheticEvent) => e.stopPropagation(),
+  onTouchEnd: (e: React.SyntheticEvent) => e.stopPropagation(),
+  onWheel: (e: React.SyntheticEvent) => e.stopPropagation(),
+};
 
 /**
- * Trade strip (5 columns, wraps rows). Swipe left → help page.
+ * Trade picker: title + local search + 3-column tile grid (grid only while the
+ * sheet is expanded). Swipe left → help page.
  */
 export function CategoryTabs({
   expanded,
@@ -72,14 +43,18 @@ export function CategoryTabs({
   /** Mechanic flow: shrink the trade grid so the card can fill the panel. */
   compact?: boolean;
 }) {
-  const { category, setCategory, theme } = useApp();
+  const { category, setCategory } = useApp();
   const t = useT();
   const router = useRouter();
-  const isLight = theme === "light";
+  const [query, setQuery] = useState("");
+  // A trade is open → one compact chip row so the flow keeps the room.
+  const isCompact = Boolean(compact) || category !== "none";
   const start = useRef<{ x: number; y: number } | null>(null);
   const moved = useRef(false);
-  // Full motorist trade bar always show every shipped trade
-  const tabs = ALL_TABS;
+  const q = query.trim().toLowerCase();
+  const tabs = q
+    ? TRADE_TILES.filter((tile) => t(tile.labelKey).toLowerCase().includes(q))
+    : TRADE_TILES;
 
   const onAxisWheel = (e: React.WheelEvent) => {
     if (!onExpand || !onCollapse) return;
@@ -115,7 +90,7 @@ export function CategoryTabs({
     start.current = null;
 
     // Horizontal swipe (lower threshold so it fires on mobile)
-    if (Math.abs(dx) >= 28 && Math.abs(dx) > Math.abs(dy) * 0.9) {
+    if (!isCompact && Math.abs(dx) >= 28 && Math.abs(dx) > Math.abs(dy) * 0.9) {
       if (dx < 0) onSwipeLeft?.();
       else onSwipeRight?.();
       return;
@@ -154,12 +129,43 @@ export function CategoryTabs({
     finishGesture(t.clientX, t.clientY);
   };
 
+  const onPick = (id: ServiceCategory) => {
+    // Ignore click if this was a swipe
+    if (moved.current) return;
+    // Former "All" → ONA Shop (repair commerce)
+    if (id === "all") {
+      router.push("/shop");
+      return;
+    }
+    // Re-tap the active trade → unclick (reset) it
+    if (id === category) {
+      clearTradeFlowSession(id);
+      setCategory("none");
+      return;
+    }
+    setQuery("");
+    setCategory(id);
+    onExpand?.();
+  };
+
+  const helpButton = onOpenHelp ? (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpenHelp();
+      }}
+      aria-label={t("home.helpSomeone")}
+      title={t("home.helpSomeone")}
+      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-0 bg-transparent p-0 text-ona-muted"
+    >
+      <UserPlus className="h-5 w-5" strokeWidth={1.9} />
+    </button>
+  ) : null;
+
   return (
     <div
-      className={cn(
-        "relative px-3 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
-        compact ? "pt-0.5 pb-0.5" : "pt-1 pb-1",
-      )}
+      className="relative px-4 pb-3 pt-1"
       onWheel={onAxisWheel}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -172,93 +178,61 @@ export function CategoryTabs({
       onTouchEnd={onTouchEnd}
       style={{ touchAction: "pan-y pinch-zoom" }}
     >
-      <div
-        role="tablist"
-        aria-label={t("home.serviceCategory")}
-        className={cn(
-          "relative grid grid-cols-5 gap-0 rounded-xl p-0.5",
-          isLight
-            ? "bg-[#d8dce4]"
-            : "bg-gradient-to-b from-[#1a1a1a] to-[#141414]",
-        )}
-      >
-        {tabs.map(({ id, labelKey, icon: Icon }) => {
-          const active = category === id;
-          return (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => {
-                // Ignore click if this was a swipe
-                if (moved.current) return;
-                // Former "All" → ONA Shop (repair commerce)
-                if (id === "all") {
-                  router.push("/shop");
-                  return;
-                }
-                // Re-tap the active trade → unclick (reset) it
-                if (id === category) {
-                  clearTradeFlowSession(id);
-                  setCategory("none");
-                  return;
-                }
-                setCategory(id);
-                onExpand?.();
-              }}
-              style={{
-                fontSize: compact ? 8 : expanded ? 10.08 : 9,
-              }}
-              className={cn(
-                "flex min-w-0 flex-col items-center justify-center gap-0.5 border-0 px-1 font-semibold rounded-md transition-all duration-500",
-                compact ? "py-1" : "py-2.5",
-                active && !menuOpen
-                  ? "metallic-orange text-white"
-                  : isLight
-                    ? "bg-transparent text-black hover:text-black"
-                    : "bg-transparent text-[#a0a0a0] hover:text-white",
-              )}
-            >
-              <Icon
-                style={{
-                  width: compact ? 12 : expanded ? 18.24 : 16,
-                  height: compact ? 12 : expanded ? 18.24 : 16,
-                }}
-                className={cn("shrink-0", !active && isLight && "text-black")}
-                strokeWidth={active ? 2.4 : 2}
+      {isCompact ? (
+        <div className="flex items-center gap-1">
+          <TradeTileGrid
+            tiles={TRADE_TILES}
+            active={menuOpen ? "none" : category}
+            compact
+            onPick={onPick}
+          />
+          {helpButton}
+        </div>
+      ) : (
+        <>
+          <div className="flex items-center justify-between gap-2">
+            <p className="py-2 text-[17px] font-bold leading-tight text-ona-ink">
+              Find trusted help near you.
+            </p>
+            {helpButton}
+          </div>
+          <div className="relative mb-3" {...stopGesture}>
+            <Search
+              aria-hidden
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ona-muted"
+              strokeWidth={2}
+            />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => onExpand?.()}
+              placeholder="What do you need help with?"
+              aria-label="What do you need help with?"
+              autoComplete="off"
+              enterKeyHint="search"
+              className="h-11 w-full rounded-ona-ctl border border-ona-border bg-ona-field pl-9 pr-3 text-[14px] text-ona-ink"
+            />
+          </div>
+          {expanded ? (
+            tabs.length > 0 ? (
+              <TradeTileGrid
+                tiles={tabs}
+                active={menuOpen ? "none" : category}
+                compact={false}
+                onPick={onPick}
               />
-              <span className="truncate leading-none">{t(labelKey)}</span>
-            </button>
-          );
-        })}
-
-        {/* Small bounce arrow: middle of A/C (top-right) and All (bottom-right) no 3rd row */}
-        {onOpenHelp && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenHelp();
-            }}
-            aria-label={t("home.helpSomeone")}
-            className={cn(
-              "absolute right-0.5 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center border-0 bg-transparent p-0",
-            )}
-          >
-            <span
-              className={cn(
-                "om-bounce-arrow flex h-5 w-5 items-center justify-center rounded-full",
-                isLight
-                  ? "bg-white/90 text-black shadow-sm ring-1 ring-black/8"
-                  : "bg-white/15 text-white ring-1 ring-white/15",
-              )}
-            >
-              <ChevronRight className="h-3 w-3" strokeWidth={2.75} />
-            </span>
-          </button>
-        )}
-      </div>
+            ) : (
+              <p
+                role="status"
+                className="py-6 text-center text-[13px] text-ona-muted"
+              >
+                No match
+              </p>
+            )
+          ) : null}
+        </>
+      )}
     </div>
   );
 }

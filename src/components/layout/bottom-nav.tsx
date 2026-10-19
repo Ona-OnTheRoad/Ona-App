@@ -22,9 +22,8 @@ const items: {
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { theme, accountType } = useApp();
+  const { accountType } = useApp();
   const t = useT();
-  const isLight = theme === "light";
   const homeHref = accountType === "professional" ? "/dashboard" : "/";
   const tabs =
     accountType === "professional"
@@ -33,10 +32,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className={cn(
-        "shrink-0 border-0 px-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1.5",
-        isLight ? "bg-[#c8c9cd]" : "bg-black",
-      )}
+      className="ona2 shrink-0 border-0 border-t border-ona-border bg-ona-surface px-1 pb-[max(0.35rem,env(safe-area-inset-bottom))]"
       aria-label="Main navigation"
     >
       <ul className="flex items-stretch justify-between">
@@ -47,23 +43,22 @@ export function BottomNav() {
               ? pathname === "/" || pathname === "/dashboard"
               : pathname.startsWith(href);
           return (
-            <li key={href} className="flex-1">
+            <li key={href} className="relative flex-1">
+              {active ? (
+                <span
+                  aria-hidden
+                  className="absolute inset-x-4 -top-px h-0.5 rounded-full bg-ona-brand"
+                />
+              ) : null}
               <Link
                 href={to}
                 className={cn(
-                  "flex flex-col items-center gap-0.5 py-1 text-[10px] font-medium transition-colors",
-                  active
-                    ? "text-brand"
-                    : isLight
-                      ? "text-slate-400 hover:text-slate-600"
-                      : "text-white/65 hover:text-white",
+                  "flex min-h-[48px] flex-col items-center justify-center gap-0.5 py-1.5 text-[11px] font-medium transition-colors",
+                  active ? "text-ona-brand-ink" : "text-ona-muted",
                 )}
                 aria-current={active ? "page" : undefined}
               >
-                <Icon
-                  className={cn("h-5 w-5", active && "fill-brand/15")}
-                  strokeWidth={active ? 2.4 : 2}
-                />
+                <Icon className="h-5 w-5" strokeWidth={active ? 2.3 : 1.9} />
                 {t(labelKey)}
               </Link>
             </li>

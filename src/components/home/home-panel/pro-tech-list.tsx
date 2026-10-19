@@ -3,14 +3,12 @@
 import { TechCard } from "@/components/technician/tech-card";
 import { useT } from "@/lib/i18n";
 import type { Technician } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import { PAGE_SIZE } from "@/components/home/home-panel/use-paged-technicians";
 
 type ActiveJob = React.ComponentProps<typeof TechCard>["activeJob"];
 
 /** Repair Pro market list (paged, scrolls inside the sheet). */
 export function ProTechList({
-  isLight,
   list,
   total,
   canShowMore,
@@ -22,7 +20,6 @@ export function ProTechList({
   onOpenJob,
   onShowMore,
 }: {
-  isLight: boolean;
   list: Technician[];
   total: number;
   canShowMore: boolean;
@@ -37,18 +34,10 @@ export function ProTechList({
   const t = useT();
   return (
     <div
-      className={cn(
-        "min-h-full overflow-hidden rounded-t-lg",
-        isLight ? "bg-[#d8dce4]/90 backdrop-blur-sm" : "bg-black",
-      )}
+      className="min-h-full overflow-hidden rounded-t-ona-card bg-ona-field"
       style={{ transform: "translateZ(0)" }}
     >
-      <p
-        className={cn(
-          "px-3 pt-2 text-[10px] font-semibold uppercase tracking-wide",
-          isLight ? "text-slate-600" : "text-white/55",
-        )}
-      >
+      <p className="px-3 pt-2 text-[11px] font-semibold uppercase tracking-wide text-ona-muted">
         {t("home.nearbyCount", { total })}
       </p>
       {list.map((tech) => (
@@ -79,24 +68,14 @@ export function ProTechList({
         <button
           type="button"
           onClick={onShowMore}
-          className={cn(
-            "w-full border-0 py-2.5 text-[12px] font-bold",
-            isLight
-              ? "bg-transparent text-slate-700 hover:bg-slate-200/60"
-              : "bg-transparent text-white/80 hover:bg-white/[0.04]",
-          )}
+          className="min-h-[44px] w-full border-0 bg-transparent py-2.5 text-[13px] font-bold text-ona-ink hover:bg-ona-field-strong"
         >
           {t("home.seeMore", { shown: list.length, total })}
         </button>
       )}
 
       {!canShowMore && total > PAGE_SIZE && (
-        <p
-          className={cn(
-            "py-1.5 text-center text-[10px]",
-            isLight ? "text-slate-400" : "text-white/45",
-          )}
-        >
+        <p className="py-1.5 text-center text-[11px] text-ona-muted">
           {t("home.showingAll", { total, km: radiusKm })}
         </p>
       )}

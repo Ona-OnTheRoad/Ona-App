@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { MapPin } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { BankForcePanel } from "@/components/auth/bank-force-panel";
 import { AppHeader } from "@/components/home/app-header";
@@ -22,7 +23,7 @@ const ServiceMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-full w-full items-center justify-center bg-[#0a1610] text-sm text-[#e2eee8]">
+      <div className="flex h-full w-full items-center justify-center bg-ona-map text-sm text-ona-muted">
         Loading map…
       </div>
     ),
@@ -34,12 +35,12 @@ export function HomeScreen() {
     visibleTechnicians,
     setSelectedTechId,
     selectedTechId,
-    theme,
+    category,
+    accountType,
     setCategory,
     authReady,
   } = useApp();
   const { config } = useAppConfig();
-  const isLight = theme === "light";
   /** Open with lower panel down (collapsed) map slot on top, sheet ~60% bottom */
   const [sheetExpanded, setSheetExpanded] = useState(false);
   /** Data-saver: no map tiles until the user taps the blank map area */
@@ -96,26 +97,20 @@ export function HomeScreen() {
     return (
       <div
         className={cn(
-          "flex h-full flex-col items-center justify-center gap-3 px-6 text-center",
-          isLight ? "bg-[#c8c9cd]" : "bg-black",
+          "ona2 flex h-full flex-col items-center justify-center gap-3 px-6 text-center",
         )}
       >
-        <p
-          className={cn(
-            "text-lg font-bold",
-            isLight ? "text-slate-900" : "text-white",
-          )}
-        >
-          {config.app.name}
-        </p>
-        <p className="max-w-xs text-sm text-muted">
+        <p className="text-lg font-bold text-ona-ink">{config.app.name}</p>
+        <p className="max-w-xs text-sm text-ona-muted">
           {config.app.maintenanceMessage}
         </p>
       </div>
     );
   }
 
-  const sheetBg = isLight ? "bg-[#c8c9cd]" : "bg-black";
+  /** Customer, no trade open, sheet down: sheet shrinks to title + search. */
+  const shortSheet =
+    !sheetExpanded && accountType !== "professional" && category === "none";
   // Cap map pins hard tiles + markers are the main data cost
   const mapTechs = visibleTechnicians
     .filter((t) => t.status !== "offline")
@@ -130,12 +125,17 @@ export function HomeScreen() {
   return (
     <div
       data-theme-toggle-ok
-      className={cn(
-        "relative flex h-full min-h-0 flex-col overflow-hidden",
-        sheetBg,
-      )}
+      className="ona2 relative flex h-full min-h-0 flex-col overflow-hidden"
     >
-      <div className={cn("z-20 shrink-0", sheetBg)}>
+      {/* Floats over the map; sits in flow above the sheet when it is full-height */}
+      <div
+        className={cn(
+          "z-40",
+          sheetExpanded
+            ? "relative shrink-0 bg-ona-bg"
+            : "absolute inset-x-0 top-0",
+        )}
+      >
         <AppHeader />
       </div>
 
@@ -146,7 +146,9 @@ export function HomeScreen() {
             "om-sheet-spring relative min-h-0 overflow-hidden",
             sheetExpanded
               ? "h-0 flex-[0_0_0%] opacity-0 pointer-events-none"
-              : "flex-[0_0_40%] opacity-100",
+              : shortSheet
+                ? "flex-1 opacity-100"
+                : "flex-[0_0_40%] opacity-100",
           )}
         >
           {mapEnabled && !sheetExpanded ? (
@@ -155,16 +157,13 @@ export function HomeScreen() {
             <button
               type="button"
               onClick={openMap}
-              className={cn(
-                "flex h-full w-full flex-col items-center justify-center gap-1 border-0 px-4 text-center",
-                // Match map palette (not pale gray) so home never looks “white”
-                isLight
-                  ? "bg-[#0a1610] text-[#e2eee8]"
-                  : "bg-[#0a0000] text-[#f0e4e4]",
-              )}
+              className="flex h-full w-full flex-col items-center justify-center gap-2 border-0 bg-ona-map px-4 text-center text-ona-ink"
             >
-              <span className="text-[13px] font-semibold">Show map</span>
-              <span className="text-[11px] opacity-80">
+              <span className="flex h-11 w-11 items-center justify-center rounded-full border border-ona-border bg-ona-surface text-ona-brand-ink">
+                <MapPin className="h-5 w-5" strokeWidth={2} />
+              </span>
+              <span className="text-[14px] font-semibold">Show map</span>
+              <span className="text-[12px] text-ona-muted">
                 Tap once to load map
               </span>
             </button>
@@ -174,11 +173,14 @@ export function HomeScreen() {
         <div
           data-theme-toggle-ok
           className={cn(
-            "om-sheet-spring z-30 flex min-h-0 flex-col overflow-hidden",
-            sheetExpanded ? "flex-1" : "flex-[0_0_60%]",
-            isLight ? "bg-[#c8c9cd]" : "bg-black",
+            "om-sheet-spring z-30 flex min-h-0 flex-col overflow-hidden bg-ona-surface",
+            sheetExpanded
+              ? "flex-1"
+              : shortSheet
+                ? "flex-[0_0_auto]"
+                : "flex-[0_0_60%]",
             !sheetExpanded &&
-              "rounded-t-2xl shadow-[0_-6px_24px_rgba(0,0,0,0.18)]",
+              "rounded-t-ona-sheet shadow-[0_-6px_24px_rgba(17,24,39,0.12)]",
           )}
           style={{ touchAction: "pan-y" }}
         >

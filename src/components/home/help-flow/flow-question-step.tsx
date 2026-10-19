@@ -1,7 +1,8 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
-import { ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { OnaFlowHeader } from "@/components/ui/ona-flow-header";
 import type { ProService } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { BaseRoute, HelpFlowConfig } from "../help-flow-configs";
@@ -10,6 +11,7 @@ import type { FlowDir, FlowStyles } from "./types";
 export function FlowQuestionStep({
   config,
   styles,
+  tag,
   step,
   dir,
   screen,
@@ -27,6 +29,7 @@ export function FlowQuestionStep({
 }: {
   config: HelpFlowConfig;
   styles: FlowStyles;
+  tag: string;
   step: string;
   dir: FlowDir;
   screen: ReturnType<HelpFlowConfig["screen"]>;
@@ -42,10 +45,21 @@ export function FlowQuestionStep({
   stackLength: number;
   goBack: () => void;
 }) {
-  const { ink, muted, field, rowCard, chipIdle, actionFlat } = styles;
+  const { field } = styles;
+  const isConfirm = step === "confirm" && route && config.confirmQuestion;
+  const title = screen?.question
+    ? screen.question
+    : isConfirm
+      ? config.confirmQuestion!(chosenTrade)
+      : "";
+  const isText = screen?.kind === "text";
   return (
     <>
-      {/* Question / confirm screen */}
+      <OnaFlowHeader
+        tag={tag}
+        title={title}
+        onBack={stackLength > 1 ? goBack : undefined}
+      />
       <div
         key={`${step}-${dir}`}
         className={cn(
@@ -53,132 +67,74 @@ export function FlowQuestionStep({
           dir === "back" ? "om-mech-slide-back" : "om-mech-slide-fwd",
         )}
       >
-        {screen ? (
-          <>
-            <div className="mt-2 flex items-center gap-1 px-0.5 pb-2">
-              {screen.kind === "text" ? (
-                <button
-                  type="button"
-                  disabled={!config.canAdvanceText(draft)}
-                  onClick={submitText}
-                  aria-label="Next"
-                  className="border-0 bg-transparent p-0.5 text-[#FF6B35] disabled:opacity-40"
-                >
-                  <ChevronRight className="h-6 w-6" strokeWidth={2.5} />
-                </button>
-              ) : null}
-              <p
-                className={cn(
-                  "text-[14px] font-bold capitalize leading-snug",
-                  ink,
-                )}
+        {screen?.kind === "choice" ? (
+          <div className="flex flex-col gap-2 pb-2">
+            {(screen.options || []).map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => pick(opt.id, opt.label)}
+                className="flex min-h-12 w-full items-center rounded-ona-ctl border-0 bg-ona-field-strong px-3.5 py-3 text-left text-[13px] font-semibold leading-snug text-ona-ink transition-colors active:bg-ona-border"
               >
-                {screen.question}
-              </p>
-            </div>
-            {screen.kind === "choice" ? (
-              <div className="flex flex-col gap-1">
-                {(screen.options || []).map((opt, i) => {
-                  const letter =
-                    step === "start"
-                      ? (config.startOptions ?? [])[i]?.id
-                      : undefined;
-                  return (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => pick(opt.id, opt.label)}
-                      className={cn(
-                        "flex w-full items-center gap-2 rounded-[4px] border-0 px-1 py-3 text-left transition-transform duration-150 active:scale-[0.985]",
-                        rowCard,
-                      )}
-                    >
-                      {letter ? (
-                        <span
-                          className={cn(
-                            "w-5 shrink-0 text-[12px] font-bold",
-                            muted,
-                          )}
-                        >
-                          {letter}.
-                        </span>
-                      ) : null}
-                      <span
-                        className={cn(
-                          "min-w-0 flex-1 text-[13px] font-semibold capitalize leading-snug",
-                          ink,
-                        )}
-                      >
-                        {opt.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <textarea
-                value={draft}
-                onChange={(e) => {
-                  setDraft(e.target.value);
-                  setError(null);
-                }}
-                rows={3}
-                placeholder={screen.placeholder}
-                className={cn(
-                  "w-full resize-none rounded-xl border-0 px-3 py-2 text-[13px] font-medium leading-snug outline-none",
-                  field,
-                )}
-              />
-            )}
-          </>
+                {opt.label}
+              </button>
+            ))}
+          </div>
         ) : null}
 
-        {/* Confirm screen */}
-        {step === "confirm" && route && config.confirmQuestion ? (
-          <div>
-            <p className={cn("text-[14px] font-bold", ink)}>
-              {config.confirmQuestion(chosenTrade)}
-            </p>
-            <div className="mt-2 flex gap-2">
-              <button
-                type="button"
-                onClick={() => acceptRoute(true)}
-                className="h-11 flex-1 rounded-md border-0 bg-brand text-[14px] font-bold text-white active:scale-[0.985]"
-              >
-                Yes
-              </button>
-              <button
-                type="button"
-                onClick={() => acceptRoute(false)}
-                className={cn(
-                  "h-11 flex-1 rounded-md border-0 text-[14px] font-bold active:scale-[0.985]",
-                  chipIdle,
-                )}
-              >
-                No
-              </button>
-            </div>
+        {isText ? (
+          <textarea
+            value={draft}
+            onChange={(e) => {
+              setDraft(e.target.value);
+              setError(null);
+            }}
+            rows={4}
+            aria-label={screen?.question}
+            placeholder={screen?.placeholder}
+            className={cn(
+              "w-full resize-none rounded-ona-ctl px-3.5 py-3 text-[14px] font-medium leading-snug outline-none",
+              field,
+            )}
+          />
+        ) : null}
+
+        {isConfirm ? (
+          <div className="flex flex-col gap-2">
+            <Button size="ona" variant="ona" onClick={() => acceptRoute(true)}>
+              Yes
+            </Button>
+            <Button
+              size="ona"
+              variant="onaOutline"
+              onClick={() => acceptRoute(false)}
+            >
+              No
+            </Button>
           </div>
         ) : null}
 
         {error ? (
-          <p className="mt-1 text-[12px] font-semibold text-red-500">{error}</p>
+          <p
+            role="alert"
+            className="mt-2 text-[12px] font-semibold text-ona-danger"
+          >
+            {error}
+          </p>
         ) : null}
       </div>
 
-      {/* Back button */}
-      {stackLength > 1 ? (
-        <div className="mt-auto flex shrink-0 gap-2 pt-2">
-          <button
-            type="button"
-            onClick={goBack}
-            className={cn(
-              "h-11 w-full rounded-md border-0 text-[14px] font-bold",
-              actionFlat,
-            )}
+      {isText ? (
+        <div className="shrink-0 pt-3">
+          <Button
+            size="ona"
+            variant="ona"
+            disabled={!config.canAdvanceText(draft)}
+            onClick={submitText}
+            aria-label="Next"
           >
-            Back
-          </button>
+            Next
+          </Button>
         </div>
       ) : null}
     </>

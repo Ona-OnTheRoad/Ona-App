@@ -84,12 +84,14 @@ export function HomePanel({
 
   const isMotorist = isAuthenticated && accountType === "motorist";
 
-  /** Repair Pro in professional mode market shows ONLY their primary trade. */
+  /** Repair Pro: market shows ONLY their primary trade. */
   const isProMode = accountType === "professional";
 
   /** Talk box only after they tap a trade. Never for Repair Pro. */
   const tradeChosen = talkBoxAfterTradePick(category);
   const isFlow = hasHelpFlow(category, isProMode);
+  /** Trade grid showing: its block scrolls inside the sheet on short phones. */
+  const gridMode = !isProMode && category === "none" && expanded;
   const showTalkBox = !isProMode && tradeChosen && !isFlow;
 
   /**
@@ -156,9 +158,11 @@ export function HomePanel({
         willChange: "transform",
       }}
     >
-      <div onWheel={onSheetWheel} className="shrink-0">
+      <div
+        onWheel={onSheetWheel}
+        className={gridMode ? "flex min-h-0 flex-col" : "shrink-0"}
+      >
         <SheetPill
-          isLight={isLight}
           expanded={expanded}
           onExpand={onExpand}
           onCollapse={onCollapse}
@@ -167,22 +171,30 @@ export function HomePanel({
           onTouchMove={onPillTouchMove}
         />
 
-        <HomeTopStrip
-          isLight={isLight}
-          isProMode={isProMode}
-          isMotorist={isMotorist}
-          addressConfirmed={Boolean(addressConfirmed)}
-          expanded={expanded}
-          onExpand={onExpand}
-          onCollapse={onCollapse}
-          menuOpen={menuOpen}
-          help={help}
-        />
+        <div
+          className={
+            gridMode
+              ? "min-h-0 overflow-y-auto overscroll-contain scrollbar-hide"
+              : undefined
+          }
+        >
+          <HomeTopStrip
+            isLight={isLight}
+            isProMode={isProMode}
+            isMotorist={isMotorist}
+            addressConfirmed={Boolean(addressConfirmed)}
+            expanded={expanded}
+            onExpand={onExpand}
+            onCollapse={onCollapse}
+            menuOpen={menuOpen}
+            help={help}
+          />
 
-        {/* Mechanic / Vulcanizer / Tow / Battery / A/C / Body / Electric / Scan / Fashion / Plumber / Carpenter / Painter / Solar / Generator: no radius Repair Pro is found by urgency. */}
-        {isProMode || (tradeChosen && !isFlow) ? <RadiusSlider /> : null}
-        {isProMode && specialtyPickerOpen ? <SpecialtyFilterBar /> : null}
-        {isProMode ? <FilterChips /> : null}
+          {/* Mechanic / Vulcanizer / Tow / Battery / A/C / Body / Electric / Scan / Fashion / Plumber / Carpenter / Painter / Solar / Generator: no radius Repair Pro is found by urgency. */}
+          {isProMode || (tradeChosen && !isFlow) ? <RadiusSlider /> : null}
+          {isProMode && specialtyPickerOpen ? <SpecialtyFilterBar /> : null}
+          {isProMode ? <FilterChips /> : null}
+        </div>
       </div>
 
       {locationError && (
@@ -191,7 +203,6 @@ export function HomePanel({
 
       {isProMode && list.length === 0 && !showVerifyPanel && (
         <ProEmptyState
-          isLight={isLight}
           refreshing={refreshingPros}
           onRefresh={() => {
             setRefreshingPros(true);
@@ -207,7 +218,7 @@ export function HomePanel({
       {/* Talk box: no scroll. Repair Pro list may scroll. */}
       <div
         className={cn(
-          "min-h-0 flex-1 px-3 pb-0",
+          "min-h-0 flex-1 px-4 pb-0",
           showTalkBox || isFlow
             ? "flex flex-col overflow-hidden"
             : "overflow-y-auto overscroll-contain scrollbar-hide",
@@ -219,15 +230,11 @@ export function HomePanel({
           </div>
         ) : null}
         {!isProMode && openNotice ? (
-          <OpenRequestNotice
-            isLight={isLight}
-            onDismiss={() => setOpenNotice(false)}
-          />
+          <OpenRequestNotice onDismiss={() => setOpenNotice(false)} />
         ) : null}
 
         {!isProMode && pendingExpress ? (
           <ExpressResumeCard
-            isLight={isLight}
             pending={pendingExpress}
             onResume={openExpressResume}
           />
@@ -256,7 +263,6 @@ export function HomePanel({
           isProMode &&
           list.length > 0 && (
             <ProTechList
-              isLight={isLight}
               list={list}
               total={total}
               canShowMore={canShowMore}
@@ -272,12 +278,7 @@ export function HomePanel({
         )}
 
         {isProMode && !expanded && list.length > 0 && (
-          <p
-            className={cn(
-              "py-2 text-center text-[10px]",
-              isLight ? "text-slate-400" : "text-white/45",
-            )}
-          >
+          <p className="py-2 text-center text-[11px] text-ona-muted">
             {t("home.swipeHint")}
           </p>
         )}

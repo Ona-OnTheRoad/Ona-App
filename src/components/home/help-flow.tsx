@@ -9,7 +9,7 @@ import {
 import { useSavedVehicles } from "@/components/home/shared/use-saved-vehicles";
 import { useApp } from "@/lib/store";
 import type { ProService } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { PRO_SERVICE_LABELS } from "@/lib/pro-service-id";
 import type { PickedLocation } from "@/components/map/location-picker-map";
 import type {
   HelpFlowConfig,
@@ -69,12 +69,13 @@ export function HelpFlow({
   );
 
   /* ---- urgency ---------------------------------------------------------- */
+  const proDistanceKm = nearestProDistanceKm(
+    visibleTechnicians,
+    config.nearestProServices,
+  );
   const { urgency, setUrgency, restoreUrgency } = useAutoCalloutUrgency({
     unsafe: config.computeUnsafe ? config.computeUnsafe(answers) : false,
-    distanceKm: nearestProDistanceKm(
-      visibleTechnicians,
-      config.nearestProServices,
-    ),
+    distanceKm: proDistanceKm,
   });
 
   /* ---- extra trade-specific state (generic bag) ------------------------- */
@@ -86,6 +87,7 @@ export function HelpFlow({
   const step = stack[stack.length - 1] || "start";
   const screen = config.screen(step);
   const styles = flowStyles(isLight);
+  const tag = `${PRO_SERVICE_LABELS[chosenTrade]} request`;
 
   useEffect(() => {
     setLandmark((prev) => prev || location.label || "");
@@ -209,12 +211,7 @@ export function HelpFlow({
     step === "final" && finalStepIndex >= 0 ? finalStepIndex : -1;
 
   return (
-    <div
-      className={cn(
-        "om-mech-enter flex h-full min-h-0 flex-col overflow-hidden rounded-t-lg px-3 pb-2 pt-1.5",
-        isLight ? "bg-[#d8dce4]/90 backdrop-blur-sm" : "bg-black",
-      )}
-    >
+    <div className="ona2 om-mech-enter flex h-full min-h-0 flex-col overflow-hidden px-4 pb-4 pt-3">
       <FlowProgressBar
         config={config}
         stackLength={stack.length}
@@ -226,6 +223,7 @@ export function HelpFlow({
       {config.hasVehicleStep && step === "vehicle" ? (
         <FlowVehicleStep
           isLight={isLight}
+          tag={tag}
           savedVehicles={savedVehicles}
           saveVehicle={saveVehicle}
           vehicleLabel={vehicleLabel}
@@ -242,6 +240,9 @@ export function HelpFlow({
               config={config}
               isLight={isLight}
               styles={styles}
+              tag={tag}
+              tradeId={chosenTrade}
+              distanceKm={proDistanceKm}
               finalStep={finalStep}
               photos={photos}
               setPhotos={setPhotos}
@@ -271,6 +272,7 @@ export function HelpFlow({
             <FlowQuestionStep
               config={config}
               styles={styles}
+              tag={tag}
               step={step}
               dir={dir}
               screen={screen}
