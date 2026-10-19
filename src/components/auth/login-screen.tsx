@@ -91,6 +91,7 @@ export function LoginScreen() {
           <RoleCard
             active={accountType === "motorist"}
             icon={Car}
+            image="/brand/role-customer.png"
             title={t("auth.motorist")}
             subtitle={t("auth.motoristHint")}
             onClick={() => setAccountType("motorist")}
@@ -98,6 +99,7 @@ export function LoginScreen() {
           <RoleCard
             active={accountType === "professional"}
             icon={Wrench}
+            image="/brand/role-pro.png"
             title={t("auth.pro")}
             subtitle={t("auth.proHint")}
             onClick={() => setAccountType("professional")}
@@ -120,6 +122,7 @@ export function LoginScreen() {
 
 function RoleCard({
   active,
+  image,
   icon: Icon,
   title,
   subtitle,
@@ -127,6 +130,8 @@ function RoleCard({
 }: {
   active: boolean;
   icon: typeof Car;
+  /** Illustration in public/brand; the icon tile shows if it is missing. */
+  image: string;
   title: string;
   subtitle: string;
   onClick: () => void;
@@ -144,17 +149,7 @@ function RoleCard({
           : "border-ona-border",
       )}
     >
-      <span
-        aria-hidden
-        className={cn(
-          "flex h-20 w-full items-center justify-center rounded-ona-ctl",
-          active
-            ? "bg-ona-brand-btn text-white"
-            : "bg-ona-field-strong text-ona-brand-ink",
-        )}
-      >
-        <Icon className="h-9 w-9" strokeWidth={1.75} />
-      </span>
+      <RoleArt active={active} image={image} icon={Icon} />
       {active ? (
         <span
           aria-hidden
@@ -171,5 +166,51 @@ function RoleCard({
         {subtitle}
       </span>
     </button>
+  );
+}
+
+/** Role illustration (coloured when selected, muted otherwise) with an icon-tile fallback. */
+function RoleArt({
+  active,
+  image,
+  icon: Icon,
+}: {
+  active: boolean;
+  image: string;
+  icon: typeof Car;
+}) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return (
+      <span
+        aria-hidden
+        className={cn(
+          "flex h-28 w-full items-center justify-center rounded-ona-ctl",
+          active
+            ? "bg-ona-brand-btn text-white"
+            : "bg-ona-field-strong text-ona-brand-ink",
+        )}
+      >
+        <Icon className="h-9 w-9" strokeWidth={1.75} />
+      </span>
+    );
+  }
+  return (
+    <span
+      aria-hidden
+      className="flex h-28 w-full items-center justify-center rounded-ona-ctl bg-ona-field-strong"
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={image}
+        alt=""
+        draggable={false}
+        onError={() => setFailed(true)}
+        className={cn(
+          "h-full w-auto max-w-full object-contain transition",
+          active ? "" : "opacity-70 grayscale",
+        )}
+      />
+    </span>
   );
 }
