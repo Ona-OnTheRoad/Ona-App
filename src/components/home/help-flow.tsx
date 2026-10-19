@@ -6,6 +6,7 @@ import {
   nearestProDistanceKm,
   useAutoCalloutUrgency,
 } from "@/lib/callout/use-auto-urgency";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { useSavedVehicles } from "@/components/home/shared/use-saved-vehicles";
 import { useApp } from "@/lib/store";
 import type { ProService } from "@/lib/types";
@@ -53,6 +54,7 @@ export function HelpFlow({
   const [finalStep, setFinalStep] = useState(config.finalSteps[0] ?? "urgency");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  useFeedbackToast("", error ?? "");
   const photoRef = useRef<HTMLInputElement>(null);
   const [pickedLoc, setPickedLoc] = useState<PickedLocation | null>(null);
 
@@ -259,7 +261,6 @@ export function HelpFlow({
               extraState={extraState}
               setExtraState={setExtraState}
               answers={answers}
-              error={error}
               setError={setError}
               busy={busy}
               canSend={canSend}
@@ -277,7 +278,6 @@ export function HelpFlow({
               screen={screen}
               draft={draft}
               setDraft={setDraft}
-              error={error}
               setError={setError}
               submitText={submitText}
               pick={pick}

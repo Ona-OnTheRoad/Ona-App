@@ -7,6 +7,7 @@ import { detectCurrency, formatMoney, fromMinorUnits } from "@/lib/pricing";
 import { shopAddToCart } from "@/lib/shop/client";
 import { Badge } from "@/components/ui/badge";
 import { useApp } from "@/lib/store";
+import { toastError, toastSuccess } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 export type ShopCardProduct = {
@@ -100,12 +101,14 @@ export function ShopProductCard({
           accountType === "professional" ? "professional" : "motorist",
       });
       setJustAdded(true);
+      toastSuccess("Added to cart");
       window.setTimeout(() => setJustAdded(false), 1500);
       onAdded?.();
       void res;
     } catch {
       onOptimisticRevert?.();
       setAddFailed(true);
+      toastError("Could not add, tap again or reload");
       window.setTimeout(() => setAddFailed(false), 2000);
     } finally {
       setAdding(false);
@@ -229,15 +232,6 @@ export function ShopProductCard({
         </button>
       </div>
 
-      {justAdded ? (
-        <div
-          role="status"
-          className="fixed left-1/2 top-2.5 z-[9999] flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-ona-dark px-4 py-2 text-[12px] font-semibold text-ona-on-dark shadow-lg"
-        >
-          <Check className="h-3.5 w-3.5 text-ona-success" strokeWidth={3} />
-          Added to cart
-        </div>
-      ) : null}
       <ProductSheet
         slug={sheetOpen ? product.slug : null}
         onClose={() => setSheetOpen(false)}

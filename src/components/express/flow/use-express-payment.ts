@@ -3,13 +3,8 @@ import { useRouter } from "next/navigation";
 import type { PickedLocation } from "@/components/map/location-picker-map";
 import { isExpressTrade } from "@/lib/express/pricing";
 import { useApp } from "@/lib/store";
-import type {
-  AssignedPro,
-  BankPay,
-  BookingType,
-  Quote,
-  Stage,
-} from "./types";
+import { toastSuccess } from "@/lib/toast";
+import type { AssignedPro, BankPay, BookingType, Quote, Stage } from "./types";
 
 type Args = {
   stage: Stage;
@@ -35,7 +30,6 @@ export function useExpressPayment(a: Args) {
 
   const [requestId, setRequestId] = useState<string | null>(null);
   const [bankPay, setBankPay] = useState<BankPay | null>(null);
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [cancelAsk, setCancelAsk] = useState(false);
   const [cancelBusy, setCancelBusy] = useState(false);
   const [assignedPro, setAssignedPro] = useState<AssignedPro | null>(null);
@@ -55,8 +49,7 @@ export function useExpressPayment(a: Args) {
         lng: location.coordinates.lng,
       };
       const email =
-        userProfile?.email ||
-        `express_${backendUserId.slice(0, 8)}@ona.africa`;
+        userProfile?.email || `express_${backendUserId.slice(0, 8)}@ona.africa`;
 
       // 1) Create the express booking (idempotent per pay attempt)
       let reqId = requestId;
@@ -185,17 +178,15 @@ export function useExpressPayment(a: Args) {
     }
   };
 
-  /** Copy the account number and flash "Copied" for 1.5s. */
+  /** Copy the account number and confirm with a toast. */
   const copyAccountNumber = (accountNumber: string) => {
     void navigator.clipboard.writeText(accountNumber).catch(() => undefined);
-    setCopiedKey("number");
-    window.setTimeout(() => setCopiedKey(null), 1500);
+    toastSuccess("Copied");
   };
 
   return {
     setRequestId,
     bankPay,
-    copiedKey,
     cancelAsk,
     setCancelAsk,
     cancelBusy,

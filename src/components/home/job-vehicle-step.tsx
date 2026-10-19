@@ -12,6 +12,7 @@ import {
   profileVehiclesOf,
 } from "@/components/home/job-vehicle-helpers";
 import type { MotoristVehicle } from "@/lib/types";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { cn } from "@/lib/utils";
 
 export { canUseVehicleLabel, formatVehicleLabel, profileVehiclesOf };
@@ -46,6 +47,7 @@ export function JobVehicleStep({
   const [year, setYear] = useState("");
   const [powertrain, setPowertrain] = useState("");
   const [saveError, setSaveError] = useState<string | null>(null);
+  useFeedbackToast("", saveError ?? "");
 
   const savedMatch = useMemo(
     () => vehicles.find((v) => formatVehicleLabel(v) === label),
@@ -150,12 +152,6 @@ export function JobVehicleStep({
     />
   );
 
-  const errorLine = saveError ? (
-    <p role="alert" className="mt-2 text-[12px] font-semibold text-ona-danger">
-      {saveError}
-    </p>
-  ) : null;
-
   const list = (
     <div className="flex flex-col gap-2.5 pb-2">
       {vehicles.map((v) => {
@@ -237,7 +233,6 @@ export function JobVehicleStep({
         Enter vehicle
       </h2>
       <div className="mt-4">{form}</div>
-      {errorLine}
       <div className="mt-4">{saveButton}</div>
     </BottomSheet>
   );
@@ -249,7 +244,6 @@ export function JobVehicleStep({
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-hide">
           {inlineForm ? form : list}
         </div>
-        {inlineForm ? errorLine : null}
         {inlineForm || (hasSaved && ctaVehicle) ? (
           <div className="shrink-0 pt-3">
             {inlineForm ? (
@@ -277,7 +271,6 @@ export function JobVehicleStep({
         <div>
           {form}
           <div className="mt-3">{saveButton}</div>
-          {errorLine}
         </div>
       ) : (
         list

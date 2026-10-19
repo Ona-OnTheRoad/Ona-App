@@ -41,7 +41,6 @@ export function FlowFinalStep({
   extraState,
   setExtraState,
   answers,
-  error,
   setError,
   busy,
   canSend,
@@ -72,7 +71,6 @@ export function FlowFinalStep({
   extraState: ExtraSnapshot;
   setExtraState: Dispatch<SetStateAction<ExtraSnapshot>>;
   answers: Record<string, string>;
-  error: string | null;
   setError: Dispatch<SetStateAction<string | null>>;
   busy: boolean;
   canSend: boolean;
@@ -223,12 +221,6 @@ export function FlowFinalStep({
               : null}
           </div>
         )}
-
-        {error ? (
-          <p className="mt-1 text-[12px] font-semibold text-ona-danger">
-            {error}
-          </p>
-        ) : null}
       </div>
 
       {/* Pinned footer */}

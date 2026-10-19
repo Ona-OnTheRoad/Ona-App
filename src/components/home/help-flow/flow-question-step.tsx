@@ -18,7 +18,6 @@ export function FlowQuestionStep({
   screen,
   draft,
   setDraft,
-  error,
   setError,
   submitText,
   pick,
@@ -36,7 +35,6 @@ export function FlowQuestionStep({
   screen: ReturnType<HelpFlowConfig["screen"]>;
   draft: string;
   setDraft: Dispatch<SetStateAction<string>>;
-  error: string | null;
   setError: Dispatch<SetStateAction<string | null>>;
   submitText: () => void;
   pick: (optionId: string, label: string) => void;
@@ -121,15 +119,6 @@ export function FlowQuestionStep({
               Cancel
             </Button>
           </div>
-        ) : null}
-
-        {error ? (
-          <p
-            role="alert"
-            className="mt-2 text-[12px] font-semibold text-ona-danger"
-          >
-            {error}
-          </p>
         ) : null}
       </div>
 

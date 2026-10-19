@@ -15,6 +15,7 @@ import {
   shopUpdateCartItem,
 } from "@/lib/shop/client";
 import { useApp } from "@/lib/store";
+import { toastError } from "@/lib/toast";
 
 function formatPrice(minor: number): string {
   return formatMoney(fromMinorUnits(minor, "NGN"), detectCurrency());
@@ -74,7 +75,7 @@ export default function ShopCartPage() {
     shopUpdateCartItem(line.id, line.qty - 1)
       .then((d) => setCart(d.cart))
       .catch(() => {
-        setError("Update failed, check your connection");
+        toastError("Update failed, check your connection");
         void load();
       });
   };
@@ -93,7 +94,7 @@ export default function ShopCartPage() {
     shopUpdateCartItem(line.id, line.qty + 1)
       .then((d) => setCart(d.cart))
       .catch(() => {
-        setError("Update failed, check your connection");
+        toastError("Update failed, check your connection");
         void load();
       });
   };

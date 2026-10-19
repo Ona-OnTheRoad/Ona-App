@@ -107,7 +107,6 @@ export default function ShopProductPage() {
                 selectedVariantId={p.selectedVariantId}
                 onSelect={(id) => {
                   p.setSelectedVariantId(id);
-                  p.setMsg(null);
                 }}
                 muted={muted}
                 border={border}
@@ -136,16 +135,6 @@ export default function ShopProductPage() {
               />
             ) : null}
 
-            {p.msg ? (
-              <p
-                className={cn(
-                  "mt-3 text-center text-[12px] font-semibold",
-                  p.msg.includes("Added") ? "text-emerald-600" : "text-red-500",
-                )}
-              >
-                {p.msg}
-              </p>
-            ) : null}
             <button
               type="button"
               disabled={p.adding || outOfStock || priceOnRequest}

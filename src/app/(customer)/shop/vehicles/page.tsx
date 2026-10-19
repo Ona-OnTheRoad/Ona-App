@@ -49,7 +49,6 @@ export default function ShopVehiclesPage() {
           setMakeId={v.setMakeId}
           setModelId={v.setModelId}
           setYear={v.setYear}
-          msg={v.msg}
           busy={v.busy}
           applyVehicle={v.applyVehicle}
         />

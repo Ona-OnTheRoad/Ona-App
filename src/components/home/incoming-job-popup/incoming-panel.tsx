@@ -1,6 +1,7 @@
 import { ChevronUp } from "lucide-react";
 import { INCOMING_POPUP_VISIBLE_SEC } from "@/lib/jobs/incoming-popup-timing";
 import type { JobRecord } from "@/lib/jobs/types";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { cn } from "@/lib/utils";
 import { FULL_HEIGHT, MIDDLE_MAX_H, SPRING } from "./constants";
 import { jobTitle } from "./helpers";
@@ -46,6 +47,7 @@ export function IncomingPanel({
   onDecline,
   onConfirm,
 }: IncomingPanelProps) {
+  useFeedbackToast("", actionError ?? "");
   const {
     dragY,
     dragging,
@@ -178,15 +180,6 @@ export function IncomingPanel({
               />
             ))}
           </div>
-
-          {actionError ? (
-            <p
-              className="mt-2 shrink-0 text-center text-[12px] font-semibold"
-              style={{ color: isLight ? "#b91c1c" : "#fca5a5" }}
-            >
-              {actionError}
-            </p>
-          ) : null}
         </>
       )}
     </div>

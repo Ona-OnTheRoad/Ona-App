@@ -18,6 +18,7 @@ import {
 } from "@/components/home/need-help-steps";
 import { isAutomotiveTrade } from "@/lib/artisan/catalog";
 import { useSavedVehicles } from "@/components/home/shared/use-saved-vehicles";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { NeedHelpActions } from "./need-help-dialogue/need-help-actions";
 import { NeedHelpStepBody } from "./need-help-dialogue/need-help-step-body";
 
@@ -55,6 +56,7 @@ export function NeedHelpDialogue({ isLight }: { isLight: boolean }) {
   const [vehicleLabel, setVehicleLabel] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  useFeedbackToast("", error ?? "");
 
   const { savedVehicles, saveVehicle } = useSavedVehicles();
 
@@ -196,12 +198,6 @@ export function NeedHelpDialogue({ isLight }: { isLight: boolean }) {
         urgency={urgency}
         setUrgency={setUrgency}
       />
-
-      {error ? (
-        <p className="mt-1 shrink-0 text-[12px] font-semibold text-ona-danger">
-          {error}
-        </p>
-      ) : null}
 
       <div className="mt-auto shrink-0 pt-2">
         <NeedHelpActions

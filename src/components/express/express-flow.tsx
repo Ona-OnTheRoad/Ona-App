@@ -28,7 +28,7 @@ import { VehicleView } from "./flow/vehicle-view";
 export function ExpressFlow({ isLight }: { isLight: boolean }) {
   const router = useRouter();
   const f = useExpressFlow();
-  const { stage, setStage, setError, error, busy, goBack } = f;
+  const { stage, setStage, setError, busy, goBack } = f;
   const { questions, vehicles, quoteState, schedule, payment } = f;
   const { screen } = questions;
   const { quote } = quoteState;
@@ -55,7 +55,7 @@ export function ExpressFlow({ isLight }: { isLight: boolean }) {
             }}
           />
         ) : stage === "vehicle" ? (
-          <VehicleView theme={theme} vehicles={vehicles} error={error} />
+          <VehicleView theme={theme} vehicles={vehicles} />
         ) : stage === "assigned" ? (
           <AssignedView
             theme={theme}
@@ -134,19 +134,12 @@ export function ExpressFlow({ isLight }: { isLight: boolean }) {
                 quote={quote}
                 bankPay={payment.bankPay}
                 busy={busy}
-                copiedKey={payment.copiedKey}
                 onCopyNumber={payment.copyAccountNumber}
                 cancelAsk={payment.cancelAsk}
                 cancelBusy={payment.cancelBusy}
                 setCancelAsk={payment.setCancelAsk}
                 onCancel={(mode) => void payment.cancelPay(mode)}
               />
-            ) : null}
-
-            {error ? (
-              <p className="mt-2 text-[12px] font-semibold text-red-500">
-                {error}
-              </p>
             ) : null}
           </div>
         )}

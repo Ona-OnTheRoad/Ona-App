@@ -14,6 +14,7 @@ import {
   shopUpdateCartItem,
 } from "@/lib/shop/client";
 import { useApp } from "@/lib/store";
+import { toastError } from "@/lib/toast";
 
 function formatPrice(minor: number): string {
   return formatMoney(fromMinorUnits(minor, "NGN"), detectCurrency());
@@ -76,7 +77,7 @@ export function CartSheet({ open, onClose }: Props) {
     shopUpdateCartItem(line.id, line.qty - 1)
       .then((d) => setCart(d.cart))
       .catch(() => {
-        setError("Update failed");
+        toastError("Update failed");
         void load();
       });
   };
@@ -94,7 +95,7 @@ export function CartSheet({ open, onClose }: Props) {
     shopUpdateCartItem(line.id, line.qty + 1)
       .then((d) => setCart(d.cart))
       .catch(() => {
-        setError("Update failed");
+        toastError("Update failed");
         void load();
       });
   };

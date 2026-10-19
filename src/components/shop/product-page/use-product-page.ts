@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { formatShopPrice } from "@/components/shop/shared/format-shop-price";
 import { shopAddToCart } from "@/lib/shop/client";
 import { useApp } from "@/lib/store";
+import { toastError, toastSuccess } from "@/lib/toast";
 import type { Price, ProductImage, Variant } from "./types";
 
 export function useProductPage() {
@@ -22,7 +23,6 @@ export function useProductPage() {
   );
   const [qty, setQty] = useState(1);
   const [adding, setAdding] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -111,7 +111,6 @@ export function useProductPage() {
     }
     if (!selectedVariant) return;
     setAdding(true);
-    setMsg(null);
     try {
       await shopAddToCart({
         variantId: selectedVariant.id,
@@ -119,9 +118,9 @@ export function useProductPage() {
         accountContext:
           accountType === "professional" ? "professional" : "motorist",
       });
-      setMsg("Added to cart");
+      toastSuccess("Added to cart");
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : "Could not add");
+      toastError(e instanceof Error ? e.message : "Could not add");
     } finally {
       setAdding(false);
     }
@@ -137,8 +136,6 @@ export function useProductPage() {
     qty,
     setQty,
     adding,
-    msg,
-    setMsg,
     priceFor,
     selectedVariant,
     priceOnRequest,

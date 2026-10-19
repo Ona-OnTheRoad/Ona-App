@@ -1,4 +1,5 @@
 import { Radio } from "lucide-react";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { cn } from "@/lib/utils";
 
 export function LiveHeaderToggle({
@@ -57,6 +58,7 @@ export function GoLiveSection({
   muted: string;
   toggleLive: () => Promise<void>;
 }) {
+  useFeedbackToast("", liveErr ?? "");
   return (
     <section className="pb-4">
       <div className="flex items-center gap-3">
@@ -89,11 +91,6 @@ export function GoLiveSection({
       >
         {liveBusy ? "Updating…" : proLive ? awayLabel : "Go Live"}
       </button>
-      {liveErr && (
-        <p className="mt-2 text-center text-[11px] font-semibold text-red-500">
-          {liveErr}
-        </p>
-      )}
     </section>
   );
 }

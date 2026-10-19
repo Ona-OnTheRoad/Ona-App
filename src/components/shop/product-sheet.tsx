@@ -13,6 +13,7 @@ import { useProductSheetData } from "@/components/shop/product-sheet/use-product
 import { formatShopPrice } from "@/components/shop/shared/format-shop-price";
 import { shopAddToCart } from "@/lib/shop/client";
 import { useApp } from "@/lib/store";
+import { toastError, toastSuccess } from "@/lib/toast";
 
 type Props = {
   slug: string | null;
@@ -32,8 +33,6 @@ export function ProductSheet({ slug, onClose }: Props) {
     setSelectedVariantId,
     qty,
     setQty,
-    msg,
-    setMsg,
   } = useProductSheetData(slug, accountType);
   const [adding, setAdding] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
@@ -158,7 +157,6 @@ export function ProductSheet({ slug, onClose }: Props) {
                 priceFor={priceFor}
                 onSelect={(id) => {
                   setSelectedVariantId(id);
-                  setMsg(null);
                 }}
               />
             ) : null}
@@ -169,19 +167,6 @@ export function ProductSheet({ slug, onClose }: Props) {
                 onDecrement={() => setQty((q) => clampQty(q - 1))}
                 onIncrement={() => setQty((q) => clampQty(q + 1))}
               />
-            ) : null}
-
-            {msg ? (
-              <p
-                role="status"
-                className={
-                  msg.includes("Added")
-                    ? "mt-3 text-center text-[12px] font-semibold text-ona-success"
-                    : "mt-3 text-center text-[12px] font-semibold text-ona-danger"
-                }
-              >
-                {msg}
-              </p>
             ) : null}
 
             <Button
@@ -197,7 +182,6 @@ export function ProductSheet({ slug, onClose }: Props) {
                 }
                 if (!selectedVariant) return;
                 setAdding(true);
-                setMsg(null);
                 try {
                   await shopAddToCart({
                     variantId: selectedVariant.id,
@@ -207,9 +191,9 @@ export function ProductSheet({ slug, onClose }: Props) {
                         ? "professional"
                         : "motorist",
                   });
-                  setMsg("Added to cart");
+                  toastSuccess("Added to cart");
                 } catch (e) {
-                  setMsg(e instanceof Error ? e.message : "Could not add");
+                  toastError(e instanceof Error ? e.message : "Could not add");
                 } finally {
                   setAdding(false);
                 }

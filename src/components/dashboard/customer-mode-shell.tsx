@@ -2,6 +2,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/page-header";
 import { useApp } from "@/lib/store";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { cn } from "@/lib/utils";
 
 export function CustomerModeShell({
@@ -21,6 +22,7 @@ export function CustomerModeShell({
 }) {
   const [switchBusy, setSwitchBusy] = useState(false);
   const [switchErr, setSwitchErr] = useState<string | null>(null);
+  useFeedbackToast("", switchErr ?? "");
 
   return (
     <div className={cn("flex h-full min-h-0 flex-col", stage)}>
@@ -81,11 +83,6 @@ export function CustomerModeShell({
             >
               {switchBusy ? "Switching…" : "Use as Repair Pro"}
             </button>
-            {switchErr ? (
-              <p className="mt-2 max-w-[280px] text-[12px] font-medium text-[#FF6B35]">
-                {switchErr}
-              </p>
-            ) : null}
           </>
         ) : (
           <Link

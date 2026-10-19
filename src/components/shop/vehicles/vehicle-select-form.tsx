@@ -38,7 +38,6 @@ export function VehicleSelectForm({
   setMakeId,
   setModelId,
   setYear,
-  msg,
   busy,
   applyVehicle,
 }: {
@@ -55,7 +54,6 @@ export function VehicleSelectForm({
   setMakeId: (v: string) => void;
   setModelId: (v: string) => void;
   setYear: (v: number | "") => void;
-  msg: string | null;
   busy: boolean;
   applyVehicle: (save: boolean) => Promise<void>;
 }) {
@@ -109,14 +107,6 @@ export function VehicleSelectForm({
           )}
         </OnaField>
       </div>
-      {msg ? (
-        <p
-          role="alert"
-          className="mt-2 text-[12px] font-semibold text-ona-danger"
-        >
-          {msg}
-        </p>
-      ) : null}
       <div className="mt-6 flex flex-col gap-2">
         {isAuthenticated ? (
           <Button

@@ -13,6 +13,7 @@ import {
   type SavedAddress,
 } from "@/lib/shop/client";
 import { useApp } from "@/lib/store";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 
 export function useCheckout() {
   const { accountType, isAuthenticated, backendUserId } = useApp();
@@ -22,6 +23,7 @@ export function useCheckout() {
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  useFeedbackToast("", error ?? "");
 
   const [addresses, setAddresses] = useState<SavedAddress[]>([]);
   const [addressId, setAddressId] = useState<string | null>(null);
@@ -171,7 +173,6 @@ export function useCheckout() {
     cart,
     loading,
     paying,
-    error,
     addresses,
     addressId,
     setAddressId,
