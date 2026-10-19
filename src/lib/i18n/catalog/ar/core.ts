@@ -60,6 +60,8 @@ export const AR_CORE: Record<keyof typeof EN_CORE, string> = {
   "auth.phone": "الهاتف",
   "auth.forgotPassword": "نسيت كلمة المرور؟",
   "auth.newHere": "جديد هنا؟ سجّل",
+  "auth.newToOna": "جديد في Ona؟",
+  "auth.createAnAccount": "إنشاء حساب",
   "auth.createAccount": "إنشاء حساب",
   "auth.tapRole": "اضغط عميل أو Repair Pro للمتابعة",
   "auth.about2min": "حوالي دقيقتين",

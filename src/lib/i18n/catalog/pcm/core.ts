@@ -60,6 +60,8 @@ export const PCM_CORE: Record<keyof typeof EN_CORE, string> = {
   "auth.phone": "Phone",
   "auth.forgotPassword": "You forget password?",
   "auth.newHere": "You be new? Sign up",
+  "auth.newToOna": "You new for Ona?",
+  "auth.createAnAccount": "Open account",
   "auth.createAccount": "Create account",
   "auth.tapRole": "Tap Customer or Repair Pro to continue",
   "auth.about2min": "About 2 minutes",

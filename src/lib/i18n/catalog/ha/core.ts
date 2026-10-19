@@ -60,6 +60,8 @@ export const HA_CORE: Record<keyof typeof EN_CORE, string> = {
   "auth.phone": "Phone",
   "auth.forgotPassword": "Ka manta kalmar sirri?",
   "auth.newHere": "Sabuwa ne? Yi rajista",
+  "auth.newToOna": "Sabo ne a Ona?",
+  "auth.createAnAccount": "Ƙirƙiri asusu",
   "auth.createAccount": "Create account",
   "auth.tapRole": "Tap Abokin ciniki or Repair Pro to continue",
   "auth.about2min": "About 2 minutes to finish",

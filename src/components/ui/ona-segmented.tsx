@@ -18,7 +18,7 @@ export function OnaSegmented<T extends string>({
     <div
       role="radiogroup"
       aria-label={label}
-      className="flex gap-1 rounded-ona-ctl bg-ona-field-strong p-1"
+      className="flex gap-1 rounded-full bg-ona-field-strong p-1"
     >
       {options.map((o) => {
         const on = value === o.value;
@@ -30,7 +30,7 @@ export function OnaSegmented<T extends string>({
             aria-checked={on}
             onClick={() => onChange(o.value)}
             className={cn(
-              "h-10 flex-1 rounded-[8px] border-0 text-[13px] font-semibold transition-colors",
+              "h-9 flex-1 rounded-full border-0 text-[13px] font-semibold transition-colors",
               on
                 ? "bg-ona-surface text-ona-ink shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
                 : "bg-transparent text-ona-muted",

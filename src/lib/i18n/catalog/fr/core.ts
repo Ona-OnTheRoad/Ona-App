@@ -60,6 +60,8 @@ export const FR_CORE: Record<keyof typeof EN_CORE, string> = {
   "auth.phone": "Téléphone",
   "auth.forgotPassword": "Mot de passe oublié ?",
   "auth.newHere": "Nouveau ici ? S'inscrire",
+  "auth.newToOna": "Nouveau sur Ona ?",
+  "auth.createAnAccount": "Créer un compte",
   "auth.createAccount": "Créer un compte",
   "auth.tapRole": "Touchez Automobiliste ou Repair Pro pour continuer",
   "auth.about2min": "Environ 2 minutes",

@@ -58,6 +58,8 @@ export const EN_CORE = {
   "auth.phone": "Phone",
   "auth.forgotPassword": "Forgot password?",
   "auth.newHere": "New here? Sign up",
+  "auth.newToOna": "New to Ona?",
+  "auth.createAnAccount": "Create an account",
   "auth.createAccount": "Create account",
   "auth.tapRole": "Tap Customer or Repair Pro to continue",
   "auth.about2min": "About 2 minutes to finish",

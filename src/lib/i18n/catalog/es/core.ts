@@ -60,6 +60,8 @@ export const ES_CORE: Record<keyof typeof EN_CORE, string> = {
   "auth.phone": "Teléfono",
   "auth.forgotPassword": "¿Olvidaste la contraseña?",
   "auth.newHere": "¿Nuevo aquí? Regístrate",
+  "auth.newToOna": "¿Nuevo en Ona?",
+  "auth.createAnAccount": "Crear una cuenta",
   "auth.createAccount": "Crear cuenta",
   "auth.tapRole": "Toca Clientea o Repair Pro para continuar",
   "auth.about2min": "Unos 2 minutos",

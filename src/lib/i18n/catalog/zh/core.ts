@@ -60,6 +60,8 @@ export const ZH_CORE: Record<keyof typeof EN_CORE, string> = {
   "auth.phone": "手机",
   "auth.forgotPassword": "忘记密码？",
   "auth.newHere": "新用户？注册",
+  "auth.newToOna": "初次使用 Ona？",
+  "auth.createAnAccount": "创建账户",
   "auth.createAccount": "创建账户",
   "auth.tapRole": "点选客户或技工以继续",
   "auth.about2min": "大约 2 分钟",

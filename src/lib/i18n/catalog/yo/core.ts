@@ -60,6 +60,8 @@ export const YO_CORE: Record<keyof typeof EN_CORE, string> = {
   "auth.phone": "Fóònù",
   "auth.forgotPassword": "Gbàgbé ọ̀rọ̀ ìgbaniwọlé?",
   "auth.newHere": "Ṣé o jẹ́ tuntun? Forúkọsílẹ̀",
+  "auth.newToOna": "Ṣé tuntun ni Ona?",
+  "auth.createAnAccount": "Ṣẹ̀dá àkọọ́lẹ̀",
   "auth.createAccount": "Ṣẹ̀dá àkọọ́lẹ̀",
   "auth.tapRole": "Tẹ Onímọ̀tò tàbí Repair Pro láti tẹ̀síwájú",
   "auth.about2min": "Nǹkan bí ìṣẹ́jú méjì",

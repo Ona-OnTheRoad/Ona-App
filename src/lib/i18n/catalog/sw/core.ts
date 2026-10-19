@@ -60,6 +60,8 @@ export const SW_CORE: Record<keyof typeof EN_CORE, string> = {
   "auth.phone": "Simu",
   "auth.forgotPassword": "Umesahau nenosiri?",
   "auth.newHere": "Mgeni hapa? Jisajili",
+  "auth.newToOna": "Mgeni kwenye Ona?",
+  "auth.createAnAccount": "Fungua akaunti",
   "auth.createAccount": "Fungua akaunti",
   "auth.tapRole": "Gusa Dereva au Repair Pro kuendelea",
   "auth.about2min": "Takriban dakika 2",

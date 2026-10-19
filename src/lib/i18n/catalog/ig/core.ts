@@ -60,6 +60,8 @@ export const IG_CORE: Record<keyof typeof EN_CORE, string> = {
   "auth.phone": "Phone",
   "auth.forgotPassword": "Forgot password?",
   "auth.newHere": "Ị bụ ọhụrụ? Debanye aha",
+  "auth.newToOna": "Ị bụ ọhụrụ na Ona?",
+  "auth.createAnAccount": "Mepụta akaụntụ",
   "auth.createAccount": "Create account",
   "auth.tapRole": "Tap Customer or Repair Pro to continue",
   "auth.about2min": "About 2 minutes to finish",
