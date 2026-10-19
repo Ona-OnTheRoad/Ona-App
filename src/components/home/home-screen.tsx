@@ -3,7 +3,6 @@
 import dynamic from "next/dynamic";
 import { MapPin } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { BankForcePanel } from "@/components/auth/bank-force-panel";
 import { AppHeader } from "@/components/home/app-header";
 import { HomePanel } from "@/components/home/home-panel";
 import { useAppConfig } from "@/components/app-config-provider";
@@ -196,8 +195,6 @@ export function HomeScreen() {
           />
         </div>
       </div>
-      {/* Last child + high z so Customer bank sheet is never covered by home list */}
-      <BankForcePanel surface="home" />
     </div>
   );
 }

@@ -28,11 +28,12 @@ differs from the mock-up and changing it would change functionality. **Protected
 
 | Item | Type | Detail |
 | --- | --- | --- |
-| Dock tabs differ between mock-ups | Decision | Mocks show Home/History/Shop/Profile and Home/History/Wallet/Profile. Built: Home, History, Shop, Wallet + More (Profile, Settings, Express, Notifications). Repair Pro: Dashboard, Jobs, Shop, Wallet + More. |
+| Dock tabs differ between mock-ups | Decision | Mocks show Home/History/Shop/Profile and Home/History/Wallet/Profile. Built: Home, Shop, Wallet, Profile + More (History, Settings, Express, Notifications). Repair Pro: Dashboard, Jobs, Wallet, Profile + More (Shop, Payments, Settings, Notifications). |
 | Dock More sheet portal | Package | `react-floating-dock` portals its sheet to `document.body`. `usePhoneRect` + CSS in `globals.css` pin it to the phone shell. A `container` prop in the package would remove the workaround. |
 | Dock close handle | Package | The dock has no programmatic close; extra actions close the sheet by dispatching Escape (`closeDockSheet`). |
 | Dock hidden on sub-pages and trade flows | Decision | Shown only on tab roots (`dockVisibleOn`) and hidden while a trade flow is open. |
 | Ona. wordmark / OnTheRoad flash on home | Design | Dropped (design home has no header bar). |
+| "Add your bank for refunds" panel on customer home | Decision | Removed from `HomeScreen` because the design has no floating panel. `BankForcePanel` is still used on the Repair Pro dashboard. Customers add a bank via Settings → Payments → Bank (`/settings/payments/bank`, `/settings/bank-setup`); decide if a softer prompt (profile banner or after first request) is wanted. |
 | Trade-search field on home | Code | New UI: client-side filter of tiles by label, no API. |
 | Trade grid is 3 columns on home, 4 in Shop | Design | Follows each mock-up. Shop is the extra 15th tile on home. |
 

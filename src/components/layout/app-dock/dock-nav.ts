@@ -45,9 +45,14 @@ export type DockNavRow = {
 /** Routes where the dock is shown: the tab destinations, not their sub-pages. */
 export function dockVisibleOn(pathname: string): boolean {
   return (
-    ["/", "/dashboard", "/history", "/requests", "/wallet", "/profile"].includes(
-      pathname,
-    ) ||
+    [
+      "/",
+      "/dashboard",
+      "/history",
+      "/requests",
+      "/wallet",
+      "/profile",
+    ].includes(pathname) ||
     pathname === "/settings" ||
     pathname === "/jobs" ||
     pathname === "/shop" ||
@@ -63,7 +68,9 @@ export function isDockActive(
   myShopHref: string,
 ): boolean {
   if (href === "/" || href === "/dashboard" || href === roleHome) {
-    return pathname === "/" || pathname === "/dashboard" || pathname === roleHome;
+    return (
+      pathname === "/" || pathname === "/dashboard" || pathname === roleHome
+    );
   }
   if (href === "/settings/payments") {
     return pathname.startsWith("/settings/payments");
@@ -96,12 +103,12 @@ export function buildDockItems(
   myShopHref: string,
   roleHome: string,
 ): { primary: DockItem[]; more: DockItem[] } {
-  const wanted = [roleHome, "/history", myShopHref, "/wallet", "/jobs"];
-  const primaryHrefs = (
+  // Customer: Home, Shop, Wallet, Profile (History lives in More).
+  // Repair Pro: Dashboard, Jobs, Wallet, Profile (Shop lives in More).
+  const primaryHrefs =
     roleHome === "/dashboard"
-      ? ["/dashboard", "/jobs", myShopHref, "/wallet"]
-      : ["/", "/history", myShopHref, "/wallet"]
-  ).filter((h) => wanted.includes(h));
+      ? ["/dashboard", "/jobs", "/wallet", "/profile"]
+      : ["/", myShopHref, "/wallet", "/profile"];
 
   const labelFor = (r: DockNavRow): string => {
     if (r.labelOverride) return r.labelOverride;
