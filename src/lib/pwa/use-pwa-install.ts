@@ -108,6 +108,15 @@ export function usePwaInstall(): PwaInstall {
       void relatedAppInstalled().then((yes) => yes && markInstalled());
     }
 
+    // The root layout captures the event before React hydrates; pick it up here.
+    const early = (window as Window & { __onaInstallPrompt?: Event })
+      .__onaInstallPrompt;
+    if (early && !deferred && !standalone) {
+      deferred = early as InstallPromptEvent;
+      if (readStore().installed) update({ installed: false });
+      else notify();
+    }
+
     const onPrompt = (e: Event) => {
       // Inside the installed app there is nothing to install.
       if (isStandaloneDisplay(window)) return;
