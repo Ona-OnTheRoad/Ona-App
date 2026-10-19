@@ -1,5 +1,3 @@
-import { IDENTITY_RULE_COPY } from "@/lib/account-registry";
-import { AccountIdFields } from "./account-id-fields";
 import { AccountIdentityFields } from "./account-identity-fields";
 import { AccountReferralField } from "./account-referral-field";
 import type { MotoristFields } from "./use-motorist-fields";
@@ -29,12 +27,6 @@ export function StepDetails({
         onChange={setRefInput}
         fromUrl={Boolean(urlRef)}
       />
-      <AccountIdFields f={f} />
-      <p className="text-center text-[11px] leading-snug text-ona-muted">
-        {f.dualSignup
-          ? "Empty NIN/BVN stay editable. Opens as Customer."
-          : IDENTITY_RULE_COPY}
-      </p>
     </div>
   );
 }

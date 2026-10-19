@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { Calendar } from "lucide-react";
 import { OnaField, OnaInput, OnaSelect } from "@/components/ui/ona-field";
+import { flagEmoji } from "@/lib/phone-codes";
 import {
   dobError,
   dobInputMax,
@@ -71,7 +73,7 @@ export function AccountIdentityFields({ f }: { f: MotoristFields }) {
   return (
     <>
       <div className="grid grid-cols-2 gap-3">
-        <OnaField label="First name" required>
+        <OnaField label="First name">
           {({ id, describedBy }) => (
             <OnaInput
               id={id}
@@ -83,11 +85,12 @@ export function AccountIdentityFields({ f }: { f: MotoristFields }) {
               onChange={(e) => setPart("first", e.target.value)}
               onBlur={() => shown.last && checkName()}
               placeholder="e.g. Sarah"
+              aria-required
               autoComplete="given-name"
             />
           )}
         </OnaField>
-        <OnaField label="Last name" required>
+        <OnaField label="Last name">
           {({ id, describedBy }) => (
             <OnaInput
               id={id}
@@ -99,6 +102,7 @@ export function AccountIdentityFields({ f }: { f: MotoristFields }) {
               onChange={(e) => setPart("last", e.target.value)}
               onBlur={checkName}
               placeholder="e.g. Jenkins"
+              aria-required
               autoComplete="family-name"
             />
           )}
@@ -113,7 +117,7 @@ export function AccountIdentityFields({ f }: { f: MotoristFields }) {
         </p>
       ) : null}
 
-      <OnaField label="Email address" required error={fieldErrors.email}>
+      <OnaField label="Email address" error={fieldErrors.email}>
         {({ id, describedBy, invalid }) => (
           <OnaInput
             id={id}
@@ -137,11 +141,11 @@ export function AccountIdentityFields({ f }: { f: MotoristFields }) {
         )}
       </OnaField>
 
-      <OnaField label="Phone number" required error={fieldErrors.phone}>
+      <OnaField label="Phone number" error={fieldErrors.phone}>
         {({ id, describedBy, invalid }) => (
           <div className="flex gap-2">
             <OnaSelect
-              wrapperClassName="w-[44%] shrink-0"
+              wrapperClassName="w-[112px] shrink-0"
               className={cn(phoneLocked && LOCKED)}
               value={phoneIso}
               aria-label="Country code"
@@ -161,7 +165,7 @@ export function AccountIdentityFields({ f }: { f: MotoristFields }) {
             >
               {phoneCodes.map((c) => (
                 <option key={`${c.iso}-${c.dial}`} value={c.iso}>
-                  {c.label} {c.name}
+                  {flagEmoji(c.iso)} {c.label}
                 </option>
               ))}
             </OnaSelect>
@@ -183,7 +187,8 @@ export function AccountIdentityFields({ f }: { f: MotoristFields }) {
               onBlur={() =>
                 setFieldError("phone", phoneNationalError(phoneNational))
               }
-              placeholder="8012345678"
+              placeholder="Enter phone number"
+              aria-required
               type="tel"
               inputMode="numeric"
               autoComplete="tel-national"
@@ -193,7 +198,7 @@ export function AccountIdentityFields({ f }: { f: MotoristFields }) {
       </OnaField>
 
       <div className="grid grid-cols-2 gap-3">
-        <OnaField label="Gender" required error={fieldErrors.gender}>
+        <OnaField label="Gender" error={fieldErrors.gender}>
           {({ id, describedBy, invalid }) => (
             <OnaSelect
               id={id}
@@ -219,27 +224,35 @@ export function AccountIdentityFields({ f }: { f: MotoristFields }) {
             </OnaSelect>
           )}
         </OnaField>
-        <OnaField label="Date of birth" required error={fieldErrors.dob}>
+        <OnaField label="Date of birth" error={fieldErrors.dob}>
           {({ id, describedBy, invalid }) => (
-            <OnaInput
-              id={id}
-              aria-describedby={describedBy}
-              invalid={invalid}
-              type="date"
-              value={dateOfBirth}
-              min={dobInputMin()}
-              max={dobInputMax()}
-              autoComplete="off"
-              onChange={(e) => {
-                const v = e.target.value;
-                setDateOfBirth(normalizeDobIso(v) || v);
-                setFieldError("dob", null);
-              }}
-              onBlur={(e) =>
-                setFieldError("dob", dobError(e.target.value || dateOfBirth))
-              }
-              required
-            />
+            <div className="relative">
+              <Calendar
+                aria-hidden
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ona-muted"
+                strokeWidth={2}
+              />
+              <OnaInput
+                id={id}
+                className="pl-9"
+                aria-describedby={describedBy}
+                invalid={invalid}
+                type="date"
+                value={dateOfBirth}
+                min={dobInputMin()}
+                max={dobInputMax()}
+                autoComplete="off"
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setDateOfBirth(normalizeDobIso(v) || v);
+                  setFieldError("dob", null);
+                }}
+                onBlur={(e) =>
+                  setFieldError("dob", dobError(e.target.value || dateOfBirth))
+                }
+                required
+              />
+            </div>
           )}
         </OnaField>
       </div>

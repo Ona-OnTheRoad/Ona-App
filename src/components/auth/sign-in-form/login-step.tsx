@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { OnaField, OnaInput, OnaSelect } from "@/components/ui/ona-field";
 import { OnaSegmented } from "@/components/ui/ona-segmented";
 import { OnaTitle } from "@/components/ui/ona-screen";
-import { getPhoneCodeOptions } from "@/lib/phone-codes";
+import { flagEmoji, getPhoneCodeOptions } from "@/lib/phone-codes";
 import { useT } from "@/lib/i18n";
 import type { AccountType } from "@/lib/types";
 import { EmailFields } from "./email-fields";
@@ -120,7 +120,7 @@ export function LoginStep({
                   >
                     {options.map((o) => (
                       <option key={o.iso} value={o.iso}>
-                        {o.iso} {o.label}
+                        {flagEmoji(o.iso)} {o.label}
                       </option>
                     ))}
                   </OnaSelect>

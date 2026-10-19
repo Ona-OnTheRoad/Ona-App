@@ -46,6 +46,15 @@ export function getPhoneCodeOptions(): PhoneCodeOption[] {
   return _cache;
 }
 
+/** Regional-indicator flag emoji for an ISO 3166 alpha-2 code ("NG" → 🇳🇬). */
+export function flagEmoji(iso: string): string {
+  const code = iso.trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(code)) return "";
+  return String.fromCodePoint(
+    ...[...code].map((c) => 127397 + c.charCodeAt(0)),
+  );
+}
+
 export const DEFAULT_PHONE_ISO = "NG";
 export const DEFAULT_PHONE_DIAL = "234";
 

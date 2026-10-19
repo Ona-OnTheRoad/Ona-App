@@ -93,12 +93,15 @@ export function SignupDetails() {
     <OnaScreen
       wordmark
       exiting={exiting}
-      onBack={goBack}
+      onBack={dualEntry ? goBack : undefined}
       footer={
         <div className="flex flex-col gap-3">
           <Button size="ona" variant="ona" onClick={onContinue}>
             Continue
           </Button>
+          <p className="text-center text-[11px] leading-snug text-ona-muted">
+            Protected by Ona escrow and secure payments via Flutterwave.
+          </p>
           {dualEntry ? null : (
             <p className="text-center text-[12px] text-ona-muted">
               Already have an account?{" "}
@@ -118,6 +121,7 @@ export function SignupDetails() {
       }
     >
       <OnaTitle
+        className="pt-5"
         title="Create account"
         subtitle="Create your account to get started with Ona."
       />

@@ -19,7 +19,7 @@ export function AccountReferralField({
   const locked = fromUrl || applied;
   return (
     <OnaField
-      label="Referral code (optional)"
+      label="Referral Code"
       hint={applied && value.trim() ? "Code applied." : undefined}
     >
       {({ id, describedBy }) => (
@@ -38,9 +38,11 @@ export function AccountReferralField({
           {fromUrl ? null : (
             <button
               type="button"
-              disabled={!applied && !value.trim()}
-              onClick={() => setApplied((a) => !a)}
-              className="absolute right-1.5 top-1/2 h-9 -translate-y-1/2 rounded-[8px] border-0 bg-ona-brand-btn px-3 text-[12px] font-semibold text-white disabled:bg-ona-disabled-bg disabled:text-ona-disabled-ink"
+              onClick={() => {
+                if (!applied && !value.trim()) return;
+                setApplied((a) => !a);
+              }}
+              className="absolute right-1.5 top-1/2 h-9 -translate-y-1/2 rounded-[8px] border-0 bg-ona-brand-btn px-3 text-[12px] font-semibold text-white"
             >
               {applied ? "Change" : "Apply code"}
             </button>
