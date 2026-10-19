@@ -1,6 +1,7 @@
 "use client";
 
 import { createElement } from "react";
+import { cn } from "@/lib/utils";
 import {
   isChatClosedForNotification,
   isJobHistoryClosedStatus,
@@ -14,12 +15,7 @@ import { actionSpec } from "./action-spec";
 
 export function NotificationRow({
   n,
-  isLight,
   accountType,
-  accent,
-  ink,
-  muted,
-  line,
   hoverHoldId,
   onEnter,
   onLeave,
@@ -27,12 +23,7 @@ export function NotificationRow({
   runAction,
 }: {
   n: AppNotification;
-  isLight: boolean;
   accountType: string | null | undefined;
-  accent: string;
-  ink: string;
-  muted: string;
-  line: string;
   hoverHoldId: string | null;
   onEnter: (n: AppNotification, unread: boolean) => void;
   onLeave: (n: AppNotification) => void;
@@ -61,7 +52,7 @@ export function NotificationRow({
   };
   return (
     <li
-      style={{ borderBottom: `1px solid ${line}` }}
+      className="border-b border-ona-border last:border-b-0"
       onMouseEnter={() => onEnter(n, unread)}
       onMouseLeave={() => onLeave(n)}
     >
@@ -69,66 +60,57 @@ export function NotificationRow({
         type="button"
         disabled={inert}
         aria-disabled={inert}
-        className={`flex w-full items-start gap-3.5 px-4 py-4 text-left ${
-          inert
-            ? "cursor-default opacity-70"
-            : isLight
-              ? "active:bg-black/[0.06]"
-              : "active:bg-white/[0.08]"
-        }`}
-        style={{ backgroundColor: "transparent" }}
+        className={cn(
+          "flex w-full items-start gap-3 border-0 bg-transparent px-3 py-3 text-left",
+          inert ? "cursor-default opacity-70" : "active:bg-ona-field",
+        )}
         onClick={go}
       >
-        {createElement(Icon, {
-          className: `mt-1 h-[18px] w-[18px] shrink-0${
-            hoverHoldId === n.id ? " animate-pulse" : ""
-          }`,
-          style: {
-            color: unread ? accent : muted,
-            strokeWidth: unread ? 2.4 : 2,
-          },
-          "aria-hidden": true,
-        })}
+        <span
+          className={cn(
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+            unread
+              ? "bg-ona-brand-soft text-ona-brand-ink"
+              : "bg-ona-field text-ona-muted",
+          )}
+        >
+          {createElement(Icon, {
+            className: cn(
+              "h-[17px] w-[17px]",
+              hoverHoldId === n.id && "animate-pulse",
+            ),
+            strokeWidth: 2,
+            "aria-hidden": true,
+          })}
+        </span>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <span
-              className="truncate text-[13px] font-bold leading-tight tracking-[-0.01em]"
-              style={{ color: ink }}
-            >
-              Ona
-            </span>
-            <span
-              className="shrink-0 text-[11px] font-medium"
-              style={{ color: muted }}
-            >
-              · {toastWhen(n.createdAt)}
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-[13px] font-semibold leading-tight text-ona-ink">
+              {n.title}
+            </p>
+            <span className="flex shrink-0 items-center gap-1.5 text-[10px] font-medium text-ona-muted">
+              {toastWhen(n.createdAt)}
+              {unread ? (
+                <>
+                  <span
+                    aria-hidden
+                    className="h-1.5 w-1.5 rounded-full bg-ona-brand"
+                  />
+                  <span className="sr-only">Unread</span>
+                </>
+              ) : null}
             </span>
           </div>
-          <p
-            className="mt-1 text-[13px] font-semibold leading-snug tracking-[-0.01em]"
-            style={{ color: ink }}
-          >
-            {n.title}
-          </p>
-          <p
-            className="mt-1.5 line-clamp-2 text-[12px] font-normal leading-snug"
-            style={{ color: muted }}
-          >
+          <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-ona-muted">
             {closed && n.messageText ? n.messageText : n.body}
           </p>
           {closed && n.messageText ? (
-            <p
-              className="mt-1 text-[10px] font-semibold"
-              style={{ color: muted }}
-            >
+            <p className="mt-1 text-[10px] font-semibold text-ona-muted">
               Job finished. Full message.
             </p>
           ) : null}
           {historyClosed && !closed && n.category === "requests" ? (
-            <p
-              className="mt-1 text-[10px] font-semibold"
-              style={{ color: muted }}
-            >
+            <p className="mt-1 text-[10px] font-semibold text-ona-muted">
               Job {n.jobStatus?.replace(/_/g, " ") || "closed"}. Link
               unavailable.
             </p>
@@ -136,12 +118,11 @@ export function NotificationRow({
         </div>
         {spec && spec.icon && spec.icon !== Icon ? (
           <span
-            className="self-center shrink-0 pl-2"
+            className="shrink-0 self-center pl-1 text-ona-muted"
             title={spec.label}
             aria-label={spec.label}
-            style={{ color: unread ? accent : muted }}
           >
-            <spec.icon className="h-[18px] w-[18px]" strokeWidth={2} />
+            <spec.icon className="h-[17px] w-[17px]" strokeWidth={2} />
           </span>
         ) : null}
       </button>
