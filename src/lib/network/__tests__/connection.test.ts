@@ -4,6 +4,7 @@ import {
   networkStateKey,
   qualityFrom,
   readNetworkState,
+  shouldDeferHeavyContent,
 } from "@/lib/network/connection";
 
 describe("qualityFrom", () => {
@@ -23,7 +24,10 @@ describe("qualityFrom", () => {
 describe("readNetworkState", () => {
   it("reads online state and connection hints", () => {
     expect(
-      readNetworkState({ onLine: true, connection: { effectiveType: "2g", saveData: true } }),
+      readNetworkState({
+        onLine: true,
+        connection: { effectiveType: "2g", saveData: true },
+      }),
     ).toEqual({ online: true, quality: "slow", saveData: true });
   });
   it("reports offline only when onLine is exactly false", () => {
@@ -34,8 +38,25 @@ describe("readNetworkState", () => {
     expect(readNetworkState(undefined)).toEqual(DEFAULT_NETWORK_STATE);
   });
   it("gives equal keys for equal states", () => {
-    expect(networkStateKey({ online: true, quality: "good", saveData: false })).toBe(
-      networkStateKey(DEFAULT_NETWORK_STATE),
+    expect(
+      networkStateKey({ online: true, quality: "good", saveData: false }),
+    ).toBe(networkStateKey(DEFAULT_NETWORK_STATE));
+  });
+});
+
+describe("shouldDeferHeavyContent", () => {
+  it("waits for a tap on 2G / Data Saver or offline, loads on 3G and better", () => {
+    expect(shouldDeferHeavyContent({ online: true, quality: "slow" })).toBe(
+      true,
+    );
+    expect(shouldDeferHeavyContent({ online: false, quality: "good" })).toBe(
+      true,
+    );
+    expect(shouldDeferHeavyContent({ online: true, quality: "fair" })).toBe(
+      false,
+    );
+    expect(shouldDeferHeavyContent({ online: true, quality: "good" })).toBe(
+      false,
     );
   });
 });

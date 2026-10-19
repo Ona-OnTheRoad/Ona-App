@@ -1,19 +1,24 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { MapPin } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { AppHeader } from "@/components/home/app-header";
 import { HomePanel } from "@/components/home/home-panel";
 import { useAppConfig } from "@/components/app-config-provider";
 import { useOnaGoogleMaps } from "@/lib/google-maps-loader";
+import { useT } from "@/lib/i18n";
+import { shouldDeferHeavyContent } from "@/lib/network/connection";
+import { useNetworkStatus } from "@/lib/network/use-network-status";
 import { useApp } from "@/lib/store";
 import { MAX_TECHNICIANS } from "@/lib/matching";
 import { cn } from "@/lib/utils";
 
 /**
- * Customer home: the map shows as soon as the screen opens (no tap needed) and the
- * trade sheet sits over its lower part. Nearby pros refresh lives in AppProvider
- * (slow poll), not on every open.
+ * Customer home: the satellite map shows as soon as the screen opens (no tap needed) and
+ * the trade sheet sits over its lower part. On 2G / Data Saver / offline the map waits for
+ * a tap so poor connections are not burdened with imagery. Nearby pros refresh lives in
+ * AppProvider (slow poll), not on every open.
  */
 const ServiceMap = dynamic(
   () => import("@/components/map/service-map").then((m) => m.ServiceMap),
@@ -38,6 +43,11 @@ export function HomeScreen() {
     authReady,
   } = useApp();
   const { config } = useAppConfig();
+  const t = useT();
+  const network = useNetworkStatus();
+  const deferMap = shouldDeferHeavyContent(network);
+  /** On a poor connection the person chose to load the map this visit. */
+  const [mapRequested, setMapRequested] = useState(false);
   /** Open with lower panel down (collapsed) map slot on top, sheet ~60% bottom */
   const [sheetExpanded, setSheetExpanded] = useState(false);
 
@@ -138,9 +148,30 @@ export function HomeScreen() {
                 : "flex-[0_0_40%] opacity-100",
           )}
         >
-          {!sheetExpanded ? (
+          {sheetExpanded ? null : !deferMap || mapRequested ? (
             <ServiceMap technicians={mapTechs} onSelect={setSelectedTechId} />
-          ) : null}
+          ) : (
+            <button
+              type="button"
+              disabled={!network.online}
+              onClick={() => setMapRequested(true)}
+              className="flex h-full w-full flex-col items-center justify-center gap-2 border-0 bg-ona-map px-4 text-center text-ona-ink disabled:opacity-80"
+            >
+              <span className="flex h-11 w-11 items-center justify-center rounded-full border border-ona-border bg-ona-surface text-ona-brand-ink">
+                <MapPin className="h-5 w-5" strokeWidth={2} aria-hidden />
+              </span>
+              <span className="text-[14px] font-semibold">
+                {network.online
+                  ? t("home.mapSaverTitle")
+                  : t("home.mapOfflineTitle")}
+              </span>
+              <span className="text-[12px] text-ona-muted">
+                {network.online
+                  ? t("home.mapSaverBody")
+                  : t("home.mapOfflineBody")}
+              </span>
+            </button>
+          )}
         </div>
 
         <div

@@ -63,3 +63,13 @@ export function readNetworkState(
 export function networkStateKey(s: NetworkState): string {
   return `${s.online ? 1 : 0}|${s.quality}|${s.saveData ? 1 : 0}`;
 }
+
+/**
+ * Whether heavy content (satellite map tiles) should wait for a tap: on 2G / Data Saver
+ * ("slow") or with no connection at all. 3G and better load straight away.
+ */
+export function shouldDeferHeavyContent(
+  s: Pick<NetworkState, "online" | "quality">,
+): boolean {
+  return !s.online || s.quality === "slow";
+}
