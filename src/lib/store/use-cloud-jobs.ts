@@ -11,6 +11,25 @@ import type { SessionStateResult } from "./use-session-state";
 
 type RequestsSetter = Dispatch<SetStateAction<ServiceRequest[]>>;
 
+function mergeRequestRelatedFields(
+  primary: ServiceRequest,
+  secondary: ServiceRequest | null | undefined,
+): ServiceRequest {
+  if (!secondary || secondary.id !== primary.id) return primary;
+  const samePro =
+    Boolean(primary.technicianId) &&
+    primary.technicianId === secondary.technicianId;
+  if (!samePro) return primary;
+  const pName = (primary.technicianName || "").trim();
+  const sName = (secondary.technicianName || "").trim();
+  const pPlaceholder = !pName || pName === "Repair Pro";
+  const sReal = Boolean(sName) && sName !== "Repair Pro";
+  if (pPlaceholder && sReal) {
+    return { ...primary, technicianName: sName };
+  }
+  return primary;
+}
+
 export function reconcileRequests(previous: ServiceRequest[], incoming: ServiceRequest[],
   started: ServiceRequest[]): ServiceRequest[] {
   const old = new Map(previous.map((j) => [j.id, j]));
@@ -18,7 +37,10 @@ export function reconcileRequests(previous: ServiceRequest[], incoming: ServiceR
   const ids = new Set(incoming.map((j) => j.id));
   const next = incoming.map((job) => {
     const current = old.get(job.id);
-    return snapshotCanReplace(job, current ?? null, baseline.get(job.id) ?? null) ? job : current!;
+    if (snapshotCanReplace(job, current ?? null, baseline.get(job.id) ?? null)) {
+      return mergeRequestRelatedFields(job, current ?? null);
+    }
+    return current ? mergeRequestRelatedFields(current, job) : job;
   });
   // Keep local additions/edits made after the read began until reconciliation
   // can observe them. A successful unchanged empty list really clears state.

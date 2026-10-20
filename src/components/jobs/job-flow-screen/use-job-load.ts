@@ -5,7 +5,7 @@ import type { useRouter } from "next/navigation";
 import type { useNotificationsOptional } from "@/components/notifications/notification-provider";
 import { apiGetJob } from "@/lib/jobs/client";
 import { useSnapshotScope } from "@/lib/jobs/use-snapshot-scope";
-import { snapshotCanReplace } from "@/lib/jobs/snapshot-reads";
+import { reconcileJobSnapshot } from "@/lib/jobs/snapshot-reads";
 import type { JobRecord } from "@/lib/jobs/types";
 import { homePathForForbidden, isForbiddenMessage } from "@/lib/navigation";
 import type { useApp } from "@/lib/store";
@@ -113,24 +113,25 @@ export function useJobLoad({
       setErr((prev) => stickyReleaseErr || prev || res.message);
       return "http-error" as const;
     }
-    if (!snapshotCanReplace(res.data.job, jobRef.current, started)) return "skipped" as const;
+    const reconciled = reconcileJobSnapshot(res.data.job, jobRef.current, started);
+    if (!reconciled) return "skipped" as const;
     // Unpaid Ona Express drafts are booking-session state, never an open
     // request: tapping one returns the customer to the page they were on.
     if (
-      (res.data.job as unknown as { flowStatus?: string }).flowStatus ===
+      (reconciled as unknown as { flowStatus?: string }).flowStatus ===
       "express_pending_payment"
     ) {
       router.back();
       return "skipped" as const;
     }
-    commitJob(res.data.job);
+    commitJob(reconciled);
     // Never clear stickyReleaseErr here only dismiss / successful release
     setErr(stickyReleaseErr ? stickyReleaseErr : null);
     // If payout already done, drop sticky error
     if (
-      res.data.job.releasedAt ||
-      res.data.job.escrowStatus === "released" ||
-      res.data.job.status === "released"
+      reconciled.releasedAt ||
+      reconciled.escrowStatus === "released" ||
+      reconciled.status === "released"
     ) {
       setStickyReleaseErr(null);
     }

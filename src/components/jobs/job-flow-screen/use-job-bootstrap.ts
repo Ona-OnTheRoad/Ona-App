@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
+import { mergeJobRelatedFields } from "@/lib/jobs/snapshot-reads";
 import { useSnapshotScope } from "@/lib/jobs/use-snapshot-scope";
 import type { AccountType } from "@/lib/types";
 import { apiCreateJob } from "@/lib/jobs/client";
@@ -38,8 +39,9 @@ export function useJobBootstrap({
         if (prev?.id === next.id && Number.isSafeInteger(prev.jobVersion) &&
           Number.isSafeInteger(next.jobVersion) && next.jobVersion! < prev.jobVersion!) return prev;
         if (!force && prev && !isJobNewer(next, prev)) return prev;
-        jobRef.current = next;
-        return next;
+        const merged = mergeJobRelatedFields(next, prev);
+        jobRef.current = merged;
+        return merged;
       });
     },
     [scope, activeJobIdRef, setJob, jobRef],

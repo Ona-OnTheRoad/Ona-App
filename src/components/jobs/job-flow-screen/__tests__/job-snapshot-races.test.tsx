@@ -147,6 +147,75 @@ describe("detail snapshot integration", () => {
     await act(async () => { pending.resolve({ ok: false, message: "Forbidden" }); await loading; });
     expect(h.router.replace).not.toHaveBeenCalled();
   });
+
+  it("preserves hydrated call-out quote and contact fields across unhydrated mutation commits and equal-version reads", async () => {
+    const pending = deferred<Result>(); mocks.get.mockReturnValue(pending.promise);
+    const h = draw();
+    const initialHydrated = {
+      ...job(5, "job", "negotiating"),
+      serviceType: "mechanic" as const,
+      motoristId: "m1",
+      motoristName: "Ada",
+      motoristPhone: "+2348011111111",
+      motoristVehicle: "Honda Accord 2020",
+      repairProId: "p1",
+      repairProName: "Kunle",
+      repairProPhone: "+2348022222222",
+      calloutQuote: {
+        requestId: "job",
+        calloutStatus: "CALCULATED" as const,
+        tradeId: "mechanic" as const,
+        originProId: "p1",
+        calloutFee: 4500,
+      },
+    } as unknown as JobRecord;
+    act(() => h.result.current.commitJob(initialHydrated, true));
+
+    // Unhydrated mutation response at version 6 must keep hydrated contacts and settled quote
+    const unhydratedMutation = {
+      ...job(6, "job", "agreed"),
+      serviceType: "mechanic" as const,
+      motoristId: "m1",
+      motoristName: "Customer",
+      motoristPhone: null,
+      motoristVehicle: null,
+      repairProId: "p1",
+      repairProName: "Repair Pro",
+      repairProPhone: null,
+      calloutQuote: null,
+    } as unknown as JobRecord;
+    act(() => h.result.current.commitJob(unhydratedMutation, true));
+    expect(h.result.current.s.job?.status).toBe("agreed");
+    expect(h.result.current.s.job?.jobVersion).toBe(6);
+    expect(h.result.current.s.job?.motoristPhone).toBe("+2348011111111");
+    expect(h.result.current.s.job?.motoristVehicle).toBe("Honda Accord 2020");
+    expect(h.result.current.s.job?.repairProPhone).toBe("+2348022222222");
+    expect(h.result.current.s.job?.calloutQuote?.calloutFee).toBe(4500);
+
+    // Start a read at version 6, then apply an optimistic status at version 6
+    let loading!: Promise<void>;
+    act(() => { loading = h.result.current.load(); }); await flush();
+    act(() => h.result.current.commitJob({ ...h.result.current.s.job!, status: "paid_booked" }, true));
+
+    // Read returns version 6 with a newly LOCKED quote: status stays paid_booked, quote upgrades to LOCKED
+    await act(async () => {
+      pending.resolve(ok({
+        ...unhydratedMutation,
+        status: "agreed",
+        calloutQuote: {
+          requestId: "job",
+          calloutStatus: "LOCKED" as const,
+          tradeId: "mechanic" as const,
+          originProId: "p1",
+          calloutFee: 4500,
+          lockedAt: "2026-10-20T10:05:00Z",
+        } as never,
+      }));
+      await loading;
+    });
+    expect(h.result.current.s.job?.status).toBe("paid_booked");
+    expect(h.result.current.s.job?.calloutQuote?.calloutStatus).toBe("LOCKED");
+  });
 });
 
 it("uses durable revision before timestamps/status ordering", () => {
