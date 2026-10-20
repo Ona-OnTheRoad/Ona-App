@@ -43,3 +43,5 @@ Update status ledger and paired guide with the exact implementation commit, actu
 - Cloud-store job subscriptions now require authentication and rebind on role/account changes, cancelling prior debounce work. Timings and authenticated maintenance cadence are unchanged.
 - Tests exercise same-user four-consumer sharing, exact filters, payload delivery, refcounts, duplicate callbacks, user/client isolation, removed generations, setup and removal failures, reentrant callback membership changes, callback error isolation, Strict Mode and cloud sign-out/role/account cleanup. No server or personal row payload is logged by diagnostics.
 - Session-local evidence: `/private/tmp/ona-phase2a-{tests,types,lint,boundaries,build,webpack}.log`. This is mocked/code evidence, not hosted RLS, reconnect or performance proof.
+
+Code/test evidence snapshot: `1e100835734e5f19b9fb5a5235941f7323b8446e`. This records the tested implementation, not independent human approval. No feature code changed after these gates.

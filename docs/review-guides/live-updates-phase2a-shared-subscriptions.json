@@ -1,7 +1,7 @@
 {
   "feature": "live-updates-phase2a-shared-subscriptions",
   "baselineCommit": "9cfe4db25afad8910ebe0b44f3b4e90fbc0e57ea",
-  "reviewedCommit": null,
+  "reviewedCommit": "1e100835734e5f19b9fb5a5235941f7323b8446e",
   "status": "implementation-local-checks-live-evidence-pending",
   "criteria": [
     {
@@ -73,5 +73,6 @@
     "external": [
       "Authenticated browser lifecycle smoke, hosted subscription/RLS verification and Phase 1 representative baseline/target agreement pending"
     ]
-  }
+  },
+  "reviewScope": "Local code/test evidence snapshot; independent human review and browser/hosted checks remain pending"
 }
