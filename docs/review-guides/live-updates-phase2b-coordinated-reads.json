@@ -143,12 +143,39 @@
     ],
     "remainingWork": {
       "code": [
-        "Independent human review against the follow-up commit remains pending. CI must pass before merge; no migration required."
+        "Independent human review against code evidence ea8d450 / CI snapshot 99c9881 remains pending. No migration required."
       ],
       "external": [
-        "Authenticated pending-to-real browser smoke and hosted/deployment acceptance pending; fresh CUA inventory returned no connected browsers."
+        "Browser connected and both user-authorized test accounts logged in sequentially. Basic navigation smoke passed; pending-to-real request, active realtime/reconnect/slow-network scenarios and representative captures remain pending. Customer location timed out; listed pro jobs were closed. Hosted/deployment acceptance pending."
       ]
     },
-    "codeEvidenceCommit": "ea8d450ccfca6513b9bbc901224902fd2436b9a3"
+    "codeEvidenceCommit": "ea8d450ccfca6513b9bbc901224902fd2436b9a3",
+    "pullRequest": "https://github.com/Ona-OnTheRoad/Ona-App/pull/29",
+    "browserSmoke": {
+      "date": "2026-10-20",
+      "environment": "localhost:3000; existing development server",
+      "result": "partial",
+      "passed": [
+        "Customer login, home and history render",
+        "Customer signout followed by repair-pro login",
+        "Repair-pro dashboard, jobs list and closed job detail render",
+        "Closed job detail Back returns to pro Jobs list"
+      ],
+      "pending": [
+        "Pending-to-real new-request smoke",
+        "Active negotiation, reconnect, slow-network and multi-consumer captures",
+        "Hosted authorization and deployment acceptance"
+      ],
+      "limitations": [
+        "Customer home reported location timeout",
+        "Listed repair-pro jobs were closed; existing payout pending left untouched",
+        "Development route compilation delays prevent representative performance conclusions"
+      ]
+    },
+    "ciEvidence": {
+      "commit": "99c9881",
+      "run": "https://github.com/Ona-OnTheRoad/Ona-App/actions/runs/39469590205",
+      "result": "All four jobs pass: tests, lint/typecheck, full-history Supabase migration replay, default production build and server boundaries. Vercel/Netlify previews pass. No hosted acceptance claim."
+    }
   }
 }
