@@ -24,7 +24,7 @@ import {
 } from "@/lib/jobs/idempotency";
 
 import type { DiagnosticContext } from "@/lib/jobs/diagnostics/types";
-import { recordJobDiagnostic } from "@/lib/jobs/diagnostics/collector";
+import { subscribeSharedJobRows, type JobChangeListener } from "./shared-job-subscriptions";
 import type { JobSource } from "@/lib/jobs/diagnostics/types";
 
 export { isAppBackendOnline };
@@ -1243,65 +1243,10 @@ export function backendSubscribeMessages(
  */
 export function backendSubscribeJobs(
   userId: string,
-  onChange: (payload?: {
-    new?: Record<string, unknown>;
-    old?: Record<string, unknown>;
-  }) => void,
+  onChange: JobChangeListener,
   source: JobSource = "other",
 ): (() => void) | null {
-  const sb = getAppSupabase();
-  const context = { source, trigger: "realtime" as const };
-  if (!sb) {
-    recordJobDiagnostic("subscription", "jobs", context, "unavailable");
-    return null;
-  }
-  recordJobDiagnostic("subscription", "jobs", context, "opened");
-  const channel = sb
-    .channel(`jobs:${userId}:${Math.random().toString(36).slice(2, 8)}`)
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "service_requests",
-        filter: `motorist_id=eq.${userId}`,
-      },
-      (
-        payload: {
-          new?: Record<string, unknown>;
-          old?: Record<string, unknown>;
-        } | null,
-      ) => {
-        recordJobDiagnostic("subscription", "jobs", context, "event");
-        onChange(payload || undefined);
-      },
-    )
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "service_requests",
-        filter: `repair_pro_id=eq.${userId}`,
-      },
-      (
-        payload: {
-          new?: Record<string, unknown>;
-          old?: Record<string, unknown>;
-        } | null,
-      ) => {
-        recordJobDiagnostic("subscription", "jobs", context, "event");
-        onChange(payload || undefined);
-      },
-    )
-    .subscribe((status) => {
-      const outcome = { SUBSCRIBED: "subscribed", CHANNEL_ERROR: "channel-error", TIMED_OUT: "timeout", CLOSED: "closed" } as const;
-      if (status in outcome) recordJobDiagnostic("subscription", "jobs", context, outcome[status]);
-    });
-  return () => {
-    recordJobDiagnostic("subscription", "jobs", context, "removed");
-    void sb.removeChannel(channel);
-  };
+  return subscribeSharedJobRows(getAppSupabase(), userId, onChange, source);
 }
 
 export type ProPresenceChangeReason = "presence" | "heartbeat";

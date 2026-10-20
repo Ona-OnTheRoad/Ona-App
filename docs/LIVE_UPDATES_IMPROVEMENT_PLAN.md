@@ -1,7 +1,7 @@
 # Live updates: phased improvement proposal
 
 Date: 2026-10-19  
-Status: phased proposal; Phase 1 measurement tooling implemented on `codex/live-updates-phase1-baseline`, with representative browser/hosted baseline and target agreement pending. Later phases remain proposed.
+Status: phased proposal; Phase 1 tooling merged to dev in PR #25; representative browser/hosted baseline and target agreement pending. Phase 2A shared-subscription scope approved and implemented locally; remaining Phase 2 work and later phases remain proposed.
 
 ## Goal and recommendation
 
@@ -122,7 +122,7 @@ Review criteria: agreed performance/budget targets pass under representative loa
 | Phase | Implementation/test evidence | Hosted/release evidence |
 | --- | --- | --- |
 | 1: baseline | Opt-in instrumentation, source inventory and synthetic tests implemented; [Phase 1 guide](review-guides/live-updates-phase1-baseline.md) tracks local checks | Representative capture and hosted subscription/query/scheduler observations pending |
-| 2: coordinated reads | Pending | Pending |
+| 2: coordinated reads | [Phase 2A shared subscriptions](review-guides/live-updates-phase2a-shared-subscriptions.md) implemented/tested locally; snapshot coordination and revision strategy remain pending | Pending |
 | 3: adaptive recovery | Pending | Pending |
 | 4: server maintenance | Existing Issue 3 evidence must be reviewed; additional scope pending | Activation and broader coverage unverified |
 | 5: Broadcast evaluation | Conditional; pending | Conditional; pending |

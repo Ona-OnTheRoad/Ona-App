@@ -96,3 +96,7 @@ Deterministic automated scenarios validate measurement attribution and unchanged
 Subscription callback reference checked during implementation: [Supabase JavaScript subscribe](https://supabase.com/docs/reference/javascript/subscribe). Only fixed status categories are retained; raw SDK errors are intentionally excluded from diagnostics.
 
 Local implementation checks: 1,606 tests / 165 files, typecheck, lint (0 errors / 139 warnings), server-boundary guard, whitespace check and webpack production build passed. Default Turbopack compilation hit environment restrictions (font network, then worker port) and is not claimed verified. These are code checks, not representative authenticated baseline data.
+
+## Phase 2A capture interpretation
+
+After the shared-subscription change, `subscription/shared-jobs` measures the physical job channel lifecycle and received events. `subscription-consumer/<source>` measures listener registration, delivery, errors and cleanup; it also provides the source event timestamp for event-to-read proxies. One received event can produce several consumer-delivery records. Count physical `opened` records for channel creation, and do not add consumer records to that count. Earlier Phase 1 captures used per-caller channels and are a different schema/ownership baseline. Channel removal is asynchronous at the SDK; an inactive retiring channel may briefly overlap a newly opened replacement, while its callbacks are ignored.
