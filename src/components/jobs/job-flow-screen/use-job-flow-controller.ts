@@ -82,12 +82,16 @@ export function useJobFlowController({
   });
   const { commitJob } = useJobBootstrap({
     jobId,
+    backendUserId,
+    accountType,
     authReady,
     isAuthenticated,
     s,
   });
   const { load } = useJobLoad({
     jobId,
+    backendUserId,
+    isAuthenticated,
     router,
     accountType,
     notifRef,

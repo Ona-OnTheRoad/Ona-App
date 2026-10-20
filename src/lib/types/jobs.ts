@@ -12,6 +12,8 @@ export type RequestStatus =
 
 export interface ServiceRequest {
   id: string;
+  /** Durable service_requests row revision; not a revision of profile data. */
+  jobVersion?: number;
   technicianId: string;
   technicianName: string;
   /** Supabase motorist profile id when job is cloud-backed */

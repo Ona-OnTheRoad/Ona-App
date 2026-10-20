@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
+import { useSnapshotScope } from "@/lib/jobs/use-snapshot-scope";
+import type { AccountType } from "@/lib/types";
 import { apiCreateJob } from "@/lib/jobs/client";
 import type { JobRecord } from "@/lib/jobs/types";
 import { isJobNewer } from "../job-flow/job-utils";
@@ -6,6 +8,8 @@ import type { JobFlowState } from "./use-job-flow-state";
 
 interface Args {
   jobId: string;
+  backendUserId: string | null;
+  accountType: AccountType | null;
   authReady: boolean;
   isAuthenticated: boolean;
   s: JobFlowState;
@@ -17,20 +21,28 @@ interface Args {
  */
 export function useJobBootstrap({
   jobId,
+  backendUserId,
+  accountType,
   authReady,
   isAuthenticated,
   s,
 }: Args) {
   const { setJob, jobRef, activeJobIdRef, setErr } = s;
+  const scope = useSnapshotScope(backendUserId, accountType, isAuthenticated, jobId);
   const commitJob = useCallback(
     (next: JobRecord, force = false) => {
+      const capture = scope.capture();
+      if (!capture) return;
       setJob((prev) => {
+        if (!capture.isCurrent() || activeJobIdRef.current !== next.id) return prev;
+        if (prev?.id === next.id && Number.isSafeInteger(prev.jobVersion) &&
+          Number.isSafeInteger(next.jobVersion) && next.jobVersion! < prev.jobVersion!) return prev;
         if (!force && prev && !isJobNewer(next, prev)) return prev;
         jobRef.current = next;
         return next;
       });
     },
-    [setJob, jobRef],
+    [scope, activeJobIdRef, setJob, jobRef],
   );
 
   // Instant paint: the help flow hands us the just-created job via
@@ -43,7 +55,7 @@ export function useJobBootstrap({
       const seed = JSON.parse(raw) as JobRecord;
       if (seed?.id !== jobId) return;
       setJob((prev) => {
-        if (prev && isJobNewer(prev, seed)) return prev;
+        if (prev?.id === seed.id && isJobNewer(prev, seed)) return prev;
         jobRef.current = seed;
         return seed;
       });
@@ -121,6 +133,8 @@ export function useJobBootstrap({
   useEffect(() => {
     if (!isNewRequest) return;
     if (createdNewRef.current) return;
+    const capture = scope.capture();
+    if (!capture) return;
     // One-click: don't wait for authReady lag — payload already carries motoristId;
     // server validates JWT on apiCreateJob, and seed job is already painted.
     if (!authReady) {
@@ -134,6 +148,7 @@ export function useJobBootstrap({
               if (!raw) return;
               const payload = JSON.parse(raw) as Record<string, unknown>;
               const res = await apiCreateJob(payload);
+              if (!capture.isCurrent()) return;
               if (!res.ok) {
                 setErr(
                   res.message || "Could not send your request. Try again.",
@@ -151,6 +166,7 @@ export function useJobBootstrap({
               activeJobIdRef.current = res.data.job.id;
               commitJob(res.data.job, true);
             } catch {
+              if (!capture.isCurrent()) return;
               setErr("Could not send your request. Try again.");
               createdNewRef.current = false;
             }
@@ -166,6 +182,7 @@ export function useJobBootstrap({
         if (!raw) return;
         const payload = JSON.parse(raw) as Record<string, unknown>;
         const res = await apiCreateJob(payload);
+        if (!capture.isCurrent()) return;
         if (!res.ok) {
           // Search screen stays visible with the error; Cancel returns home.
           setErr(res.message || "Could not send your request. Try again.");
@@ -182,11 +199,13 @@ export function useJobBootstrap({
         activeJobIdRef.current = res.data.job.id;
         commitJob(res.data.job, true);
       } catch {
+        if (!capture.isCurrent()) return;
         setErr("Could not send your request. Try again.");
       }
     };
     void create();
   }, [
+    scope,
     isNewRequest,
     authReady,
     isAuthenticated,
