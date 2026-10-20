@@ -150,6 +150,9 @@ export function useIncomingPoll({
           if (cancelled || !res.ok) return;
           ingest(res.data.jobs);
         }
+      } catch {
+        // Keep the last known cards on transient read failures. The next
+        // scheduled poll (or a pending realtime update) reconciles them.
       } finally {
         polling = false;
         if (pending && !cancelled) {

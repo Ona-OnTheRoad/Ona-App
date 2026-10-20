@@ -138,10 +138,19 @@ export function useReleasePayGate() {
       return;
     }
     let cancelled = false;
+    let polling = false;
     const poll = async () => {
       if (typeof document !== "undefined" && document.hidden) return;
-      if (cancelled) return;
-      await refresh();
+      if (cancelled || polling) return;
+      polling = true;
+      try {
+        await refresh();
+      } catch {
+        // A failed background read must not clear an existing release prompt.
+        // Leave the current state intact and retry on the next poll.
+      } finally {
+        polling = false;
+      }
     };
     void poll();
     const t = window.setInterval(() => {
