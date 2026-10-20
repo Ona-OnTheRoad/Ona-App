@@ -6,7 +6,7 @@ interface Args {
   job: JobRecord | null;
   authReady: boolean;
   isAuthenticated: boolean;
-  load: (trigger?: JobTrigger) => Promise<void>;
+  load: (trigger?: JobTrigger) => Promise<unknown>;
 }
 
 /** Client backup: sweep overdue jobs + retry PENDING_SETTLEMENT payouts. */

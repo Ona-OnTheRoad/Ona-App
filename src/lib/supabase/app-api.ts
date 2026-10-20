@@ -24,11 +24,16 @@ import {
 } from "@/lib/jobs/idempotency";
 
 import type { DiagnosticContext } from "@/lib/jobs/diagnostics/types";
-import { subscribeSharedJobRows, type JobChangeListener } from "./shared-job-subscriptions";
+import {
+  subscribeSharedJobRows,
+  type JobChangeListener,
+  type JobSubscriptionState,
+  type JobSubscriptionStatusListener,
+} from "./shared-job-subscriptions";
 import type { JobSource } from "@/lib/jobs/diagnostics/types";
 
 export { isAppBackendOnline };
-export type { MessageRow };
+export type { MessageRow, JobSubscriptionState, JobSubscriptionStatusListener };
 
 export async function backendSignUp(input: {
   email: string;
@@ -1245,8 +1250,9 @@ export function backendSubscribeJobs(
   userId: string,
   onChange: JobChangeListener,
   source: JobSource = "other",
+  onStatusChange?: JobSubscriptionStatusListener,
 ): (() => void) | null {
-  return subscribeSharedJobRows(getAppSupabase(), userId, onChange, source);
+  return subscribeSharedJobRows(getAppSupabase(), userId, onChange, source, onStatusChange);
 }
 
 export type ProPresenceChangeReason = "presence" | "heartbeat";

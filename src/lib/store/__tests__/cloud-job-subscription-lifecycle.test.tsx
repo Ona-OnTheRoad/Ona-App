@@ -48,3 +48,25 @@ it("rebinds the consumer on a role switch and cancels the old role's queued refr
   act(() => { vi.advanceTimersByTime(800); });
   expect(refreshCloudJobs).not.toHaveBeenCalled();
 });
+
+it("reconciles cloud jobs when the shared job channel reconnects or the browser returns online", () => {
+  draw();
+  const onStatus = mocks.subscribe.mock.calls[0][3] as (
+    state: "connecting" | "connected" | "reconnecting" | "failed",
+    meta: { reconnected: boolean; hadPriorConnection: boolean },
+  ) => void;
+
+  // Initial connect (not a reconnect) does not duplicate the post-auth initial refresh
+  act(() => onStatus("connected", { reconnected: false, hadPriorConnection: false }));
+  act(() => { vi.advanceTimersByTime(800); });
+  expect(refreshCloudJobs).not.toHaveBeenCalledWith("realtime");
+
+  // Reconnect after a drop triggers a debounced realtime refresh
+  act(() => onStatus("connected", { reconnected: true, hadPriorConnection: true }));
+  act(() => { vi.advanceTimersByTime(800); });
+  expect(refreshCloudJobs).toHaveBeenCalledWith("realtime");
+
+  // Browser returning online triggers an immediate visibility reconciliation
+  act(() => { window.dispatchEvent(new Event("online")); });
+  expect(refreshCloudJobs).toHaveBeenCalledWith("visibility");
+});

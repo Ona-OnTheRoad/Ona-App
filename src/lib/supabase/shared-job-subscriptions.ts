@@ -6,8 +6,23 @@ import type { JobSource, Outcome } from "@/lib/jobs/diagnostics/types";
 
 type JobChange = { new?: Record<string, unknown>; old?: Record<string, unknown> };
 export type JobChangeListener = (payload?: JobChange) => void;
-type Consumer = { onChange: JobChangeListener; source: JobSource };
-type Entry = { channel: RealtimeChannel; listeners: Set<Consumer>; active: boolean };
+export type JobSubscriptionState = "connecting" | "connected" | "reconnecting" | "failed";
+export type JobSubscriptionStatusListener = (
+  state: JobSubscriptionState,
+  meta: { reconnected: boolean; hadPriorConnection: boolean },
+) => void;
+type Consumer = {
+  onChange: JobChangeListener;
+  source: JobSource;
+  onStatusChange?: JobSubscriptionStatusListener;
+};
+type Entry = {
+  channel: RealtimeChannel;
+  listeners: Set<Consumer>;
+  active: boolean;
+  state: JobSubscriptionState;
+  hadConnected: boolean;
+};
 
 // Client identity prevents a replacement client's listeners sharing an old connection.
 // Entries hold no snapshots; the final unsubscribe removes the user key immediately.
@@ -18,10 +33,37 @@ const statusOutcomes: Record<string, Outcome> = {
   TIMED_OUT: "timeout", CLOSED: "closed",
 };
 
+function mapChannelStatus(
+  rawStatus: string,
+  hadConnected: boolean,
+): JobSubscriptionState | null {
+  if (rawStatus === "SUBSCRIBED") return "connected";
+  if (rawStatus === "TIMED_OUT" || rawStatus === "CLOSED") {
+    return hadConnected ? "reconnecting" : "failed";
+  }
+  if (rawStatus === "CHANNEL_ERROR") {
+    return hadConnected ? "reconnecting" : "failed";
+  }
+  return null;
+}
+
 function consumerEvent(consumer: Consumer, outcome: Outcome) {
   recordJobDiagnostic("subscription-consumer", "jobs", {
     source: consumer.source, trigger: "realtime",
   }, outcome);
+}
+
+function notifyConsumerStatus(
+  consumer: Consumer,
+  state: JobSubscriptionState,
+  meta: { reconnected: boolean; hadPriorConnection: boolean },
+) {
+  if (!consumer.onStatusChange) return;
+  try {
+    consumer.onStatusChange(state, meta);
+  } catch {
+    consumerEvent(consumer, "error");
+  }
 }
 
 function dispose(client: SupabaseClient, entries: Map<string, Entry>, userId: string, entry: Entry) {
@@ -45,8 +87,9 @@ export function subscribeSharedJobRows(
   userId: string,
   onChange: JobChangeListener,
   source: JobSource,
+  onStatusChange?: JobSubscriptionStatusListener,
 ): (() => void) | null {
-  const consumer = { onChange, source };
+  const consumer: Consumer = { onChange, source, onStatusChange };
   if (!client || typeof window === "undefined") {
     consumerEvent(consumer, "unavailable");
     return null;
@@ -57,10 +100,19 @@ export function subscribeSharedJobRows(
   if (entry) {
     entry.listeners.add(consumer);
     consumerEvent(consumer, "opened");
+    if (entry.state !== "connecting") {
+      notifyConsumerStatus(consumer, entry.state, {
+        reconnected: false,
+        hadPriorConnection: entry.hadConnected,
+      });
+    }
   } else {
     entry = {
       channel: client.channel(`jobs:${userId}:${Math.random().toString(36).slice(2, 8)}`),
-      listeners: new Set([consumer]), active: true,
+      listeners: new Set([consumer]),
+      active: true,
+      state: "connecting",
+      hadConnected: false,
     };
     const openedEntry = entry;
     entries.set(userId, openedEntry);
@@ -91,6 +143,25 @@ export function subscribeSharedJobRows(
           if (!openedEntry.active) return;
           const outcome = statusOutcomes[status];
           if (outcome) recordJobDiagnostic("subscription", "jobs", channelContext, outcome);
+          const nextState = mapChannelStatus(status, openedEntry.hadConnected);
+          if (!nextState) return;
+          const prevState = openedEntry.state;
+          const hadPrior = openedEntry.hadConnected;
+          const reconnected =
+            nextState === "connected" &&
+            hadPrior &&
+            prevState !== "connected";
+          if (nextState === "connected") {
+            openedEntry.hadConnected = true;
+          }
+          openedEntry.state = nextState;
+          for (const listener of [...openedEntry.listeners]) {
+            if (!openedEntry.active || !openedEntry.listeners.has(listener)) continue;
+            notifyConsumerStatus(listener, nextState, {
+              reconnected,
+              hadPriorConnection: hadPrior,
+            });
+          }
         });
     } catch (error) {
       dispose(client, entries, userId, openedEntry);

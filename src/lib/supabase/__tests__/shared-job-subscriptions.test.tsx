@@ -3,7 +3,7 @@ import { StrictMode, useEffect } from "react";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { backendSubscribeJobs } from "../app-api";
-import type { JobChangeListener } from "../shared-job-subscriptions";
+import type { JobChangeListener, JobSubscriptionStatusListener } from "../shared-job-subscriptions";
 import { beginJobDiagnostic, clearJobDiagnostics, jobDiagnosticsSnapshot, startJobDiagnostics, stopJobDiagnostics } from "@/lib/jobs/diagnostics/collector";
 import type { JobSource } from "@/lib/jobs/diagnostics/types";
 
@@ -27,8 +27,13 @@ function fakeChannel() {
 }
 let client: ReturnType<typeof fakeClient>;
 let disposers: Array<() => void>;
-function subscribe(user = "private-user", listener = vi.fn(), source: JobSource = "job-screen") {
-  const remove = backendSubscribeJobs(user, listener, source);
+function subscribe(
+  user = "private-user",
+  listener = vi.fn(),
+  source: JobSource = "job-screen",
+  onStatus?: JobSubscriptionStatusListener,
+) {
+  const remove = backendSubscribeJobs(user, listener, source, onStatus);
   if (remove) disposers.push(remove);
   return remove;
 }
@@ -175,4 +180,69 @@ it("cleans up Strict Mode remounts, navigation and account switching without sta
   client.channels[2].event(); expect(listener).toHaveBeenCalledTimes(2);
   view.unmount(); client.channels[2].event(); expect(listener).toHaveBeenCalledTimes(2);
   expect(client.removeChannel).toHaveBeenCalledTimes(3);
+});
+
+it("exposes subscription health states, notifies late-joining consumers of current state, and marks reconnects", () => {
+  const statusA = vi.fn();
+  const statusB = vi.fn();
+  subscribe("user", vi.fn(), "job-screen", statusA);
+  expect(statusA).not.toHaveBeenCalled();
+
+  // Initial failure before any connection -> failed
+  client.channels[0].status("CHANNEL_ERROR");
+  expect(statusA).toHaveBeenLastCalledWith("failed", {
+    reconnected: false,
+    hadPriorConnection: false,
+  });
+
+  // First SUBSCRIBED -> connected (not a reconnect since never connected before)
+  client.channels[0].status("SUBSCRIBED");
+  expect(statusA).toHaveBeenLastCalledWith("connected", {
+    reconnected: false,
+    hadPriorConnection: false,
+  });
+
+  // Late-joining consumer on an already-connected channel immediately receives connected
+  subscribe("user", vi.fn(), "cloud-store", statusB);
+  expect(statusB).toHaveBeenCalledExactlyOnceWith("connected", {
+    reconnected: false,
+    hadPriorConnection: true,
+  });
+
+  // Error after prior connection -> reconnecting
+  client.channels[0].status("TIMED_OUT");
+  expect(statusA).toHaveBeenLastCalledWith("reconnecting", {
+    reconnected: false,
+    hadPriorConnection: true,
+  });
+  expect(statusB).toHaveBeenLastCalledWith("reconnecting", {
+    reconnected: false,
+    hadPriorConnection: true,
+  });
+
+  // Subsequent SUBSCRIBED -> connected with reconnected: true
+  client.channels[0].status("SUBSCRIBED");
+  expect(statusA).toHaveBeenLastCalledWith("connected", {
+    reconnected: true,
+    hadPriorConnection: true,
+  });
+  expect(statusB).toHaveBeenLastCalledWith("connected", {
+    reconnected: true,
+    hadPriorConnection: true,
+  });
+});
+
+it("isolates throwing status listeners so other consumers still receive status updates", () => {
+  startJobDiagnostics();
+  const goodStatus = vi.fn();
+  subscribe("user", vi.fn(), "job-screen", () => {
+    throw new Error("status-listener-secret");
+  });
+  subscribe("user", vi.fn(), "cloud-store", goodStatus);
+  expect(() => client.channels[0].status("SUBSCRIBED")).not.toThrow();
+  expect(goodStatus).toHaveBeenCalledWith("connected", {
+    reconnected: false,
+    hadPriorConnection: false,
+  });
+  expect(JSON.stringify(jobDiagnosticsSnapshot())).not.toContain("status-listener-secret");
 });

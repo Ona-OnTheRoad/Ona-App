@@ -11,6 +11,8 @@ import { homePathForForbidden, isForbiddenMessage } from "@/lib/navigation";
 import type { useApp } from "@/lib/store";
 import type { JobFlowState } from "./use-job-flow-state";
 
+export type JobLoadOutcome = "ok" | "http-error" | "skipped";
+
 interface Args {
   jobId: string;
   backendUserId: string | null;
@@ -43,6 +45,7 @@ export function useJobLoad({
   } = s;
   const scope = useSnapshotScope(backendUserId, accountType, isAuthenticated, jobId);
   const inFlight = useRef<{ id: string; promise: Promise<void> } | null>(null);
+  const lastOutcomeRef = useRef<JobLoadOutcome>("ok");
   const previousScope = useRef({ scope, backendUserId, accountType, isAuthenticated });
   useEffect(() => {
     inFlight.current = null;
@@ -138,7 +141,10 @@ export function useJobLoad({
   const load = useCallback((trigger: JobTrigger = "unknown"): Promise<void> => {
     const id = activeJobIdRef.current;
     const capture = scope.capture();
-    if (!capture) return Promise.resolve();
+    if (!capture) {
+      lastOutcomeRef.current = "skipped";
+      return Promise.resolve();
+    }
     const started = jobRef.current;
     const invalidates = trigger === "realtime" || trigger === "visibility" || trigger === "action";
     if (inFlight.current?.id === id && !invalidates) {
@@ -146,11 +152,16 @@ export function useJobLoad({
       return inFlight.current.promise;
     }
     const finish = beginJobDiagnostic("refresh", "job", { source: "job-screen", trigger });
-    const promise = loadOnce(trigger).then((outcome) => { finish(outcome); }).catch((error: unknown) => {
+    const promise = loadOnce(trigger).then((outcome) => {
+      lastOutcomeRef.current = outcome;
+      finish(outcome);
+    }).catch((error: unknown) => {
       if (!capture.isCurrent() || activeJobIdRef.current !== id || jobRef.current !== started) {
+        lastOutcomeRef.current = "skipped";
         finish("skipped");
         return;
       }
+      lastOutcomeRef.current = "http-error";
       finish(diagnosticFailure(error));
       const message = error instanceof Error ? error.message : "Could not refresh job. Retrying…";
       setErr((prev) => stickyReleaseErr || prev || message);
@@ -160,5 +171,5 @@ export function useJobLoad({
     inFlight.current = { id, promise };
     return promise;
   }, [scope, activeJobIdRef, jobRef, loadOnce, setErr, stickyReleaseErr]);
-  return { load };
+  return { load, lastOutcomeRef };
 }
