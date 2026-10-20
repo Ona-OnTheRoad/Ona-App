@@ -1,7 +1,7 @@
-import type { ReactElement } from "react";
+import { useEffect, useState, type ReactElement } from "react";
 import { Button } from "@/components/ui/button";
 import { apiAcceptOffer, apiPlaceOffer } from "@/lib/jobs/client";
-import { MIN_OFFER_AMOUNT_MAJOR } from "@/lib/jobs/constants";
+import { MIN_OFFER_AMOUNT_MAJOR, isNegotiationTimerArmed } from "@/lib/jobs/constants";
 import type { JobOffer, JobRecord } from "@/lib/jobs/types";
 import { formatMoney } from "@/lib/pricing";
 import type { JobApiResult, JobViewer } from "./types";
@@ -38,12 +38,20 @@ export function NegotiationFooter({
   canOffer,
   canAccept,
 }: Props): ReactElement {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  const ready = job.status === "negotiating" && !job.pairingStage &&
+    isNegotiationTimerArmed(job) && Date.parse(job.negotiateEndsAt || "") > now;
   const parsed = Number(offerInput.replace(/\D/g, ""));
   const sendDisabled = busy || !offerInput || parsed < MIN_OFFER_AMOUNT_MAJOR;
   return (
     <div className="space-y-1">
+      {!ready ? <p role="status" className="text-center text-[13px]">Waiting for confirmed negotiation…</p> : null}
       <div className={canAccept && canOffer ? "grid grid-cols-2 gap-3" : ""}>
-        {canOffer && (
+        {ready && canOffer && (
           <Button
             size="ona"
             variant={canAccept ? "onaOutline" : "ona"}
@@ -78,7 +86,7 @@ export function NegotiationFooter({
               : "Send offer"}
           </Button>
         )}
-        {canAccept && last && (
+        {ready && canAccept && last && (
           <Button
             size="ona"
             variant="ona"
