@@ -66,6 +66,13 @@ export function smartBackFallback(
   if (path.startsWith("/signup/")) return "/login/role";
 
   // ── Settings tree ─────────────────────────────────────────
+  if (path === "/settings/appearance") return "/profile";
+  if (path.startsWith("/settings/payments/")) return "/settings/payments";
+  if (path === "/settings/payments") return "/profile";
+  if (path === "/settings/sections/security") return "/profile";
+  if (path === "/settings/security") return "/settings/sections/security";
+  if (path === "/settings/sessions") return "/settings/sections/security";
+  if (path === "/settings/security-alerts") return "/settings/sections/security";
   if (path.startsWith("/settings/legal/")) return "/settings/legal";
   if (path.startsWith("/settings/") && path !== "/settings") {
     return "/settings";
@@ -73,8 +80,10 @@ export function smartBackFallback(
   if (path === "/settings") return home;
 
   // ── Profile & payments ────────────────────────────────────
+  if (path.startsWith("/profile/")) return "/profile";
   if (path === "/profile") return home;
-  if (path.startsWith("/payments")) return "/settings";
+  if (path === "/wallet") return "/profile";
+  if (path.startsWith("/payments")) return "/profile";
 
   // ── ONA Shop ──────────────────────────────────────────────
   if (path.startsWith("/shop/checkout")) return "/shop/cart";
@@ -115,7 +124,8 @@ export function smartBackFallback(
   if (path === "/request" || path === "/search") return "/";
 
   // ── Verification / artisan ────────────────────────────────
-  if (path === "/verify") return home;
+  if (path === "/verify/tier-2" || path.startsWith("/verify/")) return "/verify";
+  if (path === "/verify") return "/profile";
   if (path.startsWith("/artisan/onboarding")) {
     return accountType === "professional" ? "/dashboard" : home;
   }

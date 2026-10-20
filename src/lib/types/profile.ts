@@ -11,6 +11,7 @@ export type MotoristVehicle = {
   /** Petrol | Diesel | Hybrid | Electric */
   powertrain?: string;
   plate?: string;
+  color?: string;
   photo?: string;
   commonIssues?: string[];
 };

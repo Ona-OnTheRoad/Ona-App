@@ -74,7 +74,7 @@ export function SignupVerify() {
           <button
             type="button"
             disabled
-            className="flex min-h-[44px] items-center border-0 bg-transparent text-[13px] font-medium text-ona-muted"
+            className="flex min-h-11 items-center border-0 bg-transparent text-[13px] font-medium text-ona-muted"
           >
             Resend code
           </button>

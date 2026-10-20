@@ -56,7 +56,7 @@ export function PickMethodPanel({
         }}
         className={cn(
           "flex w-full flex-col items-start rounded-md border-0 px-3 py-2.5 text-left",
-          isLight ? "bg-black/[0.06]" : "bg-white/[0.08]",
+          isLight ? "bg-black/6" : "bg-white/8",
         )}
       >
         <span className={cn("text-[13px] font-bold", ink)}>
