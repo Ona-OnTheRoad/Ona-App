@@ -1,4 +1,6 @@
 "use client";
+import type { JobTrigger } from "@/lib/jobs/diagnostics/types";
+
 
 import { useCallback, useEffect, useState } from "react";
 import { apiListJobs } from "@/lib/jobs/client";
@@ -24,7 +26,7 @@ export function useMotoristJobsByPro(): {
   const [openJobs, setOpenJobs] = useState<JobRecord[]>([]);
   const [ready, setReady] = useState(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (trigger: JobTrigger = "action") => {
     if (!backendUserId || accountType === "professional") {
       setByPro({});
       setOpenJobs([]);
@@ -32,7 +34,7 @@ export function useMotoristJobsByPro(): {
       return;
     }
     try {
-      const res = await apiListJobs(backendUserId, "motorist");
+      const res = await apiListJobs(backendUserId, "motorist", { diagnostic: { source: "discovery", trigger } });
       if (!res.ok) {
         setReady(true);
         return;
@@ -49,16 +51,16 @@ export function useMotoristJobsByPro(): {
 
   useEffect(() => {
     queueMicrotask(() => {
-      void load();
+      void load("initial");
     });
     const onVis = () => {
-      if (document.visibilityState === "visible") void load();
+      if (document.visibilityState === "visible") void load("visibility");
     };
     document.addEventListener("visibilitychange", onVis);
     // Soft poll so CTA flips Request → Open (Realtime covers most updates)
     const t = window.setInterval(() => {
       if (typeof document !== "undefined" && document.hidden) return;
-      void load();
+      void load("interval");
     }, 45_000);
     return () => {
       document.removeEventListener("visibilitychange", onVis);

@@ -109,7 +109,7 @@ export function renderPairingStage(
               void (async () => {
                 try {
                   const { apiPairingSweep } = await import("@/lib/jobs/client");
-                  await apiPairingSweep();
+                  await apiPairingSweep({ source: "job-screen", trigger: "maintenance" });
                 } catch {
                   /* */
                 }

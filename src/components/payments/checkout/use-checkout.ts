@@ -44,7 +44,7 @@ export function useCheckout() {
     }
     let cancelled = false;
     void (async () => {
-      const res = await apiGetJob(jobId);
+      const res = await apiGetJob(jobId, { source: "checkout", trigger: "initial" });
       if (cancelled) return;
       if (!res.ok || !res.data.job) {
         setErr(res.ok ? "Job not found." : res.message);
@@ -77,11 +77,11 @@ export function useCheckout() {
     setErr(null);
     setPhase("expired");
     if (jobId) {
-      void apiGetJob(jobId).then((res) => {
+      void apiGetJob(jobId, { source: "checkout", trigger: "action" }).then((res) => {
         if (res.ok && res.data.job) setJob(res.data.job);
       });
       void import("@/lib/jobs/client").then(({ apiExpireStaleBookedJobs }) =>
-        apiExpireStaleBookedJobs().catch(() => null),
+        apiExpireStaleBookedJobs({ source: "checkout", trigger: "maintenance" }).catch(() => null),
       );
     }
   }, [jobId]);
@@ -111,11 +111,11 @@ export function useCheckout() {
       if (res.ok && res.data.job) {
         setJob(res.data.job);
       } else {
-        const fresh = await apiGetJob(jobId);
+        const fresh = await apiGetJob(jobId, { source: "checkout", trigger: "action" });
         if (fresh.ok && fresh.data.job) setJob(fresh.data.job);
       }
     } catch {
-      const fresh = await apiGetJob(jobId);
+      const fresh = await apiGetJob(jobId, { source: "checkout", trigger: "action" });
       if (fresh.ok && fresh.data.job) setJob(fresh.data.job);
     }
   }, [jobId, backendUserId, job?.motoristId, actorId]);
@@ -124,7 +124,7 @@ export function useCheckout() {
     // Prefer latest job snapshot
     let current = job;
     if (jobId) {
-      const fresh = await apiGetJob(jobId);
+      const fresh = await apiGetJob(jobId, { source: "checkout", trigger: "action" });
       if (fresh.ok && fresh.data.job) {
         current = fresh.data.job;
         setJob(current);
@@ -212,7 +212,7 @@ export function useCheckout() {
         new Date(Date.now() + PAYMENT_WINDOW_MS).toISOString();
       setSessionEndsAt(ends);
 
-      const again = await apiGetJob(current.id);
+      const again = await apiGetJob(current.id, { source: "checkout", trigger: "action" });
       if (again.ok && again.data.job) setJob(again.data.job);
 
       if (!ref) {

@@ -210,7 +210,7 @@ describe("Call Out Fee on the incoming panel card", () => {
     });
     await flushPolls();
 
-    expect(client.apiGetCallout).toHaveBeenCalledWith("j1");
+    expect(client.apiGetCallout).toHaveBeenCalledWith("j1", { source: "callout", trigger: "initial" });
     expect(screen.getByText("Call Out Fee")).toBeTruthy();
     expect(screen.getByText("₦1,000")).toBeTruthy();
   });

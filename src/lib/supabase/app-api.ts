@@ -23,6 +23,10 @@ import {
   getOrCreateIdemKey,
 } from "@/lib/jobs/idempotency";
 
+import type { DiagnosticContext } from "@/lib/jobs/diagnostics/types";
+import { recordJobDiagnostic } from "@/lib/jobs/diagnostics/collector";
+import type { JobSource } from "@/lib/jobs/diagnostics/types";
+
 export { isAppBackendOnline };
 export type { MessageRow };
 
@@ -1051,6 +1055,7 @@ export async function backendCreateJob(input: {
 export async function backendFetchJobsForUser(
   userId: string,
   role: AccountType,
+  diagnostic?: DiagnosticContext,
 ): Promise<ServiceRequest[]> {
   try {
     const qs = new URLSearchParams({ userId, role });
@@ -1058,7 +1063,7 @@ export async function backendFetchJobsForUser(
     const res = await authFetch(`/api/requests?${qs.toString()}`, {
       method: "GET",
       cache: "no-store",
-    });
+    }, diagnostic);
     const json = (await res.json().catch(() => null)) as {
       ok?: boolean;
       data?: { requests?: ServiceRequest[] };
@@ -1242,9 +1247,15 @@ export function backendSubscribeJobs(
     new?: Record<string, unknown>;
     old?: Record<string, unknown>;
   }) => void,
+  source: JobSource = "other",
 ): (() => void) | null {
   const sb = getAppSupabase();
-  if (!sb) return null;
+  const context = { source, trigger: "realtime" as const };
+  if (!sb) {
+    recordJobDiagnostic("subscription", "jobs", context, "unavailable");
+    return null;
+  }
+  recordJobDiagnostic("subscription", "jobs", context, "opened");
   const channel = sb
     .channel(`jobs:${userId}:${Math.random().toString(36).slice(2, 8)}`)
     .on(
@@ -1260,7 +1271,10 @@ export function backendSubscribeJobs(
           new?: Record<string, unknown>;
           old?: Record<string, unknown>;
         } | null,
-      ) => onChange(payload || undefined),
+      ) => {
+        recordJobDiagnostic("subscription", "jobs", context, "event");
+        onChange(payload || undefined);
+      },
     )
     .on(
       "postgres_changes",
@@ -1275,10 +1289,17 @@ export function backendSubscribeJobs(
           new?: Record<string, unknown>;
           old?: Record<string, unknown>;
         } | null,
-      ) => onChange(payload || undefined),
+      ) => {
+        recordJobDiagnostic("subscription", "jobs", context, "event");
+        onChange(payload || undefined);
+      },
     )
-    .subscribe();
+    .subscribe((status) => {
+      const outcome = { SUBSCRIBED: "subscribed", CHANNEL_ERROR: "channel-error", TIMED_OUT: "timeout", CLOSED: "closed" } as const;
+      if (status in outcome) recordJobDiagnostic("subscription", "jobs", context, outcome[status]);
+    });
   return () => {
+    recordJobDiagnostic("subscription", "jobs", context, "removed");
     void sb.removeChannel(channel);
   };
 }

@@ -1,3 +1,4 @@
+import type { JobTrigger } from "@/lib/jobs/diagnostics/types";
 import { useCallback, useEffect, useState } from "react";
 import { apiListJobs } from "@/lib/jobs/client";
 import type { JobRecord } from "@/lib/jobs/types";
@@ -8,11 +9,11 @@ export function useProPastJobs(backendUserId: string | null | undefined) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (trigger: JobTrigger = "action") => {
     // Backup: auto-cancel Booked jobs past 6h (server enforces + refunds)
     try {
       const { apiExpireStaleBookedJobs } = await import("@/lib/jobs/client");
-      await apiExpireStaleBookedJobs();
+      await apiExpireStaleBookedJobs({ source: "past-jobs", trigger: "maintenance" });
     } catch {
       /* ignore */
     }
@@ -21,7 +22,7 @@ export function useProPastJobs(backendUserId: string | null | undefined) {
       setLoading(false);
       return;
     }
-    const res = await apiListJobs(backendUserId, "repair_pro");
+    const res = await apiListJobs(backendUserId, "repair_pro", { diagnostic: { source: "past-jobs", trigger } });
     if (!res.ok) {
       setErr(res.message);
       setPast([]);
@@ -49,14 +50,14 @@ export function useProPastJobs(backendUserId: string | null | undefined) {
   }, [backendUserId]);
 
   useEffect(() => {
-    void load();
+    void load("initial");
     // Realtime is primary; backup poll only (past jobs list)
     const t = window.setInterval(() => {
       if (document.hidden) return;
-      void load();
+      void load("interval");
     }, 120_000);
     const onVis = () => {
-      if (document.visibilityState === "visible") void load();
+      if (document.visibilityState === "visible") void load("visibility");
     };
     document.addEventListener("visibilitychange", onVis);
     return () => {

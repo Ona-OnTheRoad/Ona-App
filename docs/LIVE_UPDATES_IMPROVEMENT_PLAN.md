@@ -1,7 +1,7 @@
 # Live updates: phased improvement proposal
 
 Date: 2026-10-19  
-Status: proposed; implementation and hosted verification pending.
+Status: phased proposal; Phase 1 measurement tooling implemented on `codex/live-updates-phase1-baseline`, with representative browser/hosted baseline and target agreement pending. Later phases remain proposed.
 
 ## Goal and recommendation
 
@@ -121,14 +121,14 @@ Review criteria: agreed performance/budget targets pass under representative loa
 
 | Phase | Implementation/test evidence | Hosted/release evidence |
 | --- | --- | --- |
-| 1: baseline | Pending | Pending |
+| 1: baseline | Opt-in instrumentation, source inventory and synthetic tests implemented; [Phase 1 guide](review-guides/live-updates-phase1-baseline.md) tracks local checks | Representative capture and hosted subscription/query/scheduler observations pending |
 | 2: coordinated reads | Pending | Pending |
 | 3: adaptive recovery | Pending | Pending |
 | 4: server maintenance | Existing Issue 3 evidence must be reviewed; additional scope pending | Activation and broader coverage unverified |
 | 5: Broadcast evaluation | Conditional; pending | Conditional; pending |
 | 6: load and rollout | Pending | Pending |
 
-Next step: prepare the Phase 1 review guide and agree baseline measurements and numerical targets. Then implement and review one phase at a time. Do not mark a phase complete solely because local tests pass.
+Next step: use the [Phase 1 capture procedure](live-updates/phase1-baseline.md) for representative authenticated scenarios, inspect hosted evidence and agree numerical targets/budget. The review guide is prepared; Phase 1 is not complete solely because its instrumentation tests pass. Later phases still require their own reviewed scope.
 
 ## Sources for later revalidation
 

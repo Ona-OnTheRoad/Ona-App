@@ -1,3 +1,5 @@
+import { beginJobDiagnostic } from "@/lib/jobs/diagnostics/collector";
+import { diagnosticFailure, type JobTrigger } from "@/lib/jobs/diagnostics/measure";
 import { useCallback, useEffect, useRef } from "react";
 import { isProService } from "@/lib/pro-service-id";
 import {
@@ -120,10 +122,13 @@ export function useCloudData(
     refreshCloudPros({ force: true });
   }, [refreshCloudPros]);
 
-  const refreshCloudJobs = useCallback(() => {
+  const refreshCloudJobs = useCallback((trigger: JobTrigger = "unknown") => {
     if (!isAppBackendOnline() || !backendUserId || !accountType) return;
-    void backendFetchJobsForUser(backendUserId, accountType)
+    const context = { source: "cloud-store" as const, trigger };
+    const finish = beginJobDiagnostic("refresh", "requests", context);
+    void backendFetchJobsForUser(backendUserId, accountType, context)
       .then((jobs) => {
+        finish("ok");
         if (jobs.length === 0) return;
         setRequests((prev) => {
           // Cheap signature avoid JSON.stringify of full job trees every poll
@@ -138,6 +143,7 @@ export function useCloudData(
         });
       })
       .catch((e) => {
+        finish(diagnosticFailure(e));
         console.warn("[ona] refreshCloudJobs failed", e);
       });
   }, [backendUserId, accountType, setRequests]);

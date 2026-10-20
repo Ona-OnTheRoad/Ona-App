@@ -167,7 +167,7 @@ export function BankPayView({
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ reference, jobId }),
             }).then(async () => {
-              const j = await apiGetJob(jobId);
+              const j = await apiGetJob(jobId, { source: "checkout", trigger: "action" });
               if (j.ok && j.data.job) {
                 setJob(j.data.job);
                 const st = j.data.job.status;

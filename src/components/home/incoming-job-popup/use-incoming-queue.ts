@@ -91,7 +91,7 @@ export function useIncomingQueue({
         Boolean(j.voiceNote?.url);
       if (!hasMedia) {
         try {
-          const res = await apiGetJob(j.id);
+          const res = await apiGetJob(j.id, { source: "incoming", trigger: "action" });
           if (res.ok) {
             const full = res.data.job;
             job = {

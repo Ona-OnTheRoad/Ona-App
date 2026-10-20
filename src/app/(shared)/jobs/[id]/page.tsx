@@ -51,7 +51,7 @@ function JobPageInner() {
     // Fetching "new" 404s and would bounce us to the dashboard mid-search.
     if (id === "new") return;
     void (async () => {
-      const res = await apiGetJob(id);
+      const res = await apiGetJob(id, { source: "job-entry", trigger: "initial" });
       if (cancelled) return;
       if (!res.ok) {
         if (res.message === "Job not found") {
