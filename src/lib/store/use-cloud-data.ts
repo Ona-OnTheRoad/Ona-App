@@ -1,14 +1,11 @@
-import { beginJobDiagnostic } from "@/lib/jobs/diagnostics/collector";
-import { diagnosticFailure, type JobTrigger } from "@/lib/jobs/diagnostics/measure";
 import { useCallback, useEffect, useRef } from "react";
 import { isProService } from "@/lib/pro-service-id";
 import {
   backendFetchConversations,
-  backendFetchJobsForUser,
   backendFetchPros,
   isAppBackendOnline,
 } from "@/lib/supabase/app-api";
-import type { ServiceRequest } from "@/lib/types";
+import { useCloudJobs } from "./use-cloud-jobs";
 import type { SessionStateResult } from "./use-session-state";
 import type { MarketStateResult } from "./use-market-state";
 import type { ThemeAndProSheetResult } from "./use-theme-and-pro-sheet";
@@ -122,31 +119,7 @@ export function useCloudData(
     refreshCloudPros({ force: true });
   }, [refreshCloudPros]);
 
-  const refreshCloudJobs = useCallback((trigger: JobTrigger = "unknown") => {
-    if (!isAppBackendOnline() || !backendUserId || !accountType) return;
-    const context = { source: "cloud-store" as const, trigger };
-    const finish = beginJobDiagnostic("refresh", "requests", context);
-    void backendFetchJobsForUser(backendUserId, accountType, context)
-      .then((jobs) => {
-        finish("ok");
-        if (jobs.length === 0) return;
-        setRequests((prev) => {
-          // Cheap signature avoid JSON.stringify of full job trees every poll
-          const sig = (list: ServiceRequest[]) =>
-            list
-              .map(
-                (j) =>
-                  `${j.id}:${j.status}:${j.createdAt}:${j.escrowStatus || ""}:${j.paymentReference || ""}:${j.negotiationStatus || ""}:${j.labourAgreedMajor ?? ""}`,
-              )
-              .join("|");
-          return sig(prev) === sig(jobs) ? prev : jobs;
-        });
-      })
-      .catch((e) => {
-        finish(diagnosticFailure(e));
-        console.warn("[ona] refreshCloudJobs failed", e);
-      });
-  }, [backendUserId, accountType, setRequests]);
+  const refreshCloudJobs = useCloudJobs(session, market.requests, setRequests);
 
   const refreshCloudChats = useCallback(() => {
     if (!isAppBackendOnline() || !backendUserId || !accountType) return;

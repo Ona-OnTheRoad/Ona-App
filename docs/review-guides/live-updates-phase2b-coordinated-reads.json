@@ -1,0 +1,95 @@
+{
+  "feature": "live-updates-phase2b-coordinated-reads",
+  "baselineCommit": "448d2340be7400847cf94711e4690b1f246d1d98",
+  "reviewedCommit": null,
+  "status": "implemented-working-tree-review-and-live-evidence-pending",
+  "criteria": [
+    {
+      "id": "R1",
+      "expectation": "Equivalent reads share one in-flight operation within the same authenticated generation and projection; unrelated resources remain isolated",
+      "verification": "Deferred-promise helper and actual caller integration tests",
+      "status": "pass",
+      "evidence": [
+        "snapshot-reads.test.ts: equivalent work shares a promise; different resource keys stay separate; no settled cache. snapshot-scope.test.tsx and job-snapshot-races.test.tsx: multiple mounted consumers share a physical detail read."
+      ]
+    },
+    {
+      "id": "R2",
+      "expectation": "Invalidations during a read cause a follow-up; interval ticks do not accumulate work; failures allow recovery",
+      "verification": "Burst, mid-flight, repeated-dirty and failed-read tests",
+      "status": "pass",
+      "evidence": [
+        "snapshot-reads.test.ts: one queued follow-up per active resource, further invalidations retained, interval callers share current work, failures permit queued recovery. Cloud and detail hook integration tests exercise mid-flight realtime/visibility changes."
+      ]
+    },
+    {
+      "id": "R3",
+      "expectation": "Old job/session/role responses, errors and redirects cannot affect the current view, including A to B to A",
+      "verification": "Navigation, sign-out, role/account-switch and unmount integration tests",
+      "status": "pass",
+      "evidence": [
+        "job-snapshot-races.test.tsx: A to B to A, role change, sign-out, navigation, late success/not-found/forbidden/timeout, old mutation commit and unmount; destination seed retained. snapshot-scope.test.tsx: Strict Mode replay and surviving/departing consumers."
+      ]
+    },
+    {
+      "id": "R4",
+      "expectation": "Refreshes cannot overwrite newer mutation state where durable revisions cover the projection; equal/missing revisions and related-table limitations are explicit",
+      "verification": "Revision coverage audit and mutation/read ordering tests; unresolved coverage remains pending",
+      "status": "pending",
+      "evidence": [
+        "Existing full job jobVersion plus job_version exposed in /api/requests select and mapper. Lower/missing revisions and intervening equal-version mutation guards tested; equal-revision background reads preserve optimistic status; explicit action reconciliation can roll back.",
+        "Pending aggregate coverage: profile and resolved call-out/other related fields lack a composite revision; equal/missing revision fallback is not aggregate ordering proof."
+      ]
+    },
+    {
+      "id": "R5",
+      "expectation": "Empty success and failed reads are distinguishable; failures preserve data; active coordination state is released",
+      "verification": "Read adapter, list reconciliation, cleanup and retry tests",
+      "status": "pass",
+      "evidence": [
+        "request-snapshots.test.ts: valid empty success, malformed response/JSON, HTTP/network failure and 15-second abort bound. cloud-job-snapshots.test.tsx: failures retain displayed data, empty success clears unchanged rows, edits/additions made during fetch survive; settled work releases lanes and unmount cancels queued work."
+      ]
+    },
+    {
+      "id": "R6",
+      "expectation": "Initial loading, authorization, polling cadence, hidden-tab handling, subscription export and protected product behavior remain intact",
+      "verification": "Diff review, regression tests, lint, typecheck, full suite, boundaries and production build",
+      "status": "pending",
+      "evidence": [
+        "Final working-tree gates: 172 test files / 1662 tests passed; typecheck passed after completed build; lint 0 errors / 139 existing warnings; webpack production build passed; server-boundary negative build and diff whitespace check passed. Poll intervals/visibility coverage retained. Reviewed commit and independent human review pending.",
+        "Default Turbopack build failed with worker-port binding permission restriction, including after escalation; default-bundler CI verification pending."
+      ]
+    },
+    {
+      "id": "L1",
+      "expectation": "Browser multi-consumer, slow-network, navigation/account switching and reconnect behavior verified",
+      "verification": "Authenticated browser smoke and hosted inspection",
+      "status": "pending",
+      "evidence": [
+        "CUA inventory returned browsers: []; authenticated browser/hosted checks remain unrun."
+      ]
+    },
+    {
+      "id": "L2",
+      "expectation": "Baseline, targets and deployment evidence recorded separately from code checks",
+      "verification": "Phase 1 representative captures and release evidence",
+      "status": "pending",
+      "evidence": [
+        "No baseline, target/budget agreement, deployment or hosted verification performed in this implementation."
+      ]
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent review against an exact commit; implementation remains uncommitted.",
+      "Default Turbopack CI verification pending after local worker-port restriction.",
+      "Separately review composite revision or field-specific merge strategy for profile/call-out/related records before claiming complete aggregate ordering (R4).",
+      "Other direct detail readers in checkout/chat/notification/incoming/request-detail remain outside this approved cloud-list/active-detail slice. No migration required for this implementation."
+    ],
+    "external": [
+      "Phase 2A and Phase 2B authenticated navigation, slow-network, multi-consumer, account/role switch and reconnect smoke pending; no connected browser surfaces in CUA inventory.",
+      "Hosted authorization/subscription checks, Phase 1 representative baseline and target/budget agreement, deployment and verification pending."
+    ]
+  },
+  "reviewScope": "Uncommitted implementation on recorded dev baseline; no independent human review or hosted verification."
+}

@@ -15,6 +15,15 @@ export const CANCEL_REASONS = [
 export function isJobNewer(next: JobRecord, prev: JobRecord | null): boolean {
   if (!prev) return true;
   if (next.id !== prev.id) return true;
+  const nv = next.jobVersion;
+  const pv = prev.jobVersion;
+  if (Number.isSafeInteger(pv) && pv! >= 0) {
+    if (!Number.isSafeInteger(nv) || nv! < 0) return false;
+    if (nv !== pv) return nv! > pv!;
+    // Related data can refresh at an equal row revision, but background
+    // snapshots must not undo an optimistic status at that same revision.
+    return next.status === prev.status;
+  }
   const nt = Date.parse(next.updatedAt || "") || 0;
   const pt = Date.parse(prev.updatedAt || "") || 0;
   if (nt !== pt) return nt >= pt;

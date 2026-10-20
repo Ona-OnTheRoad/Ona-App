@@ -104,7 +104,7 @@ describe("shared job loader", () => {
     const router = { push: vi.fn(), replace: vi.fn(), back: vi.fn() };
     const h = renderHook(() => {
       const s = useJobFlowState("job");
-      const loader = useJobLoad({ jobId: "job", router: router as never, accountType: "motorist",
+      const loader = useJobLoad({ jobId: "job", backendUserId: "customer", isAuthenticated: true, router: router as never, accountType: "motorist",
         notifRef: { current: null }, commitJob, s });
       return { ...loader, s };
     });

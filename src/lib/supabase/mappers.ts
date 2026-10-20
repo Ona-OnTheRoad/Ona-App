@@ -295,6 +295,7 @@ export function mapRequestRow(
 ): ServiceRequest {
   return {
     id: row.id,
+    jobVersion: row.job_version,
     technicianId: row.repair_pro_id || "",
     technicianName: proName || "Repair Pro",
     motoristId: row.motorist_id,
