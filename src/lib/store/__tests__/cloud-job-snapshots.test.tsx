@@ -88,4 +88,9 @@ describe("request projection reconciliation", () => {
     expect(reconcileRequests([updated], [], started)).toEqual([updated]);
     expect(reconcileRequests([updated], [], [updated])).toEqual([]);
   });
+  it("preserves hydrated technicianName when an incoming row for the same pro uses the generic placeholder", () => {
+    const hydrated = [row(2, "Kunle Auto")];
+    const unhydratedNext = [row(3, "Repair Pro")];
+    expect(reconcileRequests(hydrated, unhydratedNext, hydrated)[0].technicianName).toBe("Kunle Auto");
+  });
 });

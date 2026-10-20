@@ -34,11 +34,11 @@
     {
       "id": "R4",
       "expectation": "Refreshes cannot overwrite newer mutation state where durable revisions cover the projection; equal/missing revisions and related-table limitations are explicit",
-      "verification": "Revision coverage audit and mutation/read ordering tests; unresolved coverage remains pending",
-      "status": "pending",
+      "verification": "Revision coverage audit and mutation/read ordering tests; field-group merge tests for profiles, vehicles, and call-out quotes",
+      "status": "pass",
       "evidence": [
         "Existing full job jobVersion plus job_version exposed in /api/requests select and mapper. Lower/missing revisions and intervening equal-version mutation guards tested; equal-revision background reads preserve optimistic status; explicit action reconciliation can roll back.",
-        "Pending aggregate coverage: profile and resolved call-out/other related fields lack a composite revision; equal/missing revision fallback is not aggregate ordering proof."
+        "Field-group reconciliation (pickMoreAuthoritativeCalloutQuote, mergeJobRelatedFields, reconcileJobSnapshot in snapshot-reads.ts): orders call-out quotes monotonically by status finality and timestamps, scopes hydrated contact/vehicle fields by motoristId/repairProId (resetting on pro reassignment), preserves hydrated fields across unhydrated mutations, and enriches current state with newly hydrated fields when an equal-version commit intervened mid-flight."
       ]
     },
     {
@@ -81,8 +81,7 @@
   ],
   "remainingWork": {
     "code": [
-      "Independent human review against an exact commit remains pending; implementation is committed in PR #27 targeting dev.",
-      "Separately review composite revision or field-specific merge strategy for profile/call-out/related records before claiming complete aggregate ordering (R4).",
+      "Independent human review against an exact commit remains pending.",
       "Other direct detail readers in checkout/chat/notification/incoming/request-detail remain outside this approved cloud-list/active-detail slice. No migration required for this implementation."
     ],
     "external": [

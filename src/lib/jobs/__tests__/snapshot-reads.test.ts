@@ -1,5 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import { createSnapshotReads, snapshotCanReplace } from "../snapshot-reads";
+import type { CalloutQuote } from "@/lib/callout/constants";
+import type { JobRecord } from "@/lib/jobs/types";
+import {
+  createSnapshotReads,
+  mergeJobRelatedFields,
+  pickMoreAuthoritativeCalloutQuote,
+  reconcileJobSnapshot,
+  snapshotCanReplace,
+} from "../snapshot-reads";
 
 function deferred<T>() {
   let resolve!: (v: T) => void;
@@ -71,5 +79,160 @@ describe("snapshot revision guards", () => {
     expect(snapshotCanReplace({ ...current }, current, { ...current })).toBe(false);
     expect(snapshotCanReplace({ ...current }, current, current)).toBe(true);
     expect(snapshotCanReplace({ id: "j" }, { id: "j" }, null)).toBe(false);
+  });
+
+  it("orders call-out quotes monotonically and rejects cross-job or cross-pro quote leaks", () => {
+    const baseJob = {
+      id: "job-1",
+      jobVersion: 3,
+      serviceType: "mechanic",
+      motoristId: "m1",
+      repairProId: "p1",
+    } as JobRecord;
+    const pendingQuote = {
+      requestId: "job-1",
+      calloutStatus: "PENDING",
+      tradeId: "mechanic",
+      originProId: "p1",
+      calculatedAt: "2026-10-20T10:00:00Z",
+    } as CalloutQuote;
+    const calculatedQuote = {
+      ...pendingQuote,
+      calloutStatus: "CALCULATED",
+      calloutFee: 4500,
+      calculatedAt: "2026-10-20T10:01:00Z",
+    } as CalloutQuote;
+    const lockedQuote = {
+      ...calculatedQuote,
+      calloutStatus: "LOCKED",
+      lockedAt: "2026-10-20T10:02:00Z",
+    } as CalloutQuote;
+    const wrongProQuote = {
+      ...lockedQuote,
+      originProId: "p2",
+    } as CalloutQuote;
+
+    // A null or PENDING quote never overwrites a CALCULATED or LOCKED quote
+    expect(pickMoreAuthoritativeCalloutQuote(null, calculatedQuote, baseJob)).toBe(calculatedQuote);
+    expect(pickMoreAuthoritativeCalloutQuote(pendingQuote, calculatedQuote, baseJob)).toBe(calculatedQuote);
+    expect(pickMoreAuthoritativeCalloutQuote(lockedQuote, calculatedQuote, baseJob)).toBe(lockedQuote);
+
+    // A quote from a previous pro is rejected when repairProId changed
+    expect(pickMoreAuthoritativeCalloutQuote(null, wrongProQuote, baseJob)).toBeNull();
+  });
+
+  it("preserves hydrated contact/vehicle fields across unhydrated updates and clears pro fields on pro reassignment", () => {
+    const hydrated = {
+      id: "job-1",
+      jobVersion: 4,
+      status: "agreed",
+      serviceType: "mechanic",
+      motoristId: "m1",
+      motoristName: "Ada Lovelace",
+      motoristPhone: "+2348011111111",
+      motoristPhoto: "https://example.com/ada.jpg",
+      motoristVehicle: "Toyota Camry 2019",
+      repairProId: "p1",
+      repairProName: "Kunle Auto",
+      repairProPhone: "+2348022222222",
+      repairProPhoto: "https://example.com/kunle.jpg",
+      calloutQuote: {
+        requestId: "job-1",
+        calloutStatus: "CALCULATED",
+        tradeId: "mechanic",
+        originProId: "p1",
+        calloutFee: 4500,
+      } as CalloutQuote,
+    } as JobRecord;
+
+    const unhydratedMutation = {
+      id: "job-1",
+      jobVersion: 5,
+      status: "paid_booked",
+      serviceType: "mechanic",
+      motoristId: "m1",
+      motoristName: "Customer",
+      motoristPhone: null,
+      motoristPhoto: null,
+      motoristVehicle: null,
+      repairProId: "p1",
+      repairProName: "Repair Pro",
+      repairProPhone: null,
+      repairProPhoto: undefined,
+      calloutQuote: null,
+    } as JobRecord;
+
+    const merged = mergeJobRelatedFields(unhydratedMutation, hydrated);
+    expect(merged.status).toBe("paid_booked");
+    expect(merged.jobVersion).toBe(5);
+    expect(merged.motoristName).toBe("Ada Lovelace");
+    expect(merged.motoristPhone).toBe("+2348011111111");
+    expect(merged.motoristPhoto).toBe("https://example.com/ada.jpg");
+    expect(merged.motoristVehicle).toBe("Toyota Camry 2019");
+    expect(merged.repairProName).toBe("Kunle Auto");
+    expect(merged.repairProPhone).toBe("+2348022222222");
+    expect(merged.repairProPhoto).toBe("https://example.com/kunle.jpg");
+    expect(merged.calloutQuote?.calloutStatus).toBe("CALCULATED");
+
+    // Reassigned to a different pro: motorist fields stay, old pro fields & quote do NOT leak
+    const reassigned = {
+      ...unhydratedMutation,
+      jobVersion: 6,
+      status: "waiting_for_pro",
+      repairProId: "p2",
+      repairProName: "Repair Pro",
+      repairProPhone: null,
+      repairProPhoto: undefined,
+    } as JobRecord;
+    const afterReassign = mergeJobRelatedFields(reassigned, merged);
+    expect(afterReassign.motoristPhone).toBe("+2348011111111");
+    expect(afterReassign.repairProId).toBe("p2");
+    expect(afterReassign.repairProName).toBe("Repair Pro");
+    expect(afterReassign.repairProPhone).toBeNull();
+    expect(afterReassign.repairProPhoto).toBeUndefined();
+    expect(afterReassign.calloutQuote).toBeNull();
+  });
+
+  it("enriches current state with newly hydrated fields when an equal-version commit intervened mid-flight", () => {
+    const started = {
+      id: "job-1",
+      jobVersion: 4,
+      status: "negotiating",
+      serviceType: "mechanic",
+      motoristId: "m1",
+      motoristName: "Customer",
+      repairProId: "p1",
+      repairProName: "Repair Pro",
+    } as JobRecord;
+    // Optimistic or intervening commit at version 4
+    const current = {
+      ...started,
+      status: "agreed",
+      agreedMajor: 15000,
+    } as JobRecord;
+    // In-flight GET started before commit, returns version 4 with hydrated contacts + quote
+    const incomingRead = {
+      ...started,
+      motoristName: "Ada Lovelace",
+      motoristPhone: "+2348011111111",
+      repairProName: "Kunle Auto",
+      repairProPhone: "+2348022222222",
+      calloutQuote: {
+        requestId: "job-1",
+        calloutStatus: "CALCULATED",
+        tradeId: "mechanic",
+        originProId: "p1",
+        calloutFee: 4200,
+      } as CalloutQuote,
+    } as JobRecord;
+
+    const reconciled = reconcileJobSnapshot(incomingRead, current, started);
+    expect(reconciled).not.toBeNull();
+    // Preserves current's core status/agreedMajor while enriching hydrated fields
+    expect(reconciled?.status).toBe("agreed");
+    expect(reconciled?.agreedMajor).toBe(15000);
+    expect(reconciled?.motoristName).toBe("Ada Lovelace");
+    expect(reconciled?.repairProPhone).toBe("+2348022222222");
+    expect(reconciled?.calloutQuote?.calloutFee).toBe(4200);
   });
 });
