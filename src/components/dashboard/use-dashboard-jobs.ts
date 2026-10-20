@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { apiListJobs, apiPairingSweep } from "@/lib/jobs/client";
 import { windowStillOpen } from "@/lib/jobs/deadline";
 import { isPayoutPendingSettlement } from "@/lib/jobs/constants";
@@ -18,16 +18,25 @@ export function useDashboardJobs(backendUserId: string | null | undefined) {
   const [jobsLoading, setJobsLoading] = useState(true);
   const [jobsCompletedCount, setJobsCompletedCount] = useState(0);
 
-  const loadJobs = useCallback(async () => {
+  const activeUser = useRef(backendUserId);
+  const flight = useRef<{ userId: string; promise: Promise<void>; pending: boolean } | null>(null);
+  useEffect(() => {
+    activeUser.current = backendUserId;
+    return () => { activeUser.current = null; };
+  }, [backendUserId]);
+
+  const readJobs = useCallback(async () => {
     if (!backendUserId) {
       setIncoming([]);
       setOngoing([]);
       setRecent([]);
+      setPayoutProcessing([]);
       setJobsCompletedCount(0);
       setJobsLoading(false);
       return;
     }
     const res = await apiListJobs(backendUserId, "repair_pro");
+    if (activeUser.current !== backendUserId) return;
     if (res.ok) {
       const mine = res.data.jobs.filter((j) => {
         if (j.repairProId !== backendUserId) return false;
@@ -89,13 +98,32 @@ export function useDashboardJobs(backendUserId: string | null | undefined) {
       setOngoing(active);
       setPayoutProcessing(payoutPending);
       setRecent(finished);
-    } else {
-      setIncoming([]);
-      setOngoing([]);
-      setRecent([]);
     }
-    setJobsLoading(false);
   }, [backendUserId]);
+
+  const loadJobs = useCallback((): Promise<void> => {
+    if (!backendUserId) return readJobs();
+    if (flight.current?.userId === backendUserId) {
+      flight.current.pending = true;
+      return flight.current.promise;
+    }
+    const request = { userId: backendUserId, promise: Promise.resolve(), pending: false };
+    request.promise = (async () => {
+      do {
+        request.pending = false;
+        try {
+          await readJobs();
+        } catch {
+          // Keep existing cards on timeout; later polls/realtime reconcile.
+        }
+      } while (request.pending && activeUser.current === backendUserId);
+    })().finally(() => {
+      if (flight.current === request) flight.current = null;
+      if (activeUser.current === backendUserId) setJobsLoading(false);
+    });
+    flight.current = request;
+    return request.promise;
+  }, [backendUserId, readJobs]);
 
   useEffect(() => {
     void loadJobs();

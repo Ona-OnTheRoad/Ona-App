@@ -19,6 +19,9 @@ export function useJobPoll({
   load,
   setErr,
 }: Args) {
+  const jobId = job?.id;
+  const status = job?.status;
+
   // Poll job state; faster while trip active / awaiting satisfaction.
   // Wait for authReady so we never hit /api/jobs with no Bearer after create→navigate.
   // While still loading (no job), poll every 2s so auth race recovers quickly.
@@ -29,62 +32,70 @@ export function useJobPoll({
       return;
     }
     let cancelled = false;
-    const tick = async () => {
+    let polling = false;
+    let pendingRealtime = false;
+    const tick = async (reconcile = false) => {
       if (cancelled) return;
-      await load();
+      if (polling) {
+        if (reconcile) pendingRealtime = true;
+        return;
+      }
+      polling = true;
+      try {
+        await load();
+      } catch (error) {
+        if (!cancelled) setErr(error instanceof Error ? error.message : "Could not refresh job. Retrying…");
+      } finally {
+        polling = false;
+        if (pendingRealtime && !cancelled) {
+          pendingRealtime = false;
+          void tick();
+        }
+      }
     };
     void tick();
     // Pairing must poll fast so customer picks up the same pairing_deadline
     // as the pro (pro popup was starting first with a 12s customer lag).
     const pairingLive =
-      job &&
-      (job.status === "waiting_for_selected" ||
-        job.status === "selected_review" ||
-        job.status === "sequential_pairing" ||
-        job.status === "waiting_for_pro" ||
-        job.status === "reserved");
-    const ms = !job
+      status &&
+      (status === "waiting_for_selected" ||
+        status === "selected_review" ||
+        status === "sequential_pairing" ||
+        status === "waiting_for_pro" ||
+        status === "reserved");
+    const ms = !status
       ? 2_000
       : pairingLive
         ? 1_000
-        : job.status === "negotiating" ||
-            job.status === "searching" ||
-            job.status === "agreed"
+        : status === "negotiating" ||
+            status === "searching" ||
+            status === "agreed"
           ? 8_000
-          : job.status === "completed"
+          : status === "completed"
             ? 15_000
             : ["paid_booked", "en_route", "arrived", "in_progress"].includes(
-                  job.status,
+                  status,
                 )
               ? 15_000
-              : job.status === "released" || job.status === "satisfied"
+              : status === "released" || status === "satisfied"
                 ? 45_000
                 : 60_000;
     const id = window.setInterval(() => {
       if (typeof document !== "undefined" && document.hidden) return;
       void tick();
     }, ms);
+    // Share the same read gate with realtime. One event received mid-read
+    // needs a follow-up; interval ticks alone do not create a retry backlog.
+    let unsub: (() => void) | null = null;
+    if (actorId) {
+      void import("@/lib/supabase/app-api").then(({ backendSubscribeJobs }) => {
+        if (!cancelled) unsub = backendSubscribeJobs(actorId, () => void tick(true));
+      }).catch(() => { /* Polling remains available if realtime cannot load. */ });
+    }
     return () => {
       cancelled = true;
       window.clearInterval(id);
-    };
-  }, [load, job?.status, job, authReady, isAuthenticated, setErr]);
-
-  // Realtime job row → customer/pro share the same pairing_deadline instantly
-  // (fixes pro timer starting before customer ring updates).
-  useEffect(() => {
-    if (!authReady || !isAuthenticated || !actorId) return;
-    let unsub: (() => void) | null = null;
-    let cancelled = false;
-    void import("@/lib/supabase/app-api").then(({ backendSubscribeJobs }) => {
-      if (cancelled) return;
-      unsub = backendSubscribeJobs(actorId, () => {
-        void load();
-      });
-    });
-    return () => {
-      cancelled = true;
       unsub?.();
     };
-  }, [authReady, isAuthenticated, actorId, load]);
+  }, [load, jobId, status, actorId, authReady, isAuthenticated, setErr]);
 }

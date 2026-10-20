@@ -1,4 +1,4 @@
-import { useCallback, type MutableRefObject } from "react";
+import { useCallback, useRef, type MutableRefObject } from "react";
 import type { useRouter } from "next/navigation";
 import type { useNotificationsOptional } from "@/components/notifications/notification-provider";
 import { apiGetJob } from "@/lib/jobs/client";
@@ -32,7 +32,8 @@ export function useJobLoad({
     stickyReleaseErr,
     setStickyReleaseErr,
   } = s;
-  const load = useCallback(async () => {
+  const inFlight = useRef<{ id: string; promise: Promise<void> } | null>(null);
+  const loadOnce = useCallback(async () => {
     // `/jobs/new`: the real job is created in the background; never GET while
     // it doesn't exist yet (a 404 would bounce us home before paint).
     const id = activeJobIdRef.current;
@@ -45,6 +46,7 @@ export function useJobLoad({
       /* continue apiGetJob retries */
     }
     const res = await apiGetJob(id);
+    if (activeJobIdRef.current !== id) return;
     if (!res.ok) {
       if (res.message === "Job not found") {
         const current = notifRef.current;
@@ -95,5 +97,20 @@ export function useJobLoad({
       setStickyReleaseErr(null);
     }
   }, [jobId, commitJob, stickyReleaseErr, accountType, router]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Polls, realtime, visibility and guards all use this loader. Share a read
+  // for the active job rather than launching parallel copies on slow networks.
+  const load = useCallback((): Promise<void> => {
+    const id = activeJobIdRef.current;
+    if (inFlight.current?.id === id) return inFlight.current.promise;
+    const promise = loadOnce().catch((error: unknown) => {
+      if (activeJobIdRef.current !== id) return;
+      const message = error instanceof Error ? error.message : "Could not refresh job. Retrying…";
+      setErr((prev) => stickyReleaseErr || prev || message);
+    }).finally(() => {
+      if (inFlight.current?.promise === promise) inFlight.current = null;
+    });
+    inFlight.current = { id, promise };
+    return promise;
+  }, [activeJobIdRef, loadOnce, setErr, stickyReleaseErr]);
   return { load };
 }
