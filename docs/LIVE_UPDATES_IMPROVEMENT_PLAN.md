@@ -1,7 +1,7 @@
 # Live updates: phased improvement proposal
 
 Date: 2026-10-19  
-Status: phased proposal; Phase 1 tooling merged to dev in PR #25; representative browser/hosted baseline and target agreement pending. Phase 2A shared subscriptions merged to dev in PR #26 (`448d234`); browser/hosted verification remains pending. Phase 2B cloud-list/active-detail read coordination is approved and implemented in the working tree; aggregate revision coverage, independent review and browser/hosted verification remain open. Later phases remain proposed.
+Status: phased proposal; Phase 1 tooling merged to dev in PR #25; representative browser/hosted baseline and target agreement pending. Phase 2A shared subscriptions merged to dev in PR #26 (`448d234`); browser/hosted verification remains pending. Phase 2B cloud-list/active-detail read coordination is approved and committed in PR #27 targeting dev; aggregate revision coverage, independent review and browser/hosted verification remain open. Later phases remain proposed.
 
 ## Goal and recommendation
 
@@ -122,7 +122,7 @@ Review criteria: agreed performance/budget targets pass under representative loa
 | Phase | Implementation/test evidence | Hosted/release evidence |
 | --- | --- | --- |
 | 1: baseline | Opt-in instrumentation, source inventory and synthetic tests implemented; [Phase 1 guide](review-guides/live-updates-phase1-baseline.md) tracks local checks | Representative capture and hosted subscription/query/scheduler observations pending |
-| 2: coordinated reads | [Phase 2A shared subscriptions](review-guides/live-updates-phase2a-shared-subscriptions.md) merged to dev in PR #26; [Phase 2B coordinated reads](review-guides/live-updates-phase2b-coordinated-reads.md) implemented in the working tree; full aggregate revision ordering and review remain pending | Pending |
+| 2: coordinated reads | [Phase 2A shared subscriptions](review-guides/live-updates-phase2a-shared-subscriptions.md) merged to dev in PR #26; [Phase 2B coordinated reads](review-guides/live-updates-phase2b-coordinated-reads.md) committed in PR #27 for dev; full aggregate revision ordering and review remain pending | Pending |
 | 3: adaptive recovery | Pending | Pending |
 | 4: server maintenance | Existing Issue 3 evidence must be reviewed; additional scope pending | Activation and broader coverage unverified |
 | 5: Broadcast evaluation | Conditional; pending | Conditional; pending |

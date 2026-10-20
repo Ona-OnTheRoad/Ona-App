@@ -2,7 +2,7 @@
   "feature": "live-updates-phase2b-coordinated-reads",
   "baselineCommit": "448d2340be7400847cf94711e4690b1f246d1d98",
   "reviewedCommit": null,
-  "status": "implemented-working-tree-review-and-live-evidence-pending",
+  "status": "committed-pr-27-review-and-live-evidence-pending",
   "criteria": [
     {
       "id": "R1",
@@ -54,10 +54,10 @@
       "id": "R6",
       "expectation": "Initial loading, authorization, polling cadence, hidden-tab handling, subscription export and protected product behavior remain intact",
       "verification": "Diff review, regression tests, lint, typecheck, full suite, boundaries and production build",
-      "status": "pending",
+      "status": "pass",
       "evidence": [
         "Final working-tree gates: 172 test files / 1662 tests passed; typecheck passed after completed build; lint 0 errors / 139 existing warnings; webpack production build passed; server-boundary negative build and diff whitespace check passed. Poll intervals/visibility coverage retained. Reviewed commit and independent human review pending.",
-        "Default Turbopack build failed with worker-port binding permission restriction, including after escalation; default-bundler CI verification pending."
+        "Default Turbopack build, server-boundary checks, lint/typecheck, tests and full-history migration replay passed in GitHub CI run 39412908936 on 085b27c5475c82c025c607d6f7fb03be69fa7d6b. Local worker-port restriction remains an environment limitation; independent human review remains pending."
       ]
     },
     {
@@ -81,8 +81,7 @@
   ],
   "remainingWork": {
     "code": [
-      "Independent review against an exact commit; implementation remains uncommitted.",
-      "Default Turbopack CI verification pending after local worker-port restriction.",
+      "Independent human review against an exact commit remains pending; implementation is committed in PR #27 targeting dev.",
       "Separately review composite revision or field-specific merge strategy for profile/call-out/related records before claiming complete aggregate ordering (R4).",
       "Other direct detail readers in checkout/chat/notification/incoming/request-detail remain outside this approved cloud-list/active-detail slice. No migration required for this implementation."
     ],
@@ -91,5 +90,12 @@
       "Hosted authorization/subscription checks, Phase 1 representative baseline and target/budget agreement, deployment and verification pending."
     ]
   },
-  "reviewScope": "Uncommitted implementation on recorded dev baseline; no independent human review or hosted verification."
+  "reviewScope": "Code/test evidence commit recorded; independent human review and hosted verification remain pending.",
+  "codeEvidenceCommit": "085b27c5475c82c025c607d6f7fb03be69fa7d6b",
+  "pullRequest": "https://github.com/Ona-OnTheRoad/Ona-App/pull/27",
+  "ciEvidence": {
+    "commit": "085b27c5475c82c025c607d6f7fb03be69fa7d6b",
+    "run": "https://github.com/Ona-OnTheRoad/Ona-App/actions/runs/39412908936",
+    "result": "All four jobs passed; preview build checks passed; no authenticated runtime verification."
+  }
 }

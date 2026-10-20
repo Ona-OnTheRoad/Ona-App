@@ -2,7 +2,7 @@
 
 ## Goal
 
-Complete the snapshot-read slice of [Phase 2](../LIVE_UPDATES_IMPROVEMENT_PLAN.md): share equivalent in-flight reads, retain invalidations received during a fetch, and prevent stale responses from replacing current state. Scope approved by the user on 2026-10-20 and implemented in the working tree. Baseline: dev `448d2340be7400847cf94711e4690b1f246d1d98` (Phase 2A merged in PR #26). Reviewed commit: pending; changes are uncommitted and have no independent human review.
+Complete the snapshot-read slice of [Phase 2](../LIVE_UPDATES_IMPROVEMENT_PLAN.md): share equivalent in-flight reads, retain invalidations received during a fetch, and prevent stale responses from replacing current state. Scope approved by the user on 2026-10-20 and committed in [PR #27](https://github.com/Ona-OnTheRoad/Ona-App/pull/27) targeting dev. Baseline: dev `448d2340be7400847cf94711e4690b1f246d1d98` (Phase 2A merged in PR #26). Code/test evidence commit: `085b27c5475c82c025c607d6f7fb03be69fa7d6b`. Independent reviewed commit: pending; no independent human review is established. All related changes are kept on `codex/live-updates-coordinated-reads`.
 
 ## Expected change areas
 
@@ -27,7 +27,7 @@ No adaptive polling, transport/provider changes, scheduler changes, database mig
 
 ## Remaining work
 
-Code: independent review against an exact commit; default Turbopack CI verification; decide a separately reviewed composite revision/merge strategy for related data before claiming complete aggregate ordering. No migration is required by this implementation. Existing direct detail readers in checkout, chat, notification, incoming and request-detail flows remain outside this cloud-store/active-screen coordination slice.
+Code: independent review against an exact commit; decide a separately reviewed composite revision/merge strategy for related data before claiming complete aggregate ordering. No migration is required by this implementation. Existing direct detail readers in checkout, chat, notification, incoming and request-detail flows remain outside this cloud-store/active-screen coordination slice.
 
 External: Phase 2A authenticated navigation/account-switch/reconnect smoke; Phase 1 representative captures and target agreement; Phase 2B slow-network/multi-consumer/browser lifecycle verification; hosted authorization/reconnect checks and deployment verification. All pending. The CUA browser inventory returned no connected browser surfaces in this session; native Chrome being open does not establish a connected browser automation session.
 
@@ -45,7 +45,7 @@ Update this guide, its paired JSON and `docs/BACKEND_FIXES_STATUS.md` with exact
 
 ## Verification evidence
 
-Final working-tree gates after the last source change: **172 test files / 1,662 tests passed; typecheck passed; lint passed with 0 errors / 139 existing warnings; webpack production build passed; server-boundary negative build and diff whitespace check passed.** Typecheck was rerun successfully after the build completed, because running it concurrently with Next generation had temporarily removed its generated input files. Independent review and all browser/hosted criteria remain pending. Session-local logs are `/private/tmp/ona-phase2b-{tests,lint,types,boundaries,webpack,build-escalated}.log`. Turbopack's default production build hit the worker-port permission restriction both in the sandbox and after escalation; it is not marked passed.
+Final working-tree gates after the last source change: **172 test files / 1,662 tests passed; typecheck passed; lint passed with 0 errors / 139 existing warnings; webpack production build passed; server-boundary negative build and diff whitespace check passed.** Typecheck was rerun successfully after the build completed, because running it concurrently with Next generation had temporarily removed its generated input files. Independent review and all browser/hosted criteria remain pending. Session-local logs are `/private/tmp/ona-phase2b-{tests,lint,types,boundaries,webpack,build-escalated}.log`. Turbopack's default production build hit the worker-port permission restriction both in the sandbox and after escalation; the local attempt is not marked passed. GitHub [CI run 39412908936](https://github.com/Ona-OnTheRoad/Ona-App/actions/runs/39412908936) passed all four jobs on code evidence commit `085b27c5475c82c025c607d6f7fb03be69fa7d6b`: lint/typecheck, tests, full-history migration replay with schema/role assertions, and default Turbopack production build with server-boundary checks. Vercel and Netlify preview build checks also passed; this is build evidence, not authenticated runtime or deployment acceptance.
 
 ## Proposed revision follow-up (not approved implementation)
 
