@@ -54,6 +54,8 @@ begin
     end if;
   end loop;
   foreach signature in array array[
+    'public.open_pairing_request(uuid,uuid,text,integer,integer)',
+    'public.dispatch_pairing_offer(uuid,bigint,text,uuid,text,text,integer)',
     'public.claim_job_sweep_lease(text,uuid)',
     'public.release_job_sweep_lease(text,uuid)',
     'public.apply_confirmed_job_payment(uuid,uuid,bigint,text,text,bigint,text,timestamptz,text)',
