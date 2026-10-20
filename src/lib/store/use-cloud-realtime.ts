@@ -86,7 +86,7 @@ export function useCloudRealtime(
 
   // Jobs Realtime near-instant customer ↔ pro job updates
   useEffect(() => {
-    if (!isAppBackendOnline() || !backendUserId) return;
+    if (!isAppBackendOnline() || !backendUserId || !isAuthenticated) return;
     let jobsTimer: ReturnType<typeof setTimeout> | null = null;
     let lastStaleSweep = 0;
     const unsubJobs = backendSubscribeJobs(backendUserId, () => {
@@ -124,7 +124,7 @@ export function useCloudRealtime(
       window.clearInterval(poll);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [backendUserId, refreshCloudJobs]);
+  }, [backendUserId, isAuthenticated, accountType, refreshCloudJobs]);
 
   // Messages Realtime refresh threads so inbound banner / toast can fire
   useEffect(() => {

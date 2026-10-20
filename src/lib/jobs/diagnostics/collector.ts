@@ -31,12 +31,12 @@ export function stopJobDiagnostics() {
 // Build a closed schema at runtime: even untyped callers cannot retain arbitrary data.
 export function recordJobDiagnostic(kind: Kind, resource: JobResource, context: DiagnosticContext, outcome: Outcome,
   detail: Partial<Pick<DiagnosticEvent, "durationMs" | "concurrent" | "status" | "bytes" | "authMs" | "jobLoadMs" | "calloutMs" | "eventToResponseMs">> = {}) {
-  if (!enabled || !["http", "refresh", "trigger", "subscription"].includes(kind) ||
+  if (!enabled || !["http", "refresh", "trigger", "subscription", "subscription-consumer"].includes(kind) ||
       !RESOURCES.includes(resource) || !SOURCES.includes(context.source) ||
       !TRIGGERS.includes(context.trigger) || !OUTCOMES.includes(outcome)) return;
   const event: DiagnosticEvent = { kind, resource, source: context.source, trigger: context.trigger,
     outcome, atMs: rounded(Math.max(0, clock() - origin)) };
-  if (kind === "subscription" && outcome === "event") lastEvent.set(context.source, clock());
+  if ((kind === "subscription" || kind === "subscription-consumer") && outcome === "event") lastEvent.set(context.source, clock());
   for (const key of ["durationMs", "concurrent", "status", "bytes", "authMs", "jobLoadMs", "calloutMs", "eventToResponseMs"] as const) {
     if (finite(detail[key])) event[key] = rounded(detail[key]);
   }
