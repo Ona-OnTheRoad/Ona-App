@@ -1,13 +1,13 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import type { MutableRefObject } from "react";
 import type { useRouter } from "next/navigation";
 import { apiTransition, getCurrentPosition } from "@/lib/jobs/client";
 import {
-  markAcceptInFlight,
   PAIRING_ACTION_STAGES,
 } from "@/lib/jobs/incoming-popup-timing";
 import type { JobRecord } from "@/lib/jobs/types";
 import { idemFor, isStaleRequestError, seedNegotiationScreen } from "./helpers";
+import { ensureIncomingRequestOpen, openRequestKey } from "./open-request";
 import type { IncomingState } from "./use-incoming-state";
 import type { RemoveJob } from "./types";
 
@@ -18,17 +18,7 @@ interface UseFixItParams {
   removeRef: MutableRefObject<RemoveJob>;
 }
 
-/**
- * One-tap "I can fix this": navigates to the negotiation screen IMMEDIATELY
- * (seeded with the card data so it paints instantly) while OPEN + CONFIRM
- * finish in the background. The popup stays mounted app-wide (phone shell),
- * so errors still surface here and the job page's own polls reconcile the
- * confirmed state within seconds.
- * - pairing-stage: OPEN (reserve; usually already done by ensureOpened at
- *   surface time so this is a server noop) then CONFIRM (accept)
- * - classic: START_NEGOTIATION + session flag so the page skips the gate.
- * Errors are surfaced inline so a failed tap is never silent.
- */
+/** Keep the card and errors visible until the server confirms negotiation. */
 export function useFixIt({
   backendUserId,
   router,
@@ -36,19 +26,21 @@ export function useFixIt({
   removeRef,
 }: UseFixItParams) {
   const {
-    openAttemptedRef,
+    pendingOpensRef,
     setAcceptingId,
     setActionError,
     fullyHide,
     notifyRequestClosed,
   } = state;
 
+  const accepting = useRef(new Set<string>());
+
   return useCallback(
     async (j: JobRecord) => {
-      if (!backendUserId) return;
+      if (!backendUserId || accepting.current.has(j.id)) return;
+      accepting.current.add(j.id);
       setAcceptingId(j.id);
       setActionError(null);
-      markAcceptInFlight(j.id);
       try {
         // Branch on the LIVE flow status, not pairingStage: a card that
         // already moved to negotiating (e.g. stale pairing stage left on the
@@ -57,15 +49,6 @@ export function useFixIt({
           const stage = j.pairingStage ?? "";
           const needsOpen =
             stage === "waiting_for_selected" || stage === "waiting_for_pro";
-          // Instant open: paint the negotiation screen from the card data
-          // right now the background transitions reconcile the rest.
-          fullyHide();
-          seedNegotiationScreen(j, {
-            ...j,
-            status: "negotiating",
-            pairingStage: null,
-          });
-          router.push(`/jobs/${j.id}`);
           // GPS is best-effort never block the confirm on it. Start it
           // alongside OPEN and only attach the fix if it resolves within
           // ~250ms; otherwise the server uses the pro's existing Live pin.
@@ -81,15 +64,8 @@ export function useFixIt({
               capturedAt: new Date().toISOString(),
             }))
             .catch(() => ({}));
-          if (needsOpen && !openAttemptedRef.current.has(j.id)) {
-            openAttemptedRef.current.add(j.id);
-            const openRes = await apiTransition({
-              jobId: j.id,
-              event: "OPEN",
-              actor: "repair_pro",
-              actorId: backendUserId,
-              idempotencyKey: idemFor(j, backendUserId, "OPEN"),
-            });
+          if (needsOpen || pendingOpensRef.current.has(openRequestKey(j.id, backendUserId))) {
+            const openRes = await ensureIncomingRequestOpen(j, backendUserId, pendingOpensRef.current);
             if (!openRes.ok) {
               if (isStaleRequestError(openRes.message)) {
                 removeRef.current(j.id);
@@ -139,7 +115,13 @@ export function useFixIt({
             }
             return;
           }
+          if (confirmRes.data.job.status !== "negotiating" || confirmRes.data.job.pairingStage) {
+            setActionError("Request confirmation is still pending. Please try again.");
+            return;
+          }
           seedNegotiationScreen(j, confirmRes.data.job);
+          fullyHide();
+          router.push(`/jobs/${j.id}`);
         } else {
           const res = await apiTransition({
             jobId: j.id,
@@ -164,7 +146,10 @@ export function useFixIt({
           seedNegotiationScreen(j, res.data.job);
           router.push(`/jobs/${j.id}`);
         }
+      } catch {
+        setActionError("Could not confirm this request. Please try again.");
       } finally {
+        accepting.current.delete(j.id);
         setAcceptingId(null);
       }
     },
@@ -173,7 +158,7 @@ export function useFixIt({
       fullyHide,
       notifyRequestClosed,
       router,
-      openAttemptedRef,
+      pendingOpensRef,
       removeRef,
       setAcceptingId,
       setActionError,

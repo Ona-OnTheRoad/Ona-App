@@ -187,12 +187,40 @@ function makeQuery(table: string) {
 
 let beforeTimeoutRpc: ((row: Row) => void) | undefined;
 let timeoutRpcFails = false;
+let openRpcError = false;
+let openRpcResult: string | undefined;
 
 function installClient(row: Row | null) {
   const sb = {
     from: vi.fn((table: string) => makeQuery(table)),
     rpc: vi.fn(async (name: string, args: Record<string, unknown>) => {
       sent.push({ table: name, op: "rpc", args: [args] });
+      if (name === "open_pairing_request") {
+        if (openRpcError) return { data: null, error: { message: "Open failed" } };
+        if (openRpcResult) return { data: openRpcResult, error: null };
+        if (!row) return { data: "not_found", error: null };
+        if (row.repair_pro_id !== args.p_pro_id) return { data: "forbidden", error: null };
+        if (["selected_review", "reserved"].includes(row.pairing_stage || "")) return { data: "noop", error: null };
+        if (!["waiting_for_selected", "waiting_for_pro"].includes(row.pairing_stage || "")) return { data: "closed", error: null };
+        const stage = row.pairing_stage === "waiting_for_selected" ? "selected_review" : "reserved";
+        const patch = { pairing_stage: stage, flow_status: stage, reservation_status: "active",
+          pairing_deadline: row.pairing_deadline, idempotency_key: args.p_idempotency_key };
+        Object.assign(row, patch);
+        sent.push({ table: "request_reservations", op: "insert", args: [{ stage, status: "active" }] });
+        sent.push({ table: "service_requests", op: "update", args: [patch] });
+        return { data: "opened", error: null };
+      }
+      if (name === "dispatch_pairing_offer") {
+        if (!row || row.repair_pro_id || row.pairing_stage == null) return { data: "noop", error: null };
+        // Model the transaction's effects for these existing orchestration tests;
+        // rollback, lock contention and permissions run in the PostgreSQL fixture.
+        const patch = { pairing_stage: "waiting_for_pro", flow_status: "waiting_for_pro",
+          repair_pro_id: args.p_pro_id, queue_position: Number(row.queue_position || 0) + 1 };
+        Object.assign(row, patch);
+        sent.push({ table: "service_requests", op: "update", args: [patch] });
+        sent.push({ table: "request_pairing_queue", op: "upsert", args: [{ pro_id: args.p_pro_id, status: "offered" }] });
+        return { data: "dispatched", error: null };
+      }
       if (row) beforeTimeoutRpc?.(row);
       if (timeoutRpcFails) return { data: null, error: { message: "atomic settlement failed" } };
       if (!row || row.pairing_stage !== args.p_stage || row.pairing_deadline !== args.p_deadline ||
@@ -236,7 +264,7 @@ function callsFor(table: string, op?: string) {
 
 beforeEach(() => {
   sent.length = 0;
-  beforeTimeoutRpc = undefined; timeoutRpcFails = false;
+  beforeTimeoutRpc = undefined; timeoutRpcFails = false; openRpcError = false; openRpcResult = undefined;
   for (const k of Object.keys(responders)) delete responders[k];
   createServiceSupabaseMock.mockClear();
 });
@@ -262,12 +290,9 @@ describe("openRequest idempotency & race safety", () => {
     const patch = updates[0].args[0] as Record<string, unknown>;
     expect(patch.pairing_stage).toBe("selected_review");
     expect(patch.idempotency_key).toBe("k-1");
-    // CAS guard on the expected stage
-    const casGuard = callsFor("service_requests", "eq").some(
-      (c) =>
-        c.args[0] === "pairing_stage" && c.args[1] === "waiting_for_selected",
-    );
-    expect(casGuard).toBe(true);
+    expect(callsFor("open_pairing_request", "rpc")[0].args[0]).toMatchObject({
+      p_request_id: "job-1", p_pro_id: "pro-1", p_window_ms: 144_000, p_rearm_floor_ms: 10_000,
+    });
   });
 
   it("replays with the same idempotency key are no-ops (no second reservation)", async () => {
@@ -284,16 +309,16 @@ describe("openRequest idempotency & race safety", () => {
     const second = await openRequest("job-1", "pro-1", "k-1");
     expect(second.ok).toBe(true);
     if (second.ok) expect(second.noop).toBe(true);
-    expect(callsFor("request_reservations", "insert")).toHaveLength(0);
-    expect(callsFor("service_requests", "update")).toHaveLength(0);
+    expect(callsFor("request_reservations", "insert")).toHaveLength(1);
+    expect(callsFor("service_requests", "update")).toHaveLength(1);
   });
 
-  it("rejects re-opening when already in a review stage (409)", async () => {
+  it("re-opening an existing review is an idempotent no-op", async () => {
     const row: Row = { ...FULL_ROW, pairing_stage: "selected_review" };
     installClient(row);
     const res = await openRequest("job-1", "pro-1");
-    expect(res.ok).toBe(false);
-    if (!res.ok) expect(res.status).toBe(409);
+    expect(res).toMatchObject({ ok: true, noop: true });
+    expect(callsFor("request_reservations", "insert")).toHaveLength(0);
   });
 
   it("rejects a pro who is not the current holder (403)", async () => {
@@ -303,41 +328,18 @@ describe("openRequest idempotency & race safety", () => {
     if (!res.ok) expect(res.status).toBe(403);
   });
 
-  it("fails safely when a concurrent CAS update loses the race", async () => {
-    const row: Row = { ...FULL_ROW, pairing_stage: "waiting_for_selected" };
-    installClient(row);
-    responders["request_reservations"] = () => ({ data: null, error: null });
-    // Simulate the stage having moved while we were mid-flight.
-    responders["service_requests"] = () => ({
-      error: { message: "stage moved" },
-    });
-
-    const res = await openRequest("job-1", "pro-1", "k-2");
-    expect(res.ok).toBe(false);
+  it("fails closed when the Open transaction is unavailable", async () => {
+    installClient({ ...FULL_ROW }); openRpcError = true;
+    expect(await openRequest("job-1", "pro-1", "k-2")).toMatchObject({ ok: false, status: 503 });
+    expect(callsFor("request_reservations", "insert")).toHaveLength(0);
+    expect(callsFor("service_requests", "update")).toHaveLength(0);
   });
 
-  it("releases the reservation and fails (409) when the stage CAS matches 0 rows", async () => {
-    const row: Row = { ...FULL_ROW, pairing_stage: "waiting_for_selected" };
-    installClient(row);
-    responders["request_reservations"] = () => ({ data: null, error: null });
-    // loadPairingRow (maybeSingle) still sees the old stage, but the stage
-    // UPDATE matches 0 rows (sweep advanced it) → reservation must be released.
-    responders["service_requests"] = (calls) => {
-      if (calls.some((c) => c.op === "maybeSingle")) {
-        return { data: row, error: null };
-      }
-      return { data: [], error: null };
-    };
-
-    const res = await openRequest("job-1", "pro-1", "k-race");
-    expect(res.ok).toBe(false);
-    if (!res.ok) expect(res.status).toBe(409);
-
-    const released = callsFor("request_reservations", "update").find((c) => {
-      const p = c.args[0] as Record<string, unknown>;
-      return p.status === "cancelled" && p.released_by === "open_race";
-    });
-    expect(released).toBeTruthy();
+  it("does not create a reservation when the locked request is already closed", async () => {
+    installClient({ ...FULL_ROW }); openRpcResult = "closed";
+    expect(await openRequest("job-1", "pro-1", "k-race")).toMatchObject({ ok: false, status: 409 });
+    expect(callsFor("request_reservations", "insert")).toHaveLength(0);
+    expect(callsFor("service_requests", "update")).toHaveLength(0);
   });
 });
 
@@ -377,7 +379,10 @@ describe("confirmRequest assignment point", () => {
   it("replays with the same idempotency key are no-ops", async () => {
     const row: Row = {
       ...FULL_ROW,
-      pairing_stage: "reserved",
+      pairing_stage: null,
+      flow_status: "negotiating",
+      assignment_status: "assigned",
+      reservation_status: "confirmed",
       idempotency_key: "k-4",
     };
     installClient(row);
@@ -772,13 +777,13 @@ describe("pairing sweep failure reporting", () => {
     await expect(sweepPairing()).rejects.toThrow("load overdue");
   });
   it.each(["request_pairing_queue", "repair_pro_profiles"])("never expires a search on a failed %s read", async (table) => {
-    installClient({ ...FULL_ROW, pairing_stage: "sequential_pairing" });
+    installClient({ ...FULL_ROW, pairing_stage: "sequential_pairing", repair_pro_id: null });
     responders[table] = () => ({ data: null, error: { message: "unavailable" } });
     await expect(advancePairing("job-1")).rejects.toThrow("load pairing");
     expect(callsFor("service_requests", "update")).toHaveLength(0);
   });
   it("keeps a search retryable when its radius update fails", async () => {
-    const row: Row = { ...FULL_ROW, pairing_stage: "sequential_pairing", pairing_radius_km: 1,
+    const row: Row = { ...FULL_ROW, repair_pro_id: null, pairing_stage: "sequential_pairing", pairing_radius_km: 1,
       radius_km: 5, queue_position: 2, pairing_deadline: new Date(Date.now() - 1000).toISOString() };
     installClient(row);
     responders["request_pairing_queue"] = () => ({ data: [], error: null });
@@ -823,6 +828,7 @@ describe("advancePairing 5-round cap & recycling", () => {
       pairing_stage: "sequential_pairing",
       pairing_deadline: new Date(Date.now() - 1000).toISOString(),
       queue_position: MAX_PAIRING_ATTEMPTS,
+      repair_pro_id: null,
     };
     installClient(row);
 

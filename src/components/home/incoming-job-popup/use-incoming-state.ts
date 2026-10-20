@@ -9,6 +9,8 @@ import type {
   NotifyClosedOpts,
 } from "./types";
 
+import type { PendingOpens } from "./open-request";
+
 interface UseIncomingStateParams {
   backendUserId: string | null | undefined;
   isAuthenticated: boolean;
@@ -39,9 +41,8 @@ export function useIncomingState({
   /** Job ids we already told the pro was closed so a request that closes
    * once doesn't toast/push repeatedly on every realtime ping. */
   const notifiedCloseRef = useRef<Set<string>>(new Set());
-  /** Job ids we already auto-reserved (OPEN) when the card surfaced so the
-   * accept tap only needs CONFIRM. */
-  const openAttemptedRef = useRef<Set<string>>(new Set());
+  /** Pending automatic/tap Open operations, shared until their actual result. */
+  const pendingOpensRef = useRef<PendingOpens>(new Map());
 
   /** Up to MAX_VISIBLE_INCOMING full request cards in the lower panel */
   const [visibleJobs, setVisibleJobs] = useState<JobRecord[]>([]);
@@ -181,7 +182,7 @@ export function useIncomingState({
     osPushed,
     surfacedAtRef,
     missingCountRef,
-    openAttemptedRef,
+    pendingOpensRef,
     visibleJobs,
     setVisibleJobs,
     queue,
