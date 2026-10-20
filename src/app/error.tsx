@@ -69,15 +69,14 @@ export default function AppError({
   useEffect(() => {
     if (!unrecoverable) return;
     setRedirectSec(5);
+    let remaining = 5;
     const t = setInterval(() => {
-      setRedirectSec((s) => {
-        if (s <= 1) {
-          clearInterval(t);
-          router.replace(roleHomeFromStorage());
-          return 0;
-        }
-        return s - 1;
-      });
+      remaining -= 1;
+      setRedirectSec(remaining);
+      if (remaining === 0) {
+        clearInterval(t);
+        router.replace(roleHomeFromStorage());
+      }
     }, 1000);
     return () => clearInterval(t);
   }, [unrecoverable, router]);
