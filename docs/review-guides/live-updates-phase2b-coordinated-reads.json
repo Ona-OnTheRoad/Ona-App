@@ -97,5 +97,85 @@
     "commit": "085b27c5475c82c025c607d6f7fb03be69fa7d6b",
     "run": "https://github.com/Ona-OnTheRoad/Ona-App/actions/runs/39412908936",
     "result": "All four jobs passed; preview build checks passed; no authenticated runtime verification."
+  },
+  "calloutTemporaryIdFollowUp": {
+    "baselineCommit": "7f9f68452bb2a2114a6ee12593c399d790385f3f",
+    "status": "implemented-local-gates-pass-review-and-live-evidence-pending",
+    "branch": "codex/live-updates-coordinated-reads",
+    "reviewedCommit": null,
+    "criteria": [
+      {
+        "id": "C1",
+        "expectation": "Temporary/malformed IDs cause no HTTP reads/timers; a real job ID starts normal fetching",
+        "verification": "Hook pending-to-real and timer regressions",
+        "status": "pass",
+        "evidence": [
+          "use-job-callout.test.tsx: no HTTP reads/timers for pending/new/empty/malformed IDs; pending-to-real UUID starts fetching."
+        ]
+      },
+      {
+        "id": "C2",
+        "expectation": "Invalid authenticated route IDs return 400 before storage; auth/ownership/not-found/error behavior preserved",
+        "verification": "Route handler regressions",
+        "status": "pass",
+        "evidence": [
+          "callout route.test.ts: invalid authenticated IDs return 400 before getJob/quote; 401/404/403, valid quote/labour response and genuine failure handling retained."
+        ]
+      },
+      {
+        "id": "C3",
+        "expectation": "Fetched quotes are job-scoped; retired completions/rejections cannot affect new jobs or rearm retries",
+        "verification": "Hook navigation/cleanup/retry/final-state tests",
+        "status": "pass",
+        "evidence": [
+          "Hook tests: old fetched quotes hidden on ID changes; late old completions ignored; retired rejections cannot rearm retries; valid unresolved quotes retry every three seconds and final quotes stop; same-job failure preserves available quote."
+        ]
+      },
+      {
+        "id": "C4",
+        "expectation": "Repository gates pass; live evidence remains separate",
+        "verification": "Tests, typecheck, lint, build and browser evidence",
+        "status": "pass",
+        "evidence": [
+          "174 files / 1685 tests, typecheck, lint 0 errors / 139 existing warnings and whitespace checks passed. Incoming-card UUID fixture updated; original fee assertions pass. Follow-up CI/build evidence is tracked separately by PR checks; no local production-build pass claimed."
+        ]
+      }
+    ],
+    "remainingWork": {
+      "code": [
+        "Independent human review against code evidence ea8d450 / CI snapshot 99c9881 remains pending. No migration required."
+      ],
+      "external": [
+        "Browser connected and both user-authorized test accounts logged in sequentially. Basic navigation smoke passed; pending-to-real request, active realtime/reconnect/slow-network scenarios and representative captures remain pending. Customer location timed out; listed pro jobs were closed. Hosted/deployment acceptance pending."
+      ]
+    },
+    "codeEvidenceCommit": "ea8d450ccfca6513b9bbc901224902fd2436b9a3",
+    "pullRequest": "https://github.com/Ona-OnTheRoad/Ona-App/pull/29",
+    "browserSmoke": {
+      "date": "2026-10-20",
+      "environment": "localhost:3000; existing development server",
+      "result": "partial",
+      "passed": [
+        "Customer login, home and history render",
+        "Customer signout followed by repair-pro login",
+        "Repair-pro dashboard, jobs list and closed job detail render",
+        "Closed job detail Back returns to pro Jobs list"
+      ],
+      "pending": [
+        "Pending-to-real new-request smoke",
+        "Active negotiation, reconnect, slow-network and multi-consumer captures",
+        "Hosted authorization and deployment acceptance"
+      ],
+      "limitations": [
+        "Customer home reported location timeout",
+        "Listed repair-pro jobs were closed; existing payout pending left untouched",
+        "Development route compilation delays prevent representative performance conclusions"
+      ]
+    },
+    "ciEvidence": {
+      "commit": "99c9881",
+      "run": "https://github.com/Ona-OnTheRoad/Ona-App/actions/runs/39469590205",
+      "result": "All four jobs pass: tests, lint/typecheck, full-history Supabase migration replay, default production build and server boundaries. Vercel/Netlify previews pass. No hosted acceptance claim."
+    }
   }
 }

@@ -91,7 +91,7 @@ const DEADLINE = new Date(NOW + 60_000).toISOString();
 const NEW_DEADLINE = new Date(NOW + 90_000).toISOString();
 
 const openJob = {
-  id: "j1",
+  id: "11111111-1111-4111-8111-111111111111",
   motoristId: "m1",
   motoristName: "Mina",
   motoristVehicle: "Toyota Camry",
@@ -119,7 +119,7 @@ const okList = (jobs: JobRecord[]) => ({
   data: { jobs },
 });
 const statusSnapshot = (over: Partial<Record<string, unknown>> = {}) => ({
-  id: "j1",
+  id: "11111111-1111-4111-8111-111111111111",
   status: "reserved",
   pairingStage: "reserved",
   pairingDeadline: DEADLINE,
@@ -134,7 +134,7 @@ const okStatus = (jobs: unknown[]) => ({
 });
 
 const calculatedQuote = {
-  requestId: "j1",
+  requestId: "11111111-1111-4111-8111-111111111111",
   calloutEligible: true,
   calloutStatus: "CALCULATED",
   tradeId: "mechanic",
@@ -210,7 +210,7 @@ describe("Call Out Fee on the incoming panel card", () => {
     });
     await flushPolls();
 
-    expect(client.apiGetCallout).toHaveBeenCalledWith("j1", { source: "callout", trigger: "initial" });
+    expect(client.apiGetCallout).toHaveBeenCalledWith("11111111-1111-4111-8111-111111111111", { source: "callout", trigger: "initial" });
     expect(screen.getByText("Call Out Fee")).toBeTruthy();
     expect(screen.getByText("₦1,000")).toBeTruthy();
   });
