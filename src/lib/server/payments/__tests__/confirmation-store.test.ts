@@ -1,13 +1,42 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { bookConfirmedJob, loadConfirmationJob } from "../confirmation-store";
+import { bindJobCheckout, bookConfirmedJob, loadConfirmationJob } from "../confirmation-store";
 import { rowToEscrow } from "../escrow-store";
 import { rowToJob } from "@/lib/server/jobs/job-store/mappers";
 
 const { rpc, query } = vi.hoisted(() => {
-  const mockQuery = { select: vi.fn(), eq: vi.fn(), maybeSingle: vi.fn() };
+  const mockQuery = { select: vi.fn(), eq: vi.fn(), update: vi.fn(), maybeSingle: vi.fn() };
   mockQuery.select.mockReturnValue(mockQuery);
   mockQuery.eq.mockReturnValue(mockQuery);
+  mockQuery.update.mockReturnValue(mockQuery);
   return { rpc: vi.fn(), query: mockQuery };
+});
+
+describe("conditional checkout binding", () => {
+  it("keeps the version, timestamp and agreed-state guards after snapshot refresh", async () => {
+    query.maybeSingle.mockResolvedValue({ data: { ...jobRow, job_version: 8 }, error: null });
+    const previous = rowToJob(jobRow);
+    expect(await bindJobCheckout(previous, { ...previous, paymentReference: "new-ref" }))
+      .toMatchObject({ jobVersion: 8 });
+    expect(query.eq.mock.calls).toEqual([
+      ["id", "job"], ["job_version", 7], ["flow_status", "agreed"], ["updated_at", "old"],
+    ]);
+  });
+
+  it("does not retry a competing checkout's losing bind without its original guard", async () => {
+    query.maybeSingle
+      .mockResolvedValueOnce({ data: { ...jobRow, payment_reference: "winner", job_version: 8 }, error: null })
+      .mockResolvedValueOnce({ data: null, error: null });
+    const previous = rowToJob(jobRow);
+    const [winner, loser] = await Promise.all([
+      bindJobCheckout(previous, { ...previous, paymentReference: "winner" }),
+      bindJobCheckout(previous, { ...previous, paymentReference: "loser" }),
+    ]);
+    expect(winner?.paymentReference).toBe("winner");
+    expect(loser).toBeNull();
+    expect(query.update).toHaveBeenCalledTimes(2);
+    expect(query.eq.mock.calls.filter(([column]) => column === "job_version"))
+      .toEqual([["job_version", 7], ["job_version", 7]]);
+  });
 });
 vi.mock("@/lib/supabase/env", () => ({ isSupabaseAdminConfigured: () => true }));
 vi.mock("@/lib/supabase/server", () => ({ createServiceSupabase: () => ({ rpc, from: () => query }) }));
