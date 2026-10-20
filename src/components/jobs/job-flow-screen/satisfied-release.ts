@@ -68,7 +68,7 @@ export function createSatisfiedHandler({
         });
         // Always re-fetch release may have finished even if the response raced.
         try {
-          const again = await apiGetJob(job.id);
+          const again = await apiGetJob(job.id, { source: "job-action", trigger: "retry" });
           if (again.ok && again.data.job) {
             commitJob(again.data.job, true);
             if (!res.ok) {
@@ -123,7 +123,7 @@ export function createSatisfiedHandler({
       } catch (e) {
         // Abort/timeout: poll once more before showing failure.
         try {
-          const again = await apiGetJob(job.id);
+          const again = await apiGetJob(job.id, { source: "job-action", trigger: "retry" });
           if (again.ok && again.data.job) {
             const j = again.data.job;
             if (isReleaseSettled(j)) {

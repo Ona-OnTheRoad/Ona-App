@@ -8,6 +8,10 @@ import {
 import { syncServerClock } from "@/lib/jobs/server-clock";
 import { clearIdemKey, getOrCreateIdemKey } from "@/lib/jobs/idempotency";
 
+import { measureJobHttp, UNKNOWN_CONTEXT, type DiagnosticContext } from "./diagnostics/measure";
+import type { JobResource } from "./diagnostics/types";
+type ReadDiagnostic = DiagnosticContext & { resource: JobResource };
+
 type ApiOk<T> = { ok: true; data: T };
 type ApiErr = { ok: false; message: string };
 
@@ -58,11 +62,14 @@ async function fetchWithTimeout(
   url: string,
   init: RequestInit = {},
   timeoutMs = FETCH_TIMEOUT,
+  diagnostic?: ReadDiagnostic,
 ): Promise<Response> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    const res = await fetch(url, { ...init, signal: ctrl.signal });
+    const res = await (diagnostic
+      ? measureJobHttp(diagnostic.resource, diagnostic, () => fetch(url, { ...init, signal: ctrl.signal }))
+      : fetch(url, { ...init, signal: ctrl.signal }));
     return res;
   } catch (e) {
     if (isAbortError(e)) {
@@ -88,6 +95,7 @@ async function jobFetch(
   url: string,
   init: RequestInit = {},
   timeoutMs = FETCH_TIMEOUT,
+  diagnostic?: ReadDiagnostic,
 ): Promise<Response> {
   const headers1 = await authHeaders(
     init.headers as Record<string, string> | undefined,
@@ -108,13 +116,14 @@ async function jobFetch(
         { status: 401, headers: { "Content-Type": "application/json" } },
       );
     }
-    return fetchWithTimeout(url, { ...init, headers: headersRetry }, timeoutMs);
+    return fetchWithTimeout(url, { ...init, headers: headersRetry }, timeoutMs, diagnostic ? { ...diagnostic, trigger: "retry" } : undefined);
   }
 
   const res = await fetchWithTimeout(
     url,
     { ...init, headers: headers1 },
     timeoutMs,
+    diagnostic,
   );
   if (res.status !== 401) return res;
 
@@ -124,7 +133,7 @@ async function jobFetch(
     { forceRefresh: true },
   );
   if (!headers2.Authorization) return res;
-  return fetchWithTimeout(url, { ...init, headers: headers2 }, timeoutMs);
+  return fetchWithTimeout(url, { ...init, headers: headers2 }, timeoutMs, diagnostic ? { ...diagnostic, trigger: "retry" } : undefined);
 }
 
 async function parse<T>(res: Response): Promise<ApiOk<T> | ApiErr> {
@@ -189,7 +198,7 @@ function hashBody(body: Record<string, unknown>): string {
   return h.toString(36);
 }
 
-export async function apiGetJob(id: string) {
+export async function apiGetJob(id: string, context: DiagnosticContext = UNKNOWN_CONTEXT) {
   // Up to 3 attempts covers create→navigate session race.
   // Prefer POST: production previously returned 401 on GET /api/jobs/[id]
   // with the same Bearer that succeeded on POST /api/jobs (create).
@@ -215,7 +224,7 @@ export async function apiGetJob(id: string) {
         action: "get",
         ...(access_token ? { access_token } : {}),
       }),
-    });
+    }, FETCH_TIMEOUT, { ...context, resource: "job", trigger: attempt > 0 ? "retry" : context.trigger });
     last = await parse<{ job: JobRecord }>(res);
     if (last.ok) return last;
     const authFail =
@@ -251,8 +260,8 @@ export async function apiDispatchScheduled(input: {
   return parse<{ job: JobRecord }>(res);
 }
 
-export async function apiGetCallout(jobId: string) {
-  const res = await jobFetch(`/api/jobs/${encodeURIComponent(jobId)}/callout`);
+export async function apiGetCallout(jobId: string, context: DiagnosticContext = { source: "callout", trigger: "unknown" }) {
+  const res = await jobFetch(`/api/jobs/${encodeURIComponent(jobId)}/callout`, {}, FETCH_TIMEOUT, { ...context, resource: "callout" });
   return parse<{
     quote: import("@/lib/callout/constants").CalloutQuote | null;
     labour: {
@@ -295,11 +304,11 @@ export async function apiPreviewCallout(body: {
  * Server sweep: Booked jobs not completed within 6h of payment →
  * cancel + full refund. Safe no-op when none are overdue.
  */
-export async function apiExpireStaleBookedJobs() {
+export async function apiExpireStaleBookedJobs(context: DiagnosticContext = UNKNOWN_CONTEXT) {
   const res = await jobFetch("/api/jobs/expire-stale", {
     method: "POST",
     cache: "no-store",
-  });
+  }, FETCH_TIMEOUT, { ...context, resource: "expire-stale" });
   return parse<{
     checked: number;
     cancelled: number;
@@ -315,18 +324,18 @@ export async function apiExpireStaleBookedJobs() {
  * closes the ring into the next pro / expired state within one `load()`
  * poll instead of waiting on the throttled sweep.
  */
-export async function apiPairingSweep() {
+export async function apiPairingSweep(context: DiagnosticContext = UNKNOWN_CONTEXT) {
   const res = await jobFetch("/api/jobs/pairing-sweep", {
     method: "POST",
     cache: "no-store",
-  });
+  }, FETCH_TIMEOUT, { ...context, resource: "pairing-sweep" });
   return parse<{ checked: number; timedOut: number; expired: number }>(res);
 }
 
 export async function apiListJobs(
   userId: string,
   role: "motorist" | "repair_pro",
-  opts?: { lean?: boolean },
+  opts?: { lean?: boolean; diagnostic?: DiagnosticContext },
 ) {
   const qs = new URLSearchParams({ userId, role });
   // Lean = status-snapshot only (no media hydration / expiry / profile
@@ -335,7 +344,7 @@ export async function apiListJobs(
   if (opts?.lean) qs.set("lean", "1");
   const res = await jobFetch(`/api/jobs?${qs}`, {
     cache: "no-store",
-  });
+  }, FETCH_TIMEOUT, { ...(opts?.diagnostic ?? UNKNOWN_CONTEXT), resource: "jobs" });
   return parse<{ jobs: JobRecord[] }>(res);
 }
 
@@ -353,11 +362,11 @@ export type ProIncomingStatus = {
  * query (id, flow_status, status, pairing_stage, pairing_deadline,
  * repair_pro_id) so a customer cancellation closes the card within ~1s even
  * when the realtime push is missed on a slow connection. */
-export async function apiProIncomingStatus(ids: string[]) {
+export async function apiProIncomingStatus(ids: string[], context: DiagnosticContext = UNKNOWN_CONTEXT) {
   const qs = new URLSearchParams({ ids: ids.join(",") });
   const res = await jobFetch(`/api/jobs/pro-incoming-status?${qs}`, {
     cache: "no-store",
-  });
+  }, FETCH_TIMEOUT, { ...context, resource: "incoming-status" });
   return parse<{ jobs: ProIncomingStatus[] }>(res);
 }
 
@@ -563,7 +572,7 @@ export async function apiTransition(input: {
     ) {
       for (let i = 0; i < 4; i++) {
         await new Promise((r) => setTimeout(r, 800 + i * 400));
-        const again = await apiGetJob(input.jobId);
+        const again = await apiGetJob(input.jobId, { source: "job-action", trigger: "retry" });
         if (
           again.ok &&
           (again.data.job.status === "released" ||

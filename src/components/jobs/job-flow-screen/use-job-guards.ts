@@ -1,3 +1,4 @@
+import type { JobTrigger } from "@/lib/jobs/diagnostics/types";
 import { useEffect } from "react";
 import type { useRouter } from "next/navigation";
 import {
@@ -16,7 +17,7 @@ interface Args {
   router: ReturnType<typeof useRouter>;
   accountType: ReturnType<typeof useApp>["accountType"];
   backendUserId: ReturnType<typeof useApp>["backendUserId"];
-  load: () => Promise<void>;
+  load: (trigger?: JobTrigger) => Promise<void>;
   s: JobFlowState;
 }
 
@@ -35,14 +36,16 @@ export function useJobGuards({
   // must never keep showing live negotiation controls from an old copy.
   useEffect(() => {
     if (job?.status !== "negotiating") return;
-    const reconcile = () => void load();
-    const iv = window.setInterval(reconcile, 20_000);
-    window.addEventListener("focus", reconcile);
-    document.addEventListener("visibilitychange", reconcile);
+    const onInterval = () => void load("interval");
+    const onFocus = () => void load("focus");
+    const onVisibility = () => void load("visibility");
+    const iv = window.setInterval(onInterval, 20_000);
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
     return () => {
       window.clearInterval(iv);
-      window.removeEventListener("focus", reconcile);
-      document.removeEventListener("visibilitychange", reconcile);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [job?.status, load]);
 

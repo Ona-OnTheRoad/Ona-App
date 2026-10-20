@@ -73,7 +73,7 @@ export function useNotificationAction({
     let liveStatus: string | undefined = n.jobStatus || undefined;
     if (n.jobId) {
       try {
-        const res = await apiGetJob(n.jobId);
+        const res = await apiGetJob(n.jobId, { source: "notification", trigger: "action" });
         if (res.ok && res.data.job?.status) {
           liveStatus = res.data.job.status;
         }

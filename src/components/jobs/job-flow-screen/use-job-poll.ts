@@ -1,3 +1,5 @@
+import { recordJobDiagnostic } from "@/lib/jobs/diagnostics/collector";
+import type { JobTrigger } from "@/lib/jobs/diagnostics/types";
 import { useEffect } from "react";
 import type { JobRecord } from "@/lib/jobs/types";
 
@@ -6,7 +8,7 @@ interface Args {
   authReady: boolean;
   isAuthenticated: boolean;
   actorId: string;
-  load: () => Promise<void>;
+  load: (trigger?: JobTrigger) => Promise<void>;
   setErr: (v: string | null) => void;
 }
 
@@ -34,22 +36,24 @@ export function useJobPoll({
     let cancelled = false;
     let polling = false;
     let pendingRealtime = false;
-    const tick = async (reconcile = false) => {
+    const tick = async (reconcile = false, trigger: JobTrigger = "initial") => {
+      recordJobDiagnostic("trigger", "job", { source: "job-screen", trigger }, "ok");
       if (cancelled) return;
       if (polling) {
+        recordJobDiagnostic("trigger", "job", { source: "job-screen", trigger }, "coalesced");
         if (reconcile) pendingRealtime = true;
         return;
       }
       polling = true;
       try {
-        await load();
+        await load(trigger);
       } catch (error) {
         if (!cancelled) setErr(error instanceof Error ? error.message : "Could not refresh job. Retrying…");
       } finally {
         polling = false;
         if (pendingRealtime && !cancelled) {
           pendingRealtime = false;
-          void tick();
+          void tick(false, "realtime");
         }
       }
     };
@@ -82,14 +86,14 @@ export function useJobPoll({
                 : 60_000;
     const id = window.setInterval(() => {
       if (typeof document !== "undefined" && document.hidden) return;
-      void tick();
+      void tick(false, "interval");
     }, ms);
     // Share the same read gate with realtime. One event received mid-read
     // needs a follow-up; interval ticks alone do not create a retry backlog.
     let unsub: (() => void) | null = null;
     if (actorId) {
       void import("@/lib/supabase/app-api").then(({ backendSubscribeJobs }) => {
-        if (!cancelled) unsub = backendSubscribeJobs(actorId, () => void tick(true));
+        if (!cancelled) unsub = backendSubscribeJobs(actorId, () => void tick(true, "realtime"), "job-screen");
       }).catch(() => { /* Polling remains available if realtime cannot load. */ });
     }
     return () => {

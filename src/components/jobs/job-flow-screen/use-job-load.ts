@@ -1,3 +1,5 @@
+import { beginJobDiagnostic, recordJobDiagnostic } from "@/lib/jobs/diagnostics/collector";
+import { diagnosticFailure, type JobTrigger } from "@/lib/jobs/diagnostics/measure";
 import { useCallback, useRef, type MutableRefObject } from "react";
 import type { useRouter } from "next/navigation";
 import type { useNotificationsOptional } from "@/components/notifications/notification-provider";
@@ -33,11 +35,11 @@ export function useJobLoad({
     setStickyReleaseErr,
   } = s;
   const inFlight = useRef<{ id: string; promise: Promise<void> } | null>(null);
-  const loadOnce = useCallback(async () => {
+  const loadOnce = useCallback(async (trigger: JobTrigger) => {
     // `/jobs/new`: the real job is created in the background; never GET while
     // it doesn't exist yet (a 404 would bounce us home before paint).
     const id = activeJobIdRef.current;
-    if (!id || id === "new" || id.startsWith("pending-")) return;
+    if (!id || id === "new" || id.startsWith("pending-")) return "skipped" as const;
     // One-click: JWT wait trimmed to 500ms (was 4000ms) — seed job already paints, server retries auth.
     try {
       const { ensureAppSession } = await import("@/lib/supabase/session");
@@ -45,9 +47,10 @@ export function useJobLoad({
     } catch {
       /* continue apiGetJob retries */
     }
-    const res = await apiGetJob(id);
-    if (activeJobIdRef.current !== id) return;
+    const res = await apiGetJob(id, { source: "job-screen", trigger });
+    if (activeJobIdRef.current !== id) return "skipped" as const;
     if (!res.ok) {
+      recordJobDiagnostic("trigger", "job", { source: "job-screen", trigger }, "http-error");
       if (res.message === "Job not found") {
         const current = notifRef.current;
         if (current) {
@@ -57,12 +60,12 @@ export function useJobLoad({
           if (ids.length) void current.markRead(ids);
         }
         router.replace(accountType === "professional" ? "/jobs" : "/");
-        return;
+        return "http-error" as const;
       }
       // Never park on a Forbidden error screen role home immediately
       if (isForbiddenMessage(res.message)) {
         router.replace(homePathForForbidden(accountType));
-        return;
+        return "http-error" as const;
       }
       // Soft auth failure: keep spinner, let poll retry don't stick forever
       const authish = /not authenticated|session|sign in|refresh/i.test(
@@ -70,11 +73,11 @@ export function useJobLoad({
       );
       if (authish && !jobRef.current) {
         setErr(res.message);
-        return;
+        return "http-error" as const;
       }
       // Don't overwrite a sticky release error with a generic load failure
       setErr((prev) => stickyReleaseErr || prev || res.message);
-      return;
+      return "http-error" as const;
     }
     // Unpaid Ona Express drafts are booking-session state, never an open
     // request: tapping one returns the customer to the page they were on.
@@ -83,7 +86,7 @@ export function useJobLoad({
       "express_pending_payment"
     ) {
       router.back();
-      return;
+      return "skipped" as const;
     }
     commitJob(res.data.job);
     // Never clear stickyReleaseErr here only dismiss / successful release
@@ -96,13 +99,19 @@ export function useJobLoad({
     ) {
       setStickyReleaseErr(null);
     }
+    return "ok" as const;
   }, [jobId, commitJob, stickyReleaseErr, accountType, router]); // eslint-disable-line react-hooks/exhaustive-deps
   // Polls, realtime, visibility and guards all use this loader. Share a read
   // for the active job rather than launching parallel copies on slow networks.
-  const load = useCallback((): Promise<void> => {
+  const load = useCallback((trigger: JobTrigger = "unknown"): Promise<void> => {
     const id = activeJobIdRef.current;
-    if (inFlight.current?.id === id) return inFlight.current.promise;
-    const promise = loadOnce().catch((error: unknown) => {
+    if (inFlight.current?.id === id) {
+      recordJobDiagnostic("trigger", "job", { source: "job-screen", trigger }, "coalesced");
+      return inFlight.current.promise;
+    }
+    const finish = beginJobDiagnostic("refresh", "job", { source: "job-screen", trigger });
+    const promise = loadOnce(trigger).then((outcome) => { finish(outcome); }).catch((error: unknown) => {
+      finish(diagnosticFailure(error));
       if (activeJobIdRef.current !== id) return;
       const message = error instanceof Error ? error.message : "Could not refresh job. Retrying…";
       setErr((prev) => stickyReleaseErr || prev || message);

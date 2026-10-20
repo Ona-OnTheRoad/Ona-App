@@ -25,8 +25,8 @@ export function useChatJobStatus(
     }
     let cancelled = false;
 
-    const check = () => {
-      void apiGetJob(rid).then((res) => {
+    const check = (trigger: "initial" | "interval" = "initial") => {
+      void apiGetJob(rid, { source: "chat", trigger }).then((res) => {
         if (cancelled || !res.ok) return;
         const ended = isJobEndedStatus(res.data.job.status);
         if (!ended) {
@@ -48,7 +48,7 @@ export function useChatJobStatus(
     check();
     const t = window.setInterval(() => {
       if (document.hidden) return;
-      check();
+      check("interval");
     }, 45_000);
     return () => {
       cancelled = true;

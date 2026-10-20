@@ -1,4 +1,5 @@
 "use client";
+import { measureJobHttp, type DiagnosticContext } from "@/lib/jobs/diagnostics/measure";
 
 /**
  * Shared Bearer headers for APIs that enforce requireUser().
@@ -48,6 +49,7 @@ export async function authHeadersGet(
 export async function authFetch(
   input: RequestInfo | URL,
   init: RequestInit = {},
+  diagnostic?: DiagnosticContext,
 ): Promise<Response> {
   const method = (init.method || "GET").toUpperCase();
   const isGet = method === "GET" || method === "HEAD" || method === "DELETE";
@@ -69,12 +71,15 @@ export async function authFetch(
   };
 
   let headers = await buildHeaders(false);
-  let res = await fetch(input, { ...init, headers });
+  const runFetch = (retry = false) => diagnostic
+    ? measureJobHttp("requests", { ...diagnostic, trigger: retry ? "retry" : diagnostic.trigger }, () => fetch(input, { ...init, headers }))
+    : fetch(input, { ...init, headers });
+  let res = await runFetch();
 
   if (res.status === 401) {
     headers = await buildHeaders(true);
     if (headers.Authorization) {
-      res = await fetch(input, { ...init, headers });
+      res = await runFetch(true);
     }
   }
 

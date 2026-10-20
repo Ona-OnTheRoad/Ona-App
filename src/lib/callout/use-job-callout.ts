@@ -49,9 +49,9 @@ export function useJobCallout(
     }
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
-    const fetchQuote = async () => {
+    const fetchQuote = async (trigger: "initial" | "interval" = "initial") => {
       try {
-        const res = await apiGetCallout(jobId);
+        const res = await apiGetCallout(jobId, { source: "callout", trigger });
         if (cancelled) return;
         if (res.ok && res.data.quote && isCalloutAmountReady(res.data.quote)) {
           quoteCache.set(jobId, res.data.quote);
@@ -64,7 +64,7 @@ export function useJobCallout(
       } catch {
         /* retry */
       }
-      timer = setTimeout(fetchQuote, 3000);
+      timer = setTimeout(() => void fetchQuote("interval"), 3000);
     };
     void fetchQuote();
     return () => {

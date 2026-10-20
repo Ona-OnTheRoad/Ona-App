@@ -491,7 +491,7 @@ describe("IncomingJobPopup fast status-check poll", () => {
 
     // Visible card → poll hits the light endpoint with the card id, not the
     // full list again.
-    expect(client.apiProIncomingStatus).toHaveBeenCalledWith(["j1"]);
+    expect(client.apiProIncomingStatus).toHaveBeenCalledWith(["j1"], { source: "incoming", trigger: "interval" });
     expect(client.apiListJobs).toHaveBeenCalledTimes(1);
     expect(screen.getByText("Engine won't start")).toBeTruthy();
   });
@@ -548,7 +548,7 @@ describe("IncomingJobPopup fast status-check poll", () => {
     await flushPolls();
 
     expect(screen.queryByText("Engine won't start")).toBeNull();
-    expect(client.apiProIncomingStatus).toHaveBeenCalledWith(["j1"]);
+    expect(client.apiProIncomingStatus).toHaveBeenCalledWith(["j1"], { source: "incoming", trigger: "interval" });
     expect(
       screen.queryByText("Mina cancelled the Toyota Camry request."),
     ).toBeNull();
@@ -618,7 +618,7 @@ describe("IncomingJobPopup fast status-check poll", () => {
     expect(
       screen.queryByText("The customer cancelled this request."),
     ).toBeNull();
-    expect(client.apiProIncomingStatus).toHaveBeenCalledWith(["j1"]);
+    expect(client.apiProIncomingStatus).toHaveBeenCalledWith(["j1"], { source: "incoming", trigger: "interval" });
   });
 
   it("still runs the full lean list every few cycles to reconcile", async () => {

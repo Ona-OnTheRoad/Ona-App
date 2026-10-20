@@ -1,3 +1,5 @@
+import { recordJobDiagnostic } from "@/lib/jobs/diagnostics/collector";
+import type { JobTrigger } from "@/lib/jobs/diagnostics/types";
 import { useEffect, useRef } from "react";
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import { apiListJobs, apiProIncomingStatus } from "@/lib/jobs/client";
@@ -91,14 +93,15 @@ export function useIncomingPoll({
 
     let polling = false;
     let pending = false;
+    let pendingTrigger: JobTrigger = "unknown";
     let tick = 0;
     /** Ultra-light close check: one tiny query for the visible card ids. Detects
      * a customer cancellation/close within ~1s even when the realtime push is
      * missed no list payload, no media, no expiry work. */
-    const statusCheck = async () => {
+    const statusCheck = async (trigger: JobTrigger) => {
       const visible = visibleJobsRef.current;
       if (visible.length === 0) return;
-      const res = await apiProIncomingStatus(visible.map((j) => j.id));
+      const res = await apiProIncomingStatus(visible.map((j) => j.id), { source: "incoming", trigger });
       if (cancelled || !res.ok) return;
       const byId = new Map(res.data.jobs.map((j) => [j.id, j]));
       for (const cur of visible.slice()) {
@@ -125,12 +128,15 @@ export function useIncomingPoll({
         }
       }
     };
-    const poll = async () => {
+    const poll = async (trigger: JobTrigger = "initial") => {
+      recordJobDiagnostic("trigger", "jobs", { source: "incoming", trigger }, "ok");
       // Never lose an update that arrives mid-fetch: if a poll is already in
       // flight, remember the request and re-run right after it settles instead
       // of swallowing it (that was the "close is a few seconds late" bug).
       if (polling) {
         pending = true;
+        pendingTrigger = trigger;
+        recordJobDiagnostic("trigger", "jobs", { source: "incoming", trigger }, "coalesced");
         return;
       }
       polling = true;
@@ -141,11 +147,11 @@ export function useIncomingPoll({
         const visibleCount = visibleJobsRef.current.length;
         if (visibleCount > 0 && tick < 2) {
           tick++;
-          await statusCheck();
+          await statusCheck(trigger);
         } else {
           tick = 0;
           const res = await apiListJobs(backendUserId, "repair_pro", {
-            lean: true,
+            lean: true, diagnostic: { source: "incoming", trigger },
           });
           if (cancelled || !res.ok) return;
           ingest(res.data.jobs);
@@ -157,7 +163,7 @@ export function useIncomingPoll({
         polling = false;
         if (pending && !cancelled) {
           pending = false;
-          void poll();
+          void poll(pendingTrigger);
         }
       }
     };
@@ -213,7 +219,7 @@ export function useIncomingPoll({
             schedule();
             return;
           }
-          void poll();
+          void poll("interval");
           schedule();
         },
         delay ??
@@ -227,17 +233,17 @@ export function useIncomingPoll({
     const unsub = backendSubscribeJobs(backendUserId, (payload) => {
       applyRealtimeClose(payload);
       if (!cancelled) {
-        void poll();
+        void poll("realtime");
         // A push may have surfaced a card while the timer sat armed at the
         // idle 12s jump onto the fast 1s cadence so its first status check
         // isn't delayed.
         clearTimeout(timer);
         schedule(INCOMING_POPUP_STATUS_POLL_MS);
       }
-    });
+    }, "incoming");
 
     const onVis = () => {
-      if (!document.hidden) void poll();
+      if (!document.hidden) void poll("visibility");
     };
     document.addEventListener("visibilitychange", onVis);
 

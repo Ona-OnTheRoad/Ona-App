@@ -76,7 +76,7 @@ export function useCloudRealtime(
   useEffect(() => {
     if (!isAuthenticated) return;
     // Jobs soon after auth; chats only as rare backup (Realtime is primary)
-    const jobsT = window.setTimeout(() => refreshCloudJobs(), 900);
+    const jobsT = window.setTimeout(() => refreshCloudJobs("initial"), 900);
     const chatsT = window.setTimeout(() => refreshCloudChats(), 600_000);
     return () => {
       window.clearTimeout(jobsT);
@@ -91,30 +91,30 @@ export function useCloudRealtime(
     let lastStaleSweep = 0;
     const unsubJobs = backendSubscribeJobs(backendUserId, () => {
       if (jobsTimer) clearTimeout(jobsTimer);
-      jobsTimer = setTimeout(() => refreshCloudJobs(), 800);
-    });
+      jobsTimer = setTimeout(() => refreshCloudJobs("realtime"), 800);
+    }, "cloud-store");
     // First stale sweep once after open (not on every jobs poll)
     const staleTimer = window.setTimeout(() => {
       lastStaleSweep = Date.now();
       import("@/lib/jobs/client")
-        .then((m) => m.apiExpireStaleBookedJobs())
+        .then((m) => m.apiExpireStaleBookedJobs({ source: "cloud-store", trigger: "initial" }))
         .catch((e) => console.warn("[ona] expire-stale (open)", e));
     }, 12_000);
     // Backup poll if Realtime drops (pairing screens still poll locally / job page)
     const poll = window.setInterval(() => {
       if (typeof document !== "undefined" && document.hidden) return;
-      refreshCloudJobs();
+      refreshCloudJobs("interval");
       const now = Date.now();
       // Expire-stale is heavy (DB sweeps + pairing + payout) keep rare
       if (now - lastStaleSweep >= 240_000) {
         lastStaleSweep = now;
         import("@/lib/jobs/client")
-          .then((m) => m.apiExpireStaleBookedJobs())
+          .then((m) => m.apiExpireStaleBookedJobs({ source: "cloud-store", trigger: "interval" }))
           .catch((e) => console.warn("[ona] expire-stale (poll)", e));
       }
     }, 120_000);
     const onVis = () => {
-      if (document.visibilityState === "visible") refreshCloudJobs();
+      if (document.visibilityState === "visible") refreshCloudJobs("visibility");
     };
     document.addEventListener("visibilitychange", onVis);
     return () => {
