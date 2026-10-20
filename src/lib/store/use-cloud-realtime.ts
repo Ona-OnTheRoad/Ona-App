@@ -89,10 +89,20 @@ export function useCloudRealtime(
     if (!isAppBackendOnline() || !backendUserId || !isAuthenticated) return;
     let jobsTimer: ReturnType<typeof setTimeout> | null = null;
     let lastStaleSweep = 0;
-    const unsubJobs = backendSubscribeJobs(backendUserId, () => {
+    const scheduleRealtimeRefresh = () => {
       if (jobsTimer) clearTimeout(jobsTimer);
       jobsTimer = setTimeout(() => refreshCloudJobs("realtime"), 800);
-    }, "cloud-store");
+    };
+    const unsubJobs = backendSubscribeJobs(
+      backendUserId,
+      scheduleRealtimeRefresh,
+      "cloud-store",
+      (state, meta) => {
+        if (state === "connected" && meta.reconnected) {
+          scheduleRealtimeRefresh();
+        }
+      },
+    );
     // First stale sweep once after open (not on every jobs poll)
     const staleTimer = window.setTimeout(() => {
       lastStaleSweep = Date.now();
@@ -116,13 +126,18 @@ export function useCloudRealtime(
     const onVis = () => {
       if (document.visibilityState === "visible") refreshCloudJobs("visibility");
     };
+    const onOnline = () => {
+      refreshCloudJobs("visibility");
+    };
     document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("online", onOnline);
     return () => {
       if (jobsTimer) clearTimeout(jobsTimer);
       unsubJobs?.();
       window.clearTimeout(staleTimer);
       window.clearInterval(poll);
       document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("online", onOnline);
     };
   }, [backendUserId, isAuthenticated, accountType, refreshCloudJobs]);
 

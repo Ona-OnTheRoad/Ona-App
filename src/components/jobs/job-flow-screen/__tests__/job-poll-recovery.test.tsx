@@ -23,10 +23,10 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
-function draw(load = vi.fn(async () => {})) {
+function draw(load = vi.fn(async () => {}), backoffJitterRatio = 0) {
   const setErr = vi.fn();
   const hook = renderHook(({ snapshot }) => useJobPoll({ job: snapshot, authReady: true,
-    isAuthenticated: true, actorId: "customer", load, setErr }), { initialProps: { snapshot: job } });
+    isAuthenticated: true, actorId: "customer", load, setErr, backoffJitterRatio }), { initialProps: { snapshot: job } });
   return { ...hook, load, setErr };
 }
 
@@ -34,7 +34,7 @@ describe("job poll recovery", () => {
   it.each([
     ["reserved", 1_000], ["negotiating", 8_000], ["agreed", 8_000],
     ["en_route", 15_000], ["completed", 15_000], ["released", 45_000], ["cancelled", 60_000],
-  ] as const)("preserves the %s polling interval", async (status, ms) => {
+  ] as const)("preserves the %s polling interval when realtime is not yet connected", async (status, ms) => {
     const h = draw(); await flush();
     h.rerender({ snapshot: { ...job, status } }); await flush();
     const calls = h.load.mock.calls.length;
@@ -42,6 +42,78 @@ describe("job poll recovery", () => {
     expect(h.load).toHaveBeenCalledTimes(calls);
     await act(async () => { await vi.advanceTimersByTimeAsync(1); });
     expect(h.load).toHaveBeenCalledTimes(calls + 1);
+  });
+
+  it.each([
+    ["reserved", 10_000], ["negotiating", 30_000], ["agreed", 30_000],
+    ["en_route", 45_000], ["completed", 45_000], ["released", 120_000], ["cancelled", 180_000],
+  ] as const)("shifts %s to the %dms safety interval once realtime is SUBSCRIBED and reverts when degraded", async (status, healthyMs) => {
+    const h = draw(); await flush();
+    h.rerender({ snapshot: { ...job, status } }); await flush();
+    const onStatus = mocks.subscribe.mock.calls.at(-1)![3] as (
+      state: "connecting" | "connected" | "reconnecting" | "failed",
+      meta: { reconnected: boolean; hadPriorConnection: boolean },
+    ) => void;
+    act(() => {
+      onStatus("connected", { reconnected: false, hadPriorConnection: false });
+    });
+    const calls = h.load.mock.calls.length;
+    await act(async () => { await vi.advanceTimersByTimeAsync(healthyMs - 1); });
+    expect(h.load).toHaveBeenCalledTimes(calls);
+    await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+    expect(h.load).toHaveBeenCalledTimes(calls + 1);
+
+    // Degrade to reconnecting -> immediately shifts back to fast degraded interval
+    act(() => {
+      onStatus("reconnecting", { reconnected: false, hadPriorConnection: true });
+    });
+    // Subsequent reconnect triggers an immediate reconciliation read
+    act(() => {
+      onStatus("connected", { reconnected: true, hadPriorConnection: true });
+    });
+    await flush();
+    expect(h.load).toHaveBeenCalledTimes(calls + 2);
+  });
+
+  it("reconciles on browser online and visibility return, and drops to degraded cadence while offline", async () => {
+    const h = draw(); await flush();
+    const onStatus = mocks.subscribe.mock.calls.at(-1)![3] as (
+      state: "connecting" | "connected" | "reconnecting" | "failed",
+      meta: { reconnected: boolean; hadPriorConnection: boolean },
+    ) => void;
+    act(() => {
+      onStatus("connected", { reconnected: false, hadPriorConnection: false });
+    });
+    expect(h.load).toHaveBeenCalledTimes(1);
+
+    // Go offline -> shifts from 45s healthy to 15s degraded interval for en_route
+    act(() => { window.dispatchEvent(new Event("offline")); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(15_000); });
+    expect(h.load).toHaveBeenCalledTimes(2);
+
+    // Return online -> immediate reconciliation read
+    act(() => { window.dispatchEvent(new Event("online")); });
+    await flush();
+    expect(h.load).toHaveBeenCalledTimes(3);
+  });
+
+  it("queues a readiness reconciliation when SUBSCRIBED arrives while initial fetch is in flight", async () => {
+    const first = deferred();
+    const h = draw(vi.fn().mockReturnValueOnce(first.promise).mockResolvedValue(undefined));
+    await flush();
+    expect(h.load).toHaveBeenCalledTimes(1);
+    const onStatus = mocks.subscribe.mock.calls.at(-1)![3] as (
+      state: "connecting" | "connected" | "reconnecting" | "failed",
+      meta: { reconnected: boolean; hadPriorConnection: boolean },
+    ) => void;
+    // SUBSCRIBED arrives while initial read is still in flight
+    act(() => {
+      onStatus("connected", { reconnected: false, hadPriorConnection: false });
+    });
+    expect(h.load).toHaveBeenCalledTimes(1);
+    await act(async () => { first.resolve(); });
+    // Follow-up reconciliation ran once initial read settled
+    expect(h.load).toHaveBeenCalledTimes(2);
   });
 
   it("does not reload or resubscribe when a same-status snapshot is replaced", async () => {
@@ -65,13 +137,32 @@ describe("job poll recovery", () => {
     expect(h.load).toHaveBeenCalledTimes(2);
   });
 
-  it("catches a read failure and retries at the next interval", async () => {
-    const h = draw(vi.fn().mockRejectedValueOnce(new Error("Request timed out"))
-      .mockResolvedValue(undefined));
+  it("catches read failures, applies bounded exponential backoff, and resets cadence after recovery", async () => {
+    const h = draw(
+      vi.fn()
+        .mockRejectedValueOnce(new Error("Request timed out"))
+        .mockRejectedValueOnce(new Error("Request timed out"))
+        .mockResolvedValue(undefined),
+      0,
+    );
     await flush();
     expect(h.setErr).toHaveBeenCalledWith("Request timed out");
-    await act(async () => { await vi.advanceTimersByTimeAsync(15_000); });
+
+    // 1st failure on en_route (base 15s) -> backs off to 30s (15s * 2^1)
+    await act(async () => { await vi.advanceTimersByTimeAsync(29_999); });
+    expect(h.load).toHaveBeenCalledTimes(1);
+    await act(async () => { await vi.advanceTimersByTimeAsync(1); });
     expect(h.load).toHaveBeenCalledTimes(2);
+
+    // 2nd failure -> backs off to 60s (15s * 2^2, capped at 60s)
+    await act(async () => { await vi.advanceTimersByTimeAsync(59_999); });
+    expect(h.load).toHaveBeenCalledTimes(2);
+    await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+    expect(h.load).toHaveBeenCalledTimes(3);
+
+    // 3rd call succeeded -> backoff resets to 15s base
+    await act(async () => { await vi.advanceTimersByTimeAsync(15_000); });
+    expect(h.load).toHaveBeenCalledTimes(4);
   });
 
   it("does not run a queued realtime follow-up after unmount", async () => {

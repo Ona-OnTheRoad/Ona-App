@@ -17,7 +17,7 @@ interface Args {
   router: ReturnType<typeof useRouter>;
   accountType: ReturnType<typeof useApp>["accountType"];
   backendUserId: ReturnType<typeof useApp>["backendUserId"];
-  load: (trigger?: JobTrigger) => Promise<void>;
+  load: (trigger?: JobTrigger) => Promise<unknown>;
   s: JobFlowState;
 }
 
@@ -32,20 +32,14 @@ export function useJobGuards({
 }: Args) {
   const { job, err, setErr, busy } = s;
   // Stale-tab reconcile: while a live negotiation screen is open, re-verify
-  // against the server periodically and on refocus. A cancelled/expired job
-  // must never keep showing live negotiation controls from an old copy.
+  // against the server on refocus. Periodic reconciliation is managed by
+  // useJobPoll's adaptive cadence (8s degraded / 30s healthy).
   useEffect(() => {
     if (job?.status !== "negotiating") return;
-    const onInterval = () => void load("interval");
     const onFocus = () => void load("focus");
-    const onVisibility = () => void load("visibility");
-    const iv = window.setInterval(onInterval, 20_000);
     window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", onVisibility);
     return () => {
-      window.clearInterval(iv);
       window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [job?.status, load]);
 

@@ -1,0 +1,91 @@
+{
+  "feature": "live-updates-phase3-adaptive-polling",
+  "baselineCommit": "5ddaf5e45d708bee7127913d7a4917efff91f061",
+  "reviewedCommit": null,
+  "status": "implemented-local-gates-pass-review-and-live-evidence-pending",
+  "criteria": [
+    {
+      "id": "P1",
+      "expectation": "Shared job subscription registry tracks and exposes connecting, connected, reconnecting, and failed states across consumers; ignores retired generations; preserves public backendSubscribeJobs compatibility",
+      "verification": "Unit and integration tests in shared-job-subscriptions.test.tsx",
+      "status": "pass",
+      "evidence": [
+        "shared-job-subscriptions.test.tsx: verifies failed before connect, initial connected, late-joining consumer receiving current state, reconnecting on TIMED_OUT/CHANNEL_ERROR after prior connection, reconnected: true on subsequent SUBSCRIBED, and status-listener error isolation."
+      ]
+    },
+    {
+      "id": "P2",
+      "expectation": "Active job polling uses fast baseline cadence before SUBSCRIBED or when degraded/offline, and shifts to slower safety reconciliation cadence once SUBSCRIBED and online",
+      "verification": "Adaptive interval unit tests and useJobPoll fake-timer integration tests",
+      "status": "pass",
+      "evidence": [
+        "adaptive-poll.test.ts and job-poll-recovery.test.tsx: verifies 1s/8s/15s/45s/60s before SUBSCRIBED and 10s/30s/45s/120s/180s once SUBSCRIBED, plus immediate fallback when degraded or offline."
+      ]
+    },
+    {
+      "id": "P3",
+      "expectation": "Consecutive read failures apply bounded exponential backoff with optional jitter without overlapping in-flight reads, and reset to base cadence after recovery",
+      "verification": "Backoff/jitter unit tests in adaptive-poll.test.ts and failure-recovery tests in job-poll-recovery.test.tsx",
+      "status": "pass",
+      "evidence": [
+        "adaptive-poll.test.ts: verifies exponential backoff ceilings and symmetric jitter bounds. job-poll-recovery.test.tsx: verifies 15s -> 30s -> 60s failure backoff on en_route and reset to 15s base after a successful read."
+      ]
+    },
+    {
+      "id": "P4",
+      "expectation": "Subscription readiness (post-initial-fetch SUBSCRIBED), reconnects, browser online events, and tab visibility transitions trigger coordinated reconciliation reads without duplicate bursts",
+      "verification": "useJobPoll and useCloudRealtime integration tests",
+      "status": "pass",
+      "evidence": [
+        "job-poll-recovery.test.tsx: verifies reconnect reconciliation, mid-initial-fetch SUBSCRIBED readiness follow-up, and online/offline transitions. cloud-job-subscription-lifecycle.test.tsx: verifies cloud-store reconnect and online reconciliation."
+      ]
+    },
+    {
+      "id": "P5",
+      "expectation": "Visual countdowns remain driven by authoritative server deadlines locally while healthy pairing/negotiation network polling slows down, and terminal jobs avoid rapid polling",
+      "verification": "Countdown and terminal-status polling tests",
+      "status": "pass",
+      "evidence": [
+        "CountdownTimer and useExactCountdown remain unchanged and driven by server pairingDeadline / negotiateEndsAt; cancelled/expired terminal statuses slow to 180s when realtime is healthy."
+      ]
+    },
+    {
+      "id": "P6",
+      "expectation": "Hidden-tab pause, Phase 2A/2B single-flight and scope guards, pro incoming-card rules, and protected files remain intact; lint, typecheck, test suite, and build checks pass",
+      "verification": "Repository gates (npm run lint, npm run typecheck, npm run test) and diff audit",
+      "status": "pass",
+      "evidence": [
+        "175 test files / 1,717 tests passed; npm run typecheck passed; npm run lint passed with 0 errors; git diff --check passed; no protected files modified."
+      ]
+    },
+    {
+      "id": "L1",
+      "expectation": "Authenticated browser smoke verifies live subscription readiness, disconnect/reconnect recovery, and offline/online reconciliation",
+      "verification": "Authenticated browser session on localhost/preview",
+      "status": "pending",
+      "evidence": [
+        "Pending authenticated browser reconnect and offline/online verification."
+      ]
+    },
+    {
+      "id": "L2",
+      "expectation": "Representative Phase 1 baseline captures, numerical targets, and hosted deployment behavior recorded separately from local tests",
+      "verification": "Hosted environment and browser capture procedure",
+      "status": "pending",
+      "evidence": [
+        "Pending representative baseline capture and hosted rollout verification."
+      ]
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent human review against the implementation commit.",
+      "Phase 2B R4 composite revision ordering for related profile/call-out fields remains separate work.",
+      "Phase 4 browser-triggered maintenance reduction remains separate work after hosted scheduler verification."
+    ],
+    "external": [
+      "Authenticated browser reconnect, offline/online, and slow-network smoke checks.",
+      "Phase 1 representative captures, target agreement, and hosted deployment verification."
+    ]
+  }
+}
