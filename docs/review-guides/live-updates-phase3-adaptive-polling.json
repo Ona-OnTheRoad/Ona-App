@@ -1,6 +1,7 @@
 {
   "feature": "live-updates-phase3-adaptive-polling",
   "baselineCommit": "5ddaf5e45d708bee7127913d7a4917efff91f061",
+  "codeEvidenceCommit": "35e09cb7ab90b75af1e2034c52e6c3dbfc4e86c8",
   "reviewedCommit": null,
   "status": "implemented-local-gates-pass-review-and-live-evidence-pending",
   "criteria": [
