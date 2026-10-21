@@ -23,7 +23,7 @@ export function useRequestDetail(id: string) {
   const load = useCallback(async () => {
     if (!id) return;
     setLoading(true);
-    const res = await apiGetJob(id);
+    const res = await apiGetJob(id, { source: "request-detail", trigger: "initial" });
     if (!res.ok) {
       if (res.message === "Job not found") {
         router.replace(accountType === "professional" ? "/jobs" : "/");

@@ -1,3 +1,4 @@
+import type { JobTrigger } from "@/lib/jobs/diagnostics/types";
 import { useEffect } from "react";
 import type { useRouter } from "next/navigation";
 import {
@@ -16,7 +17,7 @@ interface Args {
   router: ReturnType<typeof useRouter>;
   accountType: ReturnType<typeof useApp>["accountType"];
   backendUserId: ReturnType<typeof useApp>["backendUserId"];
-  load: () => Promise<void>;
+  load: (trigger?: JobTrigger) => Promise<unknown>;
   s: JobFlowState;
 }
 
@@ -31,18 +32,14 @@ export function useJobGuards({
 }: Args) {
   const { job, err, setErr, busy } = s;
   // Stale-tab reconcile: while a live negotiation screen is open, re-verify
-  // against the server periodically and on refocus. A cancelled/expired job
-  // must never keep showing live negotiation controls from an old copy.
+  // against the server on refocus. Periodic reconciliation is managed by
+  // useJobPoll's adaptive cadence (8s degraded / 30s healthy).
   useEffect(() => {
     if (job?.status !== "negotiating") return;
-    const reconcile = () => void load();
-    const iv = window.setInterval(reconcile, 20_000);
-    window.addEventListener("focus", reconcile);
-    document.addEventListener("visibilitychange", reconcile);
+    const onFocus = () => void load("focus");
+    window.addEventListener("focus", onFocus);
     return () => {
-      window.clearInterval(iv);
-      window.removeEventListener("focus", reconcile);
-      document.removeEventListener("visibilitychange", reconcile);
+      window.removeEventListener("focus", onFocus);
     };
   }, [job?.status, load]);
 

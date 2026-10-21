@@ -82,12 +82,16 @@ export function useJobFlowController({
   });
   const { commitJob } = useJobBootstrap({
     jobId,
+    backendUserId,
+    accountType,
     authReady,
     isAuthenticated,
     s,
   });
-  const { load } = useJobLoad({
+  const { load, lastOutcomeRef } = useJobLoad({
     jobId,
+    backendUserId,
+    isAuthenticated,
     router,
     accountType,
     notifRef,
@@ -103,6 +107,7 @@ export function useJobFlowController({
     isAuthenticated,
     actorId,
     load,
+    lastOutcomeRef,
     setErr: s.setErr,
   });
   useNearbyLiveCount(job, viewer, s.setNearbyLiveCount);

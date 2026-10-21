@@ -1,0 +1,78 @@
+{
+  "feature": "live-updates-phase2a-shared-subscriptions",
+  "baselineCommit": "9cfe4db25afad8910ebe0b44f3b4e90fbc0e57ea",
+  "reviewedCommit": "1e100835734e5f19b9fb5a5235941f7323b8446e",
+  "status": "implementation-local-checks-live-evidence-pending",
+  "criteria": [
+    {
+      "id": "S1",
+      "expectation": "Same user and Supabase client share exactly one physical channel with existing filters",
+      "verification": "Registry and public API tests",
+      "status": "pass",
+      "evidence": [
+        "shared-job-subscriptions.test.tsx: four consumers share one channel; exact existing user filters verified"
+      ]
+    },
+    {
+      "id": "S2",
+      "expectation": "Every live listener receives events and a throwing listener does not block others",
+      "verification": "Payload dispatch and error isolation tests",
+      "status": "pass",
+      "evidence": [
+        "Payload/null delivery and throwing-listener isolation tested; membership changes during dispatch tested"
+      ]
+    },
+    {
+      "id": "S3",
+      "expectation": "Cleanup is idempotent; only last removal closes channel; removed generations cannot deliver",
+      "verification": "Lifecycle and late-event tests",
+      "status": "pass",
+      "evidence": [
+        "Idempotent/final cleanup, resubscribe and late event/status suppression tested; failed setup/removal covered"
+      ]
+    },
+    {
+      "id": "S4",
+      "expectation": "Users and client instances remain isolated across navigation/account changes",
+      "verification": "Registry isolation and caller cleanup regression tests",
+      "status": "pass",
+      "evidence": [
+        "Client/user isolation and Strict Mode/account/unmount harness passed; actual cloud hook sign-out/role/account debounce cleanup tests passed"
+      ]
+    },
+    {
+      "id": "S5",
+      "expectation": "Public local function export and default-off diagnostics remain compatible; physical/consumer attribution is explicit",
+      "verification": "Public API import and diagnostics tests",
+      "status": "pass",
+      "evidence": [
+        "Tests import actual app-api local function; physical subscription/shared-jobs separated from subscription-consumer/source; default-off and event-to-read diagnostics tests passed"
+      ]
+    },
+    {
+      "id": "S6",
+      "expectation": "Polling, snapshot loading, auth and financial rules remain unchanged; repository gates pass",
+      "verification": "Diff review, lint, typecheck, tests and build",
+      "status": "pass",
+      "evidence": [
+        "Full suite 1621 tests / 167 files; typecheck; lint 0 errors / 139 warnings; server boundaries; whitespace and webpack production build passed. Local Turbopack worker-port restriction; CI verification pending."
+      ]
+    },
+    {
+      "id": "L1",
+      "expectation": "Authenticated browser navigation/account-switch/reconnect behavior verified separately",
+      "verification": "Browser smoke and hosted inspection",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Default-bundler CI verification and independent human review pending"
+    ],
+    "external": [
+      "Authenticated browser lifecycle smoke, hosted subscription/RLS verification and Phase 1 representative baseline/target agreement pending"
+    ]
+  },
+  "reviewScope": "Local code/test evidence snapshot; independent human review and browser/hosted checks remain pending"
+}

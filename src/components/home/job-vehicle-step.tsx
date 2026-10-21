@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
-import { Car, ChevronRight, Plus } from "lucide-react";
+import { Car, ChevronRight } from "lucide-react";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { OnaFlowHeader } from "@/components/ui/ona-flow-header";
@@ -13,6 +13,7 @@ import {
 } from "@/components/home/job-vehicle-helpers";
 import type { MotoristVehicle } from "@/lib/types";
 import { useFeedbackToast } from "@/lib/use-feedback-toast";
+import { OnaAddPill } from "@/components/ui/ona-add-pill";
 import { cn } from "@/lib/utils";
 
 export { canUseVehicleLabel, formatVehicleLabel, profileVehiclesOf };
@@ -190,18 +191,15 @@ export function JobVehicleStep({
           </button>
         );
       })}
-      <button
-        type="button"
+      <OnaAddPill
         onClick={() => {
           setManual(true);
           setSaveError(null);
           onChange("");
         }}
-        className="mx-auto mt-1 flex min-h-11 items-center gap-1.5 rounded-full border border-ona-border bg-ona-surface px-4 text-[13px] font-semibold text-ona-ink"
       >
-        <Plus className="h-4 w-4" aria-hidden />
         Enter another vehicle
-      </button>
+      </OnaAddPill>
     </div>
   );
 

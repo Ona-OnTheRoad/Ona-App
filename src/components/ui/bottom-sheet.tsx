@@ -115,6 +115,9 @@ export function BottomSheet({
     requestAnimationFrame(() => {
       sheet.style.transition = SPRING;
       sheet.style.transform = "translate3d(0, 0, 0)";
+      // Move focus into the dialog for keyboard/screen-reader users without letting
+      // the browser scroll anything to reveal it mid-slide.
+      sheet.focus({ preventScroll: true });
       if (scrimRef.current) {
         scrimRef.current.style.transition = "opacity 0.35s ease";
         scrimRef.current.style.opacity = "1";
@@ -196,9 +199,10 @@ export function BottomSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy}
+        tabIndex={-1}
         data-no-theme-toggle
         className={cn(
-          "relative z-[1] flex w-full flex-col overflow-hidden",
+          "relative z-[1] flex w-full flex-col overflow-hidden outline-none",
           "rounded-t-[14px] pb-[max(0.5rem,env(safe-area-inset-bottom))]",
           className,
         )}

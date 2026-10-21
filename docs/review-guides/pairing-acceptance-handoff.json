@@ -1,0 +1,117 @@
+{
+  "id": "pairing-acceptance-handoff",
+  "reviewedCommit": null,
+  "criteria": [
+    {
+      "id": "open",
+      "expectation": "Open reservation and review transition are atomic, use the latest locked state, and replay without duplicate reservation or timer reset",
+      "verification": "Focused hook/server tests, PostgreSQL fixture and source audit",
+      "affectedAreas": [
+        "src/components/home/incoming-job-popup/",
+        "src/lib/server/pairing/",
+        "supabase/migrations/20261019_082_atomic_pairing_open.sql"
+      ],
+      "status": "passed-local",
+      "evidence": [
+        "Uncommitted main-checkout implementation; full Vitest 1,487 tests / 141 files passed (2026-10-19), typecheck passed, lint 0 errors / 145 warnings.",
+        "Real PostgreSQL fixture passed: concurrent Open, classification/surface lock contention, rollback, cancellation/ownership, replay and permissions.",
+        "Incoming hook regressions cover delayed Open/Confirm, returned and thrown Open failures, visible confirmation error, unconfirmed response and duplicate tap; footer readiness regressions passed.",
+        "Configured Supabase: migration 082 applied, anon/authenticated execute denied and service_role allowed. Authenticated localhost smoke passed concurrent Open (one reservation), Confirm replay (same deadline), first NGN 5,000 offer visible to customer, realtime 7 customer / 5 pro events, sweep 200, unpaid test cancelled. Evidence: /private/tmp/ona-pairing-acceptance-live-evidence.json."
+      ]
+    },
+    {
+      "id": "shared",
+      "expectation": "Automatic and tap Open await one promise; returned failures and thrown errors release it for a real retry",
+      "verification": "Focused hook/server tests, PostgreSQL fixture and source audit",
+      "affectedAreas": [
+        "src/components/home/incoming-job-popup/",
+        "src/lib/server/pairing/",
+        "supabase/migrations/20261019_082_atomic_pairing_open.sql"
+      ],
+      "status": "passed-local",
+      "evidence": [
+        "Uncommitted main-checkout implementation; full Vitest 1,487 tests / 141 files passed (2026-10-19), typecheck passed, lint 0 errors / 145 warnings.",
+        "Real PostgreSQL fixture passed: concurrent Open, classification/surface lock contention, rollback, cancellation/ownership, replay and permissions.",
+        "Incoming hook regressions cover delayed Open/Confirm, returned and thrown Open failures, visible confirmation error, unconfirmed response and duplicate tap; footer readiness regressions passed.",
+        "Configured Supabase: migration 082 applied, anon/authenticated execute denied and service_role allowed. Authenticated localhost smoke passed concurrent Open (one reservation), Confirm replay (same deadline), first NGN 5,000 offer visible to customer, realtime 7 customer / 5 pro events, sweep 200, unpaid test cancelled. Evidence: /private/tmp/ona-pairing-acceptance-live-evidence.json."
+      ]
+    },
+    {
+      "id": "confirm",
+      "expectation": "Card/error remains visible and navigation waits for server-confirmed negotiation; duplicate tap does not double-confirm",
+      "verification": "Focused hook/server tests, PostgreSQL fixture and source audit",
+      "affectedAreas": [
+        "src/components/home/incoming-job-popup/",
+        "src/lib/server/pairing/",
+        "supabase/migrations/20261019_082_atomic_pairing_open.sql"
+      ],
+      "status": "passed-local",
+      "evidence": [
+        "Uncommitted main-checkout implementation; full Vitest 1,487 tests / 141 files passed (2026-10-19), typecheck passed, lint 0 errors / 145 warnings.",
+        "Real PostgreSQL fixture passed: concurrent Open, classification/surface lock contention, rollback, cancellation/ownership, replay and permissions.",
+        "Incoming hook regressions cover delayed Open/Confirm, returned and thrown Open failures, visible confirmation error, unconfirmed response and duplicate tap; footer readiness regressions passed.",
+        "Configured Supabase: migration 082 applied, anon/authenticated execute denied and service_role allowed. Authenticated localhost smoke passed concurrent Open (one reservation), Confirm replay (same deadline), first NGN 5,000 offer visible to customer, realtime 7 customer / 5 pro events, sweep 200, unpaid test cancelled. Evidence: /private/tmp/ona-pairing-acceptance-live-evidence.json."
+      ]
+    },
+    {
+      "id": "offers",
+      "expectation": "Labour offers and acceptance unavailable before real negotiation readiness; first offer works after confirmation",
+      "verification": "Focused hook/server tests, PostgreSQL fixture and source audit",
+      "affectedAreas": [
+        "src/components/home/incoming-job-popup/",
+        "src/lib/server/pairing/",
+        "supabase/migrations/20261019_082_atomic_pairing_open.sql"
+      ],
+      "status": "passed-local",
+      "evidence": [
+        "Uncommitted main-checkout implementation; full Vitest 1,487 tests / 141 files passed (2026-10-19), typecheck passed, lint 0 errors / 145 warnings.",
+        "Real PostgreSQL fixture passed: concurrent Open, classification/surface lock contention, rollback, cancellation/ownership, replay and permissions.",
+        "Incoming hook regressions cover delayed Open/Confirm, returned and thrown Open failures, visible confirmation error, unconfirmed response and duplicate tap; footer readiness regressions passed.",
+        "Configured Supabase: migration 082 applied, anon/authenticated execute denied and service_role allowed. Authenticated localhost smoke passed concurrent Open (one reservation), Confirm replay (same deadline), first NGN 5,000 offer visible to customer, realtime 7 customer / 5 pro events, sweep 200, unpaid test cancelled. Evidence: /private/tmp/ona-pairing-acceptance-live-evidence.json."
+      ]
+    },
+    {
+      "id": "guards",
+      "expectation": "Wrong pro, cancellation and assignment winners preserved; 144s/20min/windows/prices unchanged",
+      "verification": "Focused hook/server tests, PostgreSQL fixture and source audit",
+      "affectedAreas": [
+        "src/components/home/incoming-job-popup/",
+        "src/lib/server/pairing/",
+        "supabase/migrations/20261019_082_atomic_pairing_open.sql"
+      ],
+      "status": "passed-local",
+      "evidence": [
+        "Uncommitted main-checkout implementation; full Vitest 1,487 tests / 141 files passed (2026-10-19), typecheck passed, lint 0 errors / 145 warnings.",
+        "Real PostgreSQL fixture passed: concurrent Open, classification/surface lock contention, rollback, cancellation/ownership, replay and permissions.",
+        "Incoming hook regressions cover delayed Open/Confirm, returned and thrown Open failures, visible confirmation error, unconfirmed response and duplicate tap; footer readiness regressions passed.",
+        "Configured Supabase: migration 082 applied, anon/authenticated execute denied and service_role allowed. Authenticated localhost smoke passed concurrent Open (one reservation), Confirm replay (same deadline), first NGN 5,000 offer visible to customer, realtime 7 customer / 5 pro events, sweep 200, unpaid test cancelled. Evidence: /private/tmp/ona-pairing-acceptance-live-evidence.json."
+      ]
+    },
+    {
+      "id": "verification",
+      "expectation": "PostgreSQL contention/rollback/permissions, full tests/typecheck/lint, and separately recorded database smoke",
+      "verification": "Focused hook/server tests, PostgreSQL fixture and source audit",
+      "affectedAreas": [
+        "src/components/home/incoming-job-popup/",
+        "src/lib/server/pairing/",
+        "supabase/migrations/20261019_082_atomic_pairing_open.sql"
+      ],
+      "status": "passed-local",
+      "evidence": [
+        "Uncommitted main-checkout implementation; full Vitest 1,487 tests / 141 files passed (2026-10-19), typecheck passed, lint 0 errors / 145 warnings.",
+        "Real PostgreSQL fixture passed: concurrent Open, classification/surface lock contention, rollback, cancellation/ownership, replay and permissions.",
+        "Incoming hook regressions cover delayed Open/Confirm, returned and thrown Open failures, visible confirmation error, unconfirmed response and duplicate tap; footer readiness regressions passed.",
+        "Configured Supabase: migration 082 applied, anon/authenticated execute denied and service_role allowed. Authenticated localhost smoke passed concurrent Open (one reservation), Confirm replay (same deadline), first NGN 5,000 offer visible to customer, realtime 7 customer / 5 pro events, sweep 200, unpaid test cancelled. Evidence: /private/tmp/ona-pairing-acceptance-live-evidence.json."
+      ]
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent review against a committed revision pending; changes remain uncommitted."
+    ],
+    "external": [
+      "Configured database and authenticated localhost first-offer smoke completed; no hosted deployment claimed.",
+      "Direct browser visual/click smoke unavailable; full-history Supabase replay and deployed-host verification pending."
+    ]
+  }
+}

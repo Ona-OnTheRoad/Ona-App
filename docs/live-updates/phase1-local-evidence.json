@@ -1,0 +1,25 @@
+{
+  "evidenceType": "synthetic-unit-scenario-not-live-baseline",
+  "baselineCommit": "70cbae84471201e9c5cac60a9fc307732de899c1",
+  "implementationCommit": null,
+  "scenario": "controlled trip polling hook with mocked HTTP and realtime",
+  "elapsedFixtureMs": 30000,
+  "requestsWithDiagnosticsOff": 4,
+  "requestsWithDiagnosticsOn": 4,
+  "onRequestTriggers": {
+    "initial": 1,
+    "interval": 2,
+    "realtime": 1
+  },
+  "timerCountParity": true,
+  "coverage": [
+    "same-status snapshot replacements do not add reads",
+    "source/trigger attribution",
+    "realtime event-to-response proxy",
+    "no identifiers in capture"
+  ],
+  "limitations": [
+    "Not real browser/network/database measurements",
+    "No production performance, budget, scheduler or end-to-end revision/render claim"
+  ]
+}

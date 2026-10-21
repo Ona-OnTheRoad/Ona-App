@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { recordJobDiagnostic } from "@/lib/jobs/diagnostics/collector";
+import type { JobTrigger } from "@/lib/jobs/diagnostics/types";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { apiListJobs, apiPairingSweep } from "@/lib/jobs/client";
 import { windowStillOpen } from "@/lib/jobs/deadline";
 import { isPayoutPendingSettlement } from "@/lib/jobs/constants";
@@ -18,16 +20,25 @@ export function useDashboardJobs(backendUserId: string | null | undefined) {
   const [jobsLoading, setJobsLoading] = useState(true);
   const [jobsCompletedCount, setJobsCompletedCount] = useState(0);
 
-  const loadJobs = useCallback(async () => {
+  const activeUser = useRef(backendUserId);
+  const flight = useRef<{ userId: string; promise: Promise<void>; pending: boolean; trigger: JobTrigger } | null>(null);
+  useEffect(() => {
+    activeUser.current = backendUserId;
+    return () => { activeUser.current = null; };
+  }, [backendUserId]);
+
+  const readJobs = useCallback(async (trigger: JobTrigger = "unknown") => {
     if (!backendUserId) {
       setIncoming([]);
       setOngoing([]);
       setRecent([]);
+      setPayoutProcessing([]);
       setJobsCompletedCount(0);
       setJobsLoading(false);
       return;
     }
-    const res = await apiListJobs(backendUserId, "repair_pro");
+    const res = await apiListJobs(backendUserId, "repair_pro", { diagnostic: { source: "dashboard", trigger } });
+    if (activeUser.current !== backendUserId) return;
     if (res.ok) {
       const mine = res.data.jobs.filter((j) => {
         if (j.repairProId !== backendUserId) return false;
@@ -89,20 +100,42 @@ export function useDashboardJobs(backendUserId: string | null | undefined) {
       setOngoing(active);
       setPayoutProcessing(payoutPending);
       setRecent(finished);
-    } else {
-      setIncoming([]);
-      setOngoing([]);
-      setRecent([]);
     }
-    setJobsLoading(false);
   }, [backendUserId]);
 
+  const loadJobs = useCallback((trigger: JobTrigger = "unknown"): Promise<void> => {
+    recordJobDiagnostic("trigger", "jobs", { source: "dashboard", trigger }, "ok");
+    if (!backendUserId) return readJobs();
+    if (flight.current?.userId === backendUserId) {
+      flight.current.pending = true;
+      flight.current.trigger = trigger;
+      recordJobDiagnostic("trigger", "jobs", { source: "dashboard", trigger }, "coalesced");
+      return flight.current.promise;
+    }
+    const request = { userId: backendUserId, promise: Promise.resolve(), pending: false, trigger };
+    request.promise = (async () => {
+      do {
+        request.pending = false;
+        try {
+          await readJobs(request.trigger);
+        } catch {
+          // Keep existing cards on timeout; later polls/realtime reconcile.
+        }
+      } while (request.pending && activeUser.current === backendUserId);
+    })().finally(() => {
+      if (flight.current === request) flight.current = null;
+      if (activeUser.current === backendUserId) setJobsLoading(false);
+    });
+    flight.current = request;
+    return request.promise;
+  }, [backendUserId, readJobs]);
+
   useEffect(() => {
-    void loadJobs();
+    void loadJobs("initial");
     // Realtime + IncomingJobPopup keep requests live; list is a soft refresh
     const t = window.setInterval(() => {
       if (typeof document !== "undefined" && document.hidden) return;
-      void loadJobs();
+      void loadJobs("interval");
     }, 240_000);
     return () => window.clearInterval(t);
   }, [loadJobs]);
@@ -120,9 +153,9 @@ export function useDashboardJobs(backendUserId: string | null | undefined) {
       if (schedule) return;
       schedule = window.setTimeout(() => {
         schedule = undefined;
-        void loadJobs();
+        void loadJobs("realtime");
       }, 150);
-    });
+    }, "dashboard");
     return () => {
       cancelled = true;
       if (schedule) window.clearTimeout(schedule);
@@ -150,7 +183,7 @@ export function useDashboardJobs(backendUserId: string | null | undefined) {
       if (expiredIds.length === 0) return;
       const gone = new Set(expiredIds);
       setIncoming((prev) => prev.filter((j) => !gone.has(j.id)));
-      void apiPairingSweep().catch(() => {
+      void apiPairingSweep({ source: "dashboard", trigger: "maintenance" }).catch(() => {
         /* sweep is best-effort next poll reconciles */
       });
     };

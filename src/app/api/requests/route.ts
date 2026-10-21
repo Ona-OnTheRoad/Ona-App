@@ -35,7 +35,7 @@ export async function GET(req: Request) {
     let q = sb
       .from("service_requests")
       .select(
-        "id, motorist_id, repair_pro_id, service_type, status, description, pickup_lat, pickup_lng, pickup_address, radius_km, created_at, updated_at",
+        "id, job_version, motorist_id, repair_pro_id, service_type, status, description, pickup_lat, pickup_lng, pickup_address, radius_km, created_at, updated_at",
       )
       .order("created_at", { ascending: false });
     // Pros only ever see jobs assigned to them. A broad "any open job"

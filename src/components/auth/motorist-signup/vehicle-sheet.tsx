@@ -37,7 +37,6 @@ export function VehicleSheet({
           {({ id }) => (
             <OnaSelect
               id={id}
-              autoFocus
               value={vs.draftVehicleType}
               onChange={(e) => vs.setDraftVehicleType(e.target.value)}
             >

@@ -13,8 +13,11 @@ export const MAP_LABEL_DARK = "#fff0f0";
 
 export const MAP_STYLE_REVISION = "map-theme-labels-v8";
 
-export const OSM_DARK_TILE_URL =
-  "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+/** Leaflet fallback tiles: Esri World Imagery (satellite). Attribution is required. */
+export const OSM_SATELLITE_TILE_URL =
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+export const OSM_SATELLITE_ATTRIBUTION =
+  "Tiles © Esri, Maxar, Earthstar Geographics";
 
 export const MAP_ROUTE_STROKE = "#FF6B35";
 

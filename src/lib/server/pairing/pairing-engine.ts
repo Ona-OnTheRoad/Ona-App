@@ -11,6 +11,8 @@ import "server-only";
  * See docs/SSPE_REFACTOR_PLAN.md §6.
  */
 
+import { openPairingRequest } from "./open-request";
+import { dispatchPairingOffer } from "./dispatch-offer";
 import { withSweepLease } from "@/lib/server/jobs/deadlines/sweep-lease";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
@@ -79,7 +81,7 @@ export type PairingResult =
       nextProId?: string | null;
       expired?: boolean;
     }
-  | { ok: false; error: string; status?: number };
+  | { ok: false; error: string; status?: number; code?: "dispatch_conflict" };
 
 type PairingRow = {
   id: string;
@@ -254,7 +256,8 @@ async function findCandidate(
     if (
       QUEUE_TERMINAL.has(status) ||
       status === "deferred" ||
-      status === "offered"
+      status === "offered" ||
+      status === "opened"
     ) {
       blocked.add(String(q.pro_id));
     }
@@ -419,64 +422,23 @@ async function dispatchCandidate(
   row: PairingRow,
   candidate: ProCandidate,
   remaining: number,
-  source: "pairing",
 ): Promise<PairingResult> {
-  const ts = nowIso();
-  const position = Number(row.queue_position) || 0;
-  const name = candidate.full_name || candidate.business_name || "Repair Pro";
-  const { error: qErr } = await sb.from("request_pairing_queue").upsert(
-    {
-      request_id: row.id,
-      pro_id: candidate.user_id,
-      position: position + 1,
-      source,
-      status: "offered",
-      offered_at: ts,
-      responded_at: null,
-      result_note: null,
-    },
-    { onConflict: "request_id,pro_id" },
-  );
-  if (qErr && !/duplicate|already exists/i.test(qErr.message)) {
-    return { ok: false, error: qErr.message, status: 500 };
+  const result = await dispatchPairingOffer(sb, {
+    jobId: row.id,
+    expectedVersion: Number(row.job_version ?? 0),
+    expectedStage: row.pairing_stage,
+    proId: candidate.user_id,
+    proName: candidate.full_name || candidate.business_name || "Repair Pro",
+    proPhoto: candidate.avatar_url || null,
+    remaining,
+  });
+  if (result === "unavailable") {
+    return { ok: false, error: "Could not atomically dispatch the request", status: 503 };
   }
-
-  const { data: dispatchRow, error } = await sb
-    .from("service_requests")
-    .update({
-      pairing_stage: "waiting_for_pro",
-      flow_status: "waiting_for_pro",
-      status: "requested",
-      // Deadline stays NULL until the request actually appears on the pro's
-      // screen (surface endpoint arms it exactly once) otherwise dispatch
-      // and surface both arm it and the shared timer rolls back to 144s.
-      pairing_deadline: null,
-      queue_position: position + 1,
-      remaining_candidates: remaining,
-      reservation_status: "none",
-      repair_pro_id: candidate.user_id,
-      repair_pro_name: name,
-      ...(candidate.avatar_url
-        ? { repair_pro_photo: candidate.avatar_url }
-        : {}),
-      updated_at: ts,
-      status_history: [
-        ...history(row),
-        {
-          status: "waiting_for_pro",
-          at: ts,
-          by: `pairing:${candidate.user_id}`,
-        },
-      ],
-    })
-    .eq("id", row.id)
-    .eq("job_version", Number(row.job_version ?? 0))
-    .eq("pairing_stage", row.pairing_stage)
-    .select("id")
-    .maybeSingle();
-
-  if (error) return { ok: false, error: error.message, status: 500 };
-  if (!dispatchRow) return { ok: true, noop: true, jobId: row.id };
+  if (result === "conflict") {
+    return { ok: false, error: "Request changed during dispatch", status: 409, code: "dispatch_conflict" };
+  }
+  if (result === "noop") return { ok: true, noop: true, jobId: row.id };
 
   await notifyPro(
     candidate.user_id,
@@ -502,6 +464,16 @@ async function dispatchCandidate(
  * - unique pool empty → expire immediately (Retry). No same-pro recycle.
  */
 export async function advancePairing(jobId: string): Promise<PairingResult> {
+  // Classification can update job_version during selection. Reload and reselect
+  // after a conflict; never reuse a stale candidate or leave a queue-only offer.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const result = await advancePairingOnce(jobId);
+    if (result.ok || result.code !== "dispatch_conflict") return result;
+  }
+  return { ok: false, error: "Request is changing; retry dispatch shortly", status: 409, code: "dispatch_conflict" };
+}
+
+async function advancePairingOnce(jobId: string): Promise<PairingResult> {
   if (!isSupabaseAdminConfigured()) {
     return { ok: false, error: "Supabase is not configured", status: 503 };
   }
@@ -509,7 +481,7 @@ export async function advancePairing(jobId: string): Promise<PairingResult> {
   const row = await loadPairingRow(sb, jobId, true);
   if (!row) return { ok: false, error: "Job not found", status: 404 };
   // Guard: never re-advance an already-assigned / negotiating job.
-  if (!PAIRING_STAGES.includes(row.pairing_stage as PairingStage)) {
+  if (row.repair_pro_id || !PAIRING_STAGES.includes(row.pairing_stage as PairingStage)) {
     return { ok: true, noop: true, jobId: row.id };
   }
 
@@ -533,7 +505,6 @@ export async function advancePairing(jobId: string): Promise<PairingResult> {
       row,
       found.candidate,
       found.remaining,
-      "pairing",
     );
   }
 
@@ -732,92 +703,10 @@ export async function openRequest(
   if (!isSupabaseAdminConfigured()) {
     return { ok: false, error: "Supabase is not configured", status: 503 };
   }
-  const sb = createServiceSupabase();
-  const row = await loadPairingRow(sb, jobId);
-  if (!row) return { ok: false, error: "Job not found", status: 404 };
-  if (currentPro(row) !== proId) {
-    return { ok: false, error: "Not assigned to this request", status: 403 };
-  }
-  if (
-    !["waiting_for_selected", "waiting_for_pro"].includes(
-      row.pairing_stage || "",
-    )
-  ) {
-    return {
-      ok: false,
-      error: "Request is not open for this action",
-      status: 409,
-    };
-  }
-  if (idempotencyKey && row.idempotency_key === idempotencyKey) {
-    return { ok: true, noop: true, jobId };
-  }
-
-  const stage: PairingStage =
-    row.pairing_stage === "waiting_for_selected"
-      ? "selected_review"
-      : "reserved";
-  const ts = nowIso();
-
-  // Keep the SAME pairing_deadline as the review window whenever it's still
-  // healthy (no visible jump when the pro opens) the ring/card count straight
-  // through. Only re-arm to a fresh 144s when the current window is unset or
-  // nearly spent, so the pro still gets a real review period.
-  const currentLeftMs = windowLeftMs(row.pairing_deadline);
-  const reviewDeadline =
-    currentLeftMs < OPEN_REARM_FLOOR_MS
-      ? deadlineIso()
-      : String(row.pairing_deadline);
-
-  const { error: resErr } = await sb.from("request_reservations").insert({
-    request_id: row.id,
-    pro_id: proId,
-    stage,
-    status: "active",
-    expires_at: reviewDeadline,
+  return openPairingRequest(createServiceSupabase(), {
+    jobId, proId, key: idempotencyKey,
+    windowMs: PAIRING_WINDOW_MS, rearmFloorMs: OPEN_REARM_FLOOR_MS,
   });
-  if (resErr) return { ok: false, error: resErr.message, status: 500 };
-
-  const patch: Record<string, unknown> = {
-    pairing_stage: stage,
-    flow_status: stage,
-    status: "requested",
-    pairing_deadline: reviewDeadline,
-    reservation_status: "active",
-    updated_at: ts,
-    status_history: [
-      ...history(row),
-      { status: stage, at: ts, by: `open:${proId}` },
-    ],
-  };
-  if (idempotencyKey) patch.idempotency_key = idempotencyKey;
-
-  const { data, error } = await sb
-    .from("service_requests")
-    .update(patch)
-    .eq("id", row.id)
-    .eq("job_version", Number(row.job_version ?? 0))
-    .eq("pairing_stage", row.pairing_stage)
-    .select("id");
-  if (error) return { ok: false, error: error.message, status: 500 };
-  // CAS matched 0 rows → the request moved while we opened (e.g. the sweep
-  // advanced past our deadline). Release the reservation we just inserted so
-  // it can never orphan an "active" slot (which blocks the next pro's open).
-  if (!data || data.length === 0) {
-    await sb
-      .from("request_reservations")
-      .update({
-        status: "cancelled",
-        released_at: ts,
-        released_by: "open_race",
-      })
-      .eq("request_id", row.id)
-      .eq("pro_id", proId)
-      .eq("status", "active");
-    return { ok: false, error: "Request moved on while opening", status: 409 };
-  }
-
-  return { ok: true, jobId: row.id, currentProId: proId };
 }
 
 /**
@@ -845,15 +734,17 @@ export async function confirmRequest(
   if (currentPro(row) !== proId) {
     return { ok: false, error: "Not assigned to this request", status: 403 };
   }
+  // A lost response can be retried after the successful transition. Never
+  // rearm the negotiation timer or repeat acceptance side effects on replay.
+  if (row.flow_status === "negotiating" && row.assignment_status === "assigned" && row.reservation_status === "confirmed") {
+    return { ok: true, noop: true, jobId, currentProId: proId };
+  }
   if (!["selected_review", "reserved"].includes(row.pairing_stage || "")) {
     return {
       ok: false,
       error: "Request is not awaiting confirmation",
       status: 409,
     };
-  }
-  if (idempotencyKey && row.idempotency_key === idempotencyKey) {
-    return { ok: true, noop: true, jobId };
   }
 
   const ts = nowIso();

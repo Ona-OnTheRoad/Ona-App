@@ -18,6 +18,7 @@ import {
 } from "@/lib/server/payments/escrow-store";
 import { initCharge } from "@/lib/server/payments/providers";
 import { bindJobCheckout, loadConfirmationPayment } from "@/lib/server/payments/confirmation-store";
+import { refreshCheckoutSnapshot } from "@/lib/server/payments/checkout-snapshot";
 import { confirmJobPayment } from "@/lib/server/payments/confirm-job-payment";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { createServiceSupabase } from "@/lib/supabase/server";
@@ -636,6 +637,14 @@ export async function startJobEscrowPayment(input: {
     calloutQuote =
       (await estimateCalloutQuote(job, calloutQuote)) ?? calloutQuote;
   }
+  // Call-out classification writes service_requests and advances its CAS token.
+  // Refresh after preparation, before creating a provider charge; only accept
+  // a still-agreed snapshot with the same obligation and checkout association.
+  const preparedJob = await refreshCheckoutSnapshot(job);
+  if (!preparedJob) {
+    return { error: "Job changed while preparing checkout. Check payment status before trying again." };
+  }
+  job = preparedJob;
   const pricing = buildCustomerChargeMajor(agreedMajor);
   const payable = composeCustomerPayableMajor(pricing.totalMajor, calloutQuote);
   const amountMinor = toMinorUnits(payable.totalMajor, currency);

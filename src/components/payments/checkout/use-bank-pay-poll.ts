@@ -36,7 +36,7 @@ export function useBankPayPoll(
             /* keep polling */
           }
         }
-        const res = await apiGetJob(jobId);
+        const res = await apiGetJob(jobId, { source: "checkout", trigger: "interval" });
         if (!res.ok || !res.data.job) return;
         const st = res.data.job.status;
         if (isBookedOrActiveStatus(st)) {

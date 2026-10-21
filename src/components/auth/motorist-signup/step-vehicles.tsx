@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Car, ChevronRight, Plus } from "lucide-react";
+import { Car, ChevronRight } from "lucide-react";
+import { OnaAddPill } from "@/components/ui/ona-add-pill";
 import { VehicleSheet } from "./vehicle-sheet";
 import type { MotoristVehiclesState } from "./use-motorist-vehicles";
 
@@ -48,17 +49,8 @@ export function StepVehicles({ v: vs }: { v: MotoristVehiclesState }) {
             </li>
           ))}
         </ul>
-      ) : (
-        <hr className="border-0 border-t border-ona-border" />
-      )}
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="mx-auto flex h-11 items-center gap-1.5 border-0 bg-transparent px-3 text-[13px] font-semibold text-ona-brand-ink"
-      >
-        <Plus className="h-4 w-4" strokeWidth={2.25} />
-        {addLabel}
-      </button>
+      ) : null}
+      <OnaAddPill onClick={() => setOpen(true)}>{addLabel}</OnaAddPill>
       <VehicleSheet
         open={open}
         v={vs}

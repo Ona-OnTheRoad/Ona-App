@@ -122,6 +122,7 @@ export interface RepairProRow {
 
 export interface ServiceRequestRow {
   id: string;
+  job_version?: number;
   motorist_id: string;
   repair_pro_id: string | null;
   service_type: ProServiceDb;

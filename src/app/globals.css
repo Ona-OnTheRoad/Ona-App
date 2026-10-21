@@ -70,9 +70,12 @@
   --o-overlay: rgba(17, 24, 39, 0.5);
 }
 
-.ona2 {
-  background-color: var(--o-bg);
-  color: var(--o-ink);
+/* In the base layer so utilities on the same element (bg-ona-dark, text-ona-on-dark) win. */
+@layer base {
+  .ona2 {
+    background-color: var(--o-bg);
+    color: var(--o-ink);
+  }
 }
 
 [data-theme="dark"] .ona2,
@@ -100,8 +103,10 @@
  * The light theme force-paints slate/black utilities in #ona-phone. Redesigned
  * screens read colour from tokens, so reset that for anything inside `.ona2`.
  */
-[data-theme="light"] #ona-phone .ona2 {
-  color: var(--o-ink);
+@layer base {
+  [data-theme="light"] #ona-phone .ona2 {
+    color: var(--o-ink);
+  }
 }
 
 /*
@@ -111,6 +116,10 @@
  */
 :root:root {
   --rfd-offset: 0.5rem;
+  /* track padding 0.25rem x2 + tab 2.75rem, plus the gap around the dock */
+  --rfd-height: calc(
+    3.25rem + var(--rfd-offset) * 2 + env(safe-area-inset-bottom, 0px)
+  );
 }
 html .rfd-bar,
 html [data-rfd-theme] {
@@ -126,6 +135,52 @@ html [data-rfd-theme] {
   --rfd-badge-bg: var(--o-danger);
   --rfd-font: var(--font-ona-sans), sans-serif;
 }
+/*
+ * The dock is frosted glass: no strip behind it. Page content scrolls underneath and
+ * shows through the blur (iOS tab-bar style).
+ */
+html .rfd-bar {
+  --rfd-bg: color-mix(in srgb, var(--o-surface) 58%, transparent);
+  --rfd-border: color-mix(in srgb, var(--o-surface) 60%, transparent);
+}
+html .rfd-track {
+  padding: 0.25rem;
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 8px 28px rgba(17, 24, 39, 0.14);
+}
+
+html .rfd-tab {
+  height: 2.75rem;
+  gap: 0;
+}
+html .rfd-label {
+  font-size: 10px;
+  line-height: 1.1;
+}
+
+/* Room for the dock at the end of page-level scrollers (their background runs under it). */
+#ona-phone {
+  --dock-space: 0px;
+}
+#ona-phone[data-dock="1"] {
+  --dock-space: var(--rfd-height);
+}
+#ona-phone[data-dock="1"]
+  .om-page-enter
+  > *
+  > :is(.overflow-y-auto, .overflow-auto)::after,
+#ona-phone[data-dock="1"]
+  .om-page-enter
+  > *
+  > *
+  > :is(.overflow-y-auto, .overflow-auto)::after {
+  content: "";
+  display: block;
+  flex-shrink: 0;
+  height: var(--dock-space);
+}
+
 html .rfd-overlay-wrap {
   inset: auto;
   left: var(--ona-phone-left, 0);
@@ -235,6 +290,9 @@ html[data-a11y-hc="1"] #ona-phone [class*="text-white/65"] {
   max-height: min(844px, calc(100dvh - 1.5rem)) !important;
   min-height: 0;
   overflow: hidden;
+  /* clip (unlike hidden) cannot be scrolled programmatically: focusing a field inside
+     an overlay that is still sliding in used to scroll the whole phone frame up. */
+  overflow: clip;
   /* Kill iOS/Android pull-to-refresh only on the app shell (not the whole browser) */
   overscroll-behavior: none;
   overscroll-behavior-y: none;

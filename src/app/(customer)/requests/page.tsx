@@ -1,4 +1,6 @@
 "use client";
+import type { JobTrigger } from "@/lib/jobs/diagnostics/types";
+
 
 /**
  * Requests Live help & dispatch.
@@ -69,7 +71,7 @@ export default function RequestsPage() {
   const muted = isLight ? "text-slate-700" : "text-white/75";
   const stage = isLight ? "bg-[#c8c9cd]" : "bg-black";
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (trigger: JobTrigger = "action") => {
     if (!backendUserId) {
       setJobs([]);
       setLoading(false);
@@ -77,11 +79,11 @@ export default function RequestsPage() {
     }
     try {
       const { apiExpireStaleBookedJobs } = await import("@/lib/jobs/client");
-      await apiExpireStaleBookedJobs();
+      await apiExpireStaleBookedJobs({ source: "requests-page", trigger: "maintenance" });
     } catch {
       /* ignore */
     }
-    const res = await apiListJobs(backendUserId, viewer);
+    const res = await apiListJobs(backendUserId, viewer, { diagnostic: { source: "requests-page", trigger } });
     if (!res.ok) {
       setErr(res.message);
       setLoading(false);
@@ -103,10 +105,10 @@ export default function RequestsPage() {
   }, [backendUserId, viewer]);
 
   useEffect(() => {
-    void load();
+    void load("initial");
     const t = window.setInterval(() => {
       if (document.hidden) return;
-      void load();
+      void load("interval");
     }, 180_000);
     return () => window.clearInterval(t);
   }, [load]);

@@ -2,11 +2,10 @@ import { useCallback, useEffect, useRef } from "react";
 import { isProService } from "@/lib/pro-service-id";
 import {
   backendFetchConversations,
-  backendFetchJobsForUser,
   backendFetchPros,
   isAppBackendOnline,
 } from "@/lib/supabase/app-api";
-import type { ServiceRequest } from "@/lib/types";
+import { useCloudJobs } from "./use-cloud-jobs";
 import type { SessionStateResult } from "./use-session-state";
 import type { MarketStateResult } from "./use-market-state";
 import type { ThemeAndProSheetResult } from "./use-theme-and-pro-sheet";
@@ -120,27 +119,7 @@ export function useCloudData(
     refreshCloudPros({ force: true });
   }, [refreshCloudPros]);
 
-  const refreshCloudJobs = useCallback(() => {
-    if (!isAppBackendOnline() || !backendUserId || !accountType) return;
-    void backendFetchJobsForUser(backendUserId, accountType)
-      .then((jobs) => {
-        if (jobs.length === 0) return;
-        setRequests((prev) => {
-          // Cheap signature avoid JSON.stringify of full job trees every poll
-          const sig = (list: ServiceRequest[]) =>
-            list
-              .map(
-                (j) =>
-                  `${j.id}:${j.status}:${j.createdAt}:${j.escrowStatus || ""}:${j.paymentReference || ""}:${j.negotiationStatus || ""}:${j.labourAgreedMajor ?? ""}`,
-              )
-              .join("|");
-          return sig(prev) === sig(jobs) ? prev : jobs;
-        });
-      })
-      .catch((e) => {
-        console.warn("[ona] refreshCloudJobs failed", e);
-      });
-  }, [backendUserId, accountType, setRequests]);
+  const refreshCloudJobs = useCloudJobs(session, market.requests, setRequests);
 
   const refreshCloudChats = useCallback(() => {
     if (!isAppBackendOnline() || !backendUserId || !accountType) return;

@@ -1,3 +1,4 @@
+import { isPersistedJobId } from "@/lib/jobs/persisted-job-id";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { isJobParty, requireUser } from "@/lib/server/auth-utils";
 import { getJob } from "@/lib/server/jobs/job-store";
@@ -18,6 +19,7 @@ export async function GET(
     const auth = await requireUser(req);
     if (!auth.ok) return auth.response;
     const { id } = await ctx.params;
+    if (!isPersistedJobId(id)) return apiFail("Invalid job ID", 400, "invalid_job_id");
     const job = await getJob(id);
     if (!job) return apiFail("Job not found", 404);
     if (!isJobParty(auth.userId, job)) {

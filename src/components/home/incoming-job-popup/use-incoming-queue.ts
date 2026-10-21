@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { useRouter } from "next/navigation";
 import { vibrateCallPattern } from "@/lib/app-notify";
-import { apiDeferJob, apiGetJob, apiTransition } from "@/lib/jobs/client";
+import { apiDeferJob, apiGetJob } from "@/lib/jobs/client";
 import {
   canSurfaceIncomingJob,
   INCOMING_POPUP_VISIBLE_SEC,
@@ -12,7 +12,7 @@ import type { JobRecord } from "@/lib/jobs/types";
 import { enablePushNotifications } from "@/lib/push/client";
 import { playAppSound, unlockAudio } from "@/lib/sound-tone";
 import { MAX_VISIBLE_INCOMING } from "./constants";
-import { idemFor } from "./helpers";
+import { ensureIncomingRequestOpen } from "./open-request";
 import { showOsNotificationOnce } from "./os-notification";
 import type { IncomingState } from "./use-incoming-state";
 import type { RemoveJob, RemoveJobOpts } from "./types";
@@ -31,7 +31,7 @@ export function useIncomingQueue({
 }: UseIncomingQueueParams) {
   const {
     osPushed,
-    openAttemptedRef,
+    pendingOpensRef,
     visibleJobsRef,
     queueRef,
     surfacedAtRef,
@@ -57,7 +57,7 @@ export function useIncomingQueue({
    * this pro). By the time the pro taps "I can fix this" the reservation is
    * already held server-side, so the tap only needs CONFIRM. Uses the same
    * idempotency key as the tap's OPEN so a double call is a server noop.
-   * Best-effort: failure is silent the tap path still runs OPEN itself.
+   * Best-effort: the tap awaits the same result, or retries after a failure.
    */
   const ensureOpened = useCallback(
     (j: JobRecord) => {
@@ -66,20 +66,10 @@ export function useIncomingQueue({
       const stage = j.pairingStage ?? "";
       const needsOpen =
         stage === "waiting_for_selected" || stage === "waiting_for_pro";
-      if (!needsOpen || openAttemptedRef.current.has(j.id)) return;
-      openAttemptedRef.current.add(j.id);
-      void apiTransition({
-        jobId: j.id,
-        event: "OPEN",
-        actor: "repair_pro",
-        actorId: backendUserId,
-        idempotencyKey: idemFor(j, backendUserId, "OPEN"),
-      }).catch(() => {
-        // Allow a later retry from the tap path
-        openAttemptedRef.current.delete(j.id);
-      });
+      if (!needsOpen) return;
+      void ensureIncomingRequestOpen(j, backendUserId, pendingOpensRef.current);
     },
-    [backendUserId, openAttemptedRef],
+    [backendUserId, pendingOpensRef],
   );
 
   /**
@@ -101,7 +91,7 @@ export function useIncomingQueue({
         Boolean(j.voiceNote?.url);
       if (!hasMedia) {
         try {
-          const res = await apiGetJob(j.id);
+          const res = await apiGetJob(j.id, { source: "incoming", trigger: "action" });
           if (res.ok) {
             const full = res.data.job;
             job = {

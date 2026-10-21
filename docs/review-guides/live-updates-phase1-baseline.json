@@ -1,0 +1,103 @@
+{
+  "feature": "live-updates-phase1-baseline",
+  "baselineCommit": "70cbae84471201e9c5cac60a9fc307732de899c1",
+  "reviewedCommit": null,
+  "status": "implementation-verified-live-evidence-pending",
+  "criteria": [
+    {
+      "id": "B1",
+      "expectation": "Inventory attributes detail/list/status reads, subscription lifecycles, retries and maintenance to source and trigger",
+      "verification": "Source inventory cross-check and instrumented scenario capture",
+      "status": "pass",
+      "evidence": [
+        "docs/live-updates/phase1-baseline.md inventories all current job read/list/status/callout and maintenance callers, schedules and subscription owners; write/presence/chat feed coverage is explicitly excluded",
+        "Fixed source/trigger labels wired into existing callers; retry and coalescing metadata do not alter intervals"
+      ]
+    },
+    {
+      "id": "B2",
+      "expectation": "Opt-in diagnostics are bounded, clearable and omit identifiers, secrets, payloads, coordinates and raw error text",
+      "verification": "Privacy, retention and default-off tests",
+      "status": "pass",
+      "evidence": [
+        "collector.test.ts validates default-off behavior, 1000-event retention, drop reporting, snapshot isolation, fixed-label/numeric schema and invalidated stale spans",
+        "HTTP/subscription tests verify no raw URL, token, identity, row data or SDK error retained; no body clone/read by measurement"
+      ]
+    },
+    {
+      "id": "B3",
+      "expectation": "Diagnostics add no network calls or timers and preserve existing polling/auth/product/payment behavior",
+      "verification": "Request/subscription/timer comparison, regression tests and diff review",
+      "status": "pass",
+      "evidence": [
+        "poll-scenario.test.tsx: controlled 30-second trip scenario makes 4 requests with capture off and 4 with capture on; timer counts identical",
+        "Existing hook regression suite passed; protected job-store/pricing/timer/payout files untouched; no upload or diagnostic timers",
+        "Runtime export follow-up: restored subscription implementation directly in app-api after forwarding export did not resolve reported browser error; public-entry-point subscription tests retained. Error-screen redirect moved out of state updater; countdown, single redirect and unmount cleanup regression tests added. Fresh-browser Turbopack verification pending."
+      ]
+    },
+    {
+      "id": "B4",
+      "expectation": "Counts, duration, outcomes, concurrency and observed lifecycle metrics distinguish measured and unknown values",
+      "verification": "Deterministic capture tests and local summary",
+      "status": "pass",
+      "evidence": [
+        "collector/client/subscription tests verify request/error/abort/retry counts, concurrency, lifecycle and header timing; missing bytes remain unknown",
+        "Event-to-response proxy and resource-wide concurrency limitations documented; no end-to-end revision/render or per-query claim"
+      ]
+    },
+    {
+      "id": "B5",
+      "expectation": "Read-route timing separates auth, aggregate job load and call-out resolution without claiming per-query latency",
+      "verification": "Route timing tests and controlled capture",
+      "status": "pass",
+      "evidence": [
+        "read-timing.test.ts: default-off, GET/POST stage-only header, early auth/access denial and thrown-read behavior passed",
+        "JOB_READ_TIMING_ENABLED=false added to env example; no live server configuration changed"
+      ]
+    },
+    {
+      "id": "B6",
+      "expectation": "Repeatable baseline scenarios and proposed numerical targets are documented; required checks pass",
+      "verification": "Scenario procedure, target review, lint, typecheck and full tests",
+      "status": "pass",
+      "evidence": [
+        "Source inventory, repeatable scenario procedure and proposed targets documented",
+        "npm test: 1606 tests / 165 files passed",
+        "npm run typecheck: passed",
+        "npm run lint: 0 errors / 139 warnings",
+        "npm run check:server-boundaries: passed",
+        "npm run build -- --webpack: passed (existing framework/Edge warnings)",
+        "Default Turbopack build not verified: sandbox font download failed; network-enabled retry hit worker-port Operation not permitted; no bundler/configuration changes made",
+        "Final operational targets and budget remain separately pending under H2"
+      ]
+    },
+    {
+      "id": "H1",
+      "expectation": "Representative browser and hosted subscription/query/scheduler evidence is recorded separately",
+      "verification": "Authorized authenticated capture and hosted inspection",
+      "status": "pending",
+      "evidence": [
+        "Browser inventory checked: no connected browsers; representative authenticated capture not run",
+        "Hosted health/query/scheduler/quota inspection not run"
+      ]
+    },
+    {
+      "id": "H2",
+      "expectation": "Targets and infrastructure budget are agreed using actual observations and capacity",
+      "verification": "User/operational review of baseline and proposed targets",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Instrumentation, inventory, tests and required local checks complete; webpack production build passed",
+      "Independent human review and default Turbopack build/CI verification pending; separate diagnostics PR pending"
+    ],
+    "external": [
+      "Authenticated representative browser scenarios pending: no browser connected",
+      "Hosted subscription health/auth/quotas, SQL query latency and scheduler delivery unverified",
+      "Final numerical targets, infrastructure budget and hosted release checks pending"
+    ]
+  }
+}

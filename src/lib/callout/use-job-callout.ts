@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { CalloutQuote } from "@/lib/callout/constants";
 import { isCalloutAmountReady } from "@/lib/callout/payable";
+import { isPersistedJobId } from "@/lib/jobs/persisted-job-id";
 import { apiGetCallout } from "@/lib/jobs/client";
 
 /** Final states stop polling once the quote settles. */
@@ -37,25 +38,25 @@ export function useJobCallout(
   status?: string | null,
   seed?: CalloutQuote | null,
 ): { quote: CalloutQuote | null; ready: boolean } {
-  const seeded = seedQuote(jobId, seed);
-  const [fetched, setFetched] = useState<CalloutQuote | null>(null);
-  const quote = fetched && isCalloutAmountReady(fetched) ? fetched : seeded;
+  const seeded = seedQuote(isPersistedJobId(jobId) ? jobId : null, seed);
+  const [fetched, setFetched] = useState<{ jobId: string; quote: CalloutQuote } | null>(null);
+  const quote = fetched && fetched.jobId === jobId && isCalloutAmountReady(fetched.quote) ? fetched.quote : seeded;
   const ready = isCalloutAmountReady(quote);
 
   useEffect(() => {
-    if (!jobId) {
+    if (!isPersistedJobId(jobId)) {
       setFetched(null);
       return;
     }
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
-    const fetchQuote = async () => {
+    const fetchQuote = async (trigger: "initial" | "interval" = "initial") => {
       try {
-        const res = await apiGetCallout(jobId);
+        const res = await apiGetCallout(jobId, { source: "callout", trigger });
         if (cancelled) return;
         if (res.ok && res.data.quote && isCalloutAmountReady(res.data.quote)) {
           quoteCache.set(jobId, res.data.quote);
-          setFetched(res.data.quote);
+          setFetched({ jobId, quote: res.data.quote });
         }
         const q = res.ok ? res.data.quote : null;
         if (q && FINAL_QUOTE_STATUSES.has(q.calloutStatus)) {
@@ -64,7 +65,7 @@ export function useJobCallout(
       } catch {
         /* retry */
       }
-      timer = setTimeout(fetchQuote, 3000);
+      if (!cancelled) timer = setTimeout(() => void fetchQuote("interval"), 3000);
     };
     void fetchQuote();
     return () => {

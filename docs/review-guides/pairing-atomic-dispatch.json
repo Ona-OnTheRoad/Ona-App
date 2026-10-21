@@ -1,0 +1,119 @@
+{
+  "id": "pairing-atomic-dispatch",
+  "baseline": "5bf2dfb",
+  "reviewedCommit": null,
+  "criteria": [
+    {
+      "id": "atomic",
+      "expectation": "Queue offer and job assignment commit together; failures leave neither partial write",
+      "affectedAreas": [
+        "src/lib/server/pairing/",
+        "supabase/migrations/20261018_081_atomic_pairing_dispatch.sql"
+      ],
+      "verification": "Focused regressions, disposable PostgreSQL fixture and source audit",
+      "status": "pass",
+      "evidence": [
+        "Disposable PostgreSQL 16: one winner from two concurrent candidates; offer pro matches assignment; injected post-offer assignment error and foreign-key failure leave no partial writes; duplicate is no-op."
+      ]
+    },
+    {
+      "id": "retry",
+      "expectation": "Classification version conflicts reload/reselect and recover within a bounded retry; contention exhaustion is explicit",
+      "affectedAreas": [
+        "src/lib/server/pairing/",
+        "supabase/migrations/20261018_081_atomic_pairing_dispatch.sql"
+      ],
+      "verification": "Focused regressions, disposable PostgreSQL fixture and source audit",
+      "status": "pass",
+      "evidence": [
+        "7 new orchestration regressions pass: classification version conflict retries; changed trade reselects instead of dispatching stale candidate; 3-attempt cap returns 409; missing RPC returns 503."
+      ]
+    },
+    {
+      "id": "guards",
+      "expectation": "Cancel/assignment winners and previously contacted pros are not overwritten or reoffered",
+      "affectedAreas": [
+        "src/lib/server/pairing/",
+        "supabase/migrations/20261018_081_atomic_pairing_dispatch.sql"
+      ],
+      "verification": "Focused regressions, disposable PostgreSQL fixture and source audit",
+      "status": "pass",
+      "evidence": [
+        "PostgreSQL: cancellation/negotiation winners, previously contacted queue statuses and six-pro cap preserved. Unit checks: existing assignment is not advanced, cancellation winner creates no offer."
+      ]
+    },
+    {
+      "id": "parity",
+      "expectation": "Ranking, radius, 144s window, six-pro cap and post-commit notification behavior are preserved",
+      "affectedAreas": [
+        "src/lib/server/pairing/",
+        "supabase/migrations/20261018_081_atomic_pairing_dispatch.sql"
+      ],
+      "verification": "Focused regressions, disposable PostgreSQL fixture and source audit",
+      "status": "pass",
+      "evidence": [
+        "Full suite: 1,476 tests / 139 files passed, including existing 144-second/radius, timeout/decline/retry and scheduled second-pro coverage. Notification asserted once only after success. Deadline remains null until surface/fallback."
+      ]
+    },
+    {
+      "id": "sql",
+      "expectation": "Real PostgreSQL concurrency, rollback and anon/authenticated/service-role permissions are verified",
+      "affectedAreas": [
+        "src/lib/server/pairing/",
+        "supabase/migrations/20261018_081_atomic_pairing_dispatch.sql"
+      ],
+      "verification": "Focused regressions, disposable PostgreSQL fixture and source audit",
+      "status": "pass",
+      "evidence": [
+        "scripts/verify-pairing-dispatch.mjs passed on a newly initialized disposable localhost PostgreSQL 16 cluster; migration reapplied successfully; anon/authenticated denied and service_role succeeds. Full-history Supabase replay not run in this task."
+      ]
+    },
+    {
+      "id": "rollout",
+      "expectation": "Migration prerequisites and browser/hosted evidence remain separate and unrun work pending",
+      "affectedAreas": [
+        "src/lib/server/pairing/",
+        "supabase/migrations/20261018_081_atomic_pairing_dispatch.sql"
+      ],
+      "verification": "Focused regressions, disposable PostgreSQL fixture and source audit",
+      "status": "pending",
+      "evidence": [
+        "On 2026-10-19, user explicitly authorized database migration and full flow testing. Applied 078 and 081 via configured DATABASE_URL after verifying enabled 079 version trigger. RPCs present; anon/authenticated cannot execute dispatch, service_role can.",
+        "Restored all eight local polling/realtime files to their committed behavior after saving the exact debug patch at /private/tmp/ona-pairing-polling-pause.saved.patch.",
+        "Two independent authenticated sessions against localhost:3000 and configured Supabase: new request assigned to expected pro, incoming lean list includes it, exactly one matching offered queue row, card reached reserved, CONFIRM led to negotiating observed by customer GET and realtime. Customer received 6 events; pro received 4.",
+        "Authenticated pairing-sweep endpoint returned 200 (checked 0); no remaining sweep leases. All three labelled unpaid test requests cancelled via the transition API. First two attempts encountered normal surface/Open conflicts with the already-active pro app and were cleaned up; final attempt reconciled the current state and passed.",
+        "No browser automation connection available: browser-rendered visual/click smoke not performed. No deployed-host or unattended overdue-recovery verification claimed."
+      ]
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent human review and full-history Supabase migration replay remain pending. Existing orphan repair, initial-create error contract and other nontransactional pairing transitions remain excluded."
+    ],
+    "external": [
+      "Browser-rendered visual/click smoke remains pending because no browser automation connection is available.",
+      "Deployed-host and unattended overdue recovery still require verification. Configured-database migrations, localhost authenticated two-session API/realtime smoke and test cleanup have completed."
+    ]
+  },
+  "localChecks": {
+    "tests": "1,476 tests / 139 files passed",
+    "typecheck": "passed",
+    "lint": "0 errors / 144 existing warnings; none in changed files",
+    "diffCheck": "passed",
+    "postgres": "Concurrency, classification retry, cancellation/negotiation winners, rollback, FK failure, contacted-pro guards, cap, permissions and reapplication passed"
+  },
+  "configuredDatabaseChecks": {
+    "date": "2026-10-19",
+    "migrationsApplied": [
+      "20261007_078_job_sweep_leases.sql",
+      "20261018_081_atomic_pairing_dispatch.sql"
+    ],
+    "prerequisite": "079 version trigger verified enabled",
+    "dispatchPermissions": "anon=false; authenticated=false; service_role=true",
+    "apiSmoke": "passed with two independent sessions; request -> assigned -> reserved -> negotiating; customer realtime observed negotiation",
+    "sweep": "HTTP 200; no overdue rows checked; lease released",
+    "cleanup": "three labelled unpaid test requests cancelled",
+    "visualBrowserSmoke": "not run: browser automation unavailable",
+    "deployedHostSmoke": "not run"
+  }
+}
