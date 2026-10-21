@@ -8,6 +8,7 @@ import { AuthGate } from "@/components/auth/auth-gate";
 import { InAppCallProvider } from "@/components/call/in-app-call";
 import { RoleBootstrap } from "@/components/home/role-bootstrap";
 import { AppDock, useDockVisible } from "@/components/layout/app-dock";
+import { DockBlurBackdrop } from "@/components/layout/dock-blur-backdrop";
 import { InboundBanner } from "@/components/layout/inbound-banner";
 import { PhoneShell } from "@/components/layout/phone-shell";
 import { Toaster } from "@/components/ui/sonner";
@@ -114,6 +115,7 @@ export function AppFrame({ children }: { children: ReactNode }) {
               ) : null}
               <Toaster />
               <InstallNudge enabled={dockVisible} />
+              <DockBlurBackdrop />
               <AppDock />
               <NotificationCenter />
             </div>

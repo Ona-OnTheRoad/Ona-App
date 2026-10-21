@@ -144,6 +144,16 @@ export function HomePanel({
   const { onSheetWheel, onPillTouchStart, onPillTouchMove, onPillClick } =
     useSheetGestures({ expanded, onExpand, onCollapse });
 
+  const hasExtraContent = Boolean(
+    (showVerifyPanel && verifyPanelReady) ||
+      (!isProMode && openNotice) ||
+      (!isProMode && pendingExpress) ||
+      (!isProMode && openJobs.length > 0) ||
+      isFlow ||
+      showTalkBox ||
+      (isProMode && list.length > 0),
+  );
+
   return (
     <div className={cn("relative z-30 flex min-h-0 flex-col", className)}>
       <div
@@ -203,73 +213,75 @@ export function HomePanel({
       )}
 
       {/* Talk box: no scroll. Repair Pro list may scroll. */}
-      <div
-        className={cn(
-          "min-h-0 flex-1 px-4 pb-0",
-          showTalkBox || isFlow
-            ? "flex flex-col overflow-hidden"
-            : "overflow-y-auto overscroll-contain scrollbar-hide",
-        )}
-      >
-        {showVerifyPanel && verifyPanelReady ? (
-          <div className="mb-2 shrink-0">
-            <HomeVerifyPanel message={verifyMessage} isLight={isLight} />
-          </div>
-        ) : null}
-        {!isProMode && openNotice ? (
-          <OpenRequestNotice onDismiss={() => setOpenNotice(false)} />
-        ) : null}
+      {hasExtraContent ? (
+        <div
+          className={cn(
+            "min-h-0 flex-1 px-4 pb-0",
+            showTalkBox || isFlow
+              ? "flex flex-col overflow-hidden"
+              : "overflow-y-auto overscroll-contain scrollbar-hide",
+          )}
+        >
+          {showVerifyPanel && verifyPanelReady ? (
+            <div className="mb-2 shrink-0">
+              <HomeVerifyPanel message={verifyMessage} isLight={isLight} />
+            </div>
+          ) : null}
+          {!isProMode && openNotice ? (
+            <OpenRequestNotice onDismiss={() => setOpenNotice(false)} />
+          ) : null}
 
-        {!isProMode && pendingExpress ? (
-          <ExpressResumeCard
-            pending={pendingExpress}
-            onResume={openExpressResume}
-          />
-        ) : null}
+          {!isProMode && pendingExpress ? (
+            <ExpressResumeCard
+              pending={pendingExpress}
+              onResume={openExpressResume}
+            />
+          ) : null}
 
-        {!isProMode && openJobs.length > 0 ? (
-          <div className="shrink-0 pt-2.5">
-            <CustomerOpenJobs
-              jobs={openJobs}
+          {!isProMode && openJobs.length > 0 ? (
+            <div className="shrink-0 pt-2.5">
+              <CustomerOpenJobs
+                jobs={openJobs}
+                isLight={isLight}
+                onOpen={handleOpenJob}
+              />
+            </div>
+          ) : null}
+          {isFlow ? (
+            <HelpFlowOutlet
+              category={category}
               isLight={isLight}
-              onOpen={handleOpenJob}
+              onExit={() => setCategory("none")}
             />
-          </div>
-        ) : null}
-        {isFlow ? (
-          <HelpFlowOutlet
-            category={category}
-            isLight={isLight}
-            onExit={() => setCategory("none")}
-          />
-        ) : showTalkBox ? (
-          <div className="flex min-h-0 flex-1 flex-col">
-            <NeedHelpDialogue isLight={isLight} />
-          </div>
-        ) : (
-          isProMode &&
-          list.length > 0 && (
-            <ProTechList
-              list={list}
-              total={total}
-              canShowMore={canShowMore}
-              radiusKm={radiusKm}
-              selectedTechId={selectedTechId}
-              jobsByPro={jobsByPro}
-              onSelect={setSelectedTechId}
-              onRequest={handleRequest}
-              onOpenJob={handleOpenJob}
-              onShowMore={showMore}
-            />
-          )
-        )}
+          ) : showTalkBox ? (
+            <div className="flex min-h-0 flex-1 flex-col">
+              <NeedHelpDialogue isLight={isLight} />
+            </div>
+          ) : (
+            isProMode &&
+            list.length > 0 && (
+              <ProTechList
+                list={list}
+                total={total}
+                canShowMore={canShowMore}
+                radiusKm={radiusKm}
+                selectedTechId={selectedTechId}
+                jobsByPro={jobsByPro}
+                onSelect={setSelectedTechId}
+                onRequest={handleRequest}
+                onOpenJob={handleOpenJob}
+                onShowMore={showMore}
+              />
+            )
+          )}
 
-        {isProMode && !expanded && list.length > 0 && (
-          <p className="py-2 text-center text-[11px] text-ona-muted">
-            {t("home.swipeHint")}
-          </p>
-        )}
-      </div>
+          {isProMode && !expanded && list.length > 0 && (
+            <p className="py-2 text-center text-[11px] text-ona-muted">
+              {t("home.swipeHint")}
+            </p>
+          )}
+        </div>
+      ) : null}
 
       {footer}
     </div>
