@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useRef, type ReactNode } from "react";
 import { OfflineBanner } from "@/components/layout/offline-banner";
 import { DeletionBanner } from "@/components/profile/deletion-banner";
+import { PullToRefresh } from "@/components/layout/pull-to-refresh";
 import { useOverlayGatesReady } from "@/lib/use-overlay-gates-ready";
 import { usePhoneRect } from "@/components/layout/app-dock/use-phone-rect";
 import { cn } from "@/lib/utils";
@@ -276,6 +277,7 @@ export function PhoneShell({
         >
           <OfflineBanner />
           <DeletionBanner />
+          <PullToRefresh />
           {children}
           {gatesReady ? (
             <>
