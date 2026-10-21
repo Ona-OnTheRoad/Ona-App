@@ -16,13 +16,13 @@ export function DockBlurBackdrop() {
       aria-hidden="true"
       className="pointer-events-none absolute inset-x-0 bottom-0 z-[35] overflow-hidden"
       style={{
-        height: "calc(4.75rem + env(safe-area-inset-bottom, 0px))",
-        backdropFilter: "blur(20px) saturate(190%)",
-        WebkitBackdropFilter: "blur(20px) saturate(190%)",
+        height: "calc(3.75rem + env(safe-area-inset-bottom, 0px))",
+        backdropFilter: "blur(5px) saturate(135%)",
+        WebkitBackdropFilter: "blur(5px) saturate(135%)",
         background:
-          "linear-gradient(to top, var(--o-surface) 0%, color-mix(in srgb, var(--o-surface) 82%, transparent) 40%, transparent 100%)",
-        maskImage: "linear-gradient(to top, black 60%, transparent 100%)",
-        WebkitMaskImage: "linear-gradient(to top, black 60%, transparent 100%)",
+          "linear-gradient(to top, color-mix(in srgb, var(--o-surface) 38%, transparent) 0%, color-mix(in srgb, var(--o-surface) 15%, transparent) 60%, transparent 100%)",
+        maskImage: "linear-gradient(to top, black 40%, transparent 100%)",
+        WebkitMaskImage: "linear-gradient(to top, black 40%, transparent 100%)",
       }}
     />
   );
