@@ -5,6 +5,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { OfflineBanner } from "@/components/layout/offline-banner";
 import { DeletionBanner } from "@/components/profile/deletion-banner";
 import { useOverlayGatesReady } from "@/lib/use-overlay-gates-ready";
+import { usePhoneRect } from "@/components/layout/app-dock/use-phone-rect";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/lib/store";
 
@@ -120,6 +121,8 @@ export function PhoneShell({
   /** Page paints first; overlays wait for auth + settle */
   const gatesReady = useOverlayGatesReady();
   const isLight = theme === "light";
+  /** Publish --ona-phone-* CSS variables and keep them synced with screen size */
+  usePhoneRect();
   /** Phone frame interior explicit colors avoid browser class lag */
   const phoneInterior = isLight ? "#c8c9cd" : "#000000";
   const lastTapRef = useRef(0);
@@ -234,8 +237,10 @@ export function PhoneShell({
         "h-[100vh] max-h-[100vh]",
         "h-[100dvh] max-h-[100dvh]",
         "h-[100svh] max-h-[100svh]",
-        "px-3 py-3",
-        isLight ? "bg-[#060d0a]" : "bg-[#0a0605]",
+        "p-0 sm:p-4 md:p-5",
+        isLight
+          ? "bg-[#c8c9cd] sm:bg-[#060d0a]"
+          : "bg-black sm:bg-[#0a0605]",
       )}
     >
       <a
@@ -249,19 +254,17 @@ export function PhoneShell({
         data-theme={theme}
         className={cn(
           "relative box-border flex flex-col overflow-hidden",
-          "w-[390px] max-w-[calc(100vw-1.5rem)]",
-          "h-[min(844px,calc(100dvh-1.5rem))] max-h-[min(844px,calc(100dvh-1.5rem))]",
-          "h-[min(844px,calc(100svh-1.5rem))] max-h-[min(844px,calc(100svh-1.5rem))]",
-          "shadow-[0_24px_48px_rgba(0,0,0,0.55)]",
+          "w-full h-full h-[100dvh] max-h-[100dvh]",
+          "sm:w-[420px] sm:max-w-[calc(100vw-2.5rem)]",
+          "sm:h-[min(884px,calc(100dvh-2.5rem))] sm:max-h-[min(884px,calc(100dvh-2.5rem))]",
+          "sm:rounded-[36px] sm:shadow-[0_24px_50px_rgba(0,0,0,0.55)] sm:ring-1 sm:ring-white/10",
           className,
         )}
         style={{
-          width: "min(390px, calc(100vw - 1.5rem))",
-          maxWidth: "min(390px, calc(100vw - 1.5rem))",
-          height: "min(844px, calc(100dvh - 1.5rem))",
-          maxHeight: "min(844px, calc(100dvh - 1.5rem))",
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
           paddingTop: "env(safe-area-inset-top, 0px)",
+          paddingLeft: "env(safe-area-inset-left, 0px)",
+          paddingRight: "env(safe-area-inset-right, 0px)",
           backgroundColor: phoneInterior,
         }}
       >

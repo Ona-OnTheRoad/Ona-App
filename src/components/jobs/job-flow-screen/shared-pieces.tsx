@@ -76,7 +76,7 @@ export function RerouteAlertOverlay({
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-12">
       <div
         className={cn(
-          "w-full max-w-[390px] rounded-t-2xl px-5 pb-6 pt-5",
+          "w-full rounded-t-2xl px-5 pb-6 pt-5",
           isLight ? "bg-[#c8c9cd]" : "bg-[#1c1c1e]",
         )}
       >

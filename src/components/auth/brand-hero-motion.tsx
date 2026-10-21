@@ -97,7 +97,7 @@ export function BrandHeroMotion({
           fetchPriority={introMotion || size === "splash" ? "high" : "low"}
           loading={introMotion || size === "splash" ? "eager" : "lazy"}
           draggable={false}
-          sizes="390px"
+          sizes="(max-width: 640px) 100vw, 420px"
           className={cn(
             "om-brand-img absolute inset-0 h-full w-full max-h-full max-w-full",
             BRAND_FOCUS,
