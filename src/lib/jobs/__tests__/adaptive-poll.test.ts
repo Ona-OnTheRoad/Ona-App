@@ -3,8 +3,29 @@ import {
   computeAdaptiveJobPollDelayMs,
   getDegradedJobPollMs,
   getHealthyJobPollMs,
+  getIncomingIdlePollMs,
   getMaxJobPollBackoffMs,
 } from "../adaptive-poll";
+
+describe("getIncomingIdlePollMs", () => {
+  it("is 10s only when connected and online", () => {
+    expect(getIncomingIdlePollMs({ subscriptionState: "connected" })).toBe(10_000);
+  });
+
+  it.each(["connecting", "reconnecting", "failed"] as const)("is 3s when %s", (s) => {
+    expect(getIncomingIdlePollMs({ subscriptionState: s })).toBe(3_000);
+  });
+
+  it("is 3s when offline", () => {
+    expect(getIncomingIdlePollMs({ subscriptionState: "connected", online: false })).toBe(3_000);
+  });
+
+  it("is 3s when the rollback flag disables adaptive polling", () => {
+    expect(
+      getIncomingIdlePollMs({ subscriptionState: "connected", adaptiveEnabled: false }),
+    ).toBe(3_000);
+  });
+});
 
 describe("adaptive-poll intervals and backoff", () => {
   it.each([
