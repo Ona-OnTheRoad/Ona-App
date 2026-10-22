@@ -10,13 +10,6 @@ export function useProPastJobs(backendUserId: string | null | undefined) {
   const [err, setErr] = useState<string | null>(null);
 
   const load = useCallback(async (trigger: JobTrigger = "action") => {
-    // Backup: auto-cancel Booked jobs past 6h (server enforces + refunds)
-    try {
-      const { apiExpireStaleBookedJobs } = await import("@/lib/jobs/client");
-      await apiExpireStaleBookedJobs({ source: "past-jobs", trigger: "maintenance" });
-    } catch {
-      /* ignore */
-    }
     if (!backendUserId) {
       setPast([]);
       setLoading(false);
