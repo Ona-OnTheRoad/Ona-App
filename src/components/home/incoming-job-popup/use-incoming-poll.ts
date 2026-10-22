@@ -7,7 +7,8 @@ import { isProRequestCardKeepable } from "@/lib/jobs/incoming-popup-timing";
 import type { JobRecord } from "@/lib/jobs/types";
 import { backendSubscribeJobs } from "@/lib/supabase/app-api";
 import { INCOMING_POPUP_STATUS_POLL_MS } from "./constants";
-import { ingestIncomingJobs } from "./ingest-jobs";
+import { createIncomingIdleHealth } from "./incoming-idle-health";
+import { noteMissedPush, ingestIncomingJobs } from "./ingest-jobs";
 import type { IncomingState } from "./use-incoming-state";
 import type { NotifyRequestClosed, PanelLevel, RemoveJob } from "./types";
 
@@ -95,6 +96,11 @@ export function useIncomingPoll({
     let pending = false;
     let pendingTrigger: JobTrigger = "unknown";
     let tick = 0;
+    // Idle cadence follows realtime health, read at timer-fire time.
+    let rearm = () => {};
+    const health = createIncomingIdleHealth({
+      rearm: () => rearm(), poll: (t) => void poll(t), isCancelled: () => cancelled,
+    });
     /** Ultra-light close check: one tiny query for the visible card ids. Detects
      * a customer cancellation/close within ~1s even when the realtime push is
      * missed no list payload, no media, no expiry work. */
@@ -154,6 +160,12 @@ export function useIncomingPoll({
             lean: true, diagnostic: { source: "incoming", trigger },
           });
           if (cancelled || !res.ok) return;
+          noteMissedPush(
+            res.data.jobs,
+            { trigger, connected: health.isConnected(), primed: primed.current },
+            backendUserId,
+            knownIds.current,
+          );
           ingest(res.data.jobs);
         }
       } catch {
@@ -225,32 +237,40 @@ export function useIncomingPoll({
         delay ??
           (visibleJobsRef.current.length || queueRef.current.length
             ? INCOMING_POPUP_STATUS_POLL_MS
-            : 3_000),
+            : health.idleDelay()),
       );
     };
     schedule(INCOMING_POPUP_STATUS_POLL_MS);
 
+    // Re-arm on any health change (degraded → fast idle cadence at once).
+    rearm = () => {
+      if (cancelled) return;
+      clearTimeout(timer);
+      schedule();
+    };
     const unsub = backendSubscribeJobs(backendUserId, (payload) => {
       applyRealtimeClose(payload);
       if (!cancelled) {
         void poll("realtime");
         // A push may have surfaced a card while the timer sat armed at the
-        // idle 12s jump onto the fast 1s cadence so its first status check
-        // isn't delayed.
+        // idle cadence jump onto the fast 1s cadence so its first status
+        // check isn't delayed.
         clearTimeout(timer);
         schedule(INCOMING_POPUP_STATUS_POLL_MS);
       }
-    }, "incoming");
+    }, "incoming", health.onSubStatus);
 
     const onVis = () => {
       if (!document.hidden) void poll("visibility");
     };
     document.addEventListener("visibilitychange", onVis);
+    const stopHealth = health.listen();
 
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVis);
+      stopHealth();
       unsub?.();
     };
   }, [
