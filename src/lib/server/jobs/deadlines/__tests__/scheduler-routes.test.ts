@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { requireUser } from "@/lib/server/auth-utils";
 import { hasSchedulerSecret } from "../scheduler-auth";
+import { resetMaintenanceRunnerForTests } from "../maintenance-runner";
 import { SweepBusyError } from "../sweep-lease";
 import { sweepNegotiationDeadlines } from "../negotiation-expiry";
 import { sweepPairing, sweepScheduledDispatches } from "@/lib/server/pairing/pairing-engine";
-import { expireOverdueBookedJobs, expireUnacceptedJobs } from "@/lib/server/jobs/job-store";
+import { expireOverdueBookedJobs, expireUnacceptedJobs, resetZombieFlowStatuses } from "@/lib/server/jobs/job-store";
 import { processDuePayoutRetries } from "@/lib/server/payments/payout-settlement";
 import { processPaymentLifecycleBatch } from "@/lib/server/payments/durable-processing";
 import { GET, POST } from "@/app/api/jobs/deadline-sweep/route";
@@ -14,7 +15,11 @@ import { POST as pairingRecovery } from "@/app/api/jobs/pairing-sweep/route";
 vi.mock("@/lib/server/auth-utils", () => ({ requireUser: vi.fn() }));
 vi.mock("../negotiation-expiry", () => ({ sweepNegotiationDeadlines: vi.fn() }));
 vi.mock("@/lib/server/pairing/pairing-engine", () => ({ sweepPairing: vi.fn(), sweepScheduledDispatches: vi.fn() }));
-vi.mock("@/lib/server/jobs/job-store", () => ({ expireOverdueBookedJobs: vi.fn(), expireUnacceptedJobs: vi.fn() }));
+vi.mock("@/lib/server/jobs/job-store", () => ({
+  expireOverdueBookedJobs: vi.fn(),
+  expireUnacceptedJobs: vi.fn(),
+  resetZombieFlowStatuses: vi.fn(),
+}));
 vi.mock("@/lib/server/payments/payout-settlement", () => ({ processDuePayoutRetries: vi.fn() }));
 vi.mock("@/lib/server/payments/durable-processing", () => ({ processPaymentLifecycleBatch: vi.fn() }));
 vi.mock("@/lib/supabase/env", () => ({ isSupabaseAdminConfigured: () => false }));
@@ -22,6 +27,7 @@ vi.mock("@/lib/supabase/env", () => ({ isSupabaseAdminConfigured: () => false })
 const request = (headers: HeadersInit = {}) => new Request("http://localhost/api/jobs/deadline-sweep", { headers });
 beforeEach(() => {
   vi.clearAllMocks();
+  resetMaintenanceRunnerForTests();
   vi.stubEnv("CRON_SECRET", "scheduler-test-secret");
   vi.stubEnv("ONA_CRON_SECRET", "");
   vi.stubEnv("JOB_EXPIRE_SECRET", "");
@@ -96,5 +102,35 @@ describe("browser maintenance compatibility", () => {
     vi.mocked(requireUser).mockResolvedValue({ ok: true, userId: "customer" } as Awaited<ReturnType<typeof requireUser>>);
     expect((await pairingRecovery(request({ authorization: "Bearer user-token" }))).status).toBe(200);
     expect(sweepPairing).toHaveBeenCalled();
+  });
+  it("treats SweepBusyError in browser pairing-sweep as a non-error 200 busy outcome", async () => {
+    vi.mocked(requireUser).mockResolvedValue({ ok: true, userId: "customer" } as Awaited<ReturnType<typeof requireUser>>);
+    vi.mocked(sweepPairing).mockRejectedValueOnce(new SweepBusyError("busy"));
+    const res = await pairingRecovery(request({ authorization: "Bearer user-token" }));
+    expect(res.status).toBe(200);
+    expect((await res.json()).data).toMatchObject({ checked: 0, timedOut: 0, expired: 0, busy: true });
+  });
+  it("throttles repeated browser expire-stale calls while allowing scheduler-authenticated runs to bypass throttle", async () => {
+    vi.mocked(requireUser).mockResolvedValue({ ok: true, userId: "customer" } as Awaited<ReturnType<typeof requireUser>>);
+    vi.mocked(expireOverdueBookedJobs).mockResolvedValue({ checked: 2, cancelled: 1, released: 0, ids: ["j1"] });
+    vi.mocked(expireUnacceptedJobs).mockResolvedValue({ checked: 1, rerouted: 0, expired: 0 });
+    vi.mocked(resetZombieFlowStatuses).mockResolvedValue(0);
+    vi.mocked(sweepScheduledDispatches).mockResolvedValue({ checked: 1, cancelled: 0, notified: 0 });
+    vi.mocked(processDuePayoutRetries).mockResolvedValue({ checked: 0, succeeded: 0, stillPending: 0, failed: 0, ids: [] });
+
+    const first = await maintenance(request({ authorization: "Bearer user-token" }));
+    expect(first.status).toBe(200);
+    expect(expireOverdueBookedJobs).toHaveBeenCalledTimes(1);
+
+    // Immediate second browser call is throttled across families
+    const second = await maintenance(request({ authorization: "Bearer user-token" }));
+    expect(second.status).toBe(200);
+    expect((await second.json()).data).toMatchObject({ checked: 0, cancelled: 0, pairing: null });
+    expect(expireOverdueBookedJobs).toHaveBeenCalledTimes(1);
+
+    // Scheduler-authenticated call bypasses browser throttle
+    const cron = await maintenance(request({ authorization: "Bearer scheduler-test-secret" }));
+    expect(cron.status).toBe(200);
+    expect(expireOverdueBookedJobs).toHaveBeenCalledTimes(2);
   });
 });
