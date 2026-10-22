@@ -1,7 +1,7 @@
 # Live updates: phased improvement proposal
 
 Date: 2026-10-19  
-Status: phased proposal; Phase 1 tooling merged to dev in PR #25; representative browser/hosted baseline and target agreement pending. Phase 2A shared subscriptions merged to dev in PR #26 (`448d234`); browser/hosted verification remains pending. Phase 2B cloud-list/active-detail read coordination is merged to dev in PR #27 (`7f9f684`), PR #29 (`5ddaf5e`), and `R4` field-group merge on `backend/live-updates-phase2b-composite-merge`; independent review and browser/hosted verification remain open. Phase 3 adaptive recovery polling is merged to dev in PR #30 (`cce0520`, [Phase 3 guide](review-guides/live-updates-phase3-adaptive-polling.md)); independent review and browser/hosted verification remain open. Later phases remain proposed.
+Status: phased proposal; Phase 1 tooling merged to dev in PR #25; representative browser/hosted baseline and target agreement pending. Phase 2A shared subscriptions merged to dev in PR #26 (`448d234`); browser/hosted verification remains pending. Phase 2B cloud-list/active-detail read coordination is merged to dev in PR #27 (`7f9f684`), PR #29 (`5ddaf5e`), and PR #31 (`54b083e`); independent review and browser/hosted verification remain open. Phase 3 adaptive recovery polling is merged to dev in PR #30 (`cce0520`, [Phase 3 guide](review-guides/live-updates-phase3-adaptive-polling.md)); independent review and browser/hosted verification remain open. Phase 4 browser-triggered maintenance reduction is implemented on `backend/live-updates-phase4-maintenance-reduction` ([Phase 4 guide](review-guides/live-updates-phase4-maintenance-reduction.md)); independent review and browser/hosted verification remain open. Later phases remain proposed.
 
 ## Goal and recommendation
 
@@ -122,9 +122,9 @@ Review criteria: agreed performance/budget targets pass under representative loa
 | Phase | Implementation/test evidence | Hosted/release evidence |
 | --- | --- | --- |
 | 1: baseline | Opt-in instrumentation, source inventory and synthetic tests implemented; [Phase 1 guide](review-guides/live-updates-phase1-baseline.md) tracks local checks | Representative capture and hosted subscription/query/scheduler observations pending |
-| 2: coordinated reads | [Phase 2A shared subscriptions](review-guides/live-updates-phase2a-shared-subscriptions.md) merged to dev in PR #26; [Phase 2B coordinated reads](review-guides/live-updates-phase2b-coordinated-reads.md) merged to dev in PR #27, PR #29 (`5ddaf5e`), and `R4` field-group merge (`backend/live-updates-phase2b-composite-merge`); independent review remains pending | Pending |
+| 2: coordinated reads | [Phase 2A shared subscriptions](review-guides/live-updates-phase2a-shared-subscriptions.md) merged to dev in PR #26; [Phase 2B coordinated reads](review-guides/live-updates-phase2b-coordinated-reads.md) merged to dev in PR #27, PR #29 (`5ddaf5e`), and PR #31 (`54b083e`); independent review remains pending | Pending |
 | 3: adaptive recovery | Merged to dev in PR #30 (`cce0520`); [Phase 3 guide](review-guides/live-updates-phase3-adaptive-polling.md) tracks 175 files / 1,717 passing tests, typecheck and zero-error lint; independent review pending | Pending |
-| 4: server maintenance | Existing Issue 3 evidence must be reviewed; additional scope pending | Activation and broader coverage unverified |
+| 4: server maintenance | Implemented on `backend/live-updates-phase4-maintenance-reduction` ([Phase 4 guide](review-guides/live-updates-phase4-maintenance-reduction.md)): 178 files / 1,733 passing tests, typecheck and zero-error lint; independent review pending | Hosted scheduler activation and multi-tab browser capture pending |
 | 5: Broadcast evaluation | Conditional; pending | Conditional; pending |
 | 6: load and rollout | Pending | Pending |
 
