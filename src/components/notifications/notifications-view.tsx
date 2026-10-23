@@ -142,14 +142,14 @@ export function NotificationsView({
         </div>
       ) : null}
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 pt-4 scrollbar-hide">
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 pt-4 scrollbar-hide flex flex-col">
         {loading && (
           <p className="py-12 text-center text-[13px] font-medium text-ona-muted">
             Loading…
           </p>
         )}
         {!loading && sorted.length === 0 && (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-ona-border bg-ona-surface px-6 py-12 text-center">
+          <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-ona-border bg-ona-surface px-6 py-12 text-center my-auto min-h-[380px]">
             <NoNotificationsIllustration className="h-44 w-48 mx-auto" />
             <h3 className="mt-5 text-[16px] font-bold text-ona-ink">
               No notifications yet
