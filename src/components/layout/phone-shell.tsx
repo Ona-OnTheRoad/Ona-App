@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useRef, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { OfflineBanner } from "@/components/layout/offline-banner";
 import { DeletionBanner } from "@/components/profile/deletion-banner";
 import { PullToRefresh } from "@/components/layout/pull-to-refresh";
@@ -9,6 +10,7 @@ import { useOverlayGatesReady } from "@/lib/use-overlay-gates-ready";
 import { usePhoneRect } from "@/components/layout/app-dock/use-phone-rect";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/lib/store";
+import { isPublicPath } from "@/lib/routes";
 
 /**
  * Overlays only mount after the page has loaded and settled (see useOverlayGatesReady), and most
@@ -118,7 +120,15 @@ export function PhoneShell({
   children: ReactNode;
   className?: string;
 }) {
-  const { theme, toggleTheme } = useApp();
+  const { theme, toggleTheme, isAuthenticated } = useApp();
+  const pathname = usePathname() || "";
+  const isAuthOrPublic =
+    !isAuthenticated ||
+    isPublicPath(pathname) ||
+    pathname === "/logout" ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/signup");
+
   /** Page paints first; overlays wait for auth + settle */
   const gatesReady = useOverlayGatesReady();
   const isLight = theme === "light";
@@ -279,7 +289,7 @@ export function PhoneShell({
           <DeletionBanner />
           <PullToRefresh />
           {children}
-          {gatesReady ? (
+          {gatesReady && !isAuthOrPublic ? (
             <>
               <ProOnboardingSheet />
               <PostSwitchPhoneOtpGate />

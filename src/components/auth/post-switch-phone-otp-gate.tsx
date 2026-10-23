@@ -6,8 +6,10 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useApp } from "@/lib/store";
 import { useOverlayGatesReady } from "@/lib/use-overlay-gates-ready";
+import { isPublicPath } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
 const RESEND_COOLDOWN_SEC = 66;
@@ -21,6 +23,7 @@ export function PostSwitchPhoneOtpGate() {
     sendPostSwitchPhoneOtp,
     completePostSwitchPhoneOtp,
   } = useApp();
+  const pathname = usePathname() || "";
   const gatesReady = useOverlayGatesReady();
   const isLight = theme === "light";
   const [code, setCode] = useState("");
@@ -31,11 +34,18 @@ export function PostSwitchPhoneOtpGate() {
   const [resendIn, setResendIn] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const isExcludedRoute =
+    isPublicPath(pathname) ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/signup") ||
+    pathname.startsWith("/logout");
+
   const open =
     gatesReady &&
     isAuthenticated &&
     postSwitchPhoneOtpRequired &&
-    Boolean(userProfile?.phone);
+    Boolean(userProfile?.phone) &&
+    !isExcludedRoute;
 
   const clearTimer = () => {
     if (timerRef.current) {
