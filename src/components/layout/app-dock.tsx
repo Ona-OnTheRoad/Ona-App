@@ -93,7 +93,10 @@ export function AppDock() {
         notif?.openCenter();
       },
     };
-    return { primary: built.primary, more: [...built.more, bell] };
+    return {
+      primary: built.primary,
+      more: isPro ? [...built.more, bell] : [],
+    };
   }, [config.content, isPro, myShopHref, roleHome, t, unread, notif]);
 
   const DockLink = useMemo(

@@ -17,7 +17,7 @@ export function Tier2GovernmentIdCard({
   tier2Ok = false,
   onClick,
 }: Tier2GovernmentIdCardProps) {
-  const isClickable = phoneOk;
+  const isClickable = phoneOk && !submitted && !tier2Ok;
 
   return (
     <div
@@ -26,7 +26,9 @@ export function Tier2GovernmentIdCard({
         "rounded-ona-ctl border border-ona-border bg-ona-surface p-4.5 transition-all shadow-xs group",
         isClickable
           ? "cursor-pointer hover:bg-black/1.5 active:bg-black/3 dark:hover:bg-white/2"
-          : "opacity-60 cursor-not-allowed",
+          : !phoneOk
+            ? "opacity-60 cursor-not-allowed"
+            : "cursor-default",
       )}
     >
       {/* Header Row: TIER 2 + Status indicator */}
@@ -61,10 +63,12 @@ export function Tier2GovernmentIdCard({
           </span>
         </div>
 
-        <ChevronRight
-          className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5 text-ona-muted"
-          strokeWidth={2}
-        />
+        {isClickable ? (
+          <ChevronRight
+            className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5 text-ona-muted"
+            strokeWidth={2}
+          />
+        ) : null}
       </div>
 
       {/* Divider */}

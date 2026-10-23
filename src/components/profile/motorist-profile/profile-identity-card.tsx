@@ -4,14 +4,17 @@ import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { avatarInitials, DEFAULT_VENDOR_PHOTO } from "@/lib/brand";
 import type { UserProfile } from "@/lib/types";
+import { isMotoristVerified } from "@/lib/verification-gate";
 
 interface ProfileIdentityCardProps {
   userProfile: UserProfile;
   isLight?: boolean;
+  isVerified?: boolean;
 }
 
 export function ProfileIdentityCard({
   userProfile,
+  isVerified = isMotoristVerified(userProfile),
 }: ProfileIdentityCardProps) {
   const avatarUrl = userProfile.avatarUrl || DEFAULT_VENDOR_PHOTO;
 
@@ -30,20 +33,22 @@ export function ProfileIdentityCard({
           </AvatarFallback>
         </Avatar>
 
-        {/* Verified checkmark badge matching mockup */}
-        <span
-          className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand text-white ring-2 ring-ona-surface shadow-sm"
-          aria-label="Verified motorist"
-          title="Verified"
-        >
-          <Image
-            alt="Verified"
-            src="/icons/badge-check.png"
-            width={12}
-            height={12}
-            className="h-3 w-3 object-contain"
-          />
-        </span>
+        {/* Verified checkmark badge - rendered only when motorist is actually verified (Tier 1+) */}
+        {isVerified && (
+          <span
+            className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand text-white ring-2 ring-ona-surface shadow-sm"
+            aria-label="Verified motorist"
+            title="Verified"
+          >
+            <Image
+              alt="Verified"
+              src="/icons/badge-check.png"
+              width={12}
+              height={12}
+              className="h-3 w-3 object-contain"
+            />
+          </span>
+        )}
       </div>
 
       {/* Centered Name */}

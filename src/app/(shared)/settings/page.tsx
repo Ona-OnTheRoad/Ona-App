@@ -214,6 +214,14 @@ export default function SettingsPage() {
           {HUB_SECTIONS.filter((item) => {
             // Pro: Payments & Payouts lives in the side bar, not Settings
             if (isPro && item.href === "/settings/payments") return false;
+            // Customer: Availability & Pricing are Repair Pro-only settings
+            if (
+              !isPro &&
+              (item.href === "/settings/sections/availability" ||
+                item.href === "/settings/sections/pricing")
+            ) {
+              return false;
+            }
             // Dual: hide hub Verification row use Continue / View rows above
             if (
               item.href === "/settings/verification" &&

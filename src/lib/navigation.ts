@@ -67,13 +67,24 @@ export function smartBackFallback(
 
   // ── Settings tree ─────────────────────────────────────────
   if (path === "/settings/appearance") return "/profile";
+  if (path === "/settings/accessibility") return "/settings/appearance";
   if (path.startsWith("/settings/payments/")) return "/settings/payments";
   if (path === "/settings/payments") return "/profile";
   if (path === "/settings/sections/security") return "/profile";
   if (path === "/settings/security") return "/settings/sections/security";
   if (path === "/settings/sessions") return "/settings/sections/security";
   if (path === "/settings/security-alerts") return "/settings/sections/security";
+  if (path === "/settings/sections/privacy") return "/profile";
+  if (path === "/settings/privacy") return "/settings/sections/privacy";
+  if (path === "/settings/permissions") return "/settings/sections/privacy";
+  if (path === "/settings/delete-account") return "/settings/privacy";
+  if (path === "/settings/notifications") return "/profile";
+  if (path === "/settings/sections/notifications") return "/profile";
+  if (path === "/settings/sections/support") return "/profile";
+  if (path === "/settings/support") return "/settings/sections/support";
+  if (path === "/settings/legal") return "/settings/sections/support";
   if (path.startsWith("/settings/legal/")) return "/settings/legal";
+  if (path === "/settings/about") return "/settings/sections/support";
   if (path.startsWith("/settings/") && path !== "/settings") {
     return "/settings";
   }

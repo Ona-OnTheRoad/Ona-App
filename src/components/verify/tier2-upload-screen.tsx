@@ -24,13 +24,13 @@ export function Tier2UploadScreen({ isLight: propIsLight }: Tier2UploadScreenPro
   const isLight = propIsLight ?? theme === "light";
   const v = useVerifyIdentity();
 
-  // Default ID type to national_id (NIN)
+  // Default ID type to national_id (NIN) if not set yet
   useEffect(() => {
-    const nin = v.idTypes.find(
-      (d) => d.kind === "national_id" || d.api === "nin",
-    );
-    if (nin && v.idType !== nin.kind) {
-      v.changeIdType(nin.kind);
+    if (!v.idType && v.idTypes.length > 0) {
+      const nin = v.idTypes.find(
+        (d) => d.kind === "national_id" || d.api === "nin",
+      );
+      v.changeIdType(nin?.kind || v.idTypes[0].kind);
     }
   }, [v.idTypes, v.idType, v]);
 
@@ -65,7 +65,30 @@ export function Tier2UploadScreen({ isLight: propIsLight }: Tier2UploadScreenPro
     v.pickIdFront("", "");
   };
 
-  const isReady = Boolean(v.idNumber.trim().length >= 4 && v.idFront);
+  const handleBackFilePicked = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const dataUrl = await readFile(file);
+      v.pickIdBack(dataUrl, file.name);
+    } catch {
+      v.onPhotoReadError();
+    }
+  };
+
+  const handleBackFileRemoved = () => {
+    v.pickIdBack("", "");
+  };
+
+  const needsBack = Boolean(v.selectedDoc?.needsBack);
+  const minLen = v.selectedDoc?.minLen ?? 4;
+  const isReady = Boolean(
+    v.idNumber.trim().length >= minLen &&
+      v.idFront &&
+      (!needsBack || v.idBack),
+  );
 
   return (
     <div className="ona2 flex h-full min-h-0 flex-col overflow-y-auto scrollbar-hide bg-ona-bg text-ona-ink">
@@ -86,19 +109,40 @@ export function Tier2UploadScreen({ isLight: propIsLight }: Tier2UploadScreenPro
           <Tier2IdTypeSelect
             value={v.idType}
             onChange={v.changeIdType}
+            options={v.idTypes}
           />
 
           <Tier2NinInput
             value={v.idNumber}
             onChange={v.setIdNumber}
+            selectedDoc={v.selectedDoc}
           />
 
+          {/* Front Photo Picker */}
           <Tier2PhotoPicker
+            id="verify-id-photo-front"
+            label={
+              needsBack
+                ? "Upload ID photo (front)"
+                : "Upload ID photo (front only)"
+            }
             fileName={v.idFrontName}
             hasFile={Boolean(v.idFront)}
             onFilePicked={handleFrontFilePicked}
             onRemove={handleFrontFileRemoved}
           />
+
+          {/* Back Photo Picker (when document needs both sides) */}
+          {needsBack ? (
+            <Tier2PhotoPicker
+              id="verify-id-photo-back"
+              label="Upload ID photo (back)"
+              fileName={v.idBackName}
+              hasFile={Boolean(v.idBack)}
+              onFilePicked={handleBackFilePicked}
+              onRemove={handleBackFileRemoved}
+            />
+          ) : null}
 
           {/* Submit Button */}
           <button

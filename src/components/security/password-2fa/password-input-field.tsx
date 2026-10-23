@@ -26,7 +26,7 @@ export function PasswordInputField({
     <div className="space-y-1.5">
       <label
         htmlFor={id}
-        className="block text-[14px] font-bold text-ona-ink"
+        className="block text-[14px] font-medium text-ona-ink"
       >
         {label}
       </label>
@@ -38,7 +38,7 @@ export function PasswordInputField({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           autoComplete={autoComplete}
-          className="h-12 w-full rounded-ona-ctl border border-ona-border bg-ona-field px-4 pr-11 text-[14px] font-semibold text-ona-ink outline-none transition-colors placeholder:text-ona-muted/60 focus:border-ona-ink"
+          className="h-12 w-full rounded-ona-ctl border border-ona-border bg-ona-field px-4 pr-11 text-[12px] font-normal text-ona-ink outline-none transition-colors placeholder:text-ona-muted/60 focus:border-ona-ink"
         />
         <button
           type="button"

@@ -88,12 +88,8 @@ export function useTwoFa(email: string) {
       return;
     }
     if (setupStep !== "idle") {
-      // Cancel mid-setup → ensure OFF
-      setTwoFaOn(false);
-      setMethod(null);
-      setSetupStep("idle");
-      setSetupErr(null);
-      persistEnabled(false, null);
+      // Cancel mid-setup → prompt confirmation
+      setConfirmCancel(true);
       return;
     }
     // Turning ON → open setup immediately

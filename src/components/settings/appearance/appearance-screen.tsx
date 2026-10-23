@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { Accessibility, ArrowLeft, ArrowRight } from "lucide-react";
 import { AppearanceThemeCard } from "./appearance-theme-card";
 import { AppearanceLanguageCard } from "./appearance-language-card";
 import { LanguageSelectSheet } from "./language-select-sheet";
@@ -42,7 +43,7 @@ export function AppearanceScreen({ isLight: propIsLight }: AppearanceScreenProps
         </h1>
 
         <div className="space-y-6">
-          {/* Card 1: Theme switches */}
+          {/* Card 1: Theme selector */}
           <AppearanceThemeCard isLight={isLight} />
 
           {/* Card 2: Language selector card */}
@@ -50,6 +51,27 @@ export function AppearanceScreen({ isLight: propIsLight }: AppearanceScreenProps
             isLight={isLight}
             onOpenSelect={() => setLangSheetOpen(true)}
           />
+
+          {/* Card 3: Accessibility */}
+          <Link
+            href="/settings/accessibility"
+            className="flex items-center justify-between rounded-ona-ctl border border-ona-border bg-ona-surface px-4 py-4 transition-colors hover:bg-black/2 active:bg-black/4 dark:hover:bg-white/3 dark:active:bg-white/6 group"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-ona-brand-soft">
+                <Accessibility className="h-4 w-4 text-ona-brand-ink" />
+              </div>
+              <div>
+                <p className="text-[14px] font-medium leading-tight text-ona-ink">
+                  Accessibility
+                </p>
+                <p className="text-[12px] leading-tight mt-0.5 text-ona-muted">
+                  Text size & high contrast
+                </p>
+              </div>
+            </div>
+            <ArrowRight className="h-4 w-4 text-ona-muted opacity-70 group-hover:opacity-100 transition-opacity" />
+          </Link>
         </div>
       </div>
 

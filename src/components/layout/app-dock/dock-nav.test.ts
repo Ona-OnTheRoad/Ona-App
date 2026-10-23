@@ -9,7 +9,7 @@ const row = (href: string, icon: DockNavRow["icon"]): DockNavRow => ({
 });
 
 describe("buildDockItems", () => {
-  it("customer: Home, Shop, Wallet, Profile in the bar; History in More", () => {
+  it("customer: Home, Shop, History, Profile in the bar; More is empty", () => {
     const rows = [
       row("/", "dashboard"),
       row("/history", "history"),
@@ -23,14 +23,10 @@ describe("buildDockItems", () => {
     expect(primary.map((p) => p.key)).toEqual([
       "/",
       "/shop",
-      "/wallet",
+      "/history",
       "/profile",
     ]);
-    expect(more.map((m) => m.key)).toEqual([
-      "/history",
-      "/settings",
-      "/express",
-    ]);
+    expect(more).toEqual([]);
   });
 
   it("repair pro: Dashboard, Jobs, Wallet, Profile in the bar; Shop in More", () => {
@@ -59,7 +55,7 @@ describe("buildDockItems", () => {
   });
 
   it("skips a tab the backend hid instead of inventing one", () => {
-    const rows = [row("/", "dashboard"), row("/history", "history")];
+    const rows = [row("/", "dashboard")];
     const { primary } = buildDockItems(rows, t, "/shop", "/");
     expect(primary.map((p) => p.key)).toEqual(["/"]);
   });

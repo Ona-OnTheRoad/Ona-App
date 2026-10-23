@@ -2,6 +2,8 @@ export const EN_SETTINGS = {
   "settings.title": "Settings",
   "settings.subtitle": "Ona app",
   "settings.appearance": "Appearance",
+  "settings.theme": "Theme",
+  "settings.systemDefault": "System default",
   "settings.darkMode": "Dark mode",
   "settings.lightMode": "Light mode",
   "settings.themeSaved": "Saved for {name}",
@@ -28,6 +30,8 @@ export const EN_SETTINGS = {
   "settings.aboutDetail": "Version 0.1 · help nearby",
   "language.title": "Language",
   "language.subtitle": "App display language",
+  "language.selectTitle": "Select language",
+  "language.saveChanges": "Save changes",
   "language.hint":
     "Choose how Ona shows menus and buttons. English is the default.",
   "language.saved": "Language updated",

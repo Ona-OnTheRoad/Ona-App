@@ -29,9 +29,6 @@ export function PasswordScreen() {
     navigateBack(router, "/settings/sections/security", accountType);
   };
 
-  const ink = "text-ona-ink";
-  const muted = "text-ona-muted";
-
   return (
     <div className="ona2 flex h-full min-h-0 flex-col overflow-y-auto scrollbar-hide bg-ona-bg text-ona-ink">
       <div className="w-full max-w-lg mx-auto px-4 pb-20 space-y-4">
@@ -76,75 +73,61 @@ export function PasswordScreen() {
             type="button"
             onClick={pw.changePassword}
             disabled={pw.busy || !pw.next}
-            className="w-full h-12 rounded-ona-ctl bg-brand text-white font-bold text-[14px] transition-opacity hover:opacity-95 active:opacity-85 disabled:opacity-50 cursor-pointer"
+            className="w-full h-12 rounded-ona-ctl bg-brand text-white font-medium text-[14px] transition-opacity hover:opacity-95 active:opacity-85 disabled:opacity-50 cursor-pointer"
           >
             {pw.busy ? "Updating..." : "Update password"}
           </button>
         </div>
 
         {/* Two-Factor Authentication */}
-        {fa.setupStep === "idle" ? (
-          <TwoFactorAuthCard
-            enabled={fa.twoFaOn}
-            onToggle={fa.onToggle}
-          />
-        ) : (
-          <div className="rounded-ona-ctl border border-ona-border bg-ona-surface p-4 shadow-xs">
-            <TwoFactorAuthCard
-              enabled={fa.twoFaOn}
-              onToggle={fa.onToggle}
+        <TwoFactorAuthCard
+          enabled={fa.twoFaOn || fa.setupStep !== "idle"}
+          onToggle={fa.onToggle}
+          subtitle={
+            fa.twoFaOn
+              ? "On - active"
+              : fa.setupStep !== "idle"
+                ? "Setup in progress"
+                : "Off - recommended"
+          }
+        >
+          {fa.setupStep === "pick" && (
+            <PickMethodPanel
+              phone={userProfile?.phone}
+              setSetupStep={fa.setSetupStep}
+              setSmsSent={fa.setSmsSent}
+              setSetupErr={fa.setSetupErr}
+              onCancel={() => fa.setConfirmCancel(true)}
             />
-            {fa.setupStep === "pick" && (
-              <div className="mt-3">
-                <PickMethodPanel
-                  isLight={isLight}
-                  ink={ink}
-                  muted={muted}
-                  phone={userProfile?.phone}
-                  setSetupErr={fa.setSetupErr}
-                  setSetupStep={fa.setSetupStep}
-                  setSmsSent={fa.setSmsSent}
-                  onCancel={() => fa.setConfirmCancel(true)}
-                />
-              </div>
-            )}
-            {fa.setupStep === "sms" && (
-              <div className="mt-3">
-                <SmsPanel
-                  isLight={isLight}
-                  ink={ink}
-                  muted={muted}
-                  phone={userProfile?.phone}
-                  setupErr={fa.setupErr}
-                  setSetupErr={fa.setSetupErr}
-                  setSetupStep={fa.setSetupStep}
-                  smsSent={fa.smsSent}
-                  setSmsSent={fa.setSmsSent}
-                  smsCode={fa.smsCode}
-                  setSmsCode={fa.setSmsCode}
-                  verifySms={fa.verifySms}
-                />
-              </div>
-            )}
-            {fa.setupStep === "authenticator" && (
-              <div className="mt-3">
-                <AuthenticatorPanel
-                  isLight={isLight}
-                  ink={ink}
-                  muted={muted}
-                  setupErr={fa.setupErr}
-                  setSetupErr={fa.setSetupErr}
-                  setSetupStep={fa.setSetupStep}
-                  secret={fa.secret}
-                  email={email}
-                  authCode={fa.authCode}
-                  setAuthCode={fa.setAuthCode}
-                  verifyAuth={fa.verifyAuth}
-                />
-              </div>
-            )}
-          </div>
-        )}
+          )}
+
+          {fa.setupStep === "sms" && (
+            <SmsPanel
+              phone={userProfile?.phone}
+              setupErr={fa.setupErr}
+              setSetupErr={fa.setSetupErr}
+              setSetupStep={fa.setSetupStep}
+              smsSent={fa.smsSent}
+              setSmsSent={fa.setSmsSent}
+              smsCode={fa.smsCode}
+              setSmsCode={fa.setSmsCode}
+              verifySms={fa.verifySms}
+            />
+          )}
+
+          {fa.setupStep === "authenticator" && (
+            <AuthenticatorPanel
+              setupErr={fa.setupErr}
+              setSetupErr={fa.setSetupErr}
+              setSetupStep={fa.setSetupStep}
+              secret={fa.secret}
+              email={email}
+              authCode={fa.authCode}
+              setAuthCode={fa.setAuthCode}
+              verifyAuth={fa.verifyAuth}
+            />
+          )}
+        </TwoFactorAuthCard>
       </div>
 
       <ConfirmCancelSheet
@@ -152,6 +135,8 @@ export function PasswordScreen() {
         isLight={isLight}
         title="Cancel setup?"
         message="Your security setup will not be saved."
+        confirmLabel="Yes, cancel"
+        keepLabel="Continue setup"
         onClose={() => fa.setConfirmCancel(false)}
         onConfirm={() => {
           fa.setConfirmCancel(false);

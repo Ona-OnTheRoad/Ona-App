@@ -4,6 +4,8 @@ export const PT_SETTINGS: Record<keyof typeof EN_SETTINGS, string> = {
   "settings.title": "Definições",
   "settings.subtitle": "App Ona",
   "settings.appearance": "Aspeto",
+  "settings.theme": "Tema",
+  "settings.systemDefault": "Padrão do sistema",
   "settings.darkMode": "Modo escuro",
   "settings.lightMode": "Modo claro",
   "settings.themeSaved": "Guardado para {name}",
@@ -32,6 +34,8 @@ export const PT_SETTINGS: Record<keyof typeof EN_SETTINGS, string> = {
   "settings.aboutDetail": "Versão 0.1 · ajuda por perto",
   "language.title": "Idioma",
   "language.subtitle": "Idioma de apresentação",
+  "language.selectTitle": "Selecionar idioma",
+  "language.saveChanges": "Guardar alterações",
   "language.hint":
     "Escolha o idioma dos menus e botões. O inglês é o predefinido.",
   "language.saved": "Idioma atualizado",
