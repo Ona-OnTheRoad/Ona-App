@@ -58,6 +58,8 @@ export const PRO_NAV: {
   { href: "/settings", labelKey: "menu.settings", icon: "settings" },
   /** ONA Shop same commerce engine as customers (Ona is seller) */
   { href: "/shop", labelKey: "nav.myShop", icon: "shop" },
+  /** Ona Express premium direct booking */
+  { href: "/express", labelKey: "nav.onaExpress", icon: "express" },
 ];
 
 /** Map pro trade id → i18n key so My Service follows chosen language */

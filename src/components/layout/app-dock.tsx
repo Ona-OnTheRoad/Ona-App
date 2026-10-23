@@ -85,20 +85,17 @@ export function AppDock() {
     );
     const built = buildDockItems(nav, t, myShopHref, roleHome, ProfileDockIcon);
     const bell: DockItem = {
-      key: "notifications",
+      key: "/notifications",
+      href: "/notifications",
       label: t("menu.notifications"),
       icon: Bell,
       badge: unread > 0 ? (unread > 99 ? "99+" : unread) : undefined,
-      onClick: () => {
-        closeDockSheet();
-        notif?.openCenter();
-      },
     };
     return {
       primary: built.primary,
-      more: isPro ? [...built.more, bell] : [],
+      more: [bell, ...built.more],
     };
-  }, [config.content, isPro, myShopHref, roleHome, t, unread, notif]);
+  }, [config.content, isPro, myShopHref, roleHome, t, unread]);
 
   const DockLink = useMemo(
     () =>
@@ -116,6 +113,7 @@ export function AppDock() {
             {...rest}
             onClick={(e) => {
               onClick?.();
+              closeDockSheet();
               // Home always opens on a blank trade selector, never a stale flow.
               if (isHomeHref(href, roleHome)) {
                 e.preventDefault();

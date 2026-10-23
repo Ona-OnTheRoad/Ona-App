@@ -118,6 +118,8 @@ export function smartBackFallback(
   }
   if (path === "/requests") return home;
   if (path === "/history") return home;
+  if (path === "/express") return home;
+  if (path === "/notifications") return home;
   if (path === "/bookings" || path === "/orders") {
     return accountType === "professional" ? "/dashboard" : home;
   }

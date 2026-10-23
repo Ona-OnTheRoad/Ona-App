@@ -52,6 +52,8 @@ export function isSharedAppPath(pathname: string): boolean {
   if (pathname.startsWith("/shop")) return true;
   // Ona Express premium direct booking
   if (pathname.startsWith("/express")) return true;
+  // Notifications feed
+  if (pathname.startsWith("/notifications")) return true;
   return false;
 }
 
