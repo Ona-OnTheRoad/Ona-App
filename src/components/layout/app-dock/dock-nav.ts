@@ -104,17 +104,18 @@ export function buildDockItems(
   roleHome: string,
   profileIcon?: Icon,
 ): { primary: DockItem[]; more: DockItem[] } {
-  // Customer: Home, Shop, Wallet, Profile (History lives in More).
-  // Repair Pro: Dashboard, Jobs, Wallet, Profile (Shop lives in More).
-  const primaryHrefs =
-    roleHome === "/dashboard"
-      ? ["/dashboard", "/jobs", "/wallet", "/profile"]
-      : ["/", myShopHref, "/wallet", "/profile"];
+  // Customer: Home, Shop, History, Profile (No More sheet; settings, wallet, role-switch live under Profile).
+  // Repair Pro: Dashboard, Jobs, Wallet, Profile (Shop, Settings, Payments live in More).
+  const isPro = roleHome === "/dashboard";
+  const primaryHrefs = isPro
+    ? ["/dashboard", "/jobs", "/wallet", "/profile"]
+    : ["/", myShopHref, "/history", "/profile"];
 
   const labelFor = (r: DockNavRow): string => {
     if (r.labelOverride) return r.labelOverride;
     if (r.href === "/") return t("nav.home");
     if (r.href === "/wallet") return t("nav.wallet");
+    if (r.href === "/history") return t("nav.history");
     if (r.href === myShopHref || r.href === "/shop") return t("nav.shop");
     return t(r.labelKey);
   };
@@ -135,6 +136,6 @@ export function buildDockItems(
     .filter((r): r is DockNavRow => Boolean(r))
     .map(toItem);
   const taken = new Set(primary.map((p) => p.key));
-  const more = rows.filter((r) => !taken.has(r.href)).map(toItem);
+  const more = isPro ? rows.filter((r) => !taken.has(r.href)).map(toItem) : [];
   return { primary, more };
 }

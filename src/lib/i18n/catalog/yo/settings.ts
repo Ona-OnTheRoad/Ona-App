@@ -4,6 +4,8 @@ export const YO_SETTINGS: Record<keyof typeof EN_SETTINGS, string> = {
   "settings.title": "Ètò",
   "settings.subtitle": "Áàpù Ona",
   "settings.appearance": "Ìrísí",
+  "settings.theme": "Àwọ̀",
+  "settings.systemDefault": "Aṣàyàn ẹ̀rọ",
   "settings.darkMode": "Ipo dúdú",
   "settings.lightMode": "Ipo ìmọ́lẹ̀",
   "settings.themeSaved": "Ti fi pamọ́ fún {name}",
@@ -30,6 +32,8 @@ export const YO_SETTINGS: Record<keyof typeof EN_SETTINGS, string> = {
   "settings.aboutDetail": "Ẹ̀yà 0.1 · ìrànlọ́wọ́ nítòsí",
   "language.title": "Èdè",
   "language.subtitle": "Èdè ìfihàn áàpù",
+  "language.selectTitle": "Yan èdè",
+  "language.saveChanges": "Fi àwọn àyípadà pamọ́",
   "language.hint":
     "Yan bí Ona ṣe ń fi àkójọ àti bọ́tìnì hàn. Gẹ̀ẹ́sì ni aṣàyàn ìpilẹ̀ṣẹ̀.",
   "language.saved": "Èdè ti yípadà",

@@ -1,5 +1,5 @@
 export const PREFS_KEY = "ona-security-alerts-prefs-v1";
-export const FEED_KEY = "ona-security-alerts-feed-v1";
+export const FEED_KEY = "ona-security-alerts-feed-v2";
 
 export type Prefs = {
   newLogin: boolean;

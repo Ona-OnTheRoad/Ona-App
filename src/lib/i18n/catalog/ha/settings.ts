@@ -4,6 +4,8 @@ export const HA_SETTINGS: Record<keyof typeof EN_SETTINGS, string> = {
   "settings.title": "Saituna",
   "settings.subtitle": "Manhajar Ona",
   "settings.appearance": "Bayyanar",
+  "settings.theme": "Jigo",
+  "settings.systemDefault": "Tsohon tsarin",
   "settings.darkMode": "Yanayin duhu",
   "settings.lightMode": "Yanayin haske",
   "settings.themeSaved": "An ajiye wa {name}",
@@ -31,6 +33,8 @@ export const HA_SETTINGS: Record<keyof typeof EN_SETTINGS, string> = {
   "settings.aboutDetail": "Sigar 0.1 · taimako kusa",
   "language.title": "Harshe",
   "language.subtitle": "Harshen nunin manhaja",
+  "language.selectTitle": "Zaɓi harshe",
+  "language.saveChanges": "Ajiye canje-canje",
   "language.hint":
     "Zaɓi yadda Ona ke nuna menu da maɓallan. Turanci ne na asali.",
   "language.saved": "An sabunta harshe",

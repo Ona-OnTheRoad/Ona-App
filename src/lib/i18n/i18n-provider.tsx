@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import {
@@ -45,8 +46,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const [catalogTick, setCatalogTick] = useState(false);
 
   useEffect(() => {
-    setLocaleState(readStoredLocale());
+    const stored = readStoredLocale();
+    setLocaleState(stored);
     setReady(true);
+    if (stored !== DEFAULT_LOCALE) {
+      void loadCatalog(stored).then(() => {
+        setCatalogTick((v) => !v);
+      });
+    }
     if (process.env.NODE_ENV === "development") {
       void import("@/lib/i18n/catalog").then(({ assertCatalogParity }) => {
         void assertCatalogParity().then((issues: string[]) => {
@@ -79,6 +86,11 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(LOCALE_STORAGE_KEY, code);
     } catch {
       /* ignore */
+    }
+    if (code !== DEFAULT_LOCALE) {
+      void loadCatalog(code).then(() => {
+        setCatalogTick((v) => !v);
+      });
     }
     // Persist to profiles.preferred_locale when signed in
     void (async () => {

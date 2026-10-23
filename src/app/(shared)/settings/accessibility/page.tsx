@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PageHeader } from "@/components/layout/page-header";
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
+import { OnaToggle } from "@/components/ui/ona-toggle";
+import { navigateBack } from "@/lib/navigation";
 import { useApp } from "@/lib/store";
-import { cn } from "@/lib/utils";
 
 const KEY = "ona-a11y-font-scale";
 
 export default function SettingsAccessibilityPage() {
-  const { theme } = useApp();
-  const isLight = theme === "light";
+  const router = useRouter();
+  const { accountType } = useApp();
   const [scale, setScale] = useState(100);
   const [highContrast, setHighContrast] = useState(false);
 
@@ -45,110 +47,85 @@ export default function SettingsAccessibilityPage() {
   };
 
   return (
-    <div
-      className={cn(
-        "flex h-full flex-col",
-        isLight ? "bg-[#c8c9cd]" : "bg-black",
-      )}
-    >
-      <PageHeader
-        title="Accessibility"
-        subtitle="Text size & readability"
-        backHref="/settings"
-      />
-      <div className="flex-1 space-y-3 overflow-y-auto px-3 pb-6 scrollbar-hide">
-        <div className={cn("rounded-md px-3 py-3", "bg-transparent")}>
-          <p
-            className={cn(
-              "text-[13px] font-bold",
-              isLight ? "text-slate-900" : "text-white",
-            )}
+    <div className="ona2 flex h-full min-h-0 flex-col overflow-y-auto scrollbar-hide bg-ona-bg text-ona-ink">
+      <div className="w-full max-w-lg mx-auto px-4 pb-20">
+        {/* Top Back bar */}
+        <div className="flex items-center pt-3 pb-1 mb-2">
+          <button
+            type="button"
+            onClick={() => navigateBack(router, "/settings/appearance", accountType)}
+            className="-ml-2 flex h-10 w-10 items-center justify-center rounded-full transition-colors text-ona-ink hover:bg-black/5 dark:hover:bg-white/10 active:opacity-70"
+            aria-label="Back"
           >
+            <ArrowLeft className="h-5 w-5" strokeWidth={2.4} />
+          </button>
+        </div>
+
+        {/* Screen Title & Subtitle */}
+        <header className="mb-6">
+          <h1 className="text-[20px] font-semibold tracking-tight text-ona-ink">
+            Accessibility
+          </h1>
+          <p className="text-[13px] text-ona-muted mt-1">
+            Text size and readability
+          </p>
+        </header>
+
+        {/* Text Size Section */}
+        <section className="mb-6">
+          <p className="text-[14px] font-semibold text-ona-ink">
             Text size
           </p>
-          <p
-            className={cn(
-              "mt-0.5 text-[11px] font-medium",
-              isLight ? "text-slate-600" : "text-white/60",
-            )}
-          >
+          <p className="text-[12px] text-ona-muted mt-0.5 mb-3">
             Current {scale}%
           </p>
-          <div className="mt-3 flex gap-2">
+
+          <div className="flex items-center gap-3">
             <button
               type="button"
-              className="h-10 flex-1 rounded-md border-0 bg-[#323231] text-[13px] font-bold text-white"
               onClick={() => applyScale(scale - 10)}
+              className="h-11 flex-1 rounded-ona-ctl border border-[#FF6B35] bg-transparent text-[14px] font-semibold text-[#FF6B35] hover:bg-[#FF6B35]/10 active:bg-[#FF6B35]/20 transition-colors flex items-center justify-center"
             >
-              A− Decrease
+              A- Decrease
             </button>
             <button
               type="button"
-              className="h-10 flex-1 rounded-md border-0 bg-[#323231] text-[13px] font-bold text-white"
               onClick={() => applyScale(scale + 10)}
+              className="h-11 flex-1 rounded-ona-ctl border border-[#FF6B35] bg-transparent text-[14px] font-semibold text-[#FF6B35] hover:bg-[#FF6B35]/10 active:bg-[#FF6B35]/20 transition-colors flex items-center justify-center"
             >
               A+ Increase
             </button>
           </div>
-          <button
-            type="button"
-            className={cn(
-              "mt-2 w-full border-0 bg-transparent text-[11px] font-semibold",
-              isLight ? "text-slate-600" : "text-white/55",
-            )}
-            onClick={() => applyScale(100)}
-          >
-            Reset to default
-          </button>
-        </div>
 
-        <div
-          className={cn(
-            "flex items-center justify-between gap-3 rounded-md px-3 py-3",
-            "bg-transparent",
-          )}
-        >
-          <div>
-            <p
-              className={cn(
-                "text-[13px] font-bold",
-                isLight ? "text-slate-900" : "text-white",
-              )}
+          <div className="mt-3 text-center">
+            <button
+              type="button"
+              onClick={() => applyScale(100)}
+              className="border-0 bg-transparent text-[13px] font-medium text-ona-ink hover:underline active:opacity-70"
             >
-              Stronger contrast
-            </p>
-            <p
-              className={cn(
-                "text-[11px] font-medium",
-                isLight ? "text-slate-600" : "text-white/60",
-              )}
-            >
-              Preference saved on this device.
-            </p>
+              Reset to default
+            </button>
           </div>
-          <button
-            type="button"
-            role="switch"
-            aria-label="Stronger contrast"
-            aria-checked={highContrast}
-            onClick={() => applyHc(!highContrast)}
-            className={cn(
-              "h-7 w-12 shrink-0 rounded-full border-0",
-              highContrast
-                ? "bg-[#FF6B35]"
-                : isLight
-                  ? "bg-black/20"
-                  : "bg-white/20",
-            )}
-          >
-            <span
-              className={cn(
-                "block h-5 w-5 rounded-full bg-white transition-transform",
-                highContrast ? "translate-x-6" : "translate-x-1",
-              )}
+        </section>
+
+        {/* Stronger Contrast Card */}
+        <section>
+          <div className="flex items-center justify-between gap-3 rounded-ona-ctl border border-ona-border bg-ona-surface p-4 shadow-sm">
+            <div>
+              <p className="text-[14px] font-semibold text-ona-ink">
+                Stronger contrast
+              </p>
+              <p className="text-[12px] text-ona-muted mt-0.5">
+                Preference saved on this device.
+              </p>
+            </div>
+            <OnaToggle
+              checked={highContrast}
+              onChange={applyHc}
+              label="Stronger contrast"
             />
-          </button>
-        </div>
+          </div>
+        </section>
       </div>
     </div>
   );

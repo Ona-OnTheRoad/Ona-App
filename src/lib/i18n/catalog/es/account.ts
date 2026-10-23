@@ -104,6 +104,9 @@ export const ES_ACCOUNT: Record<keyof typeof EN_ACCOUNT, string> = {
   "settings.hub.supportDetail": "Ayuda, legal y acerca de",
   "settings.hub.addresses": "Addresses & location",
   "settings.hub.addressesDetail": "Home, Work, service area & pin",
+  "settings.hub.personalInfo": "Información personal",
+  "settings.hub.referEarn": "Recomienda y gana",
+  "settings.hub.referEarnDetail": "Comparte tu código. Gana créditos",
   "settings.dangerZone": "Zona de peligro",
   "settings.deleteAccount": "Eliminar cuenta",
   "settings.deleteAccountDetail":

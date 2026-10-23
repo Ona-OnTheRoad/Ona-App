@@ -1,67 +1,36 @@
-import type { ComponentType, CSSProperties } from "react";
-import { cn } from "@/lib/utils";
-import { NotificationToggle } from "./notification-toggle";
+"use client";
 
-export type ToggleTone = {
-  accent: string;
-  trackOff: string;
-  knobOn: string;
-  knobOff: string;
-};
+import { OnaToggle } from "@/components/ui/ona-toggle";
 
-/** One icon + label + switch row (types and delivery lists). */
-export function PrefRow({
-  Icon,
-  id,
-  label,
-  detail,
-  on,
-  onChange,
-  toggleLabel,
-  tone,
-  ink,
-  muted,
-}: {
-  Icon: ComponentType<{
-    className?: string;
-    style?: CSSProperties;
-    strokeWidth?: number;
-    "aria-hidden"?: boolean;
-  }>;
-  id: string;
+interface PrefRowProps {
   label: string;
   detail: string;
-  on: boolean;
-  onChange: (v: boolean) => void;
-  toggleLabel: string;
-  tone: ToggleTone;
-  ink: string;
-  muted: string;
-}) {
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (val: boolean) => void;
+}
+
+export function PrefRow({
+  label,
+  detail,
+  checked,
+  disabled = false,
+  onChange,
+}: PrefRowProps) {
   return (
-    <li className="flex items-center gap-2 py-2.5">
-      <Icon
-        className="h-4 w-4 shrink-0"
-        style={{ color: tone.accent }}
-        strokeWidth={2.1}
-        aria-hidden
-      />
-      <div className="min-w-0 flex-1">
-        <p id={id} className={cn("text-[13px] font-semibold", ink)}>
-          {label}
+    <div className="flex items-center justify-between gap-3 py-3.5 first:pt-2.5 last:pb-1">
+      <div className="min-w-0 flex-1 pr-2">
+        <p className="text-[12px] font-medium text-ona-ink">{label}</p>
+        <p className="text-[11px] font-normal text-ona-muted mt-0.5 leading-snug">
+          {detail}
         </p>
-        <p className={cn("text-[10px] font-medium", muted)}>{detail}</p>
       </div>
-      <NotificationToggle
-        accent={tone.accent}
-        trackOff={tone.trackOff}
-        knobOn={tone.knobOn}
-        knobOff={tone.knobOff}
-        on={on}
+      <OnaToggle
+        checked={checked}
+        disabled={disabled}
         onChange={onChange}
-        label={toggleLabel}
-        describedBy={id}
+        label={label}
       />
-    </li>
+    </div>
   );
 }

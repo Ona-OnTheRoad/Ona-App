@@ -62,6 +62,21 @@ export function isIdentityVerified(
   return false;
 }
 
+/**
+ * Motorist is considered verified when they reach Tier 1 (phone verified) or higher (Tier 2/3).
+ */
+export function isMotoristVerified(
+  profile: UserProfile | null | undefined,
+): boolean {
+  if (!profile) return false;
+  return (
+    isPhoneVerified(profile) ||
+    isIdentityVerified(profile) ||
+    Boolean(profile.inPersonVerified) ||
+    Boolean(profile.govIdVerified)
+  );
+}
+
 export function isIdentityPending(
   profile: UserProfile | null | undefined,
 ): boolean {
