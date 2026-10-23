@@ -156,3 +156,5 @@ Toast: a failed submit, "Saved", "Code sent", "Copied", flash messages. Keep **i
 - **Already installed:** never inside the installed app (`display-mode`, `navigator.standalone`, TWA referrer); the `appinstalled` event and `getInstalledRelatedApps()` (manifest lists the web app) record an install; Chromium only fires `beforeinstallprompt` when the app is *not* installed, which also clears a stale "installed" flag after an uninstall.
 - **Frequency:** from the second visit, after 8 seconds on a screen; "Not now" snoozes 3 → 14 → 60 days.
 - **Known limit:** iOS Safari cannot see that the app is installed (separate storage), so Safari visits by someone who installed may still show the nudge until they dismiss it; the installed app itself never does.
+
+**Dock glass:** the bottom dock has no strip or background behind it. It is frosted glass (translucent token surface + backdrop blur) and page content scrolls underneath. `#ona-phone[data-dock="1"]` (set by `AppFrame` while the dock is visible) adds `--dock-space` at the end of page-level scrollers so the last item can be scrolled clear of it.

@@ -12,7 +12,7 @@ import {
   resolveKnownPlace,
   type KnownPlace,
 } from "@/lib/known-places";
-import { mapThemeForApp } from "@/lib/map-theme";
+import { OSM_SATELLITE_ATTRIBUTION, mapThemeForApp } from "@/lib/map-theme";
 import { useApp } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import type { PickedLocation } from "./location-picker-map";
@@ -240,7 +240,10 @@ export function OsmLocationPicker({
           zoomControl={false}
           attributionControl={false}
         >
-          <TileLayer url={mapTheme.osmTileUrl} />
+          <TileLayer
+            url={mapTheme.osmTileUrl}
+            attribution={OSM_SATELLITE_ATTRIBUTION}
+          />
           <ClickHandler onPick={(lat, lng) => placePin(lat, lng)} />
           <Marker
             position={[pin.lat, pin.lng]}

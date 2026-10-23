@@ -102,6 +102,7 @@ export function buildDockItems(
   t: (k: MessageKey) => string,
   myShopHref: string,
   roleHome: string,
+  profileIcon?: Icon,
 ): { primary: DockItem[]; more: DockItem[] } {
   // Customer: Home, Shop, History, Profile (No More sheet; settings, wallet, role-switch live under Profile).
   // Repair Pro: Dashboard, Jobs, Wallet, Profile (Shop, Settings, Payments live in More).
@@ -122,7 +123,12 @@ export function buildDockItems(
     key: r.href,
     href: r.href,
     label: labelFor(r),
-    icon: r.href === "/wallet" ? WALLET_ICON : ICONS[r.icon],
+    icon:
+      r.href === "/wallet"
+        ? WALLET_ICON
+        : r.href === "/profile" && profileIcon
+          ? profileIcon
+          : ICONS[r.icon],
   });
 
   const primary = primaryHrefs

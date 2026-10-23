@@ -33,6 +33,7 @@ function req(qs: string) {
 
 type ReqRow = {
   id: string;
+  job_version?: number;
   motorist_id: string;
   repair_pro_id: string | null;
   service_type: string;
@@ -92,6 +93,7 @@ describe("GET /api/requests", () => {
         data: [
           {
             id: "req-1",
+            job_version: 12,
             motorist_id: "motorist-1",
             repair_pro_id: "pro-1",
             service_type: "mechanic",
@@ -117,6 +119,7 @@ describe("GET /api/requests", () => {
     expect(json.data.requests).toHaveLength(1);
     expect(json.data.requests[0]).toMatchObject({
       id: "req-1",
+      jobVersion: 12,
       technicianId: "pro-1",
       technicianName: "Jane Pro",
       motoristId: "motorist-1",

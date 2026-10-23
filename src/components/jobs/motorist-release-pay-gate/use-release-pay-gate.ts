@@ -1,3 +1,5 @@
+import { recordJobDiagnostic } from "@/lib/jobs/diagnostics/collector";
+import type { JobTrigger } from "@/lib/jobs/diagnostics/types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { apiListJobs, apiTransition } from "@/lib/jobs/client";
@@ -61,7 +63,7 @@ export function useReleasePayGate() {
     });
   })();
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (trigger: JobTrigger) => {
     if (!isAuthenticated || !backendUserId) {
       setPending(null);
       return;
@@ -74,13 +76,13 @@ export function useReleasePayGate() {
       lastSweepRef.current = now;
       try {
         const { apiExpireStaleBookedJobs } = await import("@/lib/jobs/client");
-        await apiExpireStaleBookedJobs();
+        await apiExpireStaleBookedJobs({ source: "release", trigger: "maintenance" });
       } catch {
         /* */
       }
     }
 
-    const res = await apiListJobs(backendUserId, "motorist");
+    const res = await apiListJobs(backendUserId, "motorist", { diagnostic: { source: "release", trigger } });
     if (!res.ok) return;
 
     // Permanently silence finished / already-confirmed jobs
@@ -138,14 +140,26 @@ export function useReleasePayGate() {
       return;
     }
     let cancelled = false;
-    const poll = async () => {
+    let polling = false;
+    const poll = async (trigger: JobTrigger = "initial") => {
       if (typeof document !== "undefined" && document.hidden) return;
-      if (cancelled) return;
-      await refresh();
+      if (cancelled || polling) {
+        if (polling) recordJobDiagnostic("trigger", "jobs", { source: "release", trigger }, "coalesced");
+        return;
+      }
+      polling = true;
+      try {
+        await refresh(trigger);
+      } catch {
+        // A failed background read must not clear an existing release prompt.
+        // Leave the current state intact and retry on the next poll.
+      } finally {
+        polling = false;
+      }
     };
     void poll();
     const t = window.setInterval(() => {
-      void poll();
+      void poll("interval");
     }, 30_000);
     return () => {
       cancelled = true;

@@ -24,6 +24,7 @@ import {
   isHomeHref,
   type DockNavRow,
 } from "./app-dock/dock-nav";
+import { ProfileDockIcon } from "./app-dock/profile-dock-icon";
 import { usePhoneRect } from "./app-dock/use-phone-rect";
 import { CLIENT_NAV, PRO_NAV, type MenuIconName } from "./app-menu/menu-nav";
 
@@ -82,7 +83,7 @@ export function AppDock() {
         : config.content.mainMenuOverrides,
       { role: isPro ? "pro" : "client", myShopHref },
     );
-    const built = buildDockItems(nav, t, myShopHref, roleHome);
+    const built = buildDockItems(nav, t, myShopHref, roleHome, ProfileDockIcon);
     const bell: DockItem = {
       key: "notifications",
       label: t("menu.notifications"),

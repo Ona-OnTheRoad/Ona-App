@@ -1,0 +1,80 @@
+{
+  "feature": "checkout-snapshot-refresh",
+  "baselineCommit": "5bf2dfb087734b0da75fcb608211a331f56e73c1",
+  "reviewedCommit": null,
+  "criteria": [
+    {
+      "id": "C1",
+      "expectation": "Pending call-out preparation cannot invalidate checkout's own bind snapshot",
+      "areas": [
+        "job-store/payments.ts"
+      ],
+      "verification": "Regression with a version/timestamp bump during preparation",
+      "status": "pass",
+      "evidence": [
+        "checkout-snapshot.test.ts: pending quote classification advances version 6 to 7; start binds version 7 with the database timestamp"
+      ]
+    },
+    {
+      "id": "C2",
+      "expectation": "Cancellation, price, currency, party or checkout association changes before provider creation stop checkout",
+      "areas": [
+        "payments/checkout-snapshot.ts"
+      ],
+      "verification": "Snapshot validation regressions",
+      "status": "pass",
+      "evidence": [
+        "checkout-snapshot.test.ts: cancellation, already-paid, price, customer, pro, currency and reference changes stop before provider/intent creation; cancel-reopen and missing-job checks"
+      ]
+    },
+    {
+      "id": "C3",
+      "expectation": "Changes during provider I/O and competing binds cannot overwrite another checkout",
+      "areas": [
+        "payments/confirmation-store.ts"
+      ],
+      "verification": "Conditional binding and competing checkout regressions",
+      "status": "pass",
+      "evidence": [
+        "checkout-snapshot.test.ts: late cancellation rejects bind",
+        "confirmation-store.test.ts: exact version/timestamp/status predicates retained; mocked competing bind loser returns null without unconditional retry; live database contention unrun"
+      ]
+    },
+    {
+      "id": "C4",
+      "expectation": "Repository code checks pass without changing fees or timers",
+      "verification": "lint, typecheck, complete unit suite, diff inspection",
+      "status": "pass",
+      "evidence": [
+        "npm test: 1500 tests / 142 files passed",
+        "npm run typecheck: passed",
+        "npm run lint: 0 errors / 145 warnings; existing payments.ts unused-function warnings; new helper/tests have no warnings",
+        "git diff --check: passed; no fee/timer implementation changes"
+      ]
+    },
+    {
+      "id": "L1",
+      "expectation": "Authenticated localhost pending-callout checkout returns bank details and binds its reference",
+      "verification": "User browser smoke",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "L2",
+      "expectation": "Hosted checkout behavior verified after deployment",
+      "verification": "Deployment and hosted smoke",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Implementation and required local checks complete; independent human review pending; no migration/configuration changes required"
+    ],
+    "external": [
+      "Authenticated localhost bank-details/reference-binding smoke pending",
+      "Deployment and hosted verification pending",
+      "Existing failed checkout intent recovery and full provider idempotency remain outside scope; no real transfer initiated"
+    ]
+  }
+}

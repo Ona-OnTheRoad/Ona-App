@@ -79,7 +79,7 @@ export default function HistoryPage() {
       setLoading(false);
       return;
     }
-    const res = await apiListJobs(backendUserId, viewer);
+    const res = await apiListJobs(backendUserId, viewer, { diagnostic: { source: "history", trigger: "initial" } });
     if (!res.ok) {
       setErr(res.message);
       setLoading(false);

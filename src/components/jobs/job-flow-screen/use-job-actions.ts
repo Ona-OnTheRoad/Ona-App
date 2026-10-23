@@ -14,7 +14,7 @@ interface Args {
   accountType: ReturnType<typeof useApp>["accountType"];
   setCategory: ReturnType<typeof useApp>["setCategory"];
   commitJob: (next: JobRecord, force?: boolean) => void;
-  load: () => Promise<void>;
+  load: () => Promise<unknown>;
   s: JobFlowState;
 }
 

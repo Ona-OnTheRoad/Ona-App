@@ -1,0 +1,92 @@
+{
+  "feature": "job-poll-recovery",
+  "baselineCommit": "5bf2dfb087734b0da75fcb608211a331f56e73c1",
+  "reviewedCommit": null,
+  "criteria": [
+    {
+      "id": "P1",
+      "expectation": "Replacing a same-status job snapshot does not trigger an immediate read",
+      "areas": [
+        "use-job-poll.ts"
+      ],
+      "verification": "Hook rerender regression",
+      "status": "pass",
+      "evidence": [
+        "job-poll-recovery.test.tsx: replacing the same-status snapshot does not reload or resubscribe; next read follows the 15-second interval"
+      ]
+    },
+    {
+      "id": "P2",
+      "expectation": "Slow reads do not overlap; realtime events during a read trigger a coalesced follow-up",
+      "areas": [
+        "use-job-load.ts",
+        "use-job-poll.ts"
+      ],
+      "verification": "Deferred promise hook tests",
+      "status": "pass",
+      "evidence": [
+        "job-poll-recovery.test.tsx: deferred read skips three interval ticks; multiple realtime events coalesce into one follow-up",
+        "Shared loader returns one promise to simultaneous callers; queued realtime is discarded on unmount"
+      ]
+    },
+    {
+      "id": "P3",
+      "expectation": "Timeouts preserve current job data and allow later polling without unhandled rejection",
+      "areas": [
+        "use-job-load.ts",
+        "use-incoming-poll.ts",
+        "use-release-pay-gate.ts",
+        "dashboard/use-dashboard-jobs.ts"
+      ],
+      "verification": "Rejected request and subsequent recovery regressions",
+      "status": "pass",
+      "evidence": [
+        "Shared-loader test: timeout preserves the existing job, resolves the background promise and permits later recovery",
+        "Incoming popup tests: initial list timeout recovers; status timeout keeps card and subsequent cancellation closes it",
+        "release-poll-recovery.test.tsx: timeout preserves release prompt, prevents overlaps and reconciles on next poll",
+        "dashboard-poll-recovery.test.tsx: four regressions for initial timeout/loading recovery, data retention on timeout/API error, coalesced realtime and stale-account responses"
+      ]
+    },
+    {
+      "id": "P4",
+      "expectation": "Cadences, hidden-tab behavior and product/payment rules remain unchanged; required checks pass",
+      "verification": "Hook timing/cleanup tests, lint, typecheck, full test suite and diff review",
+      "status": "pass",
+      "evidence": [
+        "Cadence regressions: reserved 1s, negotiating/agreed 8s, active/completed 15s, released 45s, cancelled 60s",
+        "Hidden-tab interval pause and subscription/timer cleanup tests passed",
+        "npm test: 1520 tests / 145 files passed",
+        "npm run typecheck: passed",
+        "npm run lint: 0 errors / 145 warnings",
+        "git diff --check: passed; browser read timeout, fees and payment timers unchanged"
+      ]
+    },
+    {
+      "id": "L1",
+      "expectation": "Localhost polling recovers after a slow request without request amplification",
+      "verification": "Authenticated browser slow-network smoke",
+      "status": "pending",
+      "evidence": [
+        "Browser inventory contains no connected browsers; authenticated UI smoke was not run"
+      ]
+    },
+    {
+      "id": "L2",
+      "expectation": "Hosted behavior verified after deployment",
+      "verification": "Hosted smoke",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Implementation and required local checks complete; independent human review pending; no migration/configuration changes required"
+    ],
+    "external": [
+      "Authenticated localhost slow-network recovery smoke pending",
+      "Deployment and hosted verification pending",
+      "Supabase latency, server-side abandoned request work and disabled Maps Directions API remain outside this fix",
+      "Runtime log records Flutterwave IP whitelisting rejection; no payout retried; provider configuration remains external"
+    ]
+  }
+}

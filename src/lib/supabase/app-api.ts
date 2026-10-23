@@ -23,8 +23,17 @@ import {
   getOrCreateIdemKey,
 } from "@/lib/jobs/idempotency";
 
+import type { DiagnosticContext } from "@/lib/jobs/diagnostics/types";
+import {
+  subscribeSharedJobRows,
+  type JobChangeListener,
+  type JobSubscriptionState,
+  type JobSubscriptionStatusListener,
+} from "./shared-job-subscriptions";
+import type { JobSource } from "@/lib/jobs/diagnostics/types";
+
 export { isAppBackendOnline };
-export type { MessageRow };
+export type { MessageRow, JobSubscriptionState, JobSubscriptionStatusListener };
 
 export async function backendSignUp(input: {
   email: string;
@@ -1051,6 +1060,7 @@ export async function backendCreateJob(input: {
 export async function backendFetchJobsForUser(
   userId: string,
   role: AccountType,
+  diagnostic?: DiagnosticContext,
 ): Promise<ServiceRequest[]> {
   try {
     const qs = new URLSearchParams({ userId, role });
@@ -1058,7 +1068,7 @@ export async function backendFetchJobsForUser(
     const res = await authFetch(`/api/requests?${qs.toString()}`, {
       method: "GET",
       cache: "no-store",
-    });
+    }, diagnostic);
     const json = (await res.json().catch(() => null)) as {
       ok?: boolean;
       data?: { requests?: ServiceRequest[] };
@@ -1238,49 +1248,11 @@ export function backendSubscribeMessages(
  */
 export function backendSubscribeJobs(
   userId: string,
-  onChange: (payload?: {
-    new?: Record<string, unknown>;
-    old?: Record<string, unknown>;
-  }) => void,
+  onChange: JobChangeListener,
+  source: JobSource = "other",
+  onStatusChange?: JobSubscriptionStatusListener,
 ): (() => void) | null {
-  const sb = getAppSupabase();
-  if (!sb) return null;
-  const channel = sb
-    .channel(`jobs:${userId}:${Math.random().toString(36).slice(2, 8)}`)
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "service_requests",
-        filter: `motorist_id=eq.${userId}`,
-      },
-      (
-        payload: {
-          new?: Record<string, unknown>;
-          old?: Record<string, unknown>;
-        } | null,
-      ) => onChange(payload || undefined),
-    )
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "service_requests",
-        filter: `repair_pro_id=eq.${userId}`,
-      },
-      (
-        payload: {
-          new?: Record<string, unknown>;
-          old?: Record<string, unknown>;
-        } | null,
-      ) => onChange(payload || undefined),
-    )
-    .subscribe();
-  return () => {
-    void sb.removeChannel(channel);
-  };
+  return subscribeSharedJobRows(getAppSupabase(), userId, onChange, source, onStatusChange);
 }
 
 export type ProPresenceChangeReason = "presence" | "heartbeat";
