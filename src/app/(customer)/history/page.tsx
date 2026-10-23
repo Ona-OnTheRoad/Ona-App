@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ReceiptText } from "lucide-react";
+import { NoHistoryIllustration } from "@/components/requests/no-history-illustration";
 import {
   ClosedJobDialog,
   useClosedJobDialog,
@@ -154,14 +154,11 @@ export default function HistoryPage() {
           {loading && <JobListLoading />}
           {err && <JobListError message={err} />}
           {!loading && filtered.length === 0 && (
-            <div className="flex flex-col items-center rounded-ona-card border border-ona-border bg-ona-surface px-6 py-14 text-center">
-              <span
-                aria-hidden
-                className="flex h-24 w-24 items-center justify-center rounded-full bg-ona-field-strong text-ona-muted"
-              >
-                <ReceiptText className="h-10 w-10" strokeWidth={1.5} />
-              </span>
-              <p className="mt-5 text-[15px] font-semibold text-ona-ink">
+            <div className="flex flex-col items-center rounded-ona-card border border-ona-border bg-ona-surface px-6 py-12 text-center shadow-sm">
+              <div className="mb-2 flex items-center justify-center">
+                <NoHistoryIllustration className="h-40 w-48 max-w-full" />
+              </div>
+              <p className="mt-2 text-[16px] font-semibold text-ona-ink">
                 No history yet
               </p>
               <p className="mt-1 text-[13px] text-ona-muted">
