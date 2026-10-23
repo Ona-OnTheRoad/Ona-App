@@ -9,7 +9,7 @@ const row = (href: string, icon: DockNavRow["icon"]): DockNavRow => ({
 });
 
 describe("buildDockItems", () => {
-  it("customer: Home, Express, Shop, History, Profile in the bar; Wallet & Settings in More", () => {
+  it("customer: Home, Express, Shop, History, Profile in the bar; redundant items excluded from More", () => {
     const rows = [
       row("/", "dashboard"),
       row("/history", "history"),
@@ -27,7 +27,7 @@ describe("buildDockItems", () => {
       "/history",
       "/profile",
     ]);
-    expect(more.map((m) => m.key)).toEqual(["/wallet", "/settings"]);
+    expect(more.map((m) => m.key)).toEqual([]);
   });
 
   it("repair pro: Dashboard, Jobs, Wallet, Profile in the bar; Shop in More", () => {

@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useNotifications } from "@/components/notifications/notification-provider";
-import { ArrowLeft, Bell, Search } from "lucide-react";
+import { ArrowLeft, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ExpiredDialog } from "@/components/ui/expired-dialog";
 import { CONVERSATION_ENDED_MESSAGE } from "@/lib/chat-expired";
@@ -12,6 +12,7 @@ import { FILTERS } from "./center/filters";
 import { NotificationRow } from "./center/notification-row";
 import { useHoldToRead } from "./center/use-hold-to-read";
 import { useNotificationAction } from "./center/use-notification-action";
+import { NoNotificationsIllustration } from "./no-notifications-illustration";
 
 export function NotificationsView({
   onBack,
@@ -69,20 +70,25 @@ export function NotificationsView({
             type="button"
             onClick={onBack}
             aria-label="Back"
-            className="-ml-2 flex h-10 w-10 items-center justify-center rounded-full border-0 bg-transparent text-ona-ink cursor-pointer"
+            className="-ml-2 flex h-10 w-10 items-center justify-center rounded-full border-0 bg-transparent text-ona-ink cursor-pointer hover:bg-ona-field/60 transition-colors"
           >
             <ArrowLeft className="h-5 w-5" strokeWidth={2} aria-hidden />
           </button>
         ) : null}
         <div className="mt-1 flex items-center justify-between gap-3">
-          <h2 className="text-[22px] font-bold leading-tight tracking-tight text-ona-ink">
+          <h2 className="text-[20px] font-bold leading-tight tracking-tight text-ona-ink">
             Notifications
           </h2>
           <button
             type="button"
             onClick={() => void markAllRead()}
             disabled={unreadCount === 0}
-            className="border-0 bg-transparent p-1 text-[11px] font-semibold text-ona-brand-ink underline disabled:no-underline disabled:opacity-50 cursor-pointer"
+            className={cn(
+              "border-0 bg-transparent p-1 text-[13px] font-semibold transition-colors cursor-pointer disabled:cursor-default",
+              unreadCount > 0
+                ? "text-ona-brand-ink hover:opacity-85"
+                : "text-ona-muted opacity-60",
+            )}
           >
             Mark all as read
           </button>
@@ -97,7 +103,7 @@ export function NotificationsView({
           <div className="relative">
             <Search
               aria-hidden
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ona-muted"
+              className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ona-muted"
             />
             <input
               type="search"
@@ -105,7 +111,7 @@ export function NotificationsView({
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search notifications"
               aria-label="Search notifications"
-              className="h-11 w-full rounded-ona-ctl border border-ona-border bg-ona-field pl-9 pr-3 text-[13px] font-medium text-ona-ink outline-none focus:border-ona-ink"
+              className="h-10 w-full rounded-full border border-ona-border bg-ona-surface pl-10 pr-4 text-[13px] font-medium text-ona-ink placeholder:text-ona-muted outline-none transition-colors focus:border-ona-ink"
             />
           </div>
           <div
@@ -122,10 +128,10 @@ export function NotificationsView({
                   aria-pressed={on}
                   onClick={() => setFilter(f.id)}
                   className={cn(
-                    "h-7 shrink-0 rounded-full border px-3 text-[11px] font-semibold cursor-pointer",
+                    "h-8 shrink-0 rounded-full border px-4 text-[12px] font-medium transition-colors cursor-pointer",
                     on
-                      ? "border-ona-brand bg-ona-brand-soft text-ona-brand-ink"
-                      : "border-ona-border bg-ona-surface text-ona-ink",
+                      ? "border-ona-brand bg-ona-brand-soft text-ona-brand-ink font-semibold"
+                      : "border-ona-border bg-ona-surface text-ona-muted hover:text-ona-ink",
                   )}
                 >
                   {f.label}
@@ -143,21 +149,19 @@ export function NotificationsView({
           </p>
         )}
         {!loading && sorted.length === 0 && (
-          <div className="flex flex-col items-center rounded-ona-card border border-ona-border bg-ona-surface px-6 py-16 text-center">
-            <span className="flex h-20 w-20 items-center justify-center rounded-full bg-ona-field text-ona-muted">
-              <Bell aria-hidden className="h-9 w-9" strokeWidth={1.5} />
-            </span>
-            <p className="mt-5 text-[14px] font-semibold text-ona-ink">
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-ona-border bg-ona-surface px-6 py-12 text-center">
+            <NoNotificationsIllustration className="h-44 w-48 mx-auto" />
+            <h3 className="mt-5 text-[16px] font-bold text-ona-ink">
               No notifications yet
-            </p>
-            <p className="mx-auto mt-2 max-w-[240px] text-[12px] leading-relaxed text-ona-muted">
+            </h3>
+            <p className="mx-auto mt-2 max-w-[260px] text-[13px] leading-relaxed text-ona-muted">
               You’re all caught up! Check back later for updates or new alerts.
             </p>
           </div>
         )}
 
         {sorted.length > 0 ? (
-          <ul className="list-none rounded-ona-card border border-ona-border bg-ona-surface">
+          <ul className="list-none overflow-hidden rounded-2xl border border-ona-border bg-ona-surface divide-y divide-ona-border">
             {sorted.map((n) => (
               <NotificationRow
                 key={n.id}

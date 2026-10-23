@@ -140,11 +140,17 @@ export function buildDockItems(
           : ICONS[r.icon] || Home,
   });
 
+  // Redundant destinations covered directly inside Profile: wallet and settings.
+  const isRedundantMoreHref = (href: string) =>
+    href === "/wallet" || href === "/settings" || href.startsWith("/settings/");
+
   const primary = primaryHrefs
     .map((h) => rows.find((r) => r.href === h))
     .filter((r): r is DockNavRow => Boolean(r))
     .map(toItem);
   const taken = new Set(primary.map((p) => p.key));
-  const more = rows.filter((r) => !taken.has(r.href)).map(toItem);
+  const more = rows
+    .filter((r) => !taken.has(r.href) && !isRedundantMoreHref(r.href))
+    .map(toItem);
   return { primary, more };
 }
