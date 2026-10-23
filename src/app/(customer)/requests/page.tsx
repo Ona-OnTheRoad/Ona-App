@@ -77,12 +77,6 @@ export default function RequestsPage() {
       setLoading(false);
       return;
     }
-    try {
-      const { apiExpireStaleBookedJobs } = await import("@/lib/jobs/client");
-      await apiExpireStaleBookedJobs({ source: "requests-page", trigger: "maintenance" });
-    } catch {
-      /* ignore */
-    }
     const res = await apiListJobs(backendUserId, viewer, { diagnostic: { source: "requests-page", trigger } });
     if (!res.ok) {
       setErr(res.message);

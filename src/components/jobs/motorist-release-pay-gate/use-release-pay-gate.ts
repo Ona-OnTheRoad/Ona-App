@@ -70,16 +70,15 @@ export function useReleasePayGate() {
     }
     // Soft sweep never re-open UI for done jobs.
     // Data saver: the expire-stale POST is heavy (server DB sweep), so throttle
-    // it to ~2 min even though the list poll runs more often.
+    // it to ~2 min and run non-blockingly so apiListJobs is never delayed.
     const now = Date.now();
     if (now - lastSweepRef.current >= 120_000) {
       lastSweepRef.current = now;
-      try {
-        const { apiExpireStaleBookedJobs } = await import("@/lib/jobs/client");
-        await apiExpireStaleBookedJobs({ source: "release", trigger: "maintenance" });
-      } catch {
-        /* */
-      }
+      void import("@/lib/jobs/client")
+        .then(({ apiExpireStaleBookedJobs }) =>
+          apiExpireStaleBookedJobs({ source: "release", trigger: "maintenance" }),
+        )
+        .catch(() => null);
     }
 
     const res = await apiListJobs(backendUserId, "motorist", { diagnostic: { source: "release", trigger } });

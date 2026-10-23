@@ -10,6 +10,11 @@ import { clearIdemKey, getOrCreateIdemKey } from "@/lib/jobs/idempotency";
 
 import { measureJobHttp, UNKNOWN_CONTEXT, type DiagnosticContext } from "./diagnostics/measure";
 import type { JobResource } from "./diagnostics/types";
+import {
+  coordinateExpireStale,
+  coordinatePairingSweep,
+  type MaintenanceOptions,
+} from "./maintenance-coordinator";
 type ReadDiagnostic = DiagnosticContext & { resource: JobResource };
 
 type ApiOk<T> = { ok: true; data: T };
@@ -304,16 +309,30 @@ export async function apiPreviewCallout(body: {
  * Server sweep: Booked jobs not completed within 6h of payment →
  * cancel + full refund. Safe no-op when none are overdue.
  */
-export async function apiExpireStaleBookedJobs(context: DiagnosticContext = UNKNOWN_CONTEXT) {
-  const res = await jobFetch("/api/jobs/expire-stale", {
-    method: "POST",
-    cache: "no-store",
-  }, FETCH_TIMEOUT, { ...context, resource: "expire-stale" });
-  return parse<{
-    checked: number;
-    cancelled: number;
-    ids: string[];
-  }>(res);
+export async function apiExpireStaleBookedJobs(
+  context: DiagnosticContext & MaintenanceOptions = UNKNOWN_CONTEXT,
+  options?: MaintenanceOptions,
+) {
+  const mergedOptions: MaintenanceOptions = {
+    urgent: options?.urgent ?? context.urgent,
+    force: options?.force ?? context.force,
+  };
+  return coordinateExpireStale(context, mergedOptions, async () => {
+    const res = await jobFetch(
+      "/api/jobs/expire-stale",
+      {
+        method: "POST",
+        cache: "no-store",
+      },
+      FETCH_TIMEOUT,
+      { source: context.source, trigger: context.trigger, resource: "expire-stale" },
+    );
+    return parse<{
+      checked: number;
+      cancelled: number;
+      ids: string[];
+    }>(res);
+  });
 }
 
 /**
@@ -324,12 +343,26 @@ export async function apiExpireStaleBookedJobs(context: DiagnosticContext = UNKN
  * closes the ring into the next pro / expired state within one `load()`
  * poll instead of waiting on the throttled sweep.
  */
-export async function apiPairingSweep(context: DiagnosticContext = UNKNOWN_CONTEXT) {
-  const res = await jobFetch("/api/jobs/pairing-sweep", {
-    method: "POST",
-    cache: "no-store",
-  }, FETCH_TIMEOUT, { ...context, resource: "pairing-sweep" });
-  return parse<{ checked: number; timedOut: number; expired: number }>(res);
+export async function apiPairingSweep(
+  context: DiagnosticContext & MaintenanceOptions = UNKNOWN_CONTEXT,
+  options?: MaintenanceOptions,
+) {
+  const mergedOptions: MaintenanceOptions = {
+    urgent: options?.urgent ?? context.urgent,
+    force: options?.force ?? context.force,
+  };
+  return coordinatePairingSweep(context, mergedOptions, async () => {
+    const res = await jobFetch(
+      "/api/jobs/pairing-sweep",
+      {
+        method: "POST",
+        cache: "no-store",
+      },
+      FETCH_TIMEOUT,
+      { source: context.source, trigger: context.trigger, resource: "pairing-sweep" },
+    );
+    return parse<{ checked: number; timedOut: number; expired: number }>(res);
+  });
 }
 
 export async function apiListJobs(

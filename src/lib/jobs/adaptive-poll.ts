@@ -67,6 +67,31 @@ export function getMaxJobPollBackoffMs(status: JobStatus): number {
   return 180_000;
 }
 
+/** Idle (no card on screen) incoming-request list poll when realtime is not confirmed. */
+export const INCOMING_IDLE_POLL_DEGRADED_MS = 3_000;
+/** Idle safety poll when the shared channel is `connected` and the browser is online. */
+export const INCOMING_IDLE_POLL_HEALTHY_MS = 10_000;
+
+/**
+ * Idle poll delay for the Repair Pro incoming-request popup. Slows only while
+ * realtime is confirmed healthy; `adaptiveEnabled === false` is the rollback
+ * switch that restores the fixed degraded cadence.
+ */
+export function getIncomingIdlePollMs({
+  subscriptionState,
+  online = true,
+  adaptiveEnabled = true,
+}: {
+  subscriptionState: JobSubscriptionState;
+  online?: boolean;
+  adaptiveEnabled?: boolean;
+}): number {
+  if (adaptiveEnabled && subscriptionState === "connected" && online !== false) {
+    return INCOMING_IDLE_POLL_HEALTHY_MS;
+  }
+  return INCOMING_IDLE_POLL_DEGRADED_MS;
+}
+
 export interface AdaptiveJobPollOptions {
   status: JobStatus;
   subscriptionState: JobSubscriptionState;
