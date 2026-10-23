@@ -7,22 +7,20 @@ import type { ExpressTheme, Quote } from "./types";
 type Props = { theme: ExpressTheme; quote: Quote };
 
 export function QuoteSummary({ theme, quote }: Props) {
-  const { ink, muted, rowCard } = theme;
+  const { ink, muted } = theme;
+  const tradeName = TRADE_LABEL[quote.trade] ?? "Mechanic";
+
   return (
-    <div className="flex flex-col gap-3 pt-1">
-      <div className={cn("rounded-[4px] px-3 py-3", rowCard)}>
+    <div className="flex flex-col gap-2 pt-1">
+      <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
         <Row
-          label={`Base fee · ${quote.trade === "mechanic" ? "Mechanic" : "Express service"}`}
+          label={`Base fee . ${tradeName}`}
           value={naira(quote.baseChargeMajor)}
           ink={ink}
         />
         <Row
-          label={
-            quote.distanceChargeMajor > 0
-              ? `Call-out fee · ${quote.distanceKm ?? "?"} km × ₦350`
-              : "Call-out fee"
-          }
-          value={naira(quote.calloutMajor)}
+          label="Call-out fee"
+          value={quote.calloutMajor > 0 ? naira(quote.calloutMajor) : "NO"}
           ink={ink}
         />
         {quote.urgencyMultiplier !== 1 ? (
@@ -41,7 +39,7 @@ export function QuoteSummary({ theme, quote }: Props) {
             />
           </>
         ) : null}
-        <div className="mt-2 border-t border-black/5 pt-2 dark:border-white/10">
+        <div className="mt-2.5 border-t border-gray-100 pt-2.5 dark:border-zinc-800">
           <Row
             label="Total call-out + base"
             value={naira(quote.totalMajor)}
@@ -50,9 +48,8 @@ export function QuoteSummary({ theme, quote }: Props) {
           />
         </div>
       </div>
-      <p className={cn("px-1 text-[11px] font-medium", muted)}>
-        After payment, Ona instantly assigns the{" "}
-        {TRADE_LABEL[quote.trade] ?? quote.trade}.
+      <p className={cn("px-1 text-[12px] leading-relaxed text-gray-500 dark:text-zinc-400", muted)}>
+        After payment, Ona instantly assigns the {tradeName}.
       </p>
     </div>
   );

@@ -112,7 +112,7 @@ export default function HistoryPage() {
 
   return (
     <div className="ona2 relative flex h-full min-h-0 flex-col">
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-hide">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-hide flex flex-col pb-[calc(var(--dock-space,4.5rem)+1rem)]">
         <h1 className="px-5 pt-5 text-[22px] font-bold leading-tight tracking-tight text-ona-ink">
           Booking History
         </h1>
@@ -130,11 +130,11 @@ export default function HistoryPage() {
                 type="button"
                 aria-pressed={on}
                 onClick={() => setFilter(filter === f.id ? null : f.id)}
-                className="flex h-11 shrink-0 items-center border-0 bg-transparent px-0.5"
+                className="flex h-11 shrink-0 items-center border-0 bg-transparent px-0.5 cursor-pointer"
               >
                 <span
                   className={cn(
-                    "rounded-full px-3 py-1.5 text-[12px] font-semibold",
+                    "rounded-full px-3 py-1.5 text-[12px] font-semibold transition-colors",
                     on ? "bg-ona-brand-btn text-white" : "text-ona-muted",
                   )}
                 >
@@ -145,7 +145,7 @@ export default function HistoryPage() {
           })}
         </div>
 
-        <div className="space-y-3 px-5 pb-6 pt-2">
+        <div className="flex flex-1 flex-col space-y-3 px-5 pb-6 pt-2">
           <p className="text-[12px] leading-snug text-ona-muted">
             You can still dispute a closed job within 48 hours after job
             Finished.
@@ -154,11 +154,11 @@ export default function HistoryPage() {
           {loading && <JobListLoading />}
           {err && <JobListError message={err} />}
           {!loading && filtered.length === 0 && (
-            <div className="flex flex-col items-center rounded-ona-card border border-ona-border bg-ona-surface px-6 py-12 text-center shadow-sm">
+            <div className="flex flex-1 flex-col items-center justify-center rounded-ona-card border border-ona-border bg-ona-surface px-6 py-12 text-center shadow-xs my-auto min-h-[380px]">
               <div className="mb-2 flex items-center justify-center">
-                <NoHistoryIllustration className="h-40 w-48 max-w-full" />
+                <NoHistoryIllustration className="h-44 w-52 max-w-full" />
               </div>
-              <p className="mt-2 text-[16px] font-semibold text-ona-ink">
+              <p className="mt-3 text-[16px] font-semibold text-ona-ink">
                 No history yet
               </p>
               <p className="mt-1 text-[13px] text-ona-muted">

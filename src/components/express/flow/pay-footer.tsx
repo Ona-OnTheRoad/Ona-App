@@ -1,4 +1,3 @@
-import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PINNED_BOTTOM } from "./helpers";
 import type { ExpressTheme } from "./types";
@@ -12,65 +11,76 @@ type Props = {
 };
 
 export function PayFooter({
-  theme,
   cancelAsk,
   cancelBusy,
   setCancelAsk,
   onCancel,
 }: Props) {
-  const { ink, muted } = theme;
   return (
-    <div className={PINNED_BOTTOM}>
-      <div className="flex h-12 w-full items-center justify-center gap-2 rounded-md bg-brand text-[15px] font-bold text-white">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        Waiting for payment…
-      </div>
-      {!cancelAsk ? (
+    <>
+      <div className={cn(PINNED_BOTTOM, "flex flex-col items-center gap-2.5")}>
+        <div className="flex h-12 w-full items-center justify-center rounded-[14px] bg-[#FF6B35] text-[15px] font-semibold text-white shadow-xs">
+          Waiting for payment ...
+        </div>
         <button
           type="button"
           onClick={() => setCancelAsk(true)}
-          className={cn(
-            "mt-1 h-9 w-full border-0 bg-transparent text-[12px] font-semibold underline-offset-2 hover:underline",
-            muted,
-          )}
+          className="py-1 text-[13px] font-semibold text-gray-800 dark:text-zinc-200 hover:underline cursor-pointer border-0 bg-transparent"
         >
           Cancel this request
         </button>
-      ) : (
-        <div className="mt-1 flex flex-col gap-1">
+      </div>
+
+      {/* Cancel Bottom Sheet matching Figma Screen 3 */}
+      {cancelAsk ? (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end">
+          {/* Backdrop */}
           <button
             type="button"
-            disabled={cancelBusy}
-            onClick={() => onCancel("both")}
-            className="h-9 w-full rounded-md border-0 bg-black/8 text-[12px] font-bold text-red-500 dark:bg-white/10 disabled:opacity-50"
-          >
-            Cancel payment and request
-          </button>
-          <button
-            type="button"
-            disabled={cancelBusy}
-            onClick={() => onCancel("payment")}
-            className={cn(
-              "h-9 w-full rounded-md border-0 bg-black/8 text-[12px] font-bold",
-              ink,
-              "disabled:opacity-50",
-            )}
-          >
-            Cancel payment only
-          </button>
-          <button
-            type="button"
-            disabled={cancelBusy}
+            aria-label="Dismiss cancel options"
             onClick={() => setCancelAsk(false)}
-            className={cn(
-              "h-8 w-full border-0 bg-transparent text-[12px] font-semibold",
-              muted,
-            )}
-          >
-            Keep paying
-          </button>
+            className="fixed inset-0 border-0 bg-black/40 backdrop-blur-[1px] transition-opacity cursor-pointer"
+          />
+
+          {/* Bottom Sheet */}
+          <div className="relative z-10 w-full max-w-md mx-auto rounded-t-[24px] bg-white px-5 pb-8 pt-3 shadow-2xl dark:bg-zinc-900 animate-[om-sheet-up_0.22s_ease-out]">
+            {/* Grab handle */}
+            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-gray-300 dark:bg-zinc-700" />
+
+            <h3 className="mb-4 text-[16px] font-bold text-gray-900 dark:text-white">
+              Cancel this request
+            </h3>
+
+            <div className="flex flex-col gap-2.5">
+              <button
+                type="button"
+                onClick={() => setCancelAsk(false)}
+                className="flex h-12 w-full items-center justify-center rounded-[14px] bg-[#FF6B35] text-[14px] font-semibold text-white transition-opacity hover:opacity-90 cursor-pointer border-0"
+              >
+                Keep paying
+              </button>
+
+              <button
+                type="button"
+                disabled={cancelBusy}
+                onClick={() => onCancel("payment")}
+                className="flex h-12 w-full items-center justify-center rounded-[14px] bg-gray-100 text-[14px] font-semibold text-gray-900 transition-colors hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 cursor-pointer border-0 disabled:opacity-50"
+              >
+                Cancel payment only
+              </button>
+
+              <button
+                type="button"
+                disabled={cancelBusy}
+                onClick={() => onCancel("both")}
+                className="flex h-10 w-full items-center justify-center text-[14px] font-semibold text-[#FF6B35] transition-colors hover:underline cursor-pointer border-0 bg-transparent disabled:opacity-50"
+              >
+                Cancel payment and request
+              </button>
+            </div>
+          </div>
         </div>
-      )}
-    </div>
+      ) : null}
+    </>
   );
 }

@@ -19,6 +19,8 @@ export function PageHeader({
   showBack = true,
   titleClassName,
   titleStyle,
+  className,
+  style,
   onBack,
 }: {
   title: string;
@@ -33,6 +35,8 @@ export function PageHeader({
   /** Optional title color/class (e.g. brand orange for Dashboard) */
   titleClassName?: string;
   titleStyle?: CSSProperties;
+  className?: string;
+  style?: CSSProperties;
   /** Full override: step backwards through an in-page flow instead of routing. */
   onBack?: () => void;
 }) {
@@ -62,8 +66,9 @@ export function PageHeader({
       className={cn(
         "flex items-center gap-2 px-3 py-2.5",
         isLight ? "bg-[#c8c9cd]" : "bg-black",
+        className,
       )}
-      style={{ backgroundColor: isLight ? "#c8c9cd" : "#000000" }}
+      style={style ?? { backgroundColor: isLight ? "#c8c9cd" : "#000000" }}
     >
       {showBack ? (
         <button

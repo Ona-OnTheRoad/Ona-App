@@ -9,7 +9,7 @@ const row = (href: string, icon: DockNavRow["icon"]): DockNavRow => ({
 });
 
 describe("buildDockItems", () => {
-  it("customer: Home, Shop, History, Profile in the bar; More is empty", () => {
+  it("customer: Home, History, Ona Express, Shop, Profile in the bar matching Figma", () => {
     const rows = [
       row("/", "dashboard"),
       row("/history", "history"),
@@ -22,11 +22,12 @@ describe("buildDockItems", () => {
     const { primary, more } = buildDockItems(rows, t, "/shop", "/");
     expect(primary.map((p) => p.key)).toEqual([
       "/",
-      "/shop",
       "/history",
+      "/express",
+      "/shop",
       "/profile",
     ]);
-    expect(more).toEqual([]);
+    expect(more.map((m) => m.key)).toEqual([]);
   });
 
   it("repair pro: Dashboard, Jobs, Wallet, Profile in the bar; Shop in More", () => {

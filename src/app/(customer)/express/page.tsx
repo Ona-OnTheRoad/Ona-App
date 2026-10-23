@@ -16,7 +16,7 @@ export default function ExpressPage() {
     <div
       className={cn(
         "relative flex h-full min-h-0 flex-col overflow-hidden",
-        isLight ? "bg-[#c8c9cd]" : "bg-black",
+        isLight ? "bg-[#f8f9fa]" : "bg-black",
       )}
     >
       <ExpressFlow isLight={isLight} />

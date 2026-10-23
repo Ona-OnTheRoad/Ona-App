@@ -22,6 +22,11 @@ import type {
 import { shouldListNotification } from "@/lib/notifications/types";
 import { useApp } from "@/lib/store";
 import { createBrowserSupabase } from "@/lib/supabase/client";
+import {
+  readSettings,
+  NOTIFICATION_SETTINGS_CHANGED_EVENT,
+} from "./settings/storage";
+import type { NotificationSettingsState } from "./settings/types";
 import { mapRow } from "./provider/map-row";
 import { redirectToReleasePayIfNeeded } from "./provider/release-pay-redirect";
 import { persistSeenNotifIds, readSeenNotifIds } from "./provider/seen-ids";
@@ -42,7 +47,36 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const primed = useRef(false);
   const knownIds = useRef<Set<string>>(readSeenNotifIds());
   const { toasts, pushToast, dismissToast, resetToasts } =
-    useNotificationToasts();
+    useNotificationToasts(backendUserId || "guest");
+
+  const [settings, setSettings] = useState<NotificationSettingsState>(() =>
+    readSettings(backendUserId || "guest"),
+  );
+
+  useEffect(() => {
+    setSettings(readSettings(backendUserId || "guest"));
+  }, [backendUserId]);
+
+  useEffect(() => {
+    const onSettingsChange = (e: Event) => {
+      const customEvent = e as CustomEvent<NotificationSettingsState>;
+      if (customEvent.detail) {
+        setSettings(customEvent.detail);
+      } else {
+        setSettings(readSettings(backendUserId || "guest"));
+      }
+    };
+    window.addEventListener(
+      NOTIFICATION_SETTINGS_CHANGED_EVENT,
+      onSettingsChange,
+    );
+    return () => {
+      window.removeEventListener(
+        NOTIFICATION_SETTINGS_CHANGED_EVENT,
+        onSettingsChange,
+      );
+    };
+  }, [backendUserId]);
 
   const role = accountType === "professional" ? "professional" : "motorist";
 
@@ -80,7 +114,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [backendUserId, isAuthenticated, role]);
+  }, [backendUserId, isAuthenticated]);
 
   useEffect(() => {
     primed.current = false;
@@ -212,13 +246,27 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     [backendUserId, pushToast],
   );
 
-  const unreadCount = useMemo(
-    () => notifications.filter((n) => !n.readAt).length,
-    [notifications],
-  );
+  const unreadCount = useMemo(() => {
+    if (!settings.delivery.inApp && !settings.enabled) return 0;
+    return notifications.filter((n) => {
+      if (n.readAt) return false;
+      if (n.priority === "critical") return true;
+      if (n.category && settings.categories[n.category] === false) return false;
+      return true;
+    }).length;
+  }, [notifications, settings]);
 
   const filtered = useMemo(() => {
     let list = notifications;
+    // Honor user category preferences (critical safety notifications always show)
+    list = list.filter((n) => {
+      if (n.priority === "critical") return true;
+      if (n.category && settings.categories[n.category] === false) {
+        return false;
+      }
+      return true;
+    });
+
     if (filter !== "all") {
       list = list.filter((n) => n.category === filter);
     }
@@ -232,7 +280,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       );
     }
     return list;
-  }, [notifications, filter, search]);
+  }, [notifications, filter, search, settings.categories]);
 
   const value = useMemo<Ctx>(
     () => ({

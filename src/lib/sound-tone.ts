@@ -3,6 +3,35 @@
  * Person-specific tones for messages/calls + unique system motifs for key events.
  */
 
+export const SOUNDS_SETTINGS_KEY = "ona-app-settings";
+
+export function areAppSoundsEnabled(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    const raw = localStorage.getItem(SOUNDS_SETTINGS_KEY);
+    if (!raw) return true;
+    const p = JSON.parse(raw) as { soundsOn?: boolean };
+    return p.soundsOn !== false;
+  } catch {
+    return true;
+  }
+}
+
+export function setAppSoundsEnabled(enabled: boolean): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(
+      SOUNDS_SETTINGS_KEY,
+      JSON.stringify({ soundsOn: enabled }),
+    );
+    window.dispatchEvent(
+      new CustomEvent("ona-sounds-changed", { detail: { soundsOn: enabled } }),
+    );
+  } catch {
+    /* ignore quota */
+  }
+}
+
 function hashId(id: string): number {
   let h = 2166136261;
   const s = id || "guest";
@@ -104,6 +133,7 @@ export function playPersonTone(
   personId: string,
   kind: ToneKind = "message",
 ): void {
+  if (!areAppSoundsEnabled()) return;
   const ctx = getCtx();
   if (!ctx) return;
   const p = toneProfileFor(personId);
@@ -147,6 +177,7 @@ export function playPersonTone(
 
 /** Soft system blip (not person-specific) */
 export function playSystemClick(): void {
+  if (!areAppSoundsEnabled()) return;
   const ctx = getCtx();
   if (!ctx) return;
   beep(ctx, 880, ctx.currentTime + 0.01, 0.04, "sine", 0.05);
@@ -157,6 +188,7 @@ export function playSystemClick(): void {
  * Safe no-op when audio is blocked until user gesture (call unlockAudio first).
  */
 export function playAppSound(kind: AppSoundKind): void {
+  if (!areAppSoundsEnabled()) return;
   const ctx = getCtx();
   if (!ctx) return;
   const t0 = ctx.currentTime + 0.015;

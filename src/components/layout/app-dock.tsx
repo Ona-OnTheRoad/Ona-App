@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell } from "lucide-react";
 import {
   FloatingDock,
   type DockItem,
@@ -11,7 +10,6 @@ import {
 } from "react-floating-dock";
 import "react-floating-dock/style.css";
 import { useAppConfig } from "@/components/app-config-provider";
-import { useNotificationsOptional } from "@/components/notifications/notification-provider";
 import { useT, type MessageKey } from "@/lib/i18n";
 import { defaultBackHref, resetNavStack } from "@/lib/navigation";
 import { applyNavOverrides } from "@/lib/nav-schema";
@@ -52,8 +50,6 @@ export function AppDock() {
   const { config } = useAppConfig();
   const { theme, accountType, proServices, setCategory, setSelectedTechId } =
     useApp();
-  const notif = useNotificationsOptional();
-  const unread = notif?.unreadCount ?? 0;
   const visible = useDockVisible();
   usePhoneRect();
 
@@ -84,21 +80,11 @@ export function AppDock() {
       { role: isPro ? "pro" : "client", myShopHref },
     );
     const built = buildDockItems(nav, t, myShopHref, roleHome, ProfileDockIcon);
-    const bell: DockItem = {
-      key: "notifications",
-      label: t("menu.notifications"),
-      icon: Bell,
-      badge: unread > 0 ? (unread > 99 ? "99+" : unread) : undefined,
-      onClick: () => {
-        closeDockSheet();
-        notif?.openCenter();
-      },
-    };
     return {
       primary: built.primary,
-      more: isPro ? [...built.more, bell] : [],
+      more: built.more,
     };
-  }, [config.content, isPro, myShopHref, roleHome, t, unread, notif]);
+  }, [config.content, isPro, myShopHref, roleHome, t]);
 
   const DockLink = useMemo(
     () =>
@@ -116,6 +102,7 @@ export function AppDock() {
             {...rest}
             onClick={(e) => {
               onClick?.();
+              closeDockSheet();
               // Home always opens on a blank trade selector, never a stale flow.
               if (isHomeHref(href, roleHome)) {
                 e.preventDefault();

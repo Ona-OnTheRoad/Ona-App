@@ -131,7 +131,7 @@ export function QuietHoursCard({
         </button>
 
         <p className="text-[12px] font-normal text-ona-muted mt-2">
-          Saved on this device. Server sync coming soon.
+          Saved to your account and synced across devices.
         </p>
       </div>
 

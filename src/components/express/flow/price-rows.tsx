@@ -12,8 +12,8 @@ export function Row({ label, value, ink, bold }: RowProps) {
     <div className="flex items-center justify-between gap-2 py-1">
       <span
         className={cn(
-          "text-[12px]",
-          bold ? "font-extrabold" : "font-semibold",
+          "text-[13px]",
+          bold ? "font-bold text-gray-900 dark:text-white" : "font-medium text-gray-600 dark:text-zinc-400",
           ink,
         )}
       >
@@ -21,8 +21,7 @@ export function Row({ label, value, ink, bold }: RowProps) {
       </span>
       <span
         className={cn(
-          "text-[13px]",
-          bold ? "font-extrabold" : "font-bold",
+          bold ? "text-[14px] font-bold text-gray-900 dark:text-white" : "text-[13px] font-semibold text-gray-900 dark:text-white",
           ink,
         )}
       >
