@@ -112,19 +112,19 @@ export function buildDockItems(
   roleHome: string,
   profileIcon?: Icon,
 ): { primary: DockItem[]; more: DockItem[] } {
-  // Customer: Home, Express, Shop, History, Profile (Wallet, Settings in More).
-  // Repair Pro: Dashboard, Jobs, Wallet, Profile (Express, Shop, Settings, Payments in More).
+  // Customer: Home, History, Ona Express, Shop, Profile (matching Figma; no More sheet needed).
+  // Repair Pro: Dashboard, Jobs, Wallet, Profile (Shop in More).
   const isPro = roleHome === "/dashboard";
   const primaryHrefs = isPro
     ? ["/dashboard", "/jobs", "/wallet", "/profile"]
-    : ["/", "/express", myShopHref, "/history", "/profile"];
+    : ["/", "/history", "/express", myShopHref, "/profile"];
 
   const labelFor = (r: DockNavRow): string => {
     if (r.labelOverride) return r.labelOverride;
     if (r.href === "/") return t("nav.home");
-    if (r.href === "/express") return "Express";
-    if (r.href === "/wallet") return t("nav.wallet");
     if (r.href === "/history") return t("nav.history");
+    if (r.href === "/express") return "Ona Express";
+    if (r.href === "/wallet") return t("nav.wallet");
     if (r.href === myShopHref || r.href === "/shop") return t("nav.shop");
     return t(r.labelKey);
   };
@@ -149,8 +149,10 @@ export function buildDockItems(
     .filter((r): r is DockNavRow => Boolean(r))
     .map(toItem);
   const taken = new Set(primary.map((p) => p.key));
-  const more = rows
-    .filter((r) => !taken.has(r.href) && !isRedundantMoreHref(r.href))
-    .map(toItem);
+  const more = isPro
+    ? rows
+        .filter((r) => !taken.has(r.href) && !isRedundantMoreHref(r.href))
+        .map(toItem)
+    : [];
   return { primary, more };
 }

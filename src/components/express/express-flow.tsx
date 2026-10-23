@@ -40,8 +40,15 @@ export function ExpressFlow({ isLight }: { isLight: boolean }) {
 
   return (
     <>
-      <PageHeader title={f.title} backHref={undefined} onBack={goBack} />
-      <div className="flex min-h-0 flex-1 flex-col px-3 pb-24">
+      <PageHeader
+        title={f.title}
+        backHref={undefined}
+        onBack={goBack}
+        className="bg-transparent px-4 pb-2 pt-3"
+        style={{ backgroundColor: "transparent" }}
+        titleClassName="text-[20px] font-bold text-gray-900 dark:text-white"
+      />
+      <div className="flex min-h-0 flex-1 flex-col px-4 pb-24">
         {stage === "blocked" ? (
           <BlockedView theme={theme} onBack={goBack} />
         ) : null}
