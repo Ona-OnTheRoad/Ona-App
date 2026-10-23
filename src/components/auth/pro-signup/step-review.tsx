@@ -12,11 +12,13 @@ export function StepReview({
   skill,
   specialty,
   vehiclesCanFix,
+  isLight = true,
 }: {
   form: ProSignupForm;
   skill: ProService | null;
   specialty: string | null;
   vehiclesCanFix: VehiclesCanFix["vehiclesCanFix"];
+  isLight?: boolean;
 }) {
   const {
     fullName,
@@ -37,19 +39,19 @@ export function StepReview({
     guarantorRelationship,
   } = form;
   return (
-    <div className="space-y-0 text-[12px]">
-      <Row k="Name" v={fullName} />
-      <Row k="Gender" v={formatGenderLabel(gender)} />
-      <Row k="Date of birth" v={dateOfBirth || "Not set"} />
-      <Row k="Business" v={businessName} />
-      <Row k="Trade" v={skill ? PRO_SERVICE_LABELS[skill] : "Not set"} />
-      <Row k="Focus" v={specialty || "Not set"} />
-      <Row k="Phone" v={fullPhone} />
-      <Row k="Email" v={email} />
-      <Row k="NIN" v={idNumber} />
-      <Row k="BVN" v={bvn ? "••••" + bvn.slice(-4) : "Not set"} />
-      <Row k="Area" v={`${area}, ${city}`} />
-      <Row k="Radius" v={`${serviceRadiusKm} km`} />
+    <div className="space-y-0 text-[13px]">
+      <Row k="Name" v={fullName} isLight={isLight} />
+      <Row k="Gender" v={formatGenderLabel(gender)} isLight={isLight} />
+      <Row k="Date of birth" v={dateOfBirth || "Not set"} isLight={isLight} />
+      <Row k="Business" v={businessName} isLight={isLight} />
+      <Row k="Trade" v={skill ? PRO_SERVICE_LABELS[skill] : "Not set"} isLight={isLight} />
+      <Row k="Focus" v={specialty || "Not set"} isLight={isLight} />
+      <Row k="Phone" v={fullPhone} isLight={isLight} />
+      <Row k="Email" v={email} isLight={isLight} />
+      <Row k="NIN" v={idNumber} isLight={isLight} />
+      <Row k="BVN" v={bvn ? "••••" + bvn.slice(-4) : "Not set"} isLight={isLight} />
+      <Row k="Area" v={`${area}, ${city}`} isLight={isLight} />
+      <Row k="Radius" v={`${serviceRadiusKm} km`} isLight={isLight} />
       {vehiclesCanFix.length > 0 && (
         <Row
           k="Vehicles you fix"
@@ -58,16 +60,18 @@ export function StepReview({
               [v.vehicleType, v.make, v.model, v.year].filter(Boolean).join(" "),
             )
             .join(" · ")}
+          isLight={isLight}
         />
       )}
       {yearsExperience && (
-        <Row k="Experience" v={experienceLabel(yearsExperience)} />
+        <Row k="Experience" v={experienceLabel(yearsExperience)} isLight={isLight} />
       )}
-      {bio && <Row k="Bio" v={bio} />}
+      {bio && <Row k="Bio" v={bio} isLight={isLight} />}
       {guarantorName && (
         <Row
           k="Guarantor"
           v={`${guarantorName} · ${guarantorPhone} · ${guarantorRelationship}`}
+          isLight={isLight}
         />
       )}
     </div>
