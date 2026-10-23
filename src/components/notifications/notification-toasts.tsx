@@ -108,7 +108,7 @@ export function NotificationToasts() {
     if (n.href) {
       router.push(n.href);
     } else {
-      openCenter();
+      router.push("/notifications");
     }
   };
 

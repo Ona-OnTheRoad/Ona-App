@@ -106,8 +106,8 @@ export default function RootLayout({
       data-theme="light"
       suppressHydrationWarning
       data-ona-build={ONA_BUILD_ID}
-      className={`${interSans.variable} ${geistMono.variable} h-full max-h-full overflow-hidden antialiased`}
-      style={{ height: "100%", maxHeight: "100%" }}
+      data-scroll-behavior="smooth"
+      className={`${interSans.variable} ${geistMono.variable}`}
     >
       <head>
         {/*
@@ -123,9 +123,8 @@ export default function RootLayout({
       </head>
       {/* Inline stage color so first paint is never browser-default white */}
       <body
-        className="h-full max-h-full overflow-hidden text-white"
+        className="antialiased"
         style={{
-          overscrollBehavior: "none",
           backgroundColor: "#060d0a",
           margin: 0,
         }}

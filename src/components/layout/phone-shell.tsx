@@ -245,9 +245,6 @@ export function PhoneShell({
       id="ona-stage"
       className={cn(
         "box-border flex w-full items-center justify-center overflow-hidden",
-        "h-[100vh] max-h-[100vh]",
-        "h-[100dvh] max-h-[100dvh]",
-        "h-[100svh] max-h-[100svh]",
         "p-0 sm:p-4 md:p-5",
         isLight
           ? "bg-[#c8c9cd] sm:bg-[#060d0a]"
@@ -265,15 +262,13 @@ export function PhoneShell({
         data-theme={theme}
         className={cn(
           "relative box-border flex flex-col overflow-hidden",
-          "w-full h-full h-[100dvh] max-h-[100dvh]",
+          "w-full h-full min-h-[100dvh] h-[100dvh]",
           "sm:w-[420px] sm:max-w-[calc(100vw-2.5rem)]",
-          "sm:h-[min(884px,calc(100dvh-2.5rem))] sm:max-h-[min(884px,calc(100dvh-2.5rem))]",
+          "sm:min-h-0 sm:h-[min(884px,calc(100dvh-2.5rem))] sm:max-h-[min(884px,calc(100dvh-2.5rem))]",
           "sm:rounded-[36px] sm:shadow-[0_24px_50px_rgba(0,0,0,0.55)] sm:ring-1 sm:ring-white/10",
           className,
         )}
         style={{
-          paddingBottom: "env(safe-area-inset-bottom, 0px)",
-          paddingTop: "env(safe-area-inset-top, 0px)",
           paddingLeft: "env(safe-area-inset-left, 0px)",
           paddingRight: "env(safe-area-inset-right, 0px)",
           backgroundColor: phoneInterior,

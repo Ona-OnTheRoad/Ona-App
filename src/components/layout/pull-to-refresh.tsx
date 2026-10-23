@@ -99,10 +99,6 @@ export function PullToRefresh({ children }: PullToRefreshProps) {
 
       // Smooth damped resistance pull
       const damped = Math.min(MAX_PULL, deltaY * 0.42);
-      if (damped > 8) {
-        // Prevent browser viewport navigation gestures
-        if (e.cancelable) e.preventDefault();
-      }
       setPullY(damped);
     };
 
@@ -117,6 +113,7 @@ export function PullToRefresh({ children }: PullToRefreshProps) {
         // Dispatch app-wide refresh notification
         window.dispatchEvent(new CustomEvent("ona:refresh"));
         router.refresh();
+        window.location.reload();
 
         window.setTimeout(() => {
           setRefreshing(false);
