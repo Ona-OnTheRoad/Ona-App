@@ -1,0 +1,107 @@
+{
+  "feature": "live-updates-incoming-idle-poll",
+  "baselineCommit": "54b083ebf481184efcb17fe7aca6a626c931ab48",
+  "codeEvidenceCommit": null,
+  "reviewedCommit": null,
+  "status": "implemented-local-gates-pass-review-and-live-evidence-pending",
+  "criteria": [
+    {
+      "id": "I1",
+      "expectation": "Idle (no card), subscription connected and online: the lean list polls at 10s",
+      "verification": "Unit test with fake timers",
+      "status": "pass",
+      "evidence": [
+        "src/components/home/__tests__/incoming-idle-poll.test.tsx 'slows to 10s once the channel is connected'; adaptive-poll.test.ts getIncomingIdlePollMs."
+      ]
+    },
+    {
+      "id": "I2",
+      "expectation": "Idle and connecting, reconnecting, failed or offline: 3s cadence",
+      "verification": "Unit test with fake timers",
+      "status": "pass",
+      "evidence": [
+        "incoming-idle-poll.test.tsx: not-confirmed, reconnecting and offline cases poll at 3s; adaptive-poll.test.ts covers connecting/reconnecting/failed/offline."
+      ]
+    },
+    {
+      "id": "I3",
+      "expectation": "A visible card keeps the 500ms status cadence and the lean list every third tick regardless of health",
+      "verification": "Existing incoming-job-popup-close tests plus new test",
+      "status": "pass",
+      "evidence": [
+        "Existing incoming-job-popup-close.test.tsx (18 tests) and callout-fee-on-card.test.tsx pass unchanged; card-visible cadence code untouched."
+      ]
+    },
+    {
+      "id": "I4",
+      "expectation": "Mount, realtime push, visibility, reconnect and online each poll immediately; state changes re-arm the timer",
+      "verification": "Unit test with fake timers",
+      "status": "pass",
+      "evidence": [
+        "incoming-idle-poll.test.tsx: reconnect, back-online and realtime push poll immediately; state changes re-arm the timer."
+      ]
+    },
+    {
+      "id": "I5",
+      "expectation": "A new offer first seen by an interval poll while connected records a missed-push diagnostic; offers seen via a realtime-triggered poll do not",
+      "verification": "Unit test on diagnostics collector",
+      "status": "pass",
+      "evidence": [
+        "incoming-idle-poll.test.tsx: missed-push recorded for an interval poll while connected, not for a realtime-triggered poll."
+      ]
+    },
+    {
+      "id": "I6",
+      "expectation": "NEXT_PUBLIC_INCOMING_IDLE_POLL_ADAPTIVE=false restores the fixed 3s idle poll",
+      "verification": "Unit test of getIncomingIdlePollMs",
+      "status": "pass",
+      "evidence": [
+        "adaptive-poll.test.ts: adaptiveEnabled=false returns 3s. The hook reads NEXT_PUBLIC_INCOMING_IDLE_POLL_ADAPTIVE in incoming-idle-health.ts."
+      ]
+    },
+    {
+      "id": "I7",
+      "expectation": "Closes stay near-instant; ANTI_REGRESSION \u00a710-11 and protected files (RULES \u00a710) untouched; lint, typecheck and tests pass",
+      "verification": "Existing close tests, git diff, npm run lint && npm run typecheck && npm run test",
+      "status": "pass",
+      "evidence": [
+        "No protected files changed; isProRequestCardKeepable untouched. Local gates: 179 test files / 1,746 tests passed; typecheck passed; lint 0 errors; git diff --check passed."
+      ]
+    },
+    {
+      "id": "L1",
+      "expectation": "With realtime connected in a real browser, idle polling drops to about 10s and a new offer still appears promptly",
+      "verification": "Authenticated Repair Pro session with window.onaJobDiagnostics",
+      "status": "pending",
+      "evidence": [
+        "Not run."
+      ]
+    },
+    {
+      "id": "L2",
+      "expectation": "Going offline or dropping the channel returns polling to 3s and recovers on reconnect",
+      "verification": "Browser devtools offline toggle",
+      "status": "pending",
+      "evidence": [
+        "Not run."
+      ]
+    },
+    {
+      "id": "L3",
+      "expectation": "missed-push count reviewed over a representative session before widening the interval",
+      "verification": "window.onaJobDiagnostics summary",
+      "status": "pending",
+      "evidence": [
+        "Not run."
+      ]
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent human review against the implementation commit."
+    ],
+    "external": [
+      "Live checks L1-L3 in an authenticated Repair Pro browser session."
+    ]
+  }
+}

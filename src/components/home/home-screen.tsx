@@ -192,7 +192,12 @@ export function HomeScreen() {
             expanded={sheetExpanded}
             onExpand={() => setSheetExpanded(true)}
             onCollapse={() => setSheetExpanded(false)}
-            className="min-h-0 flex-1 bg-transparent pb-[calc(max(0.5rem,env(safe-area-inset-bottom))+var(--dock-space,0px))]"
+            className={cn(
+              "min-h-0 bg-transparent",
+              shortSheet
+                ? "pb-[calc(var(--dock-space,4.5rem)+0.25rem)]"
+                : "flex-1 pb-[calc(max(0.5rem,env(safe-area-inset-bottom))+var(--dock-space,0px))]",
+            )}
           />
         </div>
       </div>

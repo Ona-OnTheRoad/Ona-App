@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useT } from "@/lib/i18n";
 import { useApp } from "@/lib/store";
 import { playAppSound, unlockAudio } from "@/lib/sound-tone";
+import { resolvePostLoginDestination } from "@/lib/auth-return-to";
 import type { AccountType } from "@/lib/types";
 import {
   COOLDOWN_SEC,
@@ -148,8 +149,9 @@ export function useSignInForm() {
     writeLastLoginRole(type);
     unlockAudio();
     playAppSound("login_success");
+    const target = resolvePostLoginDestination(type);
     window.setTimeout(() => {
-      router.replace(type === "professional" ? "/dashboard" : "/");
+      router.replace(target);
     }, 280);
   }
 

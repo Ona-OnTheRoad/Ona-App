@@ -3,6 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { canAccessPath, homePathForAccount, isPublicPath } from "@/lib/routes";
+import {
+  resolvePostLoginDestination,
+  saveReturnTo,
+  sanitizeReturnTo,
+} from "@/lib/auth-return-to";
 import { AUTH_TRANSITION_MS } from "@/components/auth/auth-transition";
 import { useApp } from "@/lib/store";
 import {
@@ -161,8 +166,20 @@ export function useAuthGateBoot() {
       leftSplashRef.current = true;
       setEntryExiting(true);
       setPhase("ready");
+      // Forward returnTo if present in current query
+      let targetPath = path;
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        const returnTo = sanitizeReturnTo(
+          params.get("returnTo") || params.get("redirect"),
+        );
+        if (returnTo && !path.includes("returnTo=")) {
+          const sep = path.includes("?") ? "&" : "?";
+          targetPath = `${path}${sep}returnTo=${encodeURIComponent(returnTo)}`;
+        }
+      }
       // Navigate immediately fade is visual only, not a second required click
-      router.replace(path);
+      router.replace(targetPath);
       window.setTimeout(
         () => {
           setEntryExiting(false);
@@ -188,7 +205,8 @@ export function useAuthGateBoot() {
 
     if (pathname.startsWith("/login")) {
       redirectingRef.current = true;
-      router.replace(homePathForAccount(accountType));
+      const target = resolvePostLoginDestination(accountType);
+      router.replace(target);
       window.setTimeout(() => {
         redirectingRef.current = false;
       }, 500);
@@ -200,7 +218,8 @@ export function useAuthGateBoot() {
         return;
       }
       redirectingRef.current = true;
-      router.replace(homePathForAccount(accountType));
+      const target = resolvePostLoginDestination(accountType);
+      router.replace(target);
       window.setTimeout(() => {
         redirectingRef.current = false;
       }, 500);
@@ -241,7 +260,12 @@ export function useAuthGateBoot() {
       setPhase("entry");
       if (pathname !== "/login") {
         redirectingRef.current = true;
-        router.replace("/login");
+        const fullPath =
+          typeof window !== "undefined"
+            ? `${window.location.pathname}${window.location.search}`
+            : pathname;
+        saveReturnTo(fullPath);
+        router.replace(`/login?returnTo=${encodeURIComponent(fullPath)}`);
         window.setTimeout(() => {
           redirectingRef.current = false;
         }, 500);

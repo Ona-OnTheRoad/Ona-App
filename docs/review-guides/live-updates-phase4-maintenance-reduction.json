@@ -1,0 +1,91 @@
+{
+  "feature": "live-updates-phase4-maintenance-reduction",
+  "baselineCommit": "54b083ebf481184efcb17fe7aca6a626c931ab48",
+  "codeEvidenceCommit": "HEAD",
+  "reviewedCommit": null,
+  "status": "implemented-local-gates-pass-review-and-live-evidence-pending",
+  "criteria": [
+    {
+      "id": "M1",
+      "expectation": "Client maintenance coordinator coalesces concurrent in-flight apiExpireStaleBookedJobs and apiPairingSweep calls, enforces routine (120s expire-stale, 5s pairing-sweep) and urgent (45s expire-stale) cooldowns across hooks and tabs via localStorage, and records coalesced/skipped diagnostics",
+      "verification": "Unit tests in src/lib/jobs/__tests__/maintenance-coordinator.test.ts",
+      "status": "pass",
+      "evidence": [
+        "src/lib/jobs/__tests__/maintenance-coordinator.test.ts: verifies single-flight coalescing, 120s routine vs 45s urgent expire-stale cooldowns, localStorage cross-tab timestamp enforcement, 5s pairing-sweep cooldown, retry eligibility after failed runs, and coalesced/skipped diagnostic events."
+      ]
+    },
+    {
+      "id": "M2",
+      "expectation": "Customer /requests, Repair Pro past-jobs list, and motorist release-pay-gate do not block apiListJobs on POST /api/jobs/expire-stale, and read-only list/history screens do not fire broad maintenance on every load",
+      "verification": "Hook/component tests and source inspection in requests/page.tsx, use-pro-past-jobs.ts, and use-release-pay-gate.ts",
+      "status": "pass",
+      "evidence": [
+        "src/app/(customer)/requests/page.tsx and src/components/jobs-list/use-pro-past-jobs.ts fetch apiListJobs directly without awaiting apiExpireStaleBookedJobs; src/components/jobs/motorist-release-pay-gate/use-release-pay-gate.ts invokes apiExpireStaleBookedJobs non-blockingly."
+      ]
+    },
+    {
+      "id": "M3",
+      "expectation": "useJobSweep skips terminal jobs without pending settlement, does not re-fire immediate sweeps on non-overdue status transitions, and triggers immediate recovery only when pendingPayout or an overdue job deadline is present",
+      "verification": "Hook unit tests in src/components/jobs/job-flow-screen/__tests__/use-job-sweep.test.tsx",
+      "status": "pass",
+      "evidence": [
+        "src/components/jobs/job-flow-screen/__tests__/use-job-sweep.test.tsx: verifies terminal jobs skip sweeps, active non-overdue jobs wait for the 180s interval without firing on mount or status transitions, and pending-payout jobs fire immediately on a 45s cadence while skipping load('maintenance') when cooldown-skipped."
+      ]
+    },
+    {
+      "id": "M4",
+      "expectation": "Server /api/jobs/expire-stale coalesces concurrent in-flight family executions and enforces per-family minimum intervals; SweepBusyError in /api/jobs/pairing-sweep and /api/jobs/expire-stale resolves cleanly without false 500/503 errors while /api/jobs/deadline-sweep retains 503 scheduler retry semantics",
+      "verification": "Unit tests in src/lib/server/jobs/deadlines/__tests__/maintenance-runner.test.ts and scheduler-routes.test.ts",
+      "status": "pass",
+      "evidence": [
+        "src/lib/server/jobs/deadlines/__tests__/maintenance-runner.test.ts and scheduler-routes.test.ts: verifies in-flight coalescing, per-family browser interval throttling, scheduler secret bypassThrottle, and 200 busy handling for SweepBusyError on /api/jobs/pairing-sweep."
+      ]
+    },
+    {
+      "id": "M5",
+      "expectation": "All product deadlines, payout retry spacing, and protected files (docs/RULES.md §10) remain unchanged",
+      "verification": "git diff check against protected file list and full test suite",
+      "status": "pass",
+      "evidence": [
+        "Zero protected files in docs/RULES.md §10 modified; all deadline and payout constants remain unchanged."
+      ]
+    },
+    {
+      "id": "M6",
+      "expectation": "All unit/integration tests, npm run typecheck, npm run lint (0 errors), and git diff --check pass",
+      "verification": "Repository validation gates",
+      "status": "pass",
+      "evidence": [
+        "178 test files / 1,733 tests passed; npm run typecheck passed; npm run lint passed with 0 errors; git diff --check passed."
+      ]
+    },
+    {
+      "id": "L1",
+      "expectation": "Opening multiple authenticated browser tabs and navigating across /, /requests, /dashboard, and /jobs/[id] produces coalesced maintenance traffic rather than proportional per-tab expire-stale bursts",
+      "verification": "Authenticated multi-tab browser session with window.onaJobDiagnostics",
+      "status": "pending",
+      "evidence": [
+        "Pending authenticated multi-tab browser capture."
+      ]
+    },
+    {
+      "id": "L2",
+      "expectation": "Hosted /api/jobs/deadline-sweep and scheduled maintenance progress overdue jobs with all browsers closed and recover cleanly after contention or transient failure",
+      "verification": "Hosted deployment scheduler logs and database state inspection",
+      "status": "pending",
+      "evidence": [
+        "Pending hosted scheduler activation and unattended catch-up verification."
+      ]
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent human review against the implementation commit."
+    ],
+    "external": [
+      "Authenticated multi-tab browser maintenance capture (L1).",
+      "Hosted scheduler activation and unattended catch-up verification (L2).",
+      "Phase 1 representative baseline captures and numerical target agreement."
+    ]
+  }
+}

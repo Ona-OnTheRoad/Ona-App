@@ -81,7 +81,11 @@ export function useCheckout() {
         if (res.ok && res.data.job) setJob(res.data.job);
       });
       void import("@/lib/jobs/client").then(({ apiExpireStaleBookedJobs }) =>
-        apiExpireStaleBookedJobs({ source: "checkout", trigger: "maintenance" }).catch(() => null),
+        apiExpireStaleBookedJobs({
+          source: "checkout",
+          trigger: "maintenance",
+          urgent: true,
+        }).catch(() => null),
       );
     }
   }, [jobId]);

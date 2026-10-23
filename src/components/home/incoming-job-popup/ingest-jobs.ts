@@ -1,4 +1,6 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
+import { recordJobDiagnostic } from "@/lib/jobs/diagnostics/collector";
+import type { JobTrigger } from "@/lib/jobs/diagnostics/types";
 import {
   clearJobShown,
   isIncomingJobOpen,
@@ -24,6 +26,22 @@ export interface IngestDeps {
   notifyRequestClosed: NotifyRequestClosed;
   presentJob: (j: JobRecord) => Promise<void>;
   offerJob: (j: JobRecord) => void;
+}
+
+/** Record a `missed-push` diagnostic when an interval poll, while realtime says
+ * "connected", surfaces an open offer this tab has not shown yet (the push
+ * never arrived). Evidence for tuning the idle poll interval. */
+export function noteMissedPush(
+  jobs: JobRecord[],
+  d: { trigger: JobTrigger; connected: boolean; primed: boolean },
+  backendUserId: string,
+  knownIds: Set<string>,
+): void {
+  if (d.trigger !== "interval" || !d.connected || !d.primed) return;
+  const now = serverNow();
+  if (jobs.some((j) => isIncomingJobOpen(j, backendUserId, now) && !knownIds.has(j.id))) {
+    recordJobDiagnostic("trigger", "jobs", { source: "incoming", trigger: d.trigger }, "missed-push");
+  }
 }
 
 /** Reconcile one full lean list from the server with the on-screen cards. */
