@@ -16,7 +16,7 @@ export function MotoristProfileHub({ isLight }: MotoristProfileHubProps) {
 
   return (
     <div className="ona2 flex h-full min-h-0 flex-col overflow-y-auto scrollbar-hide bg-ona-bg text-ona-ink">
-      <div className="w-full max-w-lg mx-auto px-4 pt-4 pb-8">
+      <div className="w-full max-w-lg mx-auto px-4 pt-4 pb-24">
         {/* Screen Title */}
         <header className="pt-2 pb-2">
           <h1 className="text-[20px] font-semibold tracking-tight text-ona-ink">
