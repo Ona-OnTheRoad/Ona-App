@@ -72,11 +72,38 @@ export function PasswordRules({
   );
 }
 
-export function Row({ k, v }: { k: string; v: string }) {
+export function Row({
+  k,
+  v,
+  isLight = true,
+}: {
+  k: string;
+  v: string;
+  isLight?: boolean;
+}) {
   return (
-    <div className="flex gap-2 border-b border-black/[0.06] py-2 last:border-0">
-      <span className="w-24 shrink-0 font-semibold text-[#86868b]">{k}</span>
-      <span className="min-w-0 flex-1 font-semibold text-[#1d1d1f]">{v}</span>
+    <div
+      className={cn(
+        "flex gap-2 border-b py-2.5 last:border-0",
+        isLight ? "border-black/[0.06]" : "border-white/10",
+      )}
+    >
+      <span
+        className={cn(
+          "w-28 shrink-0 font-semibold",
+          isLight ? "text-[#86868b]" : "text-white/60",
+        )}
+      >
+        {k}
+      </span>
+      <span
+        className={cn(
+          "min-w-0 flex-1 font-semibold break-words",
+          isLight ? "text-[#1d1d1f]" : "text-white",
+        )}
+      >
+        {v}
+      </span>
     </div>
   );
 }

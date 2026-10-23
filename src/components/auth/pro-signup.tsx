@@ -197,6 +197,7 @@ export function ProSignup() {
               skill={skill}
               specialty={specialty}
               vehiclesCanFix={fix.vehiclesCanFix}
+              isLight={isLight}
             />
           )}
 
