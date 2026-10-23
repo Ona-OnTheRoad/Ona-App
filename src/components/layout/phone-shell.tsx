@@ -245,7 +245,6 @@ export function PhoneShell({
       id="ona-stage"
       className={cn(
         "box-border flex w-full items-center justify-center overflow-hidden",
-        "min-h-[100dvh] h-[100dvh]",
         "p-0 sm:p-4 md:p-5",
         isLight
           ? "bg-[#c8c9cd] sm:bg-[#060d0a]"
