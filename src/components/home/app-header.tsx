@@ -34,12 +34,6 @@ export function AppHeader() {
 
       <Link
         href="/notifications"
-        onClick={(e) => {
-          if (notif?.openCenter) {
-            e.preventDefault();
-            notif.openCenter();
-          }
-        }}
         aria-label={
           unreadCount > 0
             ? `Notifications (${unreadCount} unread)`

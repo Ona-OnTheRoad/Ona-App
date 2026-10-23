@@ -253,15 +253,14 @@ html .rfd-sheet {
   }
 }
 
-/* Lock document to one viewport — UI must not grow the page and “lap” outside */
+/* Document viewport root — allows dynamic dvh and natural browser gestures */
 html,
 body {
+  min-height: 100%;
+  min-height: 100dvh;
   height: 100%;
-  max-height: 100%;
   width: 100%;
   max-width: 100%;
-  overflow: hidden;
-  overscroll-behavior: none;
   position: relative;
   /* Full page stage flips with html[data-theme] */
   background-color: var(--stage, #060d0a);
@@ -283,17 +282,15 @@ html[data-a11y-hc="1"] #ona-phone [class*="text-white/65"] {
 }
 
 /* Dynamic app frame:
-   - On mobile/phones (< 640px): Takes up 100% full width and height of any phone screen.
+   - On mobile/phones (< 640px): Takes up 100% full width and height of any phone screen (100dvh).
    - On web desktop / wide screens (>= 640px): Mirrored modern phone frame with sensible dimensions (420px × 884px max).
 */
 #ona-stage {
   box-sizing: border-box;
   display: flex;
   width: 100%;
-  height: 100vh;
+  min-height: 100dvh;
   height: 100dvh;
-  height: 100svh;
-  max-height: 100dvh;
   align-items: center;
   justify-content: center;
   overflow: hidden;
@@ -315,18 +312,10 @@ html[data-a11y-hc="1"] #ona-phone [class*="text-white/65"] {
   max-width: 100% !important;
   height: 100% !important;
   height: 100dvh !important;
-  max-height: 100% !important;
-  max-height: 100dvh !important;
-  min-height: 0;
+  min-height: 100dvh;
   border-radius: 0;
   box-shadow: none;
   overflow: hidden;
-  /* clip (unlike hidden) cannot be scrolled programmatically: focusing a field inside
-     an overlay that is still sliding in used to scroll the whole phone frame up. */
-  overflow: clip;
-  /* Kill iOS/Android pull-to-refresh only on the app shell (not the whole browser) */
-  overscroll-behavior: none;
-  overscroll-behavior-y: none;
   touch-action: pan-x pan-y;
   margin-left: auto;
   margin-right: auto;
