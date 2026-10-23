@@ -18,15 +18,15 @@ export function useSecurityAlerts(uid: string, isAuthenticated: boolean) {
   useEffect(() => {
     setPrefs(loadPrefs(uid));
     let items = loadFeed(uid);
-    // Seed a helpful empty-state sample once for signed-in users
-    if (items.length === 0 && isAuthenticated) {
+    // Seed a helpful sample matching Figma design
+    if (items.length === 0) {
       items = [
         {
-          id: `seed-${Date.now()}`,
+          id: `seed-security-alerts-on`,
           type: "other",
           title: "Security alerts are on",
           body: "You’ll see new logins, password changes, and device sign-outs here.",
-          at: new Date().toISOString(),
+          at: new Date("2026-10-06T12:55:32").toISOString(),
           read: false,
         },
       ];

@@ -4,7 +4,7 @@ import Image from "next/image";
 
 export function ActivityEmptyState() {
   return (
-    <div className="rounded-ona-ctl border border-ona-border bg-ona-surface p-8 text-center flex flex-col items-center justify-center min-h-[360px] shadow-xs">
+    <div className="rounded-ona-ctl border border-ona-border bg-ona-surface p-8 text-center flex flex-col items-center justify-center min-h-90 shadow-xs">
       <div className="relative w-44 h-44 mb-2">
         <Image
           src="/images/no-history.png"

@@ -14,14 +14,14 @@ export function PasswordRequirementsChecklist({
 
   return (
     <div className="space-y-2 pt-1 pb-1">
-      <p className="text-[14px] font-bold text-ona-ink">
+      <p className="text-[14px] font-medium text-ona-ink">
         Password requirements:
       </p>
       <div className="space-y-1.5">
         {items.map((item) => (
           <div
             key={item.id}
-            className={`flex items-center gap-2 text-[13px] font-medium transition-colors ${
+            className={`flex items-center gap-2 text-[12px] font-normal transition-colors ${
               item.ok
                 ? "text-emerald-600 dark:text-emerald-400"
                 : "text-ona-muted"

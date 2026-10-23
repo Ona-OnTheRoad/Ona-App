@@ -4,6 +4,8 @@ export const SW_SETTINGS: Record<keyof typeof EN_SETTINGS, string> = {
   "settings.title": "Mipangilio",
   "settings.subtitle": "Programu ya Ona",
   "settings.appearance": "Muonekano",
+  "settings.theme": "Mandhari",
+  "settings.systemDefault": "Chaguo-msingi",
   "settings.darkMode": "Hali ya giza",
   "settings.lightMode": "Hali ya mwanga",
   "settings.themeSaved": "Imehifadhiwa kwa {name}",
@@ -31,6 +33,8 @@ export const SW_SETTINGS: Record<keyof typeof EN_SETTINGS, string> = {
   "settings.aboutDetail": "Toleo 0.1 · msaada karibu",
   "language.title": "Lugha",
   "language.subtitle": "Lugha ya kuonyesha programu",
+  "language.selectTitle": "Chagua lugha",
+  "language.saveChanges": "Hifadhi mabadiliko",
   "language.hint":
     "Chagua lugha ya menyu na vitufe. Kiingereza ni chaguo-msingi.",
   "language.saved": "Lugha imesasishwa",

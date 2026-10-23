@@ -1,8 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { useI18n, type MessageKey } from "@/lib/i18n";
+import { useApp } from "@/lib/store";
 
 export interface ProfileMenuItem {
   id: string;
@@ -12,11 +16,13 @@ export interface ProfileMenuItem {
   subtitle?: string;
   iconSrc: string;
   href: string;
+  onClick?: (e: React.MouseEvent) => void | Promise<void>;
 }
 
 export const MOTORIST_PROFILE_MENU_ITEMS: ProfileMenuItem[] = [
   {
     id: "personal-info",
+    titleKey: "settings.hub.personalInfo",
     title: "Personal Info",
     iconSrc: "/icons/profile-personal-info.png",
     href: "/profile/personal-info",
@@ -41,28 +47,12 @@ export const MOTORIST_PROFILE_MENU_ITEMS: ProfileMenuItem[] = [
   },
   {
     id: "refer-earn",
+    titleKey: "settings.hub.referEarn",
+    subtitleKey: "settings.hub.referEarnDetail",
     title: "Refer & Earn",
     subtitle: "Share your code. Earn credits",
     iconSrc: "/icons/profile-refer-and-earn.png",
     href: "/wallet",
-  },
-  {
-    id: "availability",
-    titleKey: "settings.hub.availability",
-    subtitleKey: "settings.hub.availabilityDetail",
-    title: "Availability & Scheduling",
-    subtitle: "Hours, location & coverage",
-    iconSrc: "/icons/profile-availability-and-scheduling.png",
-    href: "/settings/sections/availability",
-  },
-  {
-    id: "pricing",
-    titleKey: "settings.hub.pricing",
-    subtitleKey: "settings.hub.pricingDetail",
-    title: "Pricing & Services",
-    subtitle: "Labour fees & skills",
-    iconSrc: "/icons/profile-pricing-and-services.png",
-    href: "/settings/sections/pricing",
   },
   {
     id: "payments",
@@ -96,8 +86,8 @@ export const MOTORIST_PROFILE_MENU_ITEMS: ProfileMenuItem[] = [
     titleKey: "settings.hub.privacy",
     subtitleKey: "settings.hub.privacyDetail",
     title: "Privacy & Account",
-    subtitle: "Alerts & sounds",
-    iconSrc: "/icons/profile-privacy-and-accpunts.png",
+    subtitle: "Visibility, data & permissions",
+    iconSrc: "/icons/profile-privacy-and-accounts.png",
     href: "/settings/sections/privacy",
   },
   {
@@ -126,115 +116,55 @@ interface ProfileMenuCardProps {
 }
 
 export function ProfileMenuCard({
-  items = MOTORIST_PROFILE_MENU_ITEMS,
+  items: customItems,
 }: ProfileMenuCardProps) {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
+  const router = useRouter();
+  const { hasProAccount, switchAccount } = useApp();
+  const [switching, setSwitching] = useState(false);
 
-  const getPersonalLabel = () => {
-    switch (locale) {
-      case "yo":
-        return "Àlàyé Ti Ara Ẹni";
-      case "ha":
-        return "Bayanin Kai";
-      case "ig":
-        return "Ozi Onwe Onye";
-      case "pcm":
-        return "Personal Info";
-      case "fr":
-        return "Infos personnelles";
-      case "es":
-        return "Información personal";
-      case "pt":
-        return "Informações pessoais";
-      case "ar":
-        return "المعلومات الشخصية";
-      case "sw":
-        return "Taarifa binafsi";
-      case "zh":
-        return "个人信息";
-      default:
-        return "Personal Info";
-    }
-  };
+  const proGatewayItem: ProfileMenuItem = hasProAccount
+    ? {
+        id: "switch-pro",
+        title: "Switch to Repair Pro",
+        subtitle: "Open Pro dashboard & Go Live",
+        iconSrc: "/icons/profile-pricing-and-services.png",
+        href: "/dashboard",
+        onClick: async (e: React.MouseEvent) => {
+          e.preventDefault();
+          if (switching) return;
+          setSwitching(true);
+          try {
+            await switchAccount("professional");
+            router.push("/dashboard");
+          } finally {
+            setSwitching(false);
+          }
+        },
+      }
+    : {
+        id: "become-pro",
+        title: "Become a Repair Pro",
+        subtitle: "Apply with your motorist details",
+        iconSrc: "/icons/profile-pricing-and-services.png",
+        href: "/signup/pro?from=profile&attach=1&next=/dashboard",
+      };
 
-  const getReferLabel = () => {
-    switch (locale) {
-      case "yo":
-        return "Tọ́ka & Gba Èrè";
-      case "ha":
-        return "Nuna & Samu";
-      case "ig":
-        return "Kpọọ & Nata";
-      case "pcm":
-        return "Refer & Earn";
-      case "fr":
-        return "Parrainer et gagner";
-      case "es":
-        return "Recomienda y gana";
-      case "pt":
-        return "Indique e Ganhe";
-      case "ar":
-        return "شارك واكسب";
-      case "sw":
-        return "Alika na Upate";
-      case "zh":
-        return "推荐并赚取";
-      default:
-        return "Refer & Earn";
-    }
-  };
-
-  const getReferSubtitle = () => {
-    switch (locale) {
-      case "yo":
-        return "Pin koodu rẹ. Gba awọn kirediti";
-      case "ha":
-        return "Raba lambar ku. Samu lada";
-      case "ig":
-        return "Kekọrịta koodu gị. Nata kredit";
-      case "pcm":
-        return "Share your code. Earn credits";
-      case "fr":
-        return "Partagez votre code. Gagnez des crédits";
-      case "es":
-        return "Comparte tu código. Gana créditos";
-      case "pt":
-        return "Partilhe o seu código. Ganhe créditos";
-      case "ar":
-        return "شارك رمزك واكسب رصيداً";
-      case "sw":
-        return "Shiriki msimbo wako. Pata pointi";
-      case "zh":
-        return "分享邀请码赚取积分";
-      default:
-        return "Share your code. Earn credits";
-    }
-  };
+  const items = customItems ?? [...MOTORIST_PROFILE_MENU_ITEMS, proGatewayItem];
 
   return (
-    <div className="rounded-ona-ctl border border-ona-border bg-ona-surface shadow-sm overflow-hidden pb-5">
+    <div className="rounded-ona-ctl border border-ona-border bg-ona-surface shadow-sm overflow-hidden pb-1">
       {items.map((item) => {
-        const itemTitle =
-          item.id === "personal-info"
-            ? getPersonalLabel()
-            : item.id === "refer-earn"
-              ? getReferLabel()
-              : item.titleKey
-                ? t(item.titleKey)
-                : item.title;
-
-        const itemSubtitle =
-          item.id === "refer-earn"
-            ? getReferSubtitle()
-            : item.subtitleKey
-              ? t(item.subtitleKey)
-              : item.subtitle;
+        const itemTitle = item.titleKey ? t(item.titleKey) : item.title;
+        const itemSubtitle = item.subtitleKey ? t(item.subtitleKey) : item.subtitle;
+        const isSwitchingThis = item.id === "switch-pro" && switching;
 
         return (
           <Link
             key={item.id}
             href={item.href}
-            className="flex items-center gap-3.5 mx-4 py-3.5 transition-colors border-b border-ona-border hover:bg-black/2 active:bg-black/4 dark:hover:bg-white/3 dark:active:bg-white/6 group"
+            onClick={item.onClick}
+            className="flex items-center gap-3.5 mx-4 py-3.5 transition-colors border-b border-ona-border last:border-b-0 hover:bg-black/2 active:bg-black/4 dark:hover:bg-white/3 dark:active:bg-white/6 group"
           >
             {/* Soft brand container for icon */}
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-ona-brand-soft">
@@ -259,14 +189,18 @@ export function ProfileMenuCard({
               ) : null}
             </div>
 
-            {/* Angle Right */}
-            <Image
-              alt="Angle right"
-              src="/icons/angle-right.png"
-              width={12}
-              height={12}
-              className="h-4.5 w-4.5 object-contain opacity-70 group-hover:opacity-100 transition-opacity"
-            />
+            {/* Angle Right or Loader */}
+            {isSwitchingThis ? (
+              <Loader2 className="h-4.5 w-4.5 animate-spin text-ona-brand-ink" />
+            ) : (
+              <Image
+                alt="Angle right"
+                src="/icons/angle-right.png"
+                width={12}
+                height={12}
+                className="h-4.5 w-4.5 object-contain opacity-70 group-hover:opacity-100 transition-opacity"
+              />
+            )}
           </Link>
         );
       })}

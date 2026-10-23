@@ -4,6 +4,8 @@ export const PCM_SETTINGS: Record<keyof typeof EN_SETTINGS, string> = {
   "settings.title": "Settings",
   "settings.subtitle": "Ona app",
   "settings.appearance": "How e look",
+  "settings.theme": "Theme",
+  "settings.systemDefault": "System default",
   "settings.darkMode": "Dark mode",
   "settings.lightMode": "Light mode",
   "settings.themeSaved": "E don save for {name}",
@@ -30,6 +32,8 @@ export const PCM_SETTINGS: Record<keyof typeof EN_SETTINGS, string> = {
   "settings.aboutDetail": "Version 0.1 · help near you",
   "language.title": "Language",
   "language.subtitle": "App language",
+  "language.selectTitle": "Select language",
+  "language.saveChanges": "Save changes",
   "language.hint":
     "Choose how Ona go show menu and buttons. English na default.",
   "language.saved": "Language don change",

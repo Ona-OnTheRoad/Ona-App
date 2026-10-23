@@ -28,10 +28,10 @@ export function AlertToggleCard({ items }: AlertToggleCardProps) {
             className="flex items-center justify-between gap-3 px-4 py-3"
           >
             <div className="min-w-0 flex-1 pr-2">
-              <p className="text-[14px] font-bold text-ona-ink">
+              <p className="text-[12px] font-medium text-ona-ink">
                 {item.label}
               </p>
-              <p className="text-[12px] font-medium text-ona-muted mt-0.5 leading-snug">
+              <p className="text-[11px] font-normal text-ona-muted mt-0.5 leading-snug">
                 {item.detail}
               </p>
             </div>
@@ -42,14 +42,18 @@ export function AlertToggleCard({ items }: AlertToggleCardProps) {
               aria-label={item.label}
               aria-checked={item.on}
               onClick={() => item.onChange(!item.on)}
-              className={`relative h-7 w-12 shrink-0 rounded-full border-0 transition-colors cursor-pointer ${
-                item.on ? "bg-brand" : "bg-ona-border dark:bg-white/20"
-              }`}
+              className="relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200 cursor-pointer"
+              style={{
+                backgroundColor: item.on ? "var(--brand, #ff6b35)" : "#cbd5e1",
+                border: item.on ? "1px solid var(--brand, #ff6b35)" : "1px solid #94a3b8",
+              }}
             >
               <span
-                className={`block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                  item.on ? "translate-x-6" : "translate-x-1"
-                }`}
+                className="pointer-events-none inline-block h-5 w-5 rounded-full shadow-md transition-transform duration-200 ease-in-out"
+                style={{
+                  backgroundColor: "#ffffff",
+                  transform: item.on ? "translateX(22px)" : "translateX(2px)",
+                }}
               />
             </button>
           </div>

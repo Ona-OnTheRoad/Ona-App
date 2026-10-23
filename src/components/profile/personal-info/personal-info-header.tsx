@@ -27,37 +27,10 @@ export function PersonalInfoHeader({
 }: PersonalInfoHeaderProps) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
-  const { locale } = useI18n();
+  const { t } = useI18n();
 
   const avatarUrl = userProfile.avatarUrl || DEFAULT_VENDOR_PHOTO;
   const memberSince = memberSinceLabel(userProfile.registeredAt);
-
-  const getPersonalLabel = () => {
-    switch (locale) {
-      case "yo":
-        return "Àlàyé Ti Ara Ẹni";
-      case "ha":
-        return "Bayanin Kai";
-      case "ig":
-        return "Ozi Onwe Onye";
-      case "pcm":
-        return "Personal Info";
-      case "fr":
-        return "Infos personnelles";
-      case "es":
-        return "Información personal";
-      case "pt":
-        return "Informações pessoais";
-      case "ar":
-        return "المعلومات الشخصية";
-      case "sw":
-        return "Taarifa binafsi";
-      case "zh":
-        return "个人信息";
-      default:
-        return "Personal Info";
-    }
-  };
 
   return (
     <div className="pt-2 pb-4">
@@ -75,7 +48,7 @@ export function PersonalInfoHeader({
 
       {/* Screen Title */}
       <h1 className="text-[20px] font-semibold tracking-tight mb-5 text-ona-ink">
-        {getPersonalLabel()}
+        {t("settings.hub.personalInfo")}
       </h1>
 
       {/* Identity row: Avatar with camera badge + Name + Member since */}

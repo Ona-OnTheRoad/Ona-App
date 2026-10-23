@@ -46,7 +46,7 @@ export function LanguageSelectSheet({
   onClose,
   isLight,
 }: LanguageSelectSheetProps) {
-  const { locale, setLocale } = useI18n();
+  const { locale, setLocale, t } = useI18n();
   const [selected, setSelected] = useState<LocaleCode>(locale);
 
   // Sync selected and preload catalogs when opened for instantaneous switching
@@ -81,60 +81,6 @@ export function LanguageSelectSheet({
     onClose();
   };
 
-  const getSheetTitle = () => {
-    switch (locale) {
-      case "yo":
-        return "Yan èdè";
-      case "ha":
-        return "Zaɓi harshe";
-      case "ig":
-        return "Họrọ asụsụ";
-      case "pcm":
-        return "Select language";
-      case "fr":
-        return "Sélectionner la langue";
-      case "es":
-        return "Seleccionar idioma";
-      case "pt":
-        return "Selecionar idioma";
-      case "ar":
-        return "اختر اللغة";
-      case "sw":
-        return "Chagua lugha";
-      case "zh":
-        return "选择语言";
-      default:
-        return "Select language";
-    }
-  };
-
-  const getSaveButtonText = () => {
-    switch (locale) {
-      case "yo":
-        return "Fi àwọn àyípadà pamọ́";
-      case "ha":
-        return "Ajiye canje-canje";
-      case "ig":
-        return "Chekwaa mgbanwe";
-      case "pcm":
-        return "Save changes";
-      case "fr":
-        return "Enregistrer les modifications";
-      case "es":
-        return "Guardar cambios";
-      case "pt":
-        return "Guardar alterações";
-      case "ar":
-        return "حفظ التغييرات";
-      case "sw":
-        return "Hifadhi mabadiliko";
-      case "zh":
-        return "保存更改";
-      default:
-        return "Save changes";
-    }
-  };
-
   // Build ordered list of language objects
   const availableLanguages = ORDERED_LANGUAGE_CODES.map((code) => {
     const meta = LOCALES.find((l) => l.code === code);
@@ -160,7 +106,7 @@ export function LanguageSelectSheet({
 
         {/* Title */}
         <h2 className="text-[16px] font-bold tracking-tight mb-4 text-ona-ink">
-          {getSheetTitle()}
+          {t("language.selectTitle")}
         </h2>
 
         {/* Languages Card List (Top 5 visible immediately, others scrollable) */}
@@ -215,7 +161,7 @@ export function LanguageSelectSheet({
           onClick={handleSave}
           className="mt-5 flex w-full items-center justify-center rounded-ona-ctl bg-brand py-3.5 text-[14px] font-medium text-white transition-all hover:opacity-90 active:scale-[0.99] shadow-sm"
         >
-          {getSaveButtonText()}
+          {t("language.saveChanges")}
         </button>
       </div>
     </div>

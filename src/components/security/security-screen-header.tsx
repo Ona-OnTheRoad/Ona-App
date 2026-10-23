@@ -41,13 +41,13 @@ export function SecurityScreenHeader({
 
       {/* Subtitle / Description */}
       {subtitle ? (
-        <p className="mt-0.5 text-[14px] font-medium text-ona-muted">
+        <p className="mt-0.5 text-[14px] font-normal text-ona-muted">
           {subtitle}
         </p>
       ) : null}
 
       {description ? (
-        <p className="mt-2 text-[13px] font-medium text-ona-muted leading-relaxed">
+        <p className="mt-2 text-[14px] font-normal text-ona-muted leading-relaxed">
           {description}
         </p>
       ) : null}

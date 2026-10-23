@@ -1,6 +1,6 @@
-export const TWO_FA_KEY = "ona-2fa-enabled-v1";
-export const TWO_FA_METHOD_KEY = "ona-2fa-method-v1";
-export const TWO_FA_SECRET_KEY = "ona-2fa-secret-v1";
+export const TWO_FA_KEY = "ona-2fa-enabled-v2";
+export const TWO_FA_METHOD_KEY = "ona-2fa-method-v2";
+export const TWO_FA_SECRET_KEY = "ona-2fa-secret-v2";
 
 export type TwoFaMethod = "sms" | "authenticator" | null;
 export type SetupStep = "idle" | "pick" | "sms" | "authenticator";

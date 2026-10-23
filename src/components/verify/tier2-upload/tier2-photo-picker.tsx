@@ -5,6 +5,9 @@ import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Tier2PhotoPickerProps {
+  id?: string;
+  label?: string;
+  hint?: string;
   fileName: string;
   hasFile: boolean;
   onFilePicked: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -13,6 +16,9 @@ interface Tier2PhotoPickerProps {
 }
 
 export function Tier2PhotoPicker({
+  id = "verify-id-photo",
+  label = "Upload ID photo (front only)",
+  hint = "PNG or JPG (MAX. 800×400px).",
   fileName,
   hasFile,
   onFilePicked,
@@ -34,13 +40,13 @@ export function Tier2PhotoPicker({
 
   return (
     <div>
-      <label className="block text-[12px] font-medium mb-1.5 text-ona-ink">
-        <span>Upload ID photo (front only)</span>{" "}
-        <span className="text-ona-danger">*</span>
+      <label htmlFor={id} className="block text-[12px] font-medium mb-1.5 text-ona-ink">
+        <span>{label}</span> <span className="text-ona-danger">*</span>
       </label>
 
       {/* Hidden File Input */}
       <input
+        id={id}
         ref={fileInputRef}
         type="file"
         accept="image/png,image/jpeg,image/webp"

@@ -105,6 +105,9 @@ export const EN_ACCOUNT = {
   "settings.hub.supportDetail": "Help, legal & about",
   "settings.hub.addresses": "Addresses & location",
   "settings.hub.addressesDetail": "Home, Work, service area & pin",
+  "settings.hub.personalInfo": "Personal Info",
+  "settings.hub.referEarn": "Refer & Earn",
+  "settings.hub.referEarnDetail": "Share your code. Earn credits",
   "settings.dangerZone": "Danger zone",
   "settings.deleteAccount": "Delete account",
   "settings.deleteAccountDetail":
