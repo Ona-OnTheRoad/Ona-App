@@ -15,7 +15,7 @@ import {
 } from "@/lib/chat-expired";
 
 export type NotificationCategory =
-  "requests" | "messages" | "payments" | "system";
+  "requests" | "messages" | "payments" | "system" | "promotional";
 
 export type NotificationPriority = "low" | "normal" | "high" | "critical";
 
@@ -50,7 +50,7 @@ export type AppNotification = {
 };
 
 export type NotificationFilter =
-  "all" | "requests" | "messages" | "payments" | "system";
+  "all" | "requests" | "messages" | "payments" | "system" | "promotional";
 
 /** Spec palette */
 export const COPPER = "#FF6B35";

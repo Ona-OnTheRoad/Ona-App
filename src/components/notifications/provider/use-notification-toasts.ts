@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AppNotification } from "@/lib/notifications/types";
-import { shouldToastNotification } from "@/lib/notifications/types";
+import {
+  shouldToastNotification,
+  isHighPriority,
+} from "@/lib/notifications/types";
 import { shouldShowToast } from "@/lib/notifications/quiet-hours";
 import {
   isNonStackNotification,
@@ -14,11 +17,16 @@ import {
   canAutoShowToast,
 } from "@/lib/notifications/toast-timing";
 import { playAppSound } from "@/lib/sound-tone";
+import {
+  readSettings,
+  NOTIFICATION_SETTINGS_CHANGED_EVENT,
+} from "../settings/storage";
+import type { NotificationSettingsState } from "../settings/types";
 import { persistSeenNotifIds, readSeenNotifIds } from "./seen-ids";
 import type { ToastItem } from "./types";
 
 /** Toast queue: throttle, dedupe, stack limits, auto-dismiss tick. */
-export function useNotificationToasts() {
+export function useNotificationToasts(userKey = "guest") {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   /** Start of current/last auto-toast wave (throttle + pile window). */
   const lastToastWaveAt = useRef(0);
@@ -29,9 +37,52 @@ export function useNotificationToasts() {
    * (Lazily stamped on first use: Date.now() is not render-safe.) */
   const mountedAtRef = useRef(0);
 
+  const settingsRef = useRef<NotificationSettingsState>(readSettings(userKey));
+
+  useEffect(() => {
+    settingsRef.current = readSettings(userKey);
+  }, [userKey]);
+
+  useEffect(() => {
+    const onSettingsChange = (e: Event) => {
+      const customEvent = e as CustomEvent<NotificationSettingsState>;
+      if (customEvent.detail) {
+        settingsRef.current = customEvent.detail;
+      } else {
+        settingsRef.current = readSettings(userKey);
+      }
+    };
+    window.addEventListener(
+      NOTIFICATION_SETTINGS_CHANGED_EVENT,
+      onSettingsChange,
+    );
+    return () => {
+      window.removeEventListener(
+        NOTIFICATION_SETTINGS_CHANGED_EVENT,
+        onSettingsChange,
+      );
+    };
+  }, [userKey]);
+
   const pushToast = useCallback((n: AppNotification) => {
     if (!shouldToastNotification(n)) return;
     if (!shouldShowToast(n.priority)) return;
+
+    // Gate against user preferences
+    const settings = settingsRef.current;
+    const isCritical =
+      n.priority === "critical" ||
+      (isHighPriority(n.priority) &&
+        String(n.jobStatus || "") === "cancelled");
+
+    if (!isCritical) {
+      // 1. Master toggle: Allow Notifications
+      if (!settings.enabled) return;
+      // 2. Delivery toggle: In-App Inbox
+      if (!settings.delivery.inApp) return;
+      // 3. Category toggle
+      if (n.category && settings.categories[n.category] === false) return;
+    }
     // History is silent: a row created long before the first toast moment (or
     // with a missing/unparseable timestamp) must never toast on a reload or
     // role switch. 15s grace absorbs clock skew without letting old rows

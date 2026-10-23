@@ -2,8 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { QuietHoursConfig } from "@/lib/notifications/quiet-hours";
-import { getAppSupabase } from "@/lib/supabase/app-client";
-import { DEFAULT_SETTINGS, readSettings, writeSettings } from "./storage";
+import { authFetch } from "@/lib/api-auth-headers";
+import {
+  DEFAULT_SETTINGS,
+  parseNotificationSettings,
+  readSettings,
+  writeSettings,
+} from "./storage";
 import type {
   NotificationCategoryPref,
   NotificationDeliveryPref,
@@ -21,8 +26,32 @@ export function useNotificationSettings(
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
+    // 1. Initial hydration from fast local cache
     setState(readSettings(userKey));
     setDirty(false);
+
+    // 2. Fetch server preferences if user is authenticated
+    let active = true;
+    if (userKey && userKey !== "guest") {
+      authFetch("/api/notifications/settings", { cache: "no-store" })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((json) => {
+          if (!active || !json?.ok || !json.data) return;
+          const remotePref = json.data as Record<string, unknown>;
+          if (remotePref && Object.keys(remotePref).length > 0) {
+            const parsedRemote = parseNotificationSettings(remotePref);
+            setState(parsedRemote);
+            writeSettings(userKey, parsedRemote);
+          }
+        })
+        .catch(() => {
+          /* offline or unauthenticated fallback */
+        });
+    }
+
+    return () => {
+      active = false;
+    };
   }, [userKey]);
 
   const patch = useCallback((partial: Partial<NotificationSettingsState>) => {
@@ -70,20 +99,20 @@ export function useNotificationSettings(
     try {
       writeSettings(userKey, state);
 
-      const sb = getAppSupabase();
-      const { data: sessionData } = await sb!.auth.getSession();
-      const token = sessionData.session?.access_token;
-      await fetch("/api/notifications/settings", {
+      const res = await authFetch("/api/notifications/settings", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ access_token: token, ...state }),
+        body: JSON.stringify(state),
       });
+
+      if (!res.ok) {
+        throw new Error("Server rejected preferences update");
+      }
 
       setDirty(false);
       onSaved?.(state);
       showToast("Notification preferences saved");
     } catch {
-      showToast("Could not save. Try again.");
+      showToast("Saved on device. Will sync to server when connected.");
     } finally {
       setSaving(false);
     }

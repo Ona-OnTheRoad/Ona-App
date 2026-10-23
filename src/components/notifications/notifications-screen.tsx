@@ -10,28 +10,11 @@ import { QuietHoursCard } from "./settings/quiet-hours-card";
 import { useNotificationSettings } from "./settings/use-notification-settings";
 import { navigateBack } from "@/lib/navigation";
 import { useApp } from "@/lib/store";
-
-const SOUNDS_SETTINGS_KEY = "ona-app-settings";
-
-function readLocalSounds(): boolean {
-  if (typeof window === "undefined") return true;
-  try {
-    const raw = localStorage.getItem(SOUNDS_SETTINGS_KEY);
-    if (!raw) return true;
-    const p = JSON.parse(raw) as { soundsOn?: boolean };
-    return p.soundsOn !== false;
-  } catch {
-    return true;
-  }
-}
-
-function writeLocalSounds(soundsOn: boolean) {
-  try {
-    localStorage.setItem(SOUNDS_SETTINGS_KEY, JSON.stringify({ soundsOn }));
-  } catch {
-    /* ignore */
-  }
-}
+import {
+  areAppSoundsEnabled,
+  setAppSoundsEnabled,
+  playAppSound,
+} from "@/lib/sound-tone";
 
 export function NotificationsScreen() {
   const router = useRouter();
@@ -55,12 +38,15 @@ export function NotificationsScreen() {
   const [soundsOn, setSoundsOn] = useState(true);
 
   useEffect(() => {
-    setSoundsOn(readLocalSounds());
+    setSoundsOn(areAppSoundsEnabled());
   }, []);
 
   const handleToggleSounds = (on: boolean) => {
     setSoundsOn(on);
-    writeLocalSounds(on);
+    setAppSoundsEnabled(on);
+    if (on) {
+      playAppSound("success_soft");
+    }
   };
 
   const handleBack = () => {

@@ -15,6 +15,11 @@ import {
   isVapidConfigured,
 } from "@/lib/push/env";
 
+import type {
+  NotificationCategory,
+  NotificationPriority,
+} from "@/lib/notifications/types";
+
 export type PushPayload = {
   title: string;
   body: string;
@@ -22,6 +27,8 @@ export type PushPayload = {
   url?: string;
   tag?: string;
   icon?: string;
+  category?: NotificationCategory;
+  priority?: NotificationPriority;
 };
 
 let vapidReady = false;
@@ -47,13 +54,59 @@ function ensureVapid(): boolean {
 export async function sendPushToUser(
   userId: string,
   payload: PushPayload,
-  opts?: { noEnqueue?: boolean },
+  _opts?: { noEnqueue?: boolean },
 ): Promise<{ sent: number; failures: string[] }> {
   if (!ensureVapid()) return { sent: 0, failures: ["vapid_unconfigured"] };
   let sb;
   try {
     sb = createServiceSupabase();
     if (!sb) return { sent: 0, failures: ["db_unavailable"] };
+
+    // Gate push delivery based on user's notification preferences
+    try {
+      const { data: profile } = await sb
+        .from("profiles")
+        .select("notification_preferences")
+        .eq("id", userId)
+        .maybeSingle();
+
+      const prefs = profile?.notification_preferences as
+        | {
+            enabled?: boolean;
+            delivery?: { push?: boolean };
+            pushEnabled?: boolean;
+            categories?: Record<string, boolean>;
+          }
+        | null
+        | undefined;
+
+      if (prefs) {
+        const isMasterDisabled = prefs.enabled === false;
+        const isPushDisabled =
+          prefs.delivery?.push === false || prefs.pushEnabled === false;
+        const isCatDisabled = Boolean(
+          payload.category && prefs.categories?.[payload.category] === false,
+        );
+
+        // Critical alerts break through
+        const isCritical = payload.priority === "critical";
+
+        if (!isCritical) {
+          if (isMasterDisabled) {
+            return { sent: 0, failures: ["push_disabled_master"] };
+          }
+          if (isPushDisabled) {
+            return { sent: 0, failures: ["push_disabled_by_user"] };
+          }
+          if (isCatDisabled) {
+            return { sent: 0, failures: ["push_category_disabled"] };
+          }
+        }
+      }
+    } catch {
+      /* fallback gracefully if profile read fails */
+    }
+
     const { data, error } = await sb
       .from("push_subscriptions")
       .select("endpoint,p256dh,auth")
