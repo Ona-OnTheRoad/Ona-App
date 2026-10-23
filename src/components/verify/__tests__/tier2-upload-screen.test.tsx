@@ -75,10 +75,38 @@ const mockDocs: CountryIdDoc[] = [
   },
 ];
 
-let mockVerifyState: any = {};
+import type { useVerifyIdentity } from "../use-verify-identity";
+
+type MockFn = ReturnType<typeof vi.fn>;
+
+interface MockVerifyState {
+  phoneOk?: boolean;
+  userProfile?: { fullName: string } | null;
+  accountType?: string;
+  submitted?: boolean;
+  tier2Ok?: boolean;
+  error?: string;
+  busy?: boolean;
+  idTypes?: CountryIdDoc[];
+  idType?: string;
+  selectedDoc?: CountryIdDoc;
+  idNumber?: string;
+  idFront?: string;
+  idFrontName?: string;
+  idBack?: string;
+  idBackName?: string;
+  setIdNumber?: MockFn;
+  pickIdFront?: MockFn;
+  pickIdBack?: MockFn;
+  changeIdType?: MockFn;
+  submitId?: MockFn;
+  onPhotoReadError?: MockFn;
+}
+
+let mockVerifyState: MockVerifyState = {};
 
 vi.mock("../use-verify-identity", () => ({
-  useVerifyIdentity: () => mockVerifyState,
+  useVerifyIdentity: () => mockVerifyState as unknown as ReturnType<typeof useVerifyIdentity>,
 }));
 
 describe("Tier2UploadScreen document selection and front/back photo upload", () => {
