@@ -23,6 +23,8 @@ import {
 import { useApp } from "@/lib/store";
 import { useOverlayGatesReady } from "@/lib/use-overlay-gates-ready";
 import { cn } from "@/lib/utils";
+import { usePathname } from "next/navigation";
+import { isPublicPath } from "@/lib/routes";
 
 const EXPAND_EVENT = "ona-pro-setup-expand";
 const COLLAPSED_H = 14;
@@ -45,6 +47,7 @@ export function ProOnboardingSheet() {
     proOnboardingSheetRequired,
     setProOnboardingSheetRequired,
   } = useApp();
+  const pathname = usePathname() || "";
   const gatesReady = useOverlayGatesReady();
   const isLight = theme === "light";
   const [expanded, setExpanded] = useState(true);
@@ -54,12 +57,21 @@ export function ProOnboardingSheet() {
   const gestureY = useRef<number | null>(null);
   const bodyScrollRef = useRef<HTMLDivElement | null>(null);
 
+  const isExcludedRoute =
+    isPublicPath(pathname) ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/signup") ||
+    pathname.startsWith("/logout") ||
+    pathname.startsWith("/artisan/onboarding") ||
+    pathname.startsWith("/verify");
+
   const open =
     gatesReady &&
     isAuthenticated &&
     accountType === "professional" &&
     proOnboardingSheetRequired &&
-    !menuOpen;
+    !menuOpen &&
+    !isExcludedRoute;
 
   // App menu sets #ona-phone[data-menu-open] while drawer is open
   useEffect(() => {

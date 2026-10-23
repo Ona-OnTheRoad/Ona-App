@@ -72,6 +72,9 @@ export function useSessionState() {
     setAccountType(null);
     setPrimaryAccountType(null);
     setUserProfile(null);
+    setProOnboardingSheetRequiredState(false);
+    setPostSwitchPhoneOtpRequired(false);
+    setProLiveState(false);
     try {
       localStorage.removeItem(AUTH_KEY);
       localStorage.removeItem(AUTH_NAME_KEY);
