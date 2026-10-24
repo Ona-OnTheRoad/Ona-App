@@ -48,7 +48,6 @@ const nextConfig: NextConfig = {
     localPatterns: [
       {
         pathname: "/**",
-        search: "*",
       },
     ],
     remotePatterns: [

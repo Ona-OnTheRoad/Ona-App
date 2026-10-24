@@ -52,6 +52,7 @@ export function ProfileIdentityCard({
               src="/icons/badge-check.png"
               width={12}
               height={12}
+              unoptimized
               className="h-3 w-3 object-contain"
             />
           </span>
