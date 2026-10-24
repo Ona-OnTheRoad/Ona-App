@@ -286,17 +286,16 @@ html[data-a11y-hc="1"] #ona-phone [class*="text-white/65"] {
 #ona-stage {
   box-sizing: border-box;
   display: flex;
+  flex-direction: column;
   width: 100%;
   min-height: 100dvh;
-  height: 100dvh;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
   padding: 0;
 }
 
 @media (min-width: 640px) and (min-height: 500px) {
   #ona-stage {
+    align-items: center;
+    justify-content: center;
     padding: 1.25rem;
   }
 }
@@ -308,16 +307,12 @@ html[data-a11y-hc="1"] #ona-phone [class*="text-white/65"] {
   flex-direction: column;
   width: 100% !important;
   max-width: 100% !important;
-  height: 100% !important;
-  height: 100dvh !important;
   min-height: 100dvh;
   border-radius: 0;
   box-shadow: none;
-  overflow: hidden;
   touch-action: pan-x pan-y;
   margin-left: auto;
   margin-right: auto;
-  contain: layout paint;
   flex-shrink: 0;
   /* Soft-square panels (~6px) — bars/cards not pill-rounded */
   --radius-panel: 0.375rem;

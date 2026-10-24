@@ -5,7 +5,6 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { OfflineBanner } from "@/components/layout/offline-banner";
 import { DeletionBanner } from "@/components/profile/deletion-banner";
-import { PullToRefresh } from "@/components/layout/pull-to-refresh";
 import { useOverlayGatesReady } from "@/lib/use-overlay-gates-ready";
 import { usePhoneRect } from "@/components/layout/app-dock/use-phone-rect";
 import { cn } from "@/lib/utils";
@@ -135,7 +134,7 @@ export function PhoneShell({
   /** Publish --ona-phone-* CSS variables and keep them synced with screen size */
   usePhoneRect();
   /** Phone frame interior explicit colors avoid browser class lag */
-  const phoneInterior = isLight ? "#c8c9cd" : "#000000";
+  const phoneInterior = isLight ? "#ffffff" : "#000000";
   const lastTapRef = useRef(0);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
   const toggleThemeRef = useRef(toggleTheme);
@@ -244,10 +243,10 @@ export function PhoneShell({
     <div
       id="ona-stage"
       className={cn(
-        "box-border flex w-full items-center justify-center overflow-hidden",
-        "p-0 sm:p-4 md:p-5",
+        "box-border flex w-full flex-col flex-1 min-h-[100dvh]",
+        "sm:items-center sm:justify-center sm:min-h-screen sm:p-4 md:sm:p-5",
         isLight
-          ? "bg-[#c8c9cd] sm:bg-[#060d0a]"
+          ? "bg-white sm:bg-[#060d0a]"
           : "bg-black sm:bg-[#0a0605]",
       )}
     >
@@ -261,14 +260,15 @@ export function PhoneShell({
         id="ona-phone"
         data-theme={theme}
         className={cn(
-          "relative box-border flex flex-col overflow-hidden",
-          "w-full h-full min-h-[100dvh] h-[100dvh]",
-          "sm:w-[420px] sm:max-w-[calc(100vw-2.5rem)]",
+          "relative box-border flex flex-col flex-1",
+          "w-full min-h-[100dvh] h-full",
+          "sm:w-[420px] sm:max-w-[calc(100vw-2.5rem)] sm:flex-initial",
           "sm:min-h-0 sm:h-[min(884px,calc(100dvh-2.5rem))] sm:max-h-[min(884px,calc(100dvh-2.5rem))]",
-          "sm:rounded-[36px] sm:shadow-[0_24px_50px_rgba(0,0,0,0.55)] sm:ring-1 sm:ring-white/10",
+          "sm:rounded-[36px] sm:shadow-[0_24px_50px_rgba(0,0,0,0.55)] sm:ring-1 sm:ring-white/10 sm:overflow-hidden",
           className,
         )}
         style={{
+          paddingTop: "env(safe-area-inset-top, 0px)",
           paddingLeft: "env(safe-area-inset-left, 0px)",
           paddingRight: "env(safe-area-inset-right, 0px)",
           backgroundColor: phoneInterior,
@@ -277,12 +277,11 @@ export function PhoneShell({
         <main
           id="main-content"
           tabIndex={-1}
-          className="relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden outline-none"
+          className="relative flex h-full min-h-0 w-full flex-1 flex-col outline-none"
           style={{ backgroundColor: phoneInterior }}
         >
           <OfflineBanner />
           <DeletionBanner />
-          <PullToRefresh />
           {children}
           {gatesReady && !isAuthOrPublic ? (
             <>
