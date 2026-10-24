@@ -113,18 +113,19 @@ export function buildDockItems(
   profileIcon?: Icon,
 ): { primary: DockItem[]; more: DockItem[] } {
   // Customer: Home, History, Ona Express, Shop, Profile (matching Figma; no More sheet needed).
-  // Repair Pro: Dashboard, Jobs, Wallet, Profile (Shop in More).
+  // Repair Pro: Home (Dashboard), Jobs, Payouts (Wallet), Shop, Profile (matching Figma).
   const isPro = roleHome === "/dashboard";
   const primaryHrefs = isPro
-    ? ["/dashboard", "/jobs", "/wallet", "/profile"]
+    ? ["/dashboard", "/jobs", "/wallet", myShopHref, "/profile"]
     : ["/", "/history", "/express", myShopHref, "/profile"];
 
   const labelFor = (r: DockNavRow): string => {
     if (r.labelOverride) return r.labelOverride;
     if (r.href === "/") return t("nav.home");
+    if (r.href === "/dashboard") return "Home";
     if (r.href === "/history") return t("nav.history");
     if (r.href === "/express") return "Ona Express";
-    if (r.href === "/wallet") return t("nav.wallet");
+    if (r.href === "/wallet") return isPro ? "Payouts" : t("nav.wallet");
     if (r.href === myShopHref || r.href === "/shop") return t("nav.shop");
     return t(r.labelKey);
   };
@@ -134,25 +135,19 @@ export function buildDockItems(
     label: labelFor(r),
     icon:
       r.href === "/wallet"
-        ? WALLET_ICON
+        ? isPro
+          ? CreditCard
+          : WALLET_ICON
         : r.href === "/profile" && profileIcon
           ? profileIcon
           : ICONS[r.icon] || Home,
   });
 
-  // Redundant destinations covered directly inside Profile: wallet and settings.
-  const isRedundantMoreHref = (href: string) =>
-    href === "/wallet" || href === "/settings" || href.startsWith("/settings/");
-
   const primary = primaryHrefs
     .map((h) => rows.find((r) => r.href === h))
     .filter((r): r is DockNavRow => Boolean(r))
     .map(toItem);
-  const taken = new Set(primary.map((p) => p.key));
-  const more = isPro
-    ? rows
-        .filter((r) => !taken.has(r.href) && !isRedundantMoreHref(r.href))
-        .map(toItem)
-    : [];
+  const more: DockItem[] = [];
+
   return { primary, more };
 }

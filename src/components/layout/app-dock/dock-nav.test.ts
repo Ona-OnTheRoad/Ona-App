@@ -30,7 +30,7 @@ describe("buildDockItems", () => {
     expect(more.map((m) => m.key)).toEqual([]);
   });
 
-  it("repair pro: Dashboard, Jobs, Wallet, Profile in the bar; Shop in More", () => {
+  it("repair pro: Home, Jobs, Payouts, Shop, Profile in the bar matching Figma", () => {
     const rows = [
       row("/dashboard", "dashboard"),
       row("/jobs", "jobs"),
@@ -50,9 +50,10 @@ describe("buildDockItems", () => {
       "/dashboard",
       "/jobs",
       "/wallet",
+      "/shop/c/solar",
       "/profile",
     ]);
-    expect(more.map((m) => m.key)).toContain("/shop/c/solar");
+    expect(more.map((m) => m.key)).toEqual([]);
   });
 
   it("skips a tab the backend hid instead of inventing one", () => {

@@ -260,8 +260,8 @@ export function PhoneShell({
         id="ona-phone"
         data-theme={theme}
         className={cn(
-          "relative box-border flex flex-col flex-1",
-          "w-full min-h-[100dvh] h-full",
+          "relative box-border flex flex-col flex-none",
+          "w-full h-[100dvh] max-h-[100dvh] overflow-hidden",
           "sm:w-[420px] sm:max-w-[calc(100vw-2.5rem)] sm:flex-initial",
           "sm:min-h-0 sm:h-[min(884px,calc(100dvh-2.5rem))] sm:max-h-[min(884px,calc(100dvh-2.5rem))]",
           "sm:rounded-[36px] sm:shadow-[0_24px_50px_rgba(0,0,0,0.55)] sm:ring-1 sm:ring-white/10 sm:overflow-hidden",
@@ -277,7 +277,7 @@ export function PhoneShell({
         <main
           id="main-content"
           tabIndex={-1}
-          className="relative flex h-full min-h-0 w-full flex-1 flex-col outline-none"
+          className="relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden outline-none"
           style={{ backgroundColor: phoneInterior }}
         >
           <OfflineBanner />
