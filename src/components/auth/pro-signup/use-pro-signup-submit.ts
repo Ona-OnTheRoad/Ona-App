@@ -11,6 +11,10 @@ import type { VehiclesCanFix } from "./use-vehicles-can-fix";
 import type { BankDetailsValue } from "@/components/auth/bank-details-fields/types";
 import { validateStep5 } from "./validation";
 
+const PASSWORD_REQUIRED = "password_required";
+export const PASSWORD_MISMATCH_MESSAGE =
+  "That password doesn't match your Customer account";
+
 type SubmitArgs = {
   form: ProSignupForm;
   flow: ProSignupFlow;
@@ -21,8 +25,13 @@ type SubmitArgs = {
   stepsOk: boolean;
   userProfile: UserProfile | null;
   refCode: string | null;
-  completeSignup: (profile: UserProfile) => Promise<string | null | undefined>;
+  completeSignup: (
+    profile: UserProfile,
+    opts?: { onErrorCode?: (code: string) => void },
+  ) => Promise<string | null | undefined>;
   replace: (href: string) => void;
+  /** Wizard hook: return the user to the password step. */
+  onPasswordRejected?: () => void;
 };
 
 /** Final "Finish and create account" action (identity checks → profile → signup). */
@@ -37,6 +46,7 @@ export function useProSignupSubmit({
   refCode,
   completeSignup,
   replace,
+  onPasswordRejected,
 }: SubmitArgs) {
   const { busy, setBusy, setFormError, setStep, setDone } = flow;
   const { skill, specialty, skillAnswers } = skillSel;
@@ -132,9 +142,22 @@ export function useProSignupSubmit({
       }
     }
 
-    const err = await completeSignup(profile);
+    let errorCode: string | undefined;
+    const err = await completeSignup(profile, {
+      onErrorCode: (c) => {
+        errorCode = c;
+      },
+    });
     if (err) {
       setBusy(false);
+      // Wrong Customer password: send them back to the password step, keep steps 1-5.
+      if (errorCode === PASSWORD_REQUIRED) {
+        form.setPassword("");
+        form.setConfirmPassword("");
+        setFormError(PASSWORD_MISMATCH_MESSAGE);
+        onPasswordRejected?.();
+        return { ok: false, error: PASSWORD_MISMATCH_MESSAGE };
+      }
       replace(
         `/signup/error?role=professional&message=${encodeURIComponent(err)}`,
       );

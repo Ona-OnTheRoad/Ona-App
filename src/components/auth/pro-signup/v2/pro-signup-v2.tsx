@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthNavigate } from "@/components/auth/auth-transition";
 import { RegistrationComplete } from "@/components/auth/registration-complete";
 import { useApp } from "@/lib/store";
+import { verifyAccountPassword } from "@/lib/verify-account-password";
 import { loadSignupDraft } from "@/lib/signup-draft";
 import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import type { BankDetailsValue } from "@/components/auth/bank-details-fields/types";
@@ -64,6 +65,7 @@ export function ProSignupV2() {
         : searchParams.get("ref") || loadSignupDraft()?.referral || null,
     completeSignup,
     replace: (href) => router.replace(href),
+    onPasswordRejected: () => setStep(0),
   });
 
   const handleBack = () => {
@@ -124,7 +126,8 @@ export function ProSignupV2() {
             confirmPassword={form.confirmPassword}
             setConfirmPassword={form.setConfirmPassword}
             onContinue={() => setStep(1)}
-            isDual={fromMenu || fromProfile}
+            isDual={form.dualSignup}
+            onVerify={form.dualSignup ? verifyAccountPassword : undefined}
           />
         )}
 

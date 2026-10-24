@@ -26,7 +26,10 @@ export function useSignup(
   const { applySession } = applyApi;
 
   const completeSignup = useCallback(
-    async (profile: UserProfile): Promise<string | null> => {
+    async (
+      profile: UserProfile,
+      opts?: { onErrorCode?: (code: string) => void },
+    ): Promise<string | null> => {
       // Pros: enforce single skill on profile
       const normalized: UserProfile =
         profile.accountType === "professional"
@@ -138,6 +141,7 @@ export function useSignup(
       });
 
       if (res.error || !res.profile || !res.userId) {
+        if (res.code) opts?.onErrorCode?.(res.code);
         return (
           res.error ||
           "Could not save your account to the server. Please try again."

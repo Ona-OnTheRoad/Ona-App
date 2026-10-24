@@ -86,9 +86,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  // Fixed scale: no pinch/auto zoom while using the app (focus zoom on iOS too).
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#c8c9cd" },
     { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },

@@ -17,6 +17,8 @@ interface Step0PasswordProps {
   setConfirmPassword: (confirmPassword: string) => void;
   onContinue: () => void;
   isDual?: boolean;
+  /** Dual mode: resolves to an error message, or null when the password is right. */
+  onVerify?: (password: string) => Promise<string | null>;
 }
 
 export function Step0Password({
@@ -26,7 +28,10 @@ export function Step0Password({
   setConfirmPassword,
   onContinue,
   isDual,
+  onVerify,
 }: Step0PasswordProps) {
+  const [verifying, setVerifying] = useState(false);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [touched, setTouched] = useState(false);
@@ -70,6 +75,7 @@ export function Step0Password({
                   const val = e.target.value;
                   setPassword(val);
                   setConfirmPassword(val);
+                  setVerifyError(null);
                   setTouched(true);
                 }}
                 onBlur={() => setTouched(true)}
@@ -90,6 +96,11 @@ export function Step0Password({
                 )}
               </button>
             </div>
+            {verifyError ? (
+              <p role="alert" className="text-[12px] font-medium text-ona-danger">
+                {verifyError}
+              </p>
+            ) : null}
             {touched && password.trim().length > 0 && password.trim().length < 6 && (
               <p className="text-[12px] font-medium text-ona-danger">
                 Password must be at least 6 characters.
@@ -102,15 +113,23 @@ export function Step0Password({
         <div className="pt-6">
           <button
             type="button"
-            onClick={onContinue}
-            disabled={!isDualValid}
+            onClick={async () => {
+              if (!onVerify) return onContinue();
+              setVerifying(true);
+              setVerifyError(null);
+              const err = await onVerify(password);
+              setVerifying(false);
+              if (err) setVerifyError(err);
+              else onContinue();
+            }}
+            disabled={!isDualValid || verifying}
             className={`w-full py-3.5 px-6 rounded-full font-semibold text-sm transition-all duration-200 shadow-sm cursor-pointer ${
               isDualValid
                 ? "bg-brand hover:opacity-90 text-white active:scale-[0.99]"
                 : "bg-brand/50 text-white cursor-not-allowed"
             }`}
           >
-            Continue
+            {verifying ? "Checking…" : "Continue"}
           </button>
         </div>
       </div>
