@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "id": "signup-dual-role-service-client",
+  "title": "Signup dual-role attach fails: service client signed in as user",
+  "plan": "docs/review-guides/signup-dual-role-service-client.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "R1",
+      "stage": "code+live",
+      "expectation": "A signed-in motorist completes pro signup; profiles.role = repair_pro and a repair_pro_profiles row exists.",
+      "verification": "Route test for the attach path; live attempt on a test account.",
+      "status": "pending",
+      "evidence": [
+        "code: 'src/app/api/auth/signup/__tests__/route.test.ts' attach test passes (200, profiles.role=repair_pro, repair_pro_profiles row); failed with 500 before the fix.",
+        "live: not run."
+      ]
+    },
+    {
+      "id": "R2",
+      "stage": "code",
+      "expectation": "The createServiceSupabase() client in the signup route never calls signInWithPassword.",
+      "verification": "Test assertion on the service client's auth calls; grep of the route.",
+      "status": "pass",
+      "evidence": [
+        "code: grep shows signInWithPassword only on passwordClient()/sessionClient in route.ts; 'src/app/api/auth/signup/__tests__/route.test.ts' asserts the service client's signInWithPassword is never called in all three success paths."
+      ]
+    },
+    {
+      "id": "R3",
+      "stage": "code+live",
+      "expectation": "The motorist_profiles row is kept after a pro attach.",
+      "verification": "Route test asserts no motorist_profiles delete; live DB check.",
+      "status": "pending",
+      "evidence": [
+        "code: 'src/app/api/auth/signup/__tests__/route.test.ts' asserts motorist_profiles row unchanged after attach.",
+        "live: not run."
+      ]
+    },
+    {
+      "id": "R4",
+      "stage": "code",
+      "expectation": "Wrong password on attach returns 401 password_required and writes nothing.",
+      "verification": "Route test.",
+      "status": "pass",
+      "evidence": [
+        "code: 'src/app/api/auth/signup/__tests__/route.test.ts' wrong-password attach returns 401 password_required with no upserts and profiles.role still motorist."
+      ]
+    },
+    {
+      "id": "R5",
+      "stage": "code",
+      "expectation": "New-account signup keeps the same status, body shape and returned session.",
+      "verification": "Route test.",
+      "status": "pass",
+      "evidence": [
+        "code: 'src/app/api/auth/signup/__tests__/route.test.ts' new-account test returns 200 with createdNew, role, accountType and session tokens; createUser path unchanged."
+      ]
+    },
+    {
+      "id": "R6",
+      "stage": "code+live",
+      "expectation": "Migration 077 grants, policies and guard triggers are unchanged.",
+      "verification": "Diff shows no migration changes; run scripts/verify/client-write-lockdown.sql against the deployed DB.",
+      "status": "pending",
+      "evidence": [
+        "code: diff touches no files under supabase/migrations or scripts/verify.",
+        "live: client-write-lockdown.sql not run."
+      ]
+    },
+    {
+      "id": "R7",
+      "stage": "live",
+      "expectation": "A signup_events success row is written after a successful signup.",
+      "verification": "Live DB check after a test signup.",
+      "status": "pending",
+      "evidence": [
+        "code: 'src/app/api/auth/signup/__tests__/route.test.ts' records one success signup_events row per success path under the RLS-modelling fake (zero before the fix for new accounts).",
+        "live: not run."
+      ]
+    },
+    {
+      "id": "R8",
+      "stage": "code",
+      "expectation": "Full test suite, typecheck and lint pass with no new lint warnings against the baseline.",
+      "verification": "Run the commands and compare lint output with the dev baseline.",
+      "status": "pass",
+      "evidence": [
+        "code: vitest 193 files / 1801 tests pass; tsc --noEmit exit 0; eslint 0 errors, 148 pre-existing warnings, 0 in changed files."
+      ]
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Follow-up: move signInWithPassword off the service client in src/app/api/security/action/route.ts (change_password) and src/app/api/admin/auth/login/route.ts."
+    ],
+    "external": [
+      "Live checks for R1, R3, R6 and R7 on the deployed environment."
+    ]
+  }
+}
