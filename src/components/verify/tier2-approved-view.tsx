@@ -84,7 +84,7 @@ export function Tier2ApprovedView({ isLight: _propIsLight }: Tier2ApprovedViewPr
           <button
             type="button"
             onClick={() => router.replace("/")}
-            className="w-full rounded-ona-ctl bg-ona-dark hover:opacity-90 text-white py-4 text-[15px] font-bold transition-all shadow-sm active:scale-[0.99] cursor-pointer"
+            className="w-full rounded-ona-ctl bg-brand hover:opacity-90 text-white py-4 text-[15px] font-bold transition-all shadow-sm active:scale-[0.99] cursor-pointer"
           >
             Back home
           </button>

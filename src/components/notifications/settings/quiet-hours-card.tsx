@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { SheetSelect } from "@/components/ui/option-sheet";
 import { OnaToggle } from "@/components/ui/ona-toggle";
 import type { QuietHoursConfig } from "@/lib/notifications/quiet-hours";
 import { HOUR_OPTIONS, hourLabel } from "./rows";
@@ -35,7 +35,9 @@ export function QuietHoursCard({
       {/* Mute non-urgent row */}
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1 pr-2">
-          <p className="text-[12px] font-medium text-ona-ink">Mute non-urgent</p>
+          <p className="text-[12px] font-medium text-ona-ink">
+            Mute non-urgent
+          </p>
           <p className="text-[11px] font-normal text-ona-muted mt-0.5 leading-snug">
             Critical alerts still break through
           </p>
@@ -58,29 +60,19 @@ export function QuietHoursCard({
           >
             From
           </label>
-          <div className="relative flex items-center justify-between h-12 rounded-ona-ctl border border-ona-border bg-ona-field px-3 text-[14px] font-normal text-ona-ink shadow-xs">
-            <span>{hourLabel(quietHours.startHour)}</span>
-            <ChevronDown
-              className="h-4 w-4 text-ona-muted shrink-0 pointer-events-none"
-              strokeWidth={2}
-            />
-            <select
-              id="quiet-from-select"
-              aria-label="Quiet hours start time"
-              disabled={!enabled || !quietHours.enabled}
-              value={quietHours.startHour}
-              onChange={(e) =>
-                patchQuiet({ startHour: Number(e.target.value) })
-              }
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-            >
-              {HOUR_OPTIONS.map((h) => (
-                <option key={`from-${h}`} value={h}>
-                  {hourLabel(h)}
-                </option>
-              ))}
-            </select>
-          </div>
+          <SheetSelect
+            id="quiet-from-select"
+            aria-label="Quiet hours start time"
+            disabled={!enabled || !quietHours.enabled}
+            value={String(quietHours.startHour)}
+            onChange={(v) => patchQuiet({ startHour: Number(v) })}
+            options={HOUR_OPTIONS.map((h) => ({
+              value: String(h),
+              label: hourLabel(h),
+            }))}
+            searchPlaceholder="Search time"
+            className="shadow-xs"
+          />
         </div>
 
         {/* Until */}
@@ -91,27 +83,19 @@ export function QuietHoursCard({
           >
             Until
           </label>
-          <div className="relative flex items-center justify-between h-12 rounded-ona-ctl border border-ona-border bg-ona-field px-3 text-[14px] font-normal text-ona-ink shadow-xs">
-            <span>{hourLabel(quietHours.endHour)}</span>
-            <ChevronDown
-              className="h-4 w-4 text-ona-muted shrink-0 pointer-events-none"
-              strokeWidth={2}
-            />
-            <select
-              id="quiet-until-select"
-              aria-label="Quiet hours end time"
-              disabled={!enabled || !quietHours.enabled}
-              value={quietHours.endHour}
-              onChange={(e) => patchQuiet({ endHour: Number(e.target.value) })}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-            >
-              {HOUR_OPTIONS.map((h) => (
-                <option key={`until-${h}`} value={h}>
-                  {hourLabel(h)}
-                </option>
-              ))}
-            </select>
-          </div>
+          <SheetSelect
+            id="quiet-until-select"
+            aria-label="Quiet hours end time"
+            disabled={!enabled || !quietHours.enabled}
+            value={String(quietHours.endHour)}
+            onChange={(v) => patchQuiet({ endHour: Number(v) })}
+            options={HOUR_OPTIONS.map((h) => ({
+              value: String(h),
+              label: hourLabel(h),
+            }))}
+            searchPlaceholder="Search time"
+            className="shadow-xs"
+          />
         </div>
       </div>
 

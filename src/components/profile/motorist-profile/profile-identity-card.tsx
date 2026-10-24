@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { avatarInitials, DEFAULT_VENDOR_PHOTO } from "@/lib/brand";
-import { skillDashboardTitle } from "@/components/dashboard/dashboard-helpers";
+import { formatProSkill } from "@/lib/pro-service-id";
 import type { UserProfile } from "@/lib/types";
 import { isMotoristVerified } from "@/lib/verification-gate";
 import { useApp } from "@/lib/store";
@@ -23,7 +23,7 @@ export function ProfileIdentityCard({
   const avatarUrl = userProfile.avatarUrl || DEFAULT_VENDOR_PHOTO;
 
   const proTrade =
-    skillDashboardTitle(userProfile.services?.[0] || proServices?.[0]) || "Mechanic";
+    formatProSkill(userProfile.services?.[0] || proServices?.[0]);
 
   return (
     <div className="flex flex-col items-center justify-center pt-2 pb-1">

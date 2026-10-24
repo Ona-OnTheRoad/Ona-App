@@ -54,6 +54,7 @@ export function dockVisibleOn(pathname: string): boolean {
       "/profile",
       "/express",
       "/notifications",
+      "/settings/payments",
     ].includes(pathname) ||
     pathname === "/settings" ||
     pathname === "/jobs" ||
@@ -116,7 +117,7 @@ export function buildDockItems(
   // Repair Pro: Home (Dashboard), Jobs, Payouts (Wallet), Shop, Profile (matching Figma).
   const isPro = roleHome === "/dashboard";
   const primaryHrefs = isPro
-    ? ["/dashboard", "/jobs", "/wallet", myShopHref, "/profile"]
+    ? ["/dashboard", "/jobs", "/settings/payments", myShopHref, "/profile"]
     : ["/", "/history", "/express", myShopHref, "/profile"];
 
   const labelFor = (r: DockNavRow): string => {
@@ -125,6 +126,7 @@ export function buildDockItems(
     if (r.href === "/dashboard") return "Home";
     if (r.href === "/history") return t("nav.history");
     if (r.href === "/express") return "Ona Express";
+    if (r.href === "/settings/payments") return "Payouts";
     if (r.href === "/wallet") return isPro ? "Payouts" : t("nav.wallet");
     if (r.href === myShopHref || r.href === "/shop") return t("nav.shop");
     return t(r.labelKey);
@@ -134,13 +136,15 @@ export function buildDockItems(
     href: r.href,
     label: labelFor(r),
     icon:
-      r.href === "/wallet"
-        ? isPro
-          ? CreditCard
-          : WALLET_ICON
-        : r.href === "/profile" && profileIcon
-          ? profileIcon
-          : ICONS[r.icon] || Home,
+      r.href === "/settings/payments"
+        ? CreditCard
+        : r.href === "/wallet"
+          ? isPro
+            ? CreditCard
+            : WALLET_ICON
+          : r.href === "/profile" && profileIcon
+            ? profileIcon
+            : ICONS[r.icon] || Home,
   });
 
   const primary = primaryHrefs

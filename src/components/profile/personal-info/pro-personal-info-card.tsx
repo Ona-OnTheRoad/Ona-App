@@ -5,7 +5,7 @@ import Image from "next/image";
 import { AlertCircle, ChevronRight, Loader2 } from "lucide-react";
 import type { UserProfile } from "@/lib/types";
 import { avatarInitials, DEFAULT_VENDOR_PHOTO } from "@/lib/brand";
-import { skillDashboardTitle } from "@/components/dashboard/dashboard-helpers";
+import { formatProSkill } from "@/lib/pro-service-id";
 import { memberSinceLabel } from "@/lib/profile-system";
 import { useApp } from "@/lib/store";
 
@@ -15,10 +15,10 @@ interface ProPersonalInfoCardProps {
 }
 
 export function ProPersonalInfoCard({ userProfile }: ProPersonalInfoCardProps) {
-  const { proLive, setProLive } = useApp();
+  const { proLive, setProLive, proServices } = useApp();
   const avatarUrl = userProfile.avatarUrl || DEFAULT_VENDOR_PHOTO;
   const name = userProfile.fullName || "Repair Pro";
-  const proTrade = skillDashboardTitle(userProfile.services?.[0]) || "Mechanic";
+  const proTrade = formatProSkill(userProfile.services?.[0] || proServices?.[0]);
   const memberSince = useMemo(
     () => memberSinceLabel(userProfile.registeredAt || new Date().toISOString()),
     [userProfile.registeredAt],

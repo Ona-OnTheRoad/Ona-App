@@ -1,5 +1,5 @@
 import type { JobFlowStatus } from "@/lib/jobs/types";
-import { isProService, PRO_SERVICE_LABELS } from "@/lib/pro-service-id";
+import { formatProSkill } from "@/lib/pro-service-id";
 import type { ProService } from "@/lib/types";
 
 /** Service Request only leaves dashboard after Accept */
@@ -106,20 +106,6 @@ export function splitPlaceAndArea(label: string): {
 export function skillDashboardTitle(
   skill: ProService | string | null | undefined,
 ): string {
-  const raw = String(skill || "")
-    .trim()
-    .toLowerCase();
-  if (raw && isProService(raw)) {
-    return `${PRO_SERVICE_LABELS[raw]} Dashboard`;
-  }
-  // Specialty-only strings sometimes stored without catalog id
-  if (raw) {
-    const pretty = raw
-      .split(/[\s_/|-]+/)
-      .filter(Boolean)
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(" ");
-    if (pretty) return `${pretty} Dashboard`;
-  }
-  return "Repair Pro Dashboard";
+  const label = formatProSkill(skill);
+  return `${label} Dashboard`;
 }

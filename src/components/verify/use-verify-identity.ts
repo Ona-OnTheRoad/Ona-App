@@ -79,10 +79,7 @@ export function useVerifyIdentity() {
       router.replace("/login");
       return;
     }
-    if (accountType === "professional") {
-      router.replace("/dashboard");
-    }
-  }, [isAuthenticated, accountType, router]);
+  }, [isAuthenticated, router]);
 
   useEffect(() => {
     setSubmitted(pending || tier2Ok);

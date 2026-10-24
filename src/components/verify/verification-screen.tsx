@@ -6,6 +6,7 @@ import { Tier1PhoneCard } from "./tier1-phone-card";
 import { Tier2GovernmentIdCard } from "./tier2-government-id-card";
 import { Tier3LivenessCard } from "./tier3-liveness-card";
 import { Tier4SkillCard } from "./tier4-skill-card";
+import { Tier2ApprovedView } from "./tier2-approved-view";
 import { useVerifyIdentity } from "./use-verify-identity";
 import { navigateBack } from "@/lib/navigation";
 import { useApp } from "@/lib/store";
@@ -16,14 +17,20 @@ interface VerificationScreenProps {
 
 export function VerificationScreen({ isLight: propIsLight }: VerificationScreenProps) {
   const router = useRouter();
-  const { theme } = useApp();
+  const { theme, accountType } = useApp();
   const isLight = propIsLight ?? theme === "light";
   const v = useVerifyIdentity();
+  const isPro = (v.accountType || accountType) === "professional";
 
   const profileRecord = v.userProfile as unknown as Record<string, unknown> | null;
   const isTier4Submitted = Boolean(
     profileRecord?.skillProof || profileRecord?.tier4Status === "under_review" || profileRecord?.skillProofStatus === "under_review",
   );
+
+  // Customer celebration view when Tier 2 is approved (Image 1 Screen 4)
+  if (!isPro && v.tier2Ok) {
+    return <Tier2ApprovedView isLight={isLight} />;
+  }
 
   return (
     <div className="ona2 flex h-full min-h-0 flex-col overflow-y-auto scrollbar-hide bg-ona-bg text-ona-ink">
@@ -69,20 +76,25 @@ export function VerificationScreen({ isLight: propIsLight }: VerificationScreenP
             onClick={() => router.push("/verify/tier-2")}
           />
 
-          {/* Card 3: Tier 3 Face Liveness Verification */}
-          <Tier3LivenessCard
-            isLight={isLight}
-            isUnlocked={v.tier2Ok}
-            isVerified={Boolean(profileRecord?.livenessVerified)}
-            onClick={() => router.push("/settings/security")}
-          />
+          {/* Tier 3 & Tier 4 rendered ONLY for Repair Pro (Image 2 Screen 1) */}
+          {isPro && (
+            <>
+              {/* Card 3: Tier 3 Face Liveness Verification */}
+              <Tier3LivenessCard
+                isLight={isLight}
+                isUnlocked={v.tier2Ok}
+                isVerified={Boolean(profileRecord?.livenessVerified)}
+                onClick={() => router.push("/settings/security")}
+              />
 
-          {/* Card 4: Tier 4 Trade / Skill Certification proof */}
-          <Tier4SkillCard
-            isLight={isLight}
-            status={isTier4Submitted ? "under_review" : "locked"}
-            onClick={() => router.push("/verify/tier-4")}
-          />
+              {/* Card 4: Tier 4 Trade / Skill Certification proof */}
+              <Tier4SkillCard
+                isLight={isLight}
+                status={isTier4Submitted ? "under_review" : "locked"}
+                onClick={() => router.push("/verify/tier-4")}
+              />
+            </>
+          )}
         </div>
       </div>
     </div>

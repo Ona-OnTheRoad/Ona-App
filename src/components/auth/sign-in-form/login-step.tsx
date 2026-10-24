@@ -123,15 +123,15 @@ export function LoginStep({
                   <OnaSelect
                     aria-label="Country code"
                     wrapperClassName="w-[112px] shrink-0"
+                    searchPlaceholder="Search country or code"
+                    options={options.map((o) => ({
+                      value: o.iso,
+                      label: `${flagEmoji(o.iso)} ${o.name} (${o.label})`,
+                      short: `${flagEmoji(o.iso)} ${o.label}`,
+                    }))}
                     value={iso}
                     onChange={(e) => onIsoChange(e.target.value)}
-                  >
-                    {options.map((o) => (
-                      <option key={o.iso} value={o.iso}>
-                        {flagEmoji(o.iso)} {o.label}
-                      </option>
-                    ))}
-                  </OnaSelect>
+                  />
                   <OnaInput
                     id={id}
                     aria-describedby={describedBy}

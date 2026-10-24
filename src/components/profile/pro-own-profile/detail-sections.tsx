@@ -1,3 +1,4 @@
+import { SheetSelect } from "@/components/ui/option-sheet";
 import { BioField } from "@/components/profile/bio-field";
 import { ProfileSection } from "@/components/profile/profile-shell";
 import { RadiusMapPreview } from "@/components/profile/radius-map-preview";
@@ -33,18 +34,18 @@ export function ExperienceSection({
   return (
     <ProfileSection title="Experience" isLight={isLight}>
       {editing && canSetExperience ? (
-        <select
+        <SheetSelect
+          bare
+          title="Years of experience"
           className={field}
           value={years}
-          onChange={(e) => setYears(e.target.value)}
-        >
-          <option value="">Select years…</option>
-          {EXP_YEARS.map((y) => (
-            <option key={y} value={y}>
-              {formatExperience(y)}
-            </option>
-          ))}
-        </select>
+          placeholder="Select years…"
+          onChange={setYears}
+          options={EXP_YEARS.map((y) => ({
+            value: String(y),
+            label: formatExperience(y),
+          }))}
+        />
       ) : (
         <p className={lockedField}>
           {formatExperience(userProfile.yearsExperience)}

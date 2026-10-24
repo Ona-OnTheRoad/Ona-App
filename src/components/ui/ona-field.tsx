@@ -1,13 +1,17 @@
 "use client";
 
 import {
+  Children,
+  isValidElement,
   useId,
   useState,
+  type ChangeEvent,
   type InputHTMLAttributes,
   type ReactNode,
   type SelectHTMLAttributes,
 } from "react";
-import { ChevronDown, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
+import { SheetSelect, type SheetOption } from "@/components/ui/option-sheet";
 import { cn } from "@/lib/utils";
 
 export const onaControlClass =
@@ -94,32 +98,99 @@ export function OnaInput({
   );
 }
 
-/** Styled native select (keeps the OS picker, which is the accessible choice on phones). */
+/**
+ * Reads `<option>` children (including inside fragments/arrays/optgroups) into sheet options.
+ * An empty-value option is the placeholder, not a pickable row.
+ */
+function optionsFromChildren(children: ReactNode): {
+  options: SheetOption[];
+  placeholder?: string;
+} {
+  const options: SheetOption[] = [];
+  let placeholder: string | undefined;
+  const text = (n: ReactNode): string =>
+    Children.toArray(n)
+      .map((c) =>
+        typeof c === "string" || typeof c === "number" ? String(c) : "",
+      )
+      .join("");
+  const walk = (nodes: ReactNode) => {
+    Children.forEach(nodes, (child) => {
+      if (!isValidElement(child)) return;
+      const props = child.props as {
+        value?: string | number;
+        disabled?: boolean;
+        children?: ReactNode;
+      };
+      if (child.type === "option") {
+        const label = text(props.children);
+        const value = props.value != null ? String(props.value) : label;
+        if (value === "") placeholder = label || placeholder;
+        else options.push({ value, label, disabled: props.disabled });
+      } else if (props.children) {
+        walk(props.children);
+      }
+    });
+  };
+  walk(children);
+  return { options, placeholder };
+}
+
+/**
+ * Select field that opens a bottom sheet (long lists get a search field).
+ * Same props as a native `<select>`: `value`, `onChange(e)` with `e.target.value`, `<option>` children.
+ */
 export function OnaSelect({
   className,
   invalid,
   children,
   wrapperClassName,
-  ...rest
-}: SelectHTMLAttributes<HTMLSelectElement> & {
+  id,
+  value,
+  onChange,
+  disabled,
+  options: optionsProp,
+  placeholder: placeholderProp,
+  triggerLabel,
+  searchPlaceholder,
+  "aria-describedby": describedBy,
+  "aria-label": ariaLabel,
+}: Omit<SelectHTMLAttributes<HTMLSelectElement>, "children"> & {
+  children?: ReactNode;
+  /** Alternative to `<option>` children for wrapped option lists. */
+  options?: SheetOption[];
+  placeholder?: string;
+  /** Compact text for the closed field (e.g. a dial code) instead of the full label. */
+  triggerLabel?: (selected: SheetOption) => ReactNode;
+  searchPlaceholder?: string;
   invalid?: boolean;
   wrapperClassName?: string;
 }) {
+  const parsed = optionsFromChildren(children);
+  const options = optionsProp ?? parsed.options;
+  const placeholder = placeholderProp ?? parsed.placeholder;
   return (
-    <div className={cn("relative", wrapperClassName)}>
-      <select
-        aria-invalid={invalid || undefined}
-        className={cn(onaControlClass, "pr-9", className)}
-        {...rest}
-      >
-        {children}
-      </select>
-      <ChevronDown
-        aria-hidden
-        className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ona-muted"
-        strokeWidth={2}
-      />
-    </div>
+    <SheetSelect
+      id={id}
+      title={ariaLabel}
+      aria-label={ariaLabel}
+      triggerLabel={triggerLabel}
+      searchPlaceholder={searchPlaceholder}
+      value={value == null ? "" : String(value)}
+      options={options}
+      placeholder={placeholder ?? "Select"}
+      disabled={disabled}
+      invalid={invalid}
+      aria-describedby={describedBy}
+      className={className}
+      wrapperClassName={wrapperClassName}
+      onChange={(v) =>
+        onChange?.({
+          target: { value: v, id },
+          currentTarget: { value: v, id },
+        } as unknown as ChangeEvent<HTMLSelectElement>)
+      }
+    />
   );
 }
 

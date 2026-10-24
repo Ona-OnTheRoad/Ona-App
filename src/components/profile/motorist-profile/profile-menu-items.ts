@@ -131,6 +131,13 @@ export const PRO_PROFILE_MENU_ITEMS: ProfileMenuItem[] = [
     href: "/wallet",
   },
   {
+    id: "payouts",
+    title: "Payouts & Bank",
+    subtitle: "Earnings, account & withdrawal",
+    iconSrc: "/icons/profile-payment-and-refunds.png",
+    href: "/settings/payments",
+  },
+  {
     id: "availability",
     title: "Availability & Scheduling",
     subtitle: "Hours, location & coverage",
