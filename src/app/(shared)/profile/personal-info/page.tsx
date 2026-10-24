@@ -5,18 +5,11 @@ import { PersonalInfoScreen } from "@/components/profile/personal-info/personal-
 import { useApp } from "@/lib/store";
 
 function PersonalInfoInner() {
-  const { theme, authReady, isAuthenticated } = useApp();
-  const isLight = theme === "light";
+  const { authReady, isAuthenticated } = useApp();
 
   if (!authReady) {
     return (
-      <div
-        className={
-          isLight
-            ? "flex h-full items-center justify-center bg-[#F8F9FA] text-sm font-semibold text-slate-800"
-            : "flex h-full items-center justify-center bg-black text-sm font-semibold text-white"
-        }
-      >
+      <div className="ona2 flex h-full items-center justify-center bg-ona-bg text-sm font-semibold text-ona-muted">
         Loading personal info…
       </div>
     );
@@ -24,25 +17,13 @@ function PersonalInfoInner() {
 
   if (!isAuthenticated) {
     return (
-      <div
-        className={
-          isLight
-            ? "flex h-full flex-col items-center justify-center gap-3 bg-[#F8F9FA] px-4"
-            : "flex h-full flex-col items-center justify-center gap-3 bg-black px-4"
-        }
-      >
-        <p
-          className={
-            isLight
-              ? "text-sm font-semibold text-slate-900"
-              : "text-sm font-semibold text-white"
-          }
-        >
+      <div className="ona2 flex h-full flex-col items-center justify-center gap-3 bg-ona-bg px-4">
+        <p className="text-sm font-semibold text-ona-ink">
           Sign in to view your profile
         </p>
         <a
           href="/login/signin"
-          className="rounded-xl bg-[#323231] px-4 py-2.5 text-[12px] font-bold text-white"
+          className="rounded-ona-ctl bg-ona-brand-btn px-5 py-2.5 text-[13px] font-bold text-white hover:opacity-90 transition-opacity"
         >
           Sign in
         </a>
@@ -50,14 +31,14 @@ function PersonalInfoInner() {
     );
   }
 
-  return <PersonalInfoScreen isLight={isLight} />;
+  return <PersonalInfoScreen />;
 }
 
 export default function PersonalInfoPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-full items-center justify-center bg-[#F8F9FA] text-sm font-semibold text-slate-800">
+        <div className="ona2 flex h-full items-center justify-center bg-ona-bg text-sm font-semibold text-ona-muted">
           Loading personal info…
         </div>
       }

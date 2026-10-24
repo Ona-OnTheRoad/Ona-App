@@ -50,6 +50,7 @@ export function ProPersonalInfoCard({ userProfile }: ProPersonalInfoCardProps) {
                   alt={name}
                   fill
                   sizes="48px"
+                  unoptimized
                   className="object-cover"
                 />
               ) : (

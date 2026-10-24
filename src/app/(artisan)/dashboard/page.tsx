@@ -187,10 +187,13 @@ export default function TechnicianDashboardPage() {
 
         {/* Empty State when no jobs */}
         {!jobsLoading && !hasActiveJobs && (
-          <ProEmptyState
-            title="No problem solved"
-            subtitle="Solved problems will appear here."
-          />
+          <div className="flex-1 flex flex-col py-1">
+            <ProEmptyState
+              title="No problem solved"
+              subtitle="Solved problems will appear here."
+              className="flex-1 min-h-[380px]"
+            />
+          </div>
         )}
       </div>
     </div>

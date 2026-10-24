@@ -4,7 +4,7 @@
  * Use object-cover in a circular frame so the ring fills the profile hole.
  * Cache-bust query forces CDN/clients to load the latest crop.
  */
-export const DEFAULT_VENDOR_PHOTO = "/brand/default-pro-avatar.png?v=7";
+export const DEFAULT_VENDOR_PHOTO = "/brand/default-pro-avatar.png";
 
 /** No fill behind default image already fills the circle (transparent not needed). */
 export const DEFAULT_VENDOR_PHOTO_BG = "transparent";

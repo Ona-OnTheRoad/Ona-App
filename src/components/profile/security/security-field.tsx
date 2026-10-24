@@ -13,25 +13,23 @@ interface SecurityFieldProps {
 }
 
 export function SecurityField({
-  isLight,
   label,
   value,
   badge,
   onChangeClick,
   disabled,
 }: SecurityFieldProps) {
-  const t = profileTheme(isLight);
   return (
     <div className="flex items-center justify-between gap-3">
       <div className="min-w-0 flex-1">
-        <p className="text-[12px] font-medium text-slate-400 dark:text-white/50">
+        <p className="text-[12px] font-medium text-ona-muted">
           {label}
         </p>
-        <p className={cn("truncate text-[15px] font-bold mt-0.5", t.ink)}>
+        <p className="truncate text-[15px] font-bold text-ona-ink mt-0.5">
           {value}
         </p>
         {badge && (
-          <p className="text-[11px] text-slate-400 dark:text-white/50 mt-0.5">
+          <p className="text-[11px] text-ona-muted mt-0.5">
             {badge}
           </p>
         )}
@@ -41,11 +39,8 @@ export function SecurityField({
         onClick={onChangeClick}
         disabled={disabled}
         className={cn(
-          "shrink-0 rounded-xl border-0 px-4 py-1.5 text-[13px] font-semibold transition-all",
-          disabled && "opacity-40",
-          isLight
-            ? "bg-[#F1F3F5] text-slate-900 hover:bg-slate-200"
-            : "bg-[#2c2c2e] text-white hover:bg-[#38383a]",
+          "shrink-0 rounded-ona-ctl border border-ona-border bg-ona-field px-4 py-1.5 text-[13px] font-semibold text-ona-ink transition-all hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer",
+          disabled && "opacity-40 cursor-not-allowed",
         )}
       >
         Change
