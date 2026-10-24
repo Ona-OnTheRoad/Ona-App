@@ -1,3 +1,4 @@
+import { SheetSelect } from "@/components/ui/option-sheet";
 import {
   authLockedFieldClass,
   authLockedFieldStyle,
@@ -34,7 +35,8 @@ export function PhoneField({
   return (
     <Field label="Phone" required>
       <div className="flex gap-1.5">
-        <select
+        <SheetSelect
+          bare
           className={cn(
             styles.selectClass,
             "max-w-[42%]",
@@ -43,21 +45,21 @@ export function PhoneField({
           style={phoneLocked ? authLockedFieldStyle : styles.fieldStyle}
           value={phoneIso}
           aria-label="Country code"
+          title="Country code"
+          searchPlaceholder="Search country or code"
           disabled={phoneLocked}
-          onChange={(e) => {
+          options={phoneCodes.map((c) => ({
+            value: c.iso,
+            label: `${c.name} (${c.label})`,
+            short: c.label,
+          }))}
+          onChange={(iso) => {
             if (phoneLocked) return;
-            const iso = e.target.value;
             setPhoneIso(iso);
             const opt = phoneCodes.find((c) => c.iso === iso);
             if (opt) setPhoneDial(opt.dial);
           }}
-        >
-          {phoneCodes.map((c) => (
-            <option key={`${c.iso}-${c.dial}`} value={c.iso}>
-              {c.label} {c.name}
-            </option>
-          ))}
-        </select>
+        />
         <input
           className={cn(
             styles.fieldClass,

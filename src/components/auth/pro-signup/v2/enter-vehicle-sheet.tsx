@@ -1,7 +1,7 @@
 "use client";
 
+import { SheetSelect } from "@/components/ui/option-sheet";
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
 import type { MotoristVehicle } from "@/lib/types";
 
 interface EnterVehicleSheetProps {
@@ -81,21 +81,19 @@ export function EnterVehicleSheet({
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
               Vehicle type
             </label>
-            <div className="relative">
-              <select
-                value={vehicleType}
-                onChange={(e) => setVehicleType(e.target.value)}
-                className="w-full appearance-none bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 pr-10 text-sm text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
-              >
-                <option value="">Select a type</option>
-                {VEHICLE_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-            </div>
+            <SheetSelect
+              bare
+              title="Vehicle type"
+              value={vehicleType}
+              onChange={(v) => setVehicleType(v)}
+              placeholder="Select a type"
+              options={VEHICLE_TYPES.map((t) => ({
+                value: String(t),
+                label: t,
+              }))}
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 text-sm text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
+              chevronClassName="right-3.5 text-slate-400"
+            />
           </div>
 
           {/* Make */}

@@ -1,3 +1,4 @@
+import { SheetSelect } from "@/components/ui/option-sheet";
 import { Briefcase, User } from "lucide-react";
 import {
   authLockedFieldClass,
@@ -86,7 +87,9 @@ export function AboutIdentitySection({
             Gender
             <RequiredMark />
           </span>
-          <select
+          <SheetSelect
+            bare
+            title="Gender"
             className={cn(
               styles.selectClass,
               genderLocked && authLockedFieldClass,
@@ -94,24 +97,18 @@ export function AboutIdentitySection({
             style={genderLocked ? authLockedFieldStyle : styles.fieldStyle}
             value={gender}
             disabled={genderLocked}
-            onChange={(e) => setGender(e.target.value as SignupGender | "")}
-            required
-          >
-            <option value="">Select</option>
-            {SIGNUP_GENDER_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            placeholder="Select"
+            options={SIGNUP_GENDER_OPTIONS.map((o) => ({
+              value: o.value,
+              label: o.label,
+            }))}
+            onChange={(v) => setGender(v as SignupGender | "")}
+          />
         </label>
         <Field label="Date of birth" required>
           <input
             type="date"
-            className={cn(
-              styles.fieldClass,
-              dobLocked && authLockedFieldClass,
-            )}
+            className={cn(styles.fieldClass, dobLocked && authLockedFieldClass)}
             style={dobLocked ? authLockedFieldStyle : styles.fieldStyle}
             value={dateOfBirth}
             readOnly={dobLocked}
@@ -120,9 +117,7 @@ export function AboutIdentitySection({
             max={dobInputMax()}
             onChange={(e) => {
               if (dobLocked) return;
-              setDateOfBirth(
-                normalizeDobIso(e.target.value) || e.target.value,
-              );
+              setDateOfBirth(normalizeDobIso(e.target.value) || e.target.value);
               setFieldError("dob", null);
             }}
             onBlur={(e) =>

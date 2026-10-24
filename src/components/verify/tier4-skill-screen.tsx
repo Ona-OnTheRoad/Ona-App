@@ -1,8 +1,9 @@
 "use client";
 
+import { SheetSelect } from "@/components/ui/option-sheet";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, CheckCircle2, ChevronDown, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import { navigateBack } from "@/lib/navigation";
 import { toastSuccess, toastError } from "@/lib/toast";
 import { useApp } from "@/lib/store";
@@ -20,12 +21,19 @@ export function Tier4SkillScreen() {
   const { accountType, updateUserProfile, userProfile } = useApp();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const profileRecord = userProfile as unknown as Record<string, unknown> | null;
+  const profileRecord = userProfile as unknown as Record<
+    string,
+    unknown
+  > | null;
   const [certType, setCertType] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(
-    Boolean(profileRecord?.skillProof || profileRecord?.tier4Status === "under_review" || profileRecord?.skillProofStatus === "under_review"),
+    Boolean(
+      profileRecord?.skillProof ||
+      profileRecord?.tier4Status === "under_review" ||
+      profileRecord?.skillProofStatus === "under_review",
+    ),
   );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,7 +111,11 @@ export function Tier4SkillScreen() {
           </p>
 
           {/* Form */}
-          <form id="tier4-form" onSubmit={handleSubmit} className="mt-6 space-y-5">
+          <form
+            id="tier4-form"
+            onSubmit={handleSubmit}
+            className="mt-6 space-y-5"
+          >
             {/* Certificate Type */}
             <div>
               <label
@@ -112,27 +124,14 @@ export function Tier4SkillScreen() {
               >
                 Certificate type
               </label>
-              <div className="relative">
-                <select
-                  id="cert-type"
-                  value={certType}
-                  onChange={(e) => setCertType(e.target.value)}
-                  className="w-full appearance-none rounded-ona-ctl border border-ona-border bg-ona-surface px-3.5 py-3 pr-10 text-[13px] text-ona-ink outline-none transition-colors focus:border-brand"
-                >
-                  <option value="" disabled>
-                    Select a type
-                  </option>
-                  {CERT_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ona-muted"
-                  strokeWidth={2}
-                />
-              </div>
+              <SheetSelect
+                id="cert-type"
+                value={certType}
+                onChange={setCertType}
+                placeholder="Select a type"
+                options={CERT_TYPES.map((t) => ({ value: t, label: t }))}
+                className="py-3 text-[13px] font-normal"
+              />
             </div>
 
             {/* Upload Certificate */}

@@ -5,25 +5,6 @@ import { OnaField, OnaSelect } from "@/components/ui/ona-field";
 
 type Option = { value: string; label: string };
 
-function Options({
-  options,
-  placeholder,
-}: {
-  options: Option[];
-  placeholder?: string;
-}) {
-  return (
-    <>
-      {placeholder ? <option value="">{placeholder}</option> : null}
-      {options.map((o) => (
-        <option key={o.value} value={o.value}>
-          {o.label}
-        </option>
-      ))}
-    </>
-  );
-}
-
 export function VehicleSelectForm({
   isAuthenticated,
   typeSlug,
@@ -68,18 +49,17 @@ export function VehicleSelectForm({
               aria-describedby={describedBy}
               value={typeSlug}
               onChange={(e) => setTypeSlug(e.target.value)}
-            >
-              <Options options={typeOptions} />
-            </OnaSelect>
+              options={typeOptions}
+            />
           )}
         </OnaField>
         <OnaSelect
           aria-label="Make"
           value={makeId}
           onChange={(e) => setMakeId(e.target.value)}
-        >
-          <Options options={makeOptions} placeholder="Make" />
-        </OnaSelect>
+          options={makeOptions}
+          placeholder="Make"
+        />
         <OnaField label="Model">
           {({ id }) => (
             <OnaSelect
@@ -87,9 +67,9 @@ export function VehicleSelectForm({
               value={modelId}
               disabled={!makeId}
               onChange={(e) => setModelId(e.target.value)}
-            >
-              <Options options={modelOptions} placeholder="Select" />
-            </OnaSelect>
+              options={modelOptions}
+              placeholder="Select"
+            />
           )}
         </OnaField>
         <OnaField label="Year (optional)">
@@ -101,9 +81,9 @@ export function VehicleSelectForm({
               onChange={(e) =>
                 setYear(e.target.value ? Number(e.target.value) : "")
               }
-            >
-              <Options options={yearOptions} placeholder="Select" />
-            </OnaSelect>
+              options={yearOptions}
+              placeholder="Select"
+            />
           )}
         </OnaField>
       </div>

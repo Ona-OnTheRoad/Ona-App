@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { SheetSelect } from "@/components/ui/option-sheet";
 import * as Slider from "@radix-ui/react-slider";
 import { NG_STATES } from "@/lib/artisan/catalog/locations";
 
@@ -72,23 +72,16 @@ export function Step1BaseLocation({
           <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
             City
           </label>
-          <div className="relative">
-            <select
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              className="w-full appearance-none bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 pr-10 text-sm text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
-            >
-              <option value="" disabled>
-                Select a city
-              </option>
-              {CITIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-          </div>
+          <SheetSelect
+            bare
+            title="City"
+            value={city}
+            onChange={(v) => setCity(v)}
+            placeholder="Select a city"
+            options={CITIES.map((c) => ({ value: String(c), label: c }))}
+            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 text-sm text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
+            chevronClassName="right-3.5 text-slate-400"
+          />
         </div>
 
         {/* Area Field */}

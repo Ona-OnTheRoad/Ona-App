@@ -1,5 +1,6 @@
 "use client";
 
+import { SheetSelect } from "@/components/ui/option-sheet";
 import { CopperButton, GhostButton } from "@/components/jobs/job-shell";
 import { DISPUTE_REASONS } from "@/lib/jobs/constants";
 import type { DisputeReason } from "@/lib/jobs/types";
@@ -54,21 +55,21 @@ export function DisputeSheet({
         >
           Reason
         </label>
-        <select
+        <SheetSelect
           id="dispute-reason"
+          bare
+          title="Reason"
           value={reason}
-          onChange={(e) => setReason(e.target.value as DisputeReason)}
+          onChange={(v) => setReason(v as DisputeReason)}
+          options={DISPUTE_REASONS.map((r) => ({
+            value: r.id,
+            label: r.label,
+          }))}
           className={cn(
             "mt-1 h-11 w-full rounded-xl px-3 text-[13px] font-semibold",
             isLight ? "bg-[#bebfc4]" : "bg-[#1c1c1c] text-white",
           )}
-        >
-          {DISPUTE_REASONS.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.label}
-            </option>
-          ))}
-        </select>
+        />
         <textarea
           value={desc}
           onChange={(e) => setDesc(e.target.value)}

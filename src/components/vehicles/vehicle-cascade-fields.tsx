@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useId, useMemo } from "react";
+import { SheetSelect, type SheetOption } from "@/components/ui/option-sheet";
 import {
   filterOptions,
   getAllMakes,
@@ -52,53 +53,29 @@ function SearchSelect({
   isLight?: boolean;
 }) {
   const id = useId();
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState(value);
-  const [highlight, setHighlight] = useState(0);
-
-  useEffect(() => setQuery(value), [value]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDoc = (e: MouseEvent) => {
-      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [open]);
-
-  const filtered = useMemo(
-    () => filterOptions(options, open ? query : value, 100),
-    [options, query, value, open],
+  const sheetOptions = useMemo<SheetOption[]>(
+    () => options.map((o) => ({ value: o, label: o })),
+    [options],
   );
-
-  useEffect(() => setHighlight(0), [query, open]);
+  const filterFn = useCallback((all: SheetOption[], query: string) => {
+    const byLabel = new Map(all.map((o) => [o.label, o]));
+    return filterOptions(
+      all.map((o) => o.label),
+      query,
+      all.length,
+    )
+      .map((l) => byLabel.get(l))
+      .filter((o): o is SheetOption => o != null);
+  }, []);
 
   const fieldClass =
     variant === "ona"
-      ? ONA_CASCADE.field
+      ? undefined
       : variant === "auth"
-        ? "om-auth-field h-10 w-full rounded-md border !border-[#9A9EA6] !bg-[#E2E3E7] px-3 text-[13px] font-medium !text-[#0f172a] outline-none placeholder:!text-[#64748b]"
+        ? "om-auth-field h-10 w-full rounded-md border !border-[#9A9EA6] !bg-[#E2E3E7] px-3 text-[13px] font-medium !text-[#0f172a]"
         : isLight
-          ? "h-11 w-full rounded-md border-0 bg-black/8 px-3 text-[14px] font-medium text-slate-900 outline-none placeholder:text-slate-500"
-          : "h-11 w-full rounded-md border-0 bg-[#2c2c2e] px-3 text-[14px] font-medium text-white outline-none placeholder:text-white/50";
-
-  const listClass =
-    variant === "ona"
-      ? ONA_CASCADE.list
-      : variant === "auth"
-        ? "absolute z-50 mt-1 max-h-44 w-full overflow-y-auto overscroll-contain rounded-md border border-[#9A9EA6] bg-white shadow-lg"
-        : isLight
-          ? "absolute z-50 mt-1 max-h-44 w-full overflow-y-auto overscroll-contain rounded-md border border-black/10 bg-white shadow-lg"
-          : "absolute z-50 mt-1 max-h-44 w-full overflow-y-auto overscroll-contain rounded-md border border-white/10 bg-[#1c1c1e] shadow-lg";
-
-  const itemBase =
-    variant === "ona"
-      ? ONA_CASCADE.item
-      : variant === "auth" || isLight
-        ? "px-3 py-2 text-left text-[13px] text-slate-900"
-        : "px-3 py-2 text-left text-[13px] text-white";
+          ? "h-11 w-full rounded-md border-0 bg-black/8 px-3 text-[14px] font-medium text-slate-900"
+          : "h-11 w-full rounded-md border-0 bg-[#2c2c2e] px-3 text-[14px] font-medium text-white";
 
   const labelClass =
     variant === "ona"
@@ -109,14 +86,8 @@ function SearchSelect({
           ? "mb-1 block text-[12px] font-semibold text-slate-700"
           : "mb-1 block text-[12px] font-semibold text-white/70";
 
-  const pick = (v: string) => {
-    onChange(v);
-    setQuery(v);
-    setOpen(false);
-  };
-
   return (
-    <div ref={wrapRef} className="relative block">
+    <div className="relative block">
       <label htmlFor={id} className={labelClass}>
         {label}
         {required && variant !== "ona" ? (
@@ -125,82 +96,19 @@ function SearchSelect({
           </span>
         ) : null}
       </label>
-      <input
+      <SheetSelect
         id={id}
-        className={cn(fieldClass, disabled && "cursor-not-allowed opacity-55")}
-        value={query}
-        disabled={disabled}
+        bare={variant !== "ona"}
+        title={label}
+        value={value}
+        options={sheetOptions}
         placeholder={placeholder}
-        autoComplete="off"
-        role="combobox"
-        aria-required={required || undefined}
-        aria-expanded={open}
-        aria-controls={`${id}-list`}
-        onFocus={() => {
-          if (!disabled) {
-            setOpen(true);
-            setQuery(value);
-          }
-        }}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setOpen(true);
-          if (e.target.value !== value) onChange("");
-        }}
-        onKeyDown={(e) => {
-          if (disabled) return;
-          if (e.key === "ArrowDown") {
-            e.preventDefault();
-            setOpen(true);
-            setHighlight((h) => Math.min(h + 1, filtered.length - 1));
-          } else if (e.key === "ArrowUp") {
-            e.preventDefault();
-            setHighlight((h) => Math.max(h - 1, 0));
-          } else if (e.key === "Enter") {
-            e.preventDefault();
-            if (filtered[highlight]) pick(filtered[highlight]);
-          } else if (e.key === "Escape") {
-            if (open) e.stopPropagation();
-            setOpen(false);
-            setQuery(value);
-          }
-        }}
+        disabled={disabled}
+        filterFn={filterFn}
+        className={cn(fieldClass, disabled && "cursor-not-allowed opacity-55")}
+        chevronClassName={variant === "ona" ? undefined : "text-slate-500"}
+        onChange={onChange}
       />
-      {open && !disabled && (
-        <ul id={`${id}-list`} role="listbox" className={listClass}>
-          {filtered.length === 0 ? (
-            <li className={cn(itemBase, "opacity-60")}>No matches</li>
-          ) : (
-            filtered.map((opt, i) => (
-              <li key={opt}>
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={opt === value}
-                  className={cn(
-                    itemBase,
-                    "w-full border-0 bg-transparent",
-                    i === highlight
-                      ? variant === "ona"
-                        ? ONA_CASCADE.highlight
-                        : variant === "auth" || isLight
-                          ? "bg-[#FF6B35]/15"
-                          : "bg-white/10"
-                      : "hover:bg-black/5 dark:hover:bg-white/10",
-                  )}
-                  onMouseEnter={() => setHighlight(i)}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    pick(opt);
-                  }}
-                >
-                  {opt}
-                </button>
-              </li>
-            ))
-          )}
-        </ul>
-      )}
     </div>
   );
 }

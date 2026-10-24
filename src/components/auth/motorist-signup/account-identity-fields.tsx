@@ -150,6 +150,12 @@ export function AccountIdentityFields({ f }: { f: MotoristFields }) {
               value={phoneIso}
               aria-label="Country code"
               disabled={phoneLocked}
+              searchPlaceholder="Search country or code"
+              options={phoneCodes.map((c) => ({
+                value: c.iso,
+                label: `${flagEmoji(c.iso)} ${c.name} (${c.label})`,
+                short: `${flagEmoji(c.iso)} ${c.label}`,
+              }))}
               onChange={(e) => {
                 if (phoneLocked) return;
                 const iso = e.target.value;
@@ -162,13 +168,7 @@ export function AccountIdentityFields({ f }: { f: MotoristFields }) {
                 setFieldError("nin", null);
                 setFieldError("bvn", null);
               }}
-            >
-              {phoneCodes.map((c) => (
-                <option key={`${c.iso}-${c.dial}`} value={c.iso}>
-                  {flagEmoji(c.iso)} {c.label}
-                </option>
-              ))}
-            </OnaSelect>
+            />
             <OnaInput
               id={id}
               aria-describedby={describedBy}

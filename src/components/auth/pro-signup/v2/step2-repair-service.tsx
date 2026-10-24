@@ -1,5 +1,6 @@
 "use client";
 
+import { SheetSelect } from "@/components/ui/option-sheet";
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import type { ProService } from "@/lib/types";
@@ -126,21 +127,19 @@ export function Step2RepairService({
           <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
             Years of Experience
           </label>
-          <div className="relative">
-            <select
-              value={yearsExperience}
-              onChange={(e) => setYearsExperience(e.target.value)}
-              className="w-full appearance-none bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 pr-10 text-sm text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
-            >
-              <option value="">e.g. Yaba, Lekki</option>
-              {EXP_YEARS.map((y) => (
-                <option key={y} value={y}>
-                  {experienceLabel(y)}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-          </div>
+          <SheetSelect
+            bare
+            title="Years of Experience"
+            value={yearsExperience}
+            onChange={(v) => setYearsExperience(v)}
+            placeholder="Select experience"
+            options={EXP_YEARS.map((y) => ({
+              value: String(y),
+              label: experienceLabel(y),
+            }))}
+            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 text-sm text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
+            chevronClassName="right-3.5 text-slate-400"
+          />
         </div>
 
         {/* Bio */}

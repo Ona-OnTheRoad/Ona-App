@@ -1,3 +1,4 @@
+import { SheetSelect } from "@/components/ui/option-sheet";
 import type { RefObject } from "react";
 import { Upload } from "lucide-react";
 import { UploadInlinePreview } from "@/components/media/upload-inline-preview";
@@ -60,22 +61,23 @@ export function SkillTier({
             : "Upload certificate, then submit for review"}
         </p>
       </div>
-      <select
+      <SheetSelect
+        bare
+        title="Certificate type"
         value={profile.skillProofType || ""}
-        onChange={(e) =>
-          patch({
-            skillProofType: (e.target.value || null) as SkillProofType | null,
-          })
+        placeholder="Certificate type…"
+        onChange={(v) =>
+          patch({ skillProofType: (v || null) as SkillProofType | null })
         }
+        options={[
+          { value: "trade_test", label: "Trade Test" },
+          { value: "nabteb", label: "NABTEB" },
+          { value: "itf", label: "ITF" },
+          { value: "apprenticeship_letter", label: "Apprenticeship letter" },
+          { value: "other_evidence", label: "Other evidence" },
+        ]}
         className={selectClass}
-      >
-        <option value="">Certificate type…</option>
-        <option value="trade_test">Trade Test</option>
-        <option value="nabteb">NABTEB</option>
-        <option value="itf">ITF</option>
-        <option value="apprenticeship_letter">Apprenticeship letter</option>
-        <option value="other_evidence">Other evidence</option>
-      </select>
+      />
       <div className="space-y-1.5">
         <label
           className={cn(
