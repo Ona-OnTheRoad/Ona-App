@@ -213,6 +213,25 @@ html .rfd-overlay-wrap {
   align-items: flex-end;
   overflow: hidden;
 }
+
+@media (min-width: 640px) {
+  html .rfd-bar {
+    left: var(--ona-phone-left, 0px) !important;
+    right: auto !important;
+    width: var(--ona-phone-width, 100%) !important;
+    max-width: var(--ona-phone-width, 100%) !important;
+    bottom: calc(
+      100vh - (var(--ona-phone-top, 0px) + var(--ona-phone-height, 100vh)) + var(--rfd-offset, 0.5rem)
+    ) !important;
+    margin-inline: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+  }
+  html .rfd-track {
+    max-width: calc(var(--ona-phone-width, 100%) - 1.5rem) !important;
+    width: calc(var(--ona-phone-width, 100%) - 1.5rem) !important;
+  }
+}
 html .rfd-sheet {
   border-radius: 1.5rem 1.5rem 0 0;
   max-width: none;

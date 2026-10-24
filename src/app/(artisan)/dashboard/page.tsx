@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { BankForcePanel } from "@/components/auth/bank-force-panel";
+import { isProService, PRO_SERVICE_LABELS } from "@/lib/pro-service-id";
 import { CustomerModeShell } from "@/components/dashboard/customer-mode-shell";
 import { skillDashboardTitle } from "@/components/dashboard/dashboard-helpers";
 import {
@@ -79,7 +79,11 @@ export default function TechnicianDashboardPage() {
     const fromArtisan = artisan?.trade?.service;
     const fromProfile = userProfile?.services?.[0];
     const fromProList = proServices?.[0];
-    return skillDashboardTitle(fromArtisan || fromProfile || fromProList) || "Mechanic";
+    const raw = fromArtisan || fromProfile || fromProList;
+    if (raw && isProService(raw)) {
+      return PRO_SERVICE_LABELS[raw];
+    }
+    return "Mechanic";
   }, [artisan?.trade?.service, userProfile?.services, proServices]);
 
   useEffect(() => subscribeIncomingPanelOpen(setIncomingPanelOpen), []);
@@ -124,7 +128,6 @@ export default function TechnicianDashboardPage() {
 
   return (
     <div className="ona2 relative flex h-full min-h-0 flex-col bg-ona-bg text-ona-ink">
-      <BankForcePanel surface="dashboard" />
       <ProDashboardHeader title="Dashboard" trade={dashboardTrade} />
 
       <div className="flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto px-5 pb-24 scrollbar-hide">
