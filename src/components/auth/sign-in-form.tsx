@@ -15,6 +15,7 @@ import {
   splitPastedPhone,
 } from "./sign-in-form/phone-input";
 import { useSignInForm } from "./sign-in-form/use-sign-in-form";
+import { clearSignupDraft } from "@/lib/signup-draft";
 
 /**
  * Login by phone (SMS code) or by email + password.
@@ -84,7 +85,10 @@ export function SignInForm() {
             {t("auth.newToOna")}
             <button
               type="button"
-              onClick={() => go("/signup")}
+              onClick={() => {
+                clearSignupDraft();
+                go("/signup");
+              }}
               className="flex min-h-[44px] items-center border-0 bg-transparent p-0 font-semibold text-ona-brand-ink underline underline-offset-2"
             >
               {t("auth.createAnAccount")}

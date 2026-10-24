@@ -7,6 +7,7 @@ interface ProWizardHeaderProps {
   totalSteps?: number;
   onBack?: () => void;
   showBack?: boolean;
+  showProgress?: boolean;
 }
 
 export function ProWizardHeader({
@@ -14,6 +15,7 @@ export function ProWizardHeader({
   totalSteps = 5,
   onBack,
   showBack = true,
+  showProgress = currentStep > 0,
 }: ProWizardHeaderProps) {
   return (
     <div className="w-full bg-white dark:bg-[#121316] pt-3 pb-2 px-4">
@@ -39,23 +41,23 @@ export function ProWizardHeader({
         <div className="w-9" />
       </div>
 
-      {/* 5-segment Progress bar */}
-      <div className="mt-3 flex items-center gap-1.5 w-full">
-        {Array.from({ length: totalSteps }).map((_, i) => {
-          const stepNum = i + 1;
-          const isActive = stepNum <= currentStep;
-          return (
-            <div
-              key={stepNum}
-              className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-                isActive
-                  ? "bg-[#FF6B35]"
-                  : "bg-slate-200 dark:bg-slate-800"
-              }`}
-            />
-          );
-        })}
-      </div>
+      {/* Segmented Progress bar */}
+      {showProgress && currentStep > 0 ? (
+        <div className="mt-3 flex items-center gap-1.5 w-full">
+          {Array.from({ length: totalSteps }).map((_, i) => {
+            const stepNum = i + 1;
+            const isActive = stepNum <= currentStep;
+            return (
+              <div
+                key={stepNum}
+                className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                  isActive ? "bg-[#FF6B35]" : "bg-slate-200 dark:bg-slate-800"
+                }`}
+              />
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }

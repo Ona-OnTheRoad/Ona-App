@@ -1,56 +1,30 @@
 "use client";
 
-import { toastSuccess } from "@/lib/toast";
 import { useEffect, useMemo, useState } from "react";
-import { PageHeader } from "@/components/layout/page-header";
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
+import { toastSuccess } from "@/lib/toast";
 import {
   LocationPickerMap,
   type PickedLocation,
 } from "@/components/map/location-picker-map";
-import { SettingsComingSoon } from "@/components/settings/settings-ui";
+import { navigateBack } from "@/lib/navigation";
 import { useT } from "@/lib/i18n";
 import { useApp } from "@/lib/store";
-import { cn } from "@/lib/utils";
-
-type AddressLabel = "Home" | "Work" | "Other";
-
-type SavedAddress = {
-  id: string;
-  label: AddressLabel;
-  customLabel?: string;
-  text: string;
-  lat: number;
-  lng: number;
-};
-
-const ADDR_KEY = "ona-saved-addresses-v1";
-
-function loadAddresses(uid: string): SavedAddress[] {
-  try {
-    const raw = localStorage.getItem(`${ADDR_KEY}:${uid}`);
-    if (!raw) return [];
-    const p = JSON.parse(raw) as SavedAddress[];
-    return Array.isArray(p) ? p : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveAddresses(uid: string, list: SavedAddress[]) {
-  try {
-    localStorage.setItem(`${ADDR_KEY}:${uid}`, JSON.stringify(list));
-  } catch {
-    /* */
-  }
-}
+import {
+  loadAddresses,
+  saveAddresses,
+  type AddressLabel,
+  type SavedAddress,
+} from "./saved-addresses";
 
 /**
  * Customer: service pin + labeled saved addresses (Home / Work / Other).
  * Pro: service area pin (coverage radius lives under Availability).
  */
 export default function SettingsLocationPage() {
+  const router = useRouter();
   const {
-    theme,
     location,
     setManualLocation,
     accountType,
@@ -58,7 +32,6 @@ export default function SettingsLocationPage() {
     backendUserId,
   } = useApp();
   const t = useT();
-  const isLight = theme === "light";
   const isPro = accountType === "professional";
   const uid = backendUserId || userProfile?.email || "guest";
   const [addresses, setAddresses] = useState<SavedAddress[]>([]);
@@ -93,18 +66,15 @@ export default function SettingsLocationPage() {
     const entry: SavedAddress = {
       id: `${Date.now()}`,
       label,
-      customLabel:
-        label === "Other" ? customLabel.trim() || "Other" : undefined,
+      customLabel: label === "Other" ? customLabel.trim() || "Other" : undefined,
       text: location.label,
       lat: location.coordinates.lat,
       lng: location.coordinates.lng,
     };
-    const next = [
-      ...addresses.filter((a) => a.label !== label || label === "Other"),
-      entry,
-    ].slice(0, 8);
+    const next = [entry, ...addresses.filter((a) => a.id !== entry.id)];
     setAddresses(next);
     saveAddresses(uid, next);
+    toastSuccess("Address saved");
   };
 
   const removeAddress = (id: string) => {
@@ -119,128 +89,104 @@ export default function SettingsLocationPage() {
   };
 
   return (
-    <div
-      className={cn(
-        "flex h-full min-h-0 flex-col",
-        isLight ? "bg-[#c8c9cd]" : "bg-black",
-      )}
-    >
-      <PageHeader
-        title={isPro ? "Service area" : "Addresses & location"}
-        subtitle={
-          isPro
-            ? location.label || "Pin where you work from"
-            : location.label || "Service pin & saved places"
-        }
-        backHref="/settings"
-      />
-
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-6 scrollbar-hide">
-        {isPro ? (
-          <p
-            className={cn(
-              "mb-2 text-[12px] font-medium leading-snug",
-              isLight ? "text-slate-600" : "text-white/65",
-            )}
+    <div className="ona2 flex h-full min-h-0 flex-col overflow-y-auto scrollbar-hide bg-ona-bg text-ona-ink">
+      <div className="w-full max-w-lg mx-auto flex min-h-full flex-col px-4 pb-8 pt-3">
+        {/* Back arrow */}
+        <div className="flex items-center mb-3">
+          <button
+            type="button"
+            onClick={() =>
+              navigateBack(
+                router,
+                isPro ? "/settings/sections/availability" : "/settings",
+                accountType,
+              )
+            }
+            className="-ml-2 flex h-10 w-10 items-center justify-center rounded-full text-ona-ink hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            aria-label="Back"
           >
-            Set your base location. Coverage radius is under Availability
-          </p>
-        ) : null}
-        <LocationPickerMap value={value} onChange={onChange} />
+            <ArrowLeft className="h-5 w-5" strokeWidth={2.4} />
+          </button>
+        </div>
 
+        {/* Heading & Subtitle */}
+        <h1 className="text-[20px] font-semibold tracking-tight text-ona-ink">
+          {isPro ? "Service area" : "Addresses & location"}
+        </h1>
+        <p className="mt-1 text-[13px] text-ona-muted mb-4">
+          {isPro
+            ? "Set your base location. Coverage radius is under Availability"
+            : location.label || "Service pin & saved places"}
+        </p>
+
+        {/* Map Picker Component */}
+        <div className="w-full overflow-hidden rounded-ona-card border border-ona-border shadow-xs">
+          <LocationPickerMap value={value} onChange={onChange} />
+        </div>
+
+        {/* Customer Saved Addresses Section */}
         {!isPro ? (
-          <div
-            className={cn(
-              "mt-3 space-y-2 rounded-md px-3 py-3",
-              "bg-transparent",
-            )}
-          >
-            <p
-              className={cn(
-                "text-[13px] font-bold",
-                isLight ? "text-slate-900" : "text-white",
-              )}
-            >
-              Save current pin as
-            </p>
+          <div className="mt-5 space-y-3 rounded-ona-card border border-ona-border bg-ona-surface p-4 shadow-2xs">
+            <p className="text-[13px] font-bold text-ona-ink">Save current pin as</p>
             <div className="flex flex-wrap gap-1.5">
               {(["Home", "Work", "Other"] as AddressLabel[]).map((l) => (
                 <button
                   key={l}
                   type="button"
                   onClick={() => setLabel(l)}
-                  className={cn(
-                    "rounded-md border-0 px-2.5 py-1.5 text-[11px] font-bold",
+                  className={`rounded-ona-ctl border px-3 py-1.5 text-[12px] font-semibold transition-colors ${
                     label === l
-                      ? "bg-[#FF6B35] text-white"
-                      : isLight
-                        ? "bg-black/10 text-slate-700"
-                        : "bg-white/10 text-white/70",
-                  )}
+                      ? "border-[#ea580c] bg-ona-brand-soft text-[#ea580c]"
+                      : "border-ona-border bg-ona-field text-ona-muted"
+                  }`}
                 >
                   {l}
                 </button>
               ))}
             </div>
-            {label === "Other" ? (
+
+            {label === "Other" && (
               <input
-                className={cn(
-                  "h-10 w-full rounded-md border-0 px-3 text-[13px] font-medium outline-none",
-                  isLight
-                    ? "bg-black/[0.06] text-slate-900"
-                    : "bg-white/[0.08] text-white",
-                )}
+                className="h-10 w-full rounded-ona-ctl border border-ona-border bg-ona-field px-3 text-[13px] text-ona-ink outline-none placeholder:text-ona-muted"
                 value={customLabel}
                 onChange={(e) => setCustomLabel(e.target.value)}
                 placeholder="Label (e.g. Mum’s house)"
               />
-            ) : null}
+            )}
+
             <button
               type="button"
               onClick={addSavedAddress}
               disabled={!location.label?.trim()}
-              className="flex h-10 w-full items-center justify-center rounded-md border-0 bg-[#323231] text-[12px] font-bold text-white disabled:opacity-50"
+              className="flex h-10 w-full items-center justify-center rounded-ona-card bg-[#ea580c] hover:bg-[#d94e08] text-[13px] font-bold text-white disabled:opacity-50 transition cursor-pointer"
             >
               Save labeled address
             </button>
 
-            {addresses.length > 0 ? (
-              <ul className="mt-2 space-y-2">
+            {addresses.length > 0 && (
+              <ul className="mt-3 space-y-2 border-t border-ona-border pt-3">
                 {addresses.map((a) => (
                   <li
                     key={a.id}
-                    className={cn(
-                      "rounded-md px-2.5 py-2",
-                      isLight ? "bg-black/[0.05]" : "bg-white/[0.06]",
-                    )}
+                    className="flex items-center justify-between rounded-ona-ctl border border-ona-border bg-ona-field p-2.5"
                   >
-                    <p
-                      className={cn(
-                        "text-[12px] font-bold",
-                        isLight ? "text-slate-900" : "text-white",
-                      )}
-                    >
-                      {a.label === "Other" ? a.customLabel || "Other" : a.label}
-                    </p>
-                    <p
-                      className={cn(
-                        "text-[11px] font-medium leading-snug",
-                        isLight ? "text-slate-600" : "text-white/60",
-                      )}
-                    >
-                      {a.text}
-                    </p>
-                    <div className="mt-1.5 flex gap-2">
+                    <div className="min-w-0 flex-1 pr-2">
+                      <p className="text-[12px] font-bold text-ona-ink">
+                        {a.label === "Other" ? a.customLabel || "Other" : a.label}
+                      </p>
+                      <p className="text-[11px] text-ona-muted truncate">{a.text}</p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
                       <button
                         type="button"
-                        className="text-[11px] font-bold text-[#FF6B35]"
+                        className="text-[11px] font-bold text-brand hover:underline"
                         onClick={() => applySavedAddress(a)}
                       >
                         Use
                       </button>
                       <button
                         type="button"
-                        className="text-[11px] font-bold text-red-500"
+                        className="text-[11px] font-bold text-red-500 hover:underline"
                         onClick={() => removeAddress(a.id)}
                       >
                         Delete
@@ -249,24 +195,9 @@ export default function SettingsLocationPage() {
                   </li>
                 ))}
               </ul>
-            ) : null}
-            <p
-              className={cn(
-                "text-[10px] font-medium",
-                isLight ? "text-slate-500" : "text-white/40",
-              )}
-            >
-              Stored on this device
-            </p>
+            )}
           </div>
-        ) : (
-          <div className="mt-3">
-            <SettingsComingSoon
-              isLight={isLight}
-              title="Multiple service zones"
-            />
-          </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { useMotoristOwnProfile } from "@/components/profile/motorist-own-profile/use-motorist-own-profile";
+import { navigateBack } from "@/lib/navigation";
 import { PersonalInfoHeader } from "./personal-info-header";
 import { ContactSecurityCard } from "./contact-security-card";
 import { PersonalVehiclesCard } from "./personal-vehicles-card";
@@ -23,27 +24,27 @@ export function PersonalInfoScreen({ isLight: propIsLight }: PersonalInfoScreenP
 
   if (!userProfile) {
     return (
-      <div className="flex h-full items-center justify-center text-sm font-semibold bg-white dark:bg-[#121316] text-slate-700 dark:text-slate-300">
+      <div className="ona2 flex h-full items-center justify-center text-sm font-semibold bg-ona-bg text-ona-muted">
         Loading personal info…
       </div>
     );
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-y-auto scrollbar-hide bg-white dark:bg-[#121316] text-slate-900 dark:text-white">
-      <div className="w-full max-w-lg mx-auto px-4 pb-24 sm:pb-28">
+    <div className="ona2 flex h-full min-h-0 flex-col overflow-y-auto scrollbar-hide bg-ona-bg text-ona-ink">
+      <div className="w-full max-w-lg mx-auto px-4 pb-20">
         {/* Top Header for Pro */}
         {isPro ? (
           <header className="flex items-center gap-3 py-3 pt-2">
             <button
               type="button"
-              onClick={() => router.back()}
-              className="flex items-center justify-center w-9 h-9 -ml-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              aria-label="Back"
+              onClick={() => navigateBack(router, "/profile", "professional")}
+              className="flex items-center justify-center w-9 h-9 -ml-1 rounded-full text-ona-ink hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+              aria-label="Back to Profile"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-5 h-5" strokeWidth={2.4} />
             </button>
-            <h1 className="text-xl font-bold tracking-tight">Personal Info</h1>
+            <h1 className="text-[20px] font-semibold tracking-tight text-ona-ink">Personal Info</h1>
           </header>
         ) : (
           <PersonalInfoHeader

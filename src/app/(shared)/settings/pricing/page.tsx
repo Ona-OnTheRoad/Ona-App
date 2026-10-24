@@ -1,23 +1,19 @@
 "use client";
 
-import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { useEffect, useState } from "react";
-import { PageHeader } from "@/components/layout/page-header";
-import {
-  SettingsField,
-  SettingsSaveBar,
-  settingsInputClass,
-} from "@/components/settings/settings-ui";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Info } from "lucide-react";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { PRO_SERVICE_LABELS, isProService } from "@/lib/pro-service-id";
 import { MIN_OFFER_AMOUNT_MAJOR } from "@/lib/jobs/constants";
 import { formatMoney } from "@/lib/pricing";
+import { navigateBack } from "@/lib/navigation";
 import type { ProService } from "@/lib/types";
 import { useApp } from "@/lib/store";
-import { cn } from "@/lib/utils";
 
 export default function SettingsPricingPage() {
-  const { theme, accountType, userProfile, updateUserProfile } = useApp();
-  const isLight = theme === "light";
+  const router = useRouter();
+  const { accountType, userProfile, updateUserProfile } = useApp();
   const [prices, setPrices] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -34,20 +30,6 @@ export default function SettingsPricingPage() {
     setPrices(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userProfile?.services, userProfile?.servicePrices]);
-
-  if (accountType !== "professional") {
-    return (
-      <div
-        className={cn(
-          "flex h-full flex-col",
-          isLight ? "bg-[#c8c9cd]" : "bg-black",
-        )}
-      >
-        <PageHeader title="Pricing" backHref="/settings" />
-        <p className="px-4 text-[13px]">Repair Pros only.</p>
-      </div>
-    );
-  }
 
   const save = () => {
     setErr(null);
@@ -77,56 +59,103 @@ export default function SettingsPricingPage() {
 
   const currency = userProfile?.pricingCurrency || "NGN";
 
+  if (accountType !== "professional") {
+    return (
+      <div className="ona2 flex h-full flex-col bg-ona-bg text-ona-ink">
+        <header className="flex items-center gap-3 px-4 py-3">
+          <button
+            type="button"
+            onClick={() => navigateBack(router, "/settings/sections/pricing", accountType)}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-ona-ink"
+            aria-label="Back"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <h1 className="text-[20px] font-semibold tracking-tight">Pricing & services</h1>
+        </header>
+        <p className="px-4 text-[13px] text-ona-muted">Repair Pros only.</p>
+      </div>
+    );
+  }
+
   return (
-    <div
-      className={cn(
-        "flex h-full flex-col",
-        isLight ? "bg-[#c8c9cd]" : "bg-black",
-      )}
-    >
-      <PageHeader
-        title="Pricing & services"
-        subtitle={`Labour only · ${currency}`}
-        backHref="/settings"
-      />
-      <div className="flex-1 overflow-y-auto px-3 pb-6 scrollbar-hide">
-        <p
-          className={cn(
-            "mb-3 text-[12px] font-medium leading-snug",
-            isLight ? "text-slate-600" : "text-white/65",
-          )}
-        >
-          No assumed defaults. Leave blank if you quote on request. Skill list
-          comes from your registration (edit via verification / profile flow).
-        </p>
-        <div className={cn("overflow-hidden rounded-md", "bg-transparent")}>
-          {skills.length === 0 ? (
-            <p className="px-3 py-4 text-[12px] font-medium text-muted">
-              No skills on file yet.
+    <div className="ona2 flex h-full min-h-0 flex-col overflow-y-auto scrollbar-hide bg-ona-bg text-ona-ink">
+      <div className="w-full max-w-lg mx-auto flex min-h-full flex-col justify-between px-4 pb-8 pt-3">
+        <div>
+          {/* Back button */}
+          <div className="flex items-center mb-3">
+            <button
+              type="button"
+              onClick={() => navigateBack(router, "/settings/sections/pricing", "professional")}
+              className="-ml-2 flex h-10 w-10 items-center justify-center rounded-full text-ona-ink hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+              aria-label="Back to Pricing & Services"
+            >
+              <ArrowLeft className="h-5 w-5" strokeWidth={2.4} />
+            </button>
+          </div>
+
+          {/* Heading */}
+          <h1 className="text-[20px] font-semibold tracking-tight text-ona-ink">
+            Pricing & services
+          </h1>
+
+          {/* Info Card */}
+          <div className="mt-4 rounded-ona-card border border-ona-border bg-ona-field p-3.5 flex items-start gap-2.5 text-ona-muted">
+            <Info className="h-4 w-4 shrink-0 mt-0.5 text-ona-muted" />
+            <p className="text-[11px] leading-relaxed">
+              No assumed defaults. Leave blank if you quote on request. Skill list
+              comes from your registration (edit via verification / profile flow).
             </p>
-          ) : (
-            skills.map((s) => (
-              <SettingsField
-                key={s}
-                label={`${PRO_SERVICE_LABELS[s]} labour (${currency})`}
-                isLight={isLight}
-              >
+          </div>
+
+          {/* Skill List Inputs */}
+          <div className="mt-6 space-y-5">
+            {skills.length === 0 ? (
+              <div>
+                <label className="block text-[13px] font-semibold text-ona-ink mb-1.5">
+                  Mechanic labour ({currency})
+                </label>
                 <input
-                  className={settingsInputClass(isLight)}
+                  type="text"
                   inputMode="decimal"
-                  value={prices[s] ?? ""}
-                  onChange={(e) =>
-                    setPrices((p) => ({
-                      ...p,
-                      [s]: e.target.value.replace(/[^\d.]/g, ""),
-                    }))
-                  }
                   placeholder="Leave empty for quote on request"
+                  className="w-full rounded-ona-ctl border border-ona-border bg-ona-field px-3.5 py-3 text-[13px] text-ona-ink outline-none transition-colors focus:border-brand placeholder:text-ona-muted"
                 />
-              </SettingsField>
-            ))
-          )}
-          <SettingsSaveBar onSave={save} />
+              </div>
+            ) : (
+              skills.map((s) => (
+                <div key={s}>
+                  <label className="block text-[13px] font-semibold text-ona-ink mb-1.5">
+                    {PRO_SERVICE_LABELS[s]} labour ({currency})
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={prices[s] ?? ""}
+                    onChange={(e) =>
+                      setPrices((p) => ({
+                        ...p,
+                        [s]: e.target.value.replace(/[^\d.]/g, ""),
+                      }))
+                    }
+                    placeholder="Leave empty for quote on request"
+                    className="w-full rounded-ona-ctl border border-ona-border bg-ona-field px-3.5 py-3 text-[13px] text-ona-ink outline-none transition-colors focus:border-brand placeholder:text-ona-muted"
+                  />
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Bottom Save Changes CTA */}
+        <div className="pt-8 pb-4">
+          <button
+            type="button"
+            onClick={save}
+            className="flex h-12 w-full items-center justify-center rounded-ona-card bg-[#ea580c] hover:bg-[#d94e08] active:scale-[0.99] font-bold text-sm text-white shadow-xs transition cursor-pointer"
+          >
+            Save changes
+          </button>
         </div>
       </div>
     </div>

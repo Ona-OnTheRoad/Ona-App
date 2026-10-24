@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
+import * as Slider from "@radix-ui/react-slider";
 import { NG_STATES } from "@/lib/artisan/catalog/locations";
 
 interface Step1BaseLocationProps {
@@ -106,28 +107,34 @@ export function Step1BaseLocation({
           </div>
         </div>
 
-        {/* Service Radius Slider */}
-        <div className="flex flex-col gap-2.5 mt-2">
+        {/* Service Radius Slider Card with active orange fill */}
+        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 shadow-sm flex flex-col gap-3 mt-1">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <span className="text-sm font-semibold text-slate-900 dark:text-white">
               Service radius
-            </label>
-            <span className="text-xs font-bold text-[#FF6B35]">
+            </span>
+            <span className="text-sm font-bold text-[#c2410c] dark:text-[#FF6B35]">
               {serviceRadiusKm} km
             </span>
           </div>
 
-          <div className="relative flex items-center">
-            <input
-              type="range"
-              min={1}
-              max={50}
-              step={1}
-              value={serviceRadiusKm}
-              onChange={(e) => setServiceRadiusKm(Number(e.target.value))}
-              className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-[#FF6B35]"
+          <Slider.Root
+            value={[serviceRadiusKm]}
+            onValueChange={([val]) => setServiceRadiusKm(val)}
+            min={1}
+            max={50}
+            step={1}
+            aria-label="Service radius"
+            className="relative flex items-center select-none touch-none w-full h-6 cursor-pointer"
+          >
+            <Slider.Track className="bg-slate-200/90 dark:bg-slate-700 relative grow rounded-full h-2 overflow-hidden">
+              <Slider.Range className="absolute bg-[#ea580c] dark:bg-[#FF6B35] rounded-full h-full" />
+            </Slider.Track>
+            <Slider.Thumb
+              className="block w-6 h-6 bg-white shadow-md border border-slate-200/80 dark:border-slate-600 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/30 transition-transform active:scale-110"
+              aria-label="Radius value"
             />
-          </div>
+          </Slider.Root>
         </div>
       </div>
 

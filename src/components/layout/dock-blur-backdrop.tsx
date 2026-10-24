@@ -16,7 +16,8 @@ export function DockBlurBackdrop() {
       aria-hidden="true"
       className="pointer-events-none absolute inset-x-0 bottom-0 z-[35] overflow-hidden"
       style={{
-        height: "calc(3.75rem + env(safe-area-inset-bottom, 0px))",
+        height:
+          "calc(3.5rem + max(0.5rem, calc(env(safe-area-inset-bottom, 0px) - 16px)))",
         backdropFilter: "blur(5px) saturate(135%)",
         WebkitBackdropFilter: "blur(5px) saturate(135%)",
         background:

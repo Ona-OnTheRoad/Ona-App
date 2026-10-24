@@ -103,6 +103,7 @@ export function ProfileMenuCard({
                 alt={itemTitle}
                 width={20}
                 height={20}
+                unoptimized
                 className="h-4 w-4 object-contain"
               />
             </div>
@@ -128,6 +129,7 @@ export function ProfileMenuCard({
                 src="/icons/angle-right.png"
                 width={12}
                 height={12}
+                unoptimized
                 className="h-4.5 w-4.5 object-contain opacity-70 group-hover:opacity-100 transition-opacity"
               />
             )}

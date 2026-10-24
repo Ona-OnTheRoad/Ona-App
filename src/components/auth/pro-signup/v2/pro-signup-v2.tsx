@@ -15,6 +15,7 @@ import { useSkillSelection } from "../use-skill-selection";
 import { useVehicleFocus } from "../use-vehicle-focus";
 import { useVehiclesCanFix } from "../use-vehicles-can-fix";
 import { ProWizardHeader } from "./pro-wizard-header";
+import { Step0Password } from "./step0-password";
 import { Step1BaseLocation } from "./step1-base-location";
 import { Step2RepairService } from "./step2-repair-service";
 import { Step3Vehicles } from "./step3-vehicles";
@@ -27,11 +28,14 @@ export function ProSignupV2() {
   const searchParams = useSearchParams();
   const { completeSignup, userProfile, isAuthenticated } = useApp();
 
-  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
-  const [anyVehicles, setAnyVehicles] = useState(true);
-
   const fromMenu = searchParams.get("from") === "menu";
   const fromProfile = searchParams.get("from") === "profile";
+
+  // Step 0: Set password (shown after role selection), then 1..5 for Pro profile details
+  const [step, setStep] = useState<0 | 1 | 2 | 3 | 4 | 5>(
+    fromMenu || fromProfile ? 1 : 0,
+  );
+  const [anyVehicles, setAnyVehicles] = useState(true);
 
   const flow = useProSignupFlow();
   const { done, busy, formError, setBusy, setDone, setFormError } = flow;
@@ -62,15 +66,23 @@ export function ProSignupV2() {
   });
 
   const handleBack = () => {
-    if (step > 1) {
-      setStep((prev) => (prev - 1) as 1 | 2 | 3 | 4 | 5);
+    if (step === 0) {
+      if (fromMenu || fromProfile) {
+        router.back();
+      } else {
+        go("/login/role");
+      }
       return;
     }
-    if (fromMenu || fromProfile) {
-      router.back();
-    } else {
-      go("/login/role");
+    if (step === 1) {
+      if (fromMenu || fromProfile) {
+        router.back();
+      } else {
+        setStep(0);
+      }
+      return;
     }
+    setStep((prev) => (prev - 1) as 0 | 1 | 2 | 3 | 4 | 5);
   };
 
   const handleFinalSubmit = async (bankDetails?: BankDetailsValue) => {
@@ -97,16 +109,27 @@ export function ProSignupV2() {
 
   return (
     <div className="flex flex-col min-h-[100dvh] w-full max-w-md mx-auto bg-white dark:bg-[#121316]">
-      {/* 5-step Header with back button, Ona. logo and progress bar */}
+      {/* Header with back button, Ona. logo and progress bar on wizard steps */}
       <ProWizardHeader
         currentStep={step}
         totalSteps={5}
         onBack={handleBack}
         showBack={true}
+        showProgress={step > 0}
       />
 
       {/* Wizard Steps */}
       <div className="flex flex-col flex-1">
+        {step === 0 && (
+          <Step0Password
+            password={form.password}
+            setPassword={form.setPassword}
+            confirmPassword={form.confirmPassword}
+            setConfirmPassword={form.setConfirmPassword}
+            onContinue={() => setStep(1)}
+          />
+        )}
+
         {step === 1 && (
           <Step1BaseLocation
             city={form.city}
