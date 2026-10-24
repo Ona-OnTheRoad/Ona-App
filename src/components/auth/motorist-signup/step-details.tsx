@@ -22,11 +22,13 @@ export function StepDetails({
         </p>
       ) : null}
       <AccountIdentityFields f={f} />
-      <AccountReferralField
-        value={refInput}
-        onChange={setRefInput}
-        fromUrl={Boolean(urlRef)}
-      />
+      {!f.dualSignup ? (
+        <AccountReferralField
+          value={refInput}
+          onChange={setRefInput}
+          fromUrl={Boolean(urlRef)}
+        />
+      ) : null}
     </div>
   );
 }
