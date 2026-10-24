@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { Mail, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OnaField, OnaInput, OnaSelect } from "@/components/ui/ona-field";
 import { OnaSegmented } from "@/components/ui/ona-segmented";
@@ -11,6 +10,28 @@ import { useT } from "@/lib/i18n";
 import type { AccountType } from "@/lib/types";
 import { EmailFields } from "./email-fields";
 import type { LoginMethod } from "./helpers";
+
+/** "Log in with email instead" / "…with phone instead" text switch. */
+function MethodSwitch({
+  method,
+  onPick,
+}: {
+  method: LoginMethod;
+  onPick: (m: LoginMethod) => void;
+}) {
+  const next: LoginMethod = method === "email" ? "phone" : "email";
+  return (
+    <button
+      type="button"
+      onClick={() => onPick(next)}
+      className="mx-auto flex min-h-11 items-center border-0 bg-transparent text-[13px] font-semibold text-ona-brand-ink underline underline-offset-2"
+    >
+      {next === "email"
+        ? "Log in with email instead"
+        : "Log in with phone number instead"}
+    </button>
+  );
+}
 
 /**
  * Screen 1: role tabs, email login first (email + password + Log in),
@@ -92,28 +113,7 @@ export function LoginStep({
             >
               {t("auth.logIn")}
             </Button>
-
-            <div className="relative my-1 flex items-center justify-center">
-              <div
-                className="absolute inset-0 flex items-center"
-                aria-hidden="true"
-              >
-                <div className="w-full border-t border-ona-border" />
-              </div>
-              <span className="relative bg-white px-3 text-[12px] font-medium text-ona-muted">
-                or
-              </span>
-            </div>
-
-            <Button
-              size="ona"
-              variant="onaOutline"
-              type="button"
-              onClick={() => pickMethod("phone")}
-            >
-              <Phone className="mr-2 h-4 w-4 text-ona-muted" />
-              Sign in with phone
-            </Button>
+            <MethodSwitch method={method} onPick={pickMethod} />
           </>
         ) : showPhone ? (
           <>
@@ -157,28 +157,7 @@ export function LoginStep({
             >
               Send code
             </Button>
-
-            <div className="relative my-1 flex items-center justify-center">
-              <div
-                className="absolute inset-0 flex items-center"
-                aria-hidden="true"
-              >
-                <div className="w-full border-t border-ona-border" />
-              </div>
-              <span className="relative bg-white px-3 text-[12px] font-medium text-ona-muted">
-                or
-              </span>
-            </div>
-
-            <Button
-              size="ona"
-              variant="onaOutline"
-              type="button"
-              onClick={() => pickMethod("email")}
-            >
-              <Mail className="mr-2 h-4 w-4 text-ona-muted" />
-              Sign in with email
-            </Button>
+            <MethodSwitch method={method} onPick={pickMethod} />
           </>
         ) : null}
       </div>
