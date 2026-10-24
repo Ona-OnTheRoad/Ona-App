@@ -100,7 +100,7 @@ export function HomeScreen() {
     return (
       <div
         className={cn(
-          "ona2 flex h-full flex-col items-center justify-center gap-3 px-6 text-center",
+          "ona2 flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-6 text-center",
         )}
       >
         <p className="text-lg font-bold text-ona-ink">{config.app.name}</p>
@@ -122,7 +122,7 @@ export function HomeScreen() {
   return (
     <div
       data-theme-toggle-ok
-      className="ona2 relative flex h-full min-h-0 flex-col overflow-hidden"
+      className="ona2 relative flex min-h-0 flex-1 flex-col overflow-hidden"
     >
       {/* Floats over the map; sits in flow above the sheet when it is full-height */}
       <div

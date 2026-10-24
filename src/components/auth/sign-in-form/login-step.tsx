@@ -34,8 +34,8 @@ function MethodSwitch({
 }
 
 /**
- * Screen 1: role tabs, then phone row + Send code or email + password + Log in.
- * The method is switched with a text link under the form (one tab row, as designed).
+ * Screen 1: role tabs, email login first (email + password + Log in),
+ * and option to sign in with phone as the second option (or switch back to email).
  */
 export function LoginStep({
   preferType,

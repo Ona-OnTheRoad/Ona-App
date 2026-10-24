@@ -15,8 +15,9 @@ import {
   writeLastLoginRole,
   type LoginMethod,
 } from "./helpers";
+import { useCodeCooldown } from "./use-code-cooldown";
 
-/** State, countdown and handlers for the login form: phone + SMS code, or email + password. */
+/** State, countdown and handlers for the login form: email + password (default), or phone + SMS code. */
 export function useSignInForm() {
   const router = useRouter();
   const t = useT();
@@ -24,7 +25,8 @@ export function useSignInForm() {
 
   // Customer is preselected; a returning Repair Pro gets their last role back.
   const [preferType, setPreferType] = useState<AccountType | "">("motorist");
-  const [method, setMethod] = useState<LoginMethod>("phone");
+  // Email login is the default primary method; phone login is the second option.
+  const [method, setMethod] = useState<LoginMethod>("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
@@ -33,43 +35,19 @@ export function useSignInForm() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
-  const [failedAttempts, setFailedAttempts] = useState(0);
-  const [cooldownUntil, setCooldownUntil] = useState(0);
-  const [cooldownLeft, setCooldownLeft] = useState(0);
+  const cooldown = useCodeCooldown();
   const ambiguousSendRef = useRef(false);
 
   const showPhone = Boolean(preferType);
-  const inCooldown = cooldownLeft > 0;
 
   useEffect(() => {
     const last = readLastLoginRole();
     if (last) setPreferType(last);
   }, []);
 
-  // Live countdown tick
-  useEffect(() => {
-    if (!cooldownUntil) {
-      setCooldownLeft(0);
-      return;
-    }
-    const tick = () => {
-      const left = Math.max(0, Math.ceil((cooldownUntil - Date.now()) / 1000));
-      setCooldownLeft(left);
-      if (left <= 0) setCooldownUntil(0);
-    };
-    tick();
-    const id = window.setInterval(tick, 250);
-    return () => window.clearInterval(id);
-  }, [cooldownUntil]);
-
   function clearFeedback() {
     setError("");
     setInfo("");
-  }
-
-  function startCooldown(sec = COOLDOWN_SEC) {
-    setCooldownUntil(Date.now() + sec * 1000);
-    setCooldownLeft(sec);
   }
 
   function pickRole(type: AccountType) {
@@ -77,8 +55,7 @@ export function useSignInForm() {
     ambiguousSendRef.current = false;
     setOtpSent(false);
     setOtp("");
-    setFailedAttempts(0);
-    setCooldownUntil(0);
+    cooldown.resetCooldown();
     clearFeedback();
   }
 
@@ -88,9 +65,8 @@ export function useSignInForm() {
       setError(t("auth.pickRole"));
       return;
     }
-    // Cooldown message only after 4 failed attempts live countdown
-    if (failedAttempts >= FAIL_THRESHOLD && inCooldown) {
-      setError(`Please wait ${cooldownLeft}s before requesting another code.`);
+    if (cooldown.failedAttempts >= FAIL_THRESHOLD && cooldown.inCooldown) {
+      setError(`Please wait ${cooldown.cooldownLeft}s before requesting another code.`);
       return;
     }
     const target = phone.trim();
@@ -100,17 +76,14 @@ export function useSignInForm() {
     }
     setBusy(true);
     try {
-      // After a maybe-sent result the next tap is a deliberate resend, so the
-      // idempotency key is cleared and a fresh code genuinely goes out.
       const res = await sendLoginOtp("phone", target, {
         forceResend: ambiguousSendRef.current,
       });
       if (res.error) {
-        // Parse server wait if present (after 4 fails)
         const waitMatch = res.error.match(/wait\s+(\d+)\s*s/i);
         if (waitMatch) {
           const sec = Number(waitMatch[1]) || COOLDOWN_SEC;
-          startCooldown(sec);
+          cooldown.startCooldown(sec);
           setError(`Please wait ${sec}s before requesting another code.`);
           return;
         }
@@ -118,7 +91,6 @@ export function useSignInForm() {
         return;
       }
       if (res.maybeSent) {
-        // Outcome unproven (response lost) stay neutral, never block.
         ambiguousSendRef.current = true;
         setInfo(
           "Code request may not have gone through. If nothing arrives, tap send again.",
@@ -140,8 +112,7 @@ export function useSignInForm() {
     ambiguousSendRef.current = false;
     setOtpSent(false);
     setOtp("");
-    setFailedAttempts(0);
-    setCooldownUntil(0);
+    cooldown.resetCooldown();
     clearFeedback();
   }
 
@@ -204,11 +175,8 @@ export function useSignInForm() {
         preferType,
       );
       if (err) {
-        const nextFails = failedAttempts + 1;
-        setFailedAttempts(nextFails);
-        // After 4 failed attempts → start live resend cooldown
+        const nextFails = cooldown.registerFailure();
         if (nextFails >= FAIL_THRESHOLD) {
-          startCooldown(COOLDOWN_SEC);
           setError(
             `Please wait ${COOLDOWN_SEC}s before requesting another code.`,
           );
@@ -219,18 +187,16 @@ export function useSignInForm() {
         playAppSound("error");
         return;
       }
-      setFailedAttempts(0);
-      setCooldownUntil(0);
+      cooldown.resetCooldown();
       finishLogin(preferType);
     } finally {
       setBusy(false);
     }
   }
 
-  // Keep error line live while counting down
   const displayError =
-    failedAttempts >= FAIL_THRESHOLD && inCooldown
-      ? `Please wait ${cooldownLeft}s before requesting another code.`
+    cooldown.failedAttempts >= FAIL_THRESHOLD && cooldown.inCooldown
+      ? `Please wait ${cooldown.cooldownLeft}s before requesting another code.`
       : error;
 
   function onPhoneChange(value: string) {
@@ -238,8 +204,7 @@ export function useSignInForm() {
     ambiguousSendRef.current = false;
     setOtpSent(false);
     setOtp("");
-    setFailedAttempts(0);
-    setCooldownUntil(0);
+    cooldown.resetCooldown();
     clearFeedback();
   }
 
@@ -257,9 +222,9 @@ export function useSignInForm() {
     otpSent,
     info,
     busy,
-    failedAttempts,
-    inCooldown,
-    cooldownLeft,
+    failedAttempts: cooldown.failedAttempts,
+    inCooldown: cooldown.inCooldown,
+    cooldownLeft: cooldown.cooldownLeft,
     showPhone,
     displayError,
     pickRole,

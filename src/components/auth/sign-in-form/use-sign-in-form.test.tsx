@@ -36,11 +36,30 @@ describe("useSignInForm email login", () => {
     vi.useFakeTimers();
   });
 
+  it("defaults to email method first", () => {
+    const { result } = renderHook(() => useSignInForm());
+    expect(result.current.method).toBe("email");
+  });
+
+  it("allows switching to phone as the second option and back to email", () => {
+    const { result } = renderHook(() => useSignInForm());
+    expect(result.current.method).toBe("email");
+
+    act(() => {
+      result.current.pickMethod("phone");
+    });
+    expect(result.current.method).toBe("phone");
+
+    act(() => {
+      result.current.pickMethod("email");
+    });
+    expect(result.current.method).toBe("email");
+  });
+
   it("asks for both fields before calling the server", async () => {
     const { result } = renderHook(() => useSignInForm());
     act(() => {
       result.current.pickRole("motorist");
-      result.current.pickMethod("email");
       result.current.setEmail("a@b.co");
     });
     await act(async () => result.current.onSubmit(submit()));
@@ -53,7 +72,6 @@ describe("useSignInForm email login", () => {
     const { result } = renderHook(() => useSignInForm());
     act(() => {
       result.current.pickRole("motorist");
-      result.current.pickMethod("email");
       result.current.setEmail(" a@b.co ");
       result.current.setPassword("secret");
     });
@@ -74,7 +92,6 @@ describe("useSignInForm email login", () => {
     const { result } = renderHook(() => useSignInForm());
     act(() => {
       result.current.pickRole("professional");
-      result.current.pickMethod("email");
       result.current.setEmail("a@b.co");
       result.current.setPassword("secret");
     });
@@ -92,7 +109,6 @@ describe("useSignInForm email login", () => {
     const { result } = renderHook(() => useSignInForm());
     act(() => {
       result.current.pickRole("motorist");
-      result.current.pickMethod("email");
       result.current.setEmail("a@b.co");
       result.current.setPassword("nope");
     });
@@ -105,7 +121,6 @@ describe("useSignInForm email login", () => {
     const { result } = renderHook(() => useSignInForm());
     act(() => {
       result.current.pickRole("motorist");
-      result.current.pickMethod("email");
     });
     await act(async () => result.current.onSubmit(submit()));
     expect(mocks.sendLoginOtp).not.toHaveBeenCalled();

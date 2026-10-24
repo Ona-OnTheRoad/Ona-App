@@ -8,6 +8,7 @@ import type { ProSignupForm } from "./use-pro-signup-form";
 import type { SkillSelection } from "./use-skill-selection";
 import type { VehicleFocus } from "./use-vehicle-focus";
 import type { VehiclesCanFix } from "./use-vehicles-can-fix";
+import type { BankDetailsValue } from "@/components/auth/bank-details-fields/types";
 import { validateStep5 } from "./validation";
 
 type SubmitArgs = {
@@ -41,7 +42,7 @@ export function useProSignupSubmit({
   const { skill, specialty, skillAnswers } = skillSel;
   const { dualSignup, idNumber, bvn } = form;
 
-  const finish = async () => {
+  const finish = async (bankOverride?: BankDetailsValue) => {
     if (busy || !skill || !specialty || !stepsOk) return;
     const v5 = validateStep5(form);
     if (v5) {
@@ -91,9 +92,16 @@ export function useProSignupSubmit({
       refCode: refCode || undefined,
     });
 
+    if (bankOverride?.bankCode) {
+      profile.bankCode = bankOverride.bankCode;
+      profile.bankName = bankOverride.bankName;
+      profile.bankAccountName = bankOverride.bankAccountName;
+      profile.bankAccountNumber = bankOverride.bankAccountNumber;
+    }
+
     // Dual-role: carry Customer bank into Repair Pro so payout bank is ready
     // and the "Add bank" panel does not ask again after signup.
-    if (dualSignup) {
+    if (dualSignup && !profile.bankCode) {
       try {
         const { getVaultProfile } = await import("@/lib/profiles-vault");
         const { hasCompleteBankDetails } = await import("@/lib/bank-details");

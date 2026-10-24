@@ -7,38 +7,33 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { BankForcePanel } from "@/components/auth/bank-force-panel";
-import { PageHeader } from "@/components/layout/page-header";
+import { isProService, PRO_SERVICE_LABELS } from "@/lib/pro-service-id";
 import { CustomerModeShell } from "@/components/dashboard/customer-mode-shell";
-import {
-  liveAwayButtonLabel,
-  skillDashboardTitle,
-} from "@/components/dashboard/dashboard-helpers";
+import { skillDashboardTitle } from "@/components/dashboard/dashboard-helpers";
 import {
   IncomingSection,
   OngoingSection,
   PayoutProcessingSection,
   RecentSection,
 } from "@/components/dashboard/job-sections";
-import {
-  GoLiveSection,
-  LiveHeaderToggle,
-} from "@/components/dashboard/live-controls";
-import { ProblemSolvedFooter } from "@/components/dashboard/problem-solved-footer";
+import { ProDashboardHeader } from "@/components/dashboard/pro-dashboard-header";
+import { ProProfileCard } from "@/components/dashboard/pro-profile-card";
+import { ProTier2Banner } from "@/components/dashboard/pro-tier2-banner";
+import { ProOnlineAction } from "@/components/dashboard/pro-online-action";
+import { ProEmptyState } from "@/components/dashboard/pro-empty-state";
 import { useDashboardArtisan } from "@/components/dashboard/use-dashboard-artisan";
 import { useDashboardJobs } from "@/components/dashboard/use-dashboard-jobs";
-import { VerificationCard } from "@/components/dashboard/verification-card";
 import { subscribeIncomingPanelOpen } from "@/lib/jobs/incoming-popup-timing";
-import { useT } from "@/lib/i18n";
 import {
   isCustomerToProDualPath,
   proT2CareApproved,
 } from "@/lib/pro-switch-onboarding";
 import { useApp } from "@/lib/store";
-import { cn } from "@/lib/utils";
 
 export default function TechnicianDashboardPage() {
+  const router = useRouter();
   const {
     theme,
     proLive,
@@ -54,7 +49,6 @@ export default function TechnicianDashboardPage() {
     proServices,
     setProOnboardingSheetRequired,
   } = useApp();
-  const t = useT();
   const isLight = theme === "light";
   const dualCtoPro = isCustomerToProDualPath({
     hasMotoristAccount,
@@ -70,12 +64,9 @@ export default function TechnicianDashboardPage() {
     recent,
     payoutProcessing,
     jobsLoading,
-    jobsCompletedCount,
     setJobsCompletedCount,
   } = useDashboardJobs(backendUserId);
-  /** Incoming lower panel is up hide the dashboard's own Incoming list. */
   const [incomingPanelOpen, setIncomingPanelOpen] = useState(false);
-  const [awayLabel, setAwayLabel] = useState(() => liveAwayButtonLabel());
   const artisan = useDashboardArtisan({
     backendUserId,
     proLive,
@@ -84,27 +75,18 @@ export default function TechnicianDashboardPage() {
   });
   const t2CareOk = proT2CareApproved(userProfile, artisan);
 
-  const dashboardTitle = useMemo(() => {
+  const dashboardTrade = useMemo(() => {
     const fromArtisan = artisan?.trade?.service;
     const fromProfile = userProfile?.services?.[0];
     const fromProList = proServices?.[0];
-    return skillDashboardTitle(fromArtisan || fromProfile || fromProList);
+    const raw = fromArtisan || fromProfile || fromProList;
+    if (raw && isProService(raw)) {
+      return PRO_SERVICE_LABELS[raw];
+    }
+    return "Mechanic";
   }, [artisan?.trade?.service, userProfile?.services, proServices]);
 
   useEffect(() => subscribeIncomingPanelOpen(setIncomingPanelOpen), []);
-
-  const stage = isLight ? "bg-[#c8c9cd]" : "bg-black";
-  const ink = isLight ? "text-slate-900" : "text-white";
-  const muted = isLight ? "text-slate-700" : "text-white/75";
-
-  // Refresh Away button copy when the 3-hour slot rolls over (local only)
-  useEffect(() => {
-    if (!proLive) return;
-    const tick = () => setAwayLabel(liveAwayButtonLabel());
-    tick();
-    const t = window.setInterval(tick, 300_000);
-    return () => window.clearInterval(t);
-  }, [proLive]);
 
   const toggleLive = async () => {
     setLiveBusy(true);
@@ -121,65 +103,56 @@ export default function TechnicianDashboardPage() {
 
   const showIncoming = incoming.length > 0 && !incomingPanelOpen;
   const showOngoing = ongoing.length > 0;
-  /** Same for every trade: Recent always when finished jobs exist (not hidden by Incoming). */
   const showRecent = recent.length > 0;
+  const hasActiveJobs = showIncoming || showOngoing || showRecent || payoutProcessing.length > 0;
+
+  const handleContinueVerification = () => {
+    router.push("/verify/tier-2");
+  };
 
   // Always paint a shell never blank when role/session is mid-switch
   if (isAuthenticated && accountType !== "professional") {
     return (
       <CustomerModeShell
-        stage={stage}
-        ink={ink}
-        muted={muted}
-        dashboardTitle={dashboardTitle}
+        stage="bg-ona-bg"
+        ink="text-ona-ink"
+        muted="text-ona-muted"
+        dashboardTitle={dashboardTrade}
         hasProAccount={hasProAccount}
         switchAccount={switchAccount}
       />
     );
   }
 
-  return (
-    <div className={cn("relative flex h-full min-h-0 flex-col", stage)}>
-      <BankForcePanel surface="dashboard" />
-      <div className={cn("z-20 shrink-0", stage)}>
-        <PageHeader title={dashboardTitle} showBack={false} />
-        <div className="flex items-center justify-end gap-2 px-3 pb-2">
-          <LiveHeaderToggle
-            liveBusy={liveBusy}
-            proLive={proLive}
-            isLight={isLight}
-            toggleLive={toggleLive}
-          />
-        </div>
-      </div>
+  const showTier2Banner = (artisan || dualCtoPro) && !t2CareOk;
 
-      <div className="flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto px-3 pb-4 scrollbar-hide">
-        {artisan || dualCtoPro ? (
-          <VerificationCard
-            artisan={artisan}
-            t2CareOk={t2CareOk}
-            userProfile={userProfile}
-            isLight={isLight}
-            ink={ink}
-            muted={muted}
-            t={t}
-            setProOnboardingSheetRequired={setProOnboardingSheetRequired}
-          />
+  return (
+    <div className="ona2 relative flex h-full min-h-0 flex-col bg-ona-bg text-ona-ink">
+      <ProDashboardHeader title="Dashboard" trade={dashboardTrade} />
+
+      <div className="flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto px-5 pb-24 scrollbar-hide">
+        {/* Profile Card */}
+        <ProProfileCard
+          displayName={userProfile?.fullName}
+          avatarUrl={userProfile?.avatarUrl}
+          proLive={proLive}
+        />
+
+        {/* Tier 2 Verification Card */}
+        {showTier2Banner ? (
+          <ProTier2Banner onContinue={handleContinueVerification} />
         ) : null}
 
-        <GoLiveSection
-          liveBusy={liveBusy}
+        {/* Go Online / Go Offline Action */}
+        <ProOnlineAction
           proLive={proLive}
-          liveErr={liveErr}
-          awayLabel={awayLabel}
-          ink={ink}
-          muted={muted}
-          toggleLive={toggleLive}
+          liveBusy={liveBusy}
+          onToggle={toggleLive}
         />
 
         {jobsLoading && (
           <div className="flex justify-center py-6">
-            <Loader2 className="h-5 w-5 animate-spin text-[#FF6B35]" />
+            <Loader2 className="h-6 w-6 animate-spin text-[#FF6B35]" />
           </div>
         )}
 
@@ -188,35 +161,37 @@ export default function TechnicianDashboardPage() {
           <IncomingSection
             incoming={incoming}
             backendUserId={backendUserId}
-            ink={ink}
-            muted={muted}
+            ink="text-ona-ink"
+            muted="text-ona-muted"
           />
         )}
 
-        {/* Ongoing jobs easy navigation for active work */}
+        {/* Ongoing jobs */}
         {!jobsLoading && showOngoing && (
-          <OngoingSection ongoing={ongoing} ink={ink} muted={muted} />
+          <OngoingSection ongoing={ongoing} ink="text-ona-ink" muted="text-ona-muted" />
         )}
 
-        {/* Payment processing — jobs where payout is pending settlement */}
+        {/* Payout Processing */}
         {!jobsLoading && payoutProcessing.length > 0 && (
           <PayoutProcessingSection
             payoutProcessing={payoutProcessing}
-            ink={ink}
-            muted={muted}
+            ink="text-ona-ink"
+            muted="text-ona-muted"
           />
         )}
-        {/* Last 6 finished jobs vertical listing (Uber/inDrive style), place + area only — read-only, not clickable */}
+
+        {/* Finished jobs */}
         {!jobsLoading && showRecent && (
-          <RecentSection recent={recent} ink={ink} muted={muted} />
+          <RecentSection recent={recent} ink="text-ona-ink" muted="text-ona-muted" />
         )}
 
-        {/* Bottom: problem solved count (no gray plate) */}
-        <ProblemSolvedFooter
-          count={jobsCompletedCount}
-          ink={ink}
-          muted={muted}
-        />
+        {/* Empty State when no jobs */}
+        {!jobsLoading && !hasActiveJobs && (
+          <ProEmptyState
+            title="No problem solved"
+            subtitle="Solved problems will appear here."
+          />
+        )}
       </div>
     </div>
   );
