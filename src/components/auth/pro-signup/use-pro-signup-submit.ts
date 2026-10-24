@@ -42,13 +42,21 @@ export function useProSignupSubmit({
   const { skill, specialty, skillAnswers } = skillSel;
   const { dualSignup, idNumber, bvn } = form;
 
-  const finish = async (bankOverride?: BankDetailsValue) => {
-    if (busy || !skill || !specialty || !stepsOk) return;
+  const finish = async (
+    bankOverride?: BankDetailsValue,
+  ): Promise<{ ok: boolean; error?: string }> => {
+    if (busy) return { ok: false };
+    if (!skill || !specialty) {
+      return { ok: false, error: "Please pick your trade and specialty." };
+    }
+    if (!stepsOk) {
+      return { ok: false, error: "Please complete all required steps." };
+    }
     const v5 = validateStep5(form);
     if (v5) {
       setFormError(v5);
       setStep(5);
-      return;
+      return { ok: false, error: v5 };
     }
     setBusy(true);
     setFormError("");
@@ -66,7 +74,7 @@ export function useProSignupSubmit({
         setFormError(identity.message);
         setBusy(false);
         setStep(5);
-        return;
+        return { ok: false, error: identity.message };
       }
     }
 
@@ -79,7 +87,7 @@ export function useProSignupSubmit({
       setFormError(verified.message);
       setBusy(false);
       setStep(5);
-      return;
+      return { ok: false, error: verified.message };
     }
 
     const profile = buildProProfile({
@@ -130,11 +138,12 @@ export function useProSignupSubmit({
       replace(
         `/signup/error?role=professional&message=${encodeURIComponent(err)}`,
       );
-      return;
+      return { ok: false, error: err };
     }
     clearSignupDraft();
     setDone(true);
     setBusy(false);
+    return { ok: true };
   };
 
   return { finish };

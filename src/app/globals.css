@@ -1772,3 +1772,23 @@ button.om-cta-dark-gray:disabled,
   outline-offset: 0;
   box-shadow: 0 0 0 4px #ff6b35;
 }
+
+/* No zoom while using the app.
+   iOS Safari zooms the page when a focused field's font-size is under 16px,
+   so every text control is 16px on touch screens (it never reads as "big":
+   the design sizes stay for desktop). Double-tap zoom is off too. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+      [type="file"]
+    ):not([type="button"]):not([type="submit"]),
+  textarea,
+  select,
+  [contenteditable="true"] {
+    font-size: 16px !important;
+  }
+}
