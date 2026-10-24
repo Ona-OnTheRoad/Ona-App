@@ -9,6 +9,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { toastError, toastSuccess } from "@/lib/toast";
 import { isProService, PRO_SERVICE_LABELS } from "@/lib/pro-service-id";
 import { CustomerModeShell } from "@/components/dashboard/customer-mode-shell";
 import { skillDashboardTitle } from "@/components/dashboard/dashboard-helpers";
@@ -93,9 +94,16 @@ export default function TechnicianDashboardPage() {
     setLiveErr(null);
     try {
       const err = await setProLive(!proLive);
-      if (err) setLiveErr(err);
+      if (err) {
+        setLiveErr(err);
+        toastError(err);
+      } else {
+        toastSuccess(!proLive ? "You are now online" : "You are now offline");
+      }
     } catch {
-      setLiveErr("Could not update Live status. Check GPS permission.");
+      const msg = "Could not update Live status. Check GPS permission.";
+      setLiveErr(msg);
+      toastError(msg);
     } finally {
       setLiveBusy(false);
     }
@@ -107,7 +115,7 @@ export default function TechnicianDashboardPage() {
   const hasActiveJobs = showIncoming || showOngoing || showRecent || payoutProcessing.length > 0;
 
   const handleContinueVerification = () => {
-    router.push("/verify/tier-2");
+    router.push("/verify");
   };
 
   // Always paint a shell never blank when role/session is mid-switch
@@ -147,7 +155,9 @@ export default function TechnicianDashboardPage() {
         <ProOnlineAction
           proLive={proLive}
           liveBusy={liveBusy}
+          liveErr={liveErr}
           onToggle={toggleLive}
+          onVerify={() => router.push("/verify")}
         />
 
         {jobsLoading && (

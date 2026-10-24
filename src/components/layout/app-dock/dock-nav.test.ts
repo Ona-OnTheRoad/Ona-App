@@ -49,7 +49,7 @@ describe("buildDockItems", () => {
     expect(primary.map((p) => p.key)).toEqual([
       "/dashboard",
       "/jobs",
-      "/wallet",
+      "/settings/payments",
       "/shop/c/solar",
       "/profile",
     ]);
