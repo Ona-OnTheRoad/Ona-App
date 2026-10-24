@@ -54,6 +54,7 @@ export function SignupDetails() {
       return;
     }
     setFormError("");
+    const isDual = dualEntry || fields.dualSignup;
     const { first, last } = splitFullName(fields.fullName);
     saveSignupDraft({
       firstName: first,
@@ -64,11 +65,11 @@ export function SignupDetails() {
       phoneNational: fields.phoneNational,
       gender: fields.gender,
       dateOfBirth: fields.dateOfBirth,
-      referral: fields.refInput.trim(),
+      referral: isDual ? "" : fields.refInput.trim(),
       idNumber: fields.idNumber.trim(),
       bvn: fields.bvn.trim(),
     });
-    const ref = fields.urlRef || fields.refInput.trim() || null;
+    const ref = isDual ? null : (fields.urlRef || fields.refInput.trim() || null);
     if (dualEntry) {
       const q = new URLSearchParams(params.toString());
       q.delete("err");

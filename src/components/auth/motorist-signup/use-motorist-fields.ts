@@ -232,7 +232,7 @@ export function useMotoristFields() {
     setCity,
     area,
     setArea,
-    dualSignup,
+    dualSignup: dualSignup || fromMenu || fromProfile,
     nameLocked,
     genderLocked,
     phoneLocked,

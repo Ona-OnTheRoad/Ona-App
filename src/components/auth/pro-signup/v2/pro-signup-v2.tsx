@@ -58,7 +58,10 @@ export function ProSignupV2() {
     fix,
     stepsOk: true,
     userProfile,
-    refCode: searchParams.get("ref") || loadSignupDraft()?.referral || null,
+    refCode:
+      fromMenu || fromProfile
+        ? null
+        : searchParams.get("ref") || loadSignupDraft()?.referral || null,
     completeSignup,
     replace: (href) => router.replace(href),
   });

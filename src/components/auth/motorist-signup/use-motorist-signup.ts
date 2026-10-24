@@ -224,7 +224,7 @@ export function useMotoristSignup() {
       vehicleModel: first?.model,
       vehicleYear: first?.year,
       registeredAt: new Date().toISOString(),
-      refCode: refInput.trim() || undefined,
+      refCode: fields.dualSignup ? undefined : (refInput.trim() || undefined),
     };
 
     // Service area text → home map session label (Lagos default coords until GPS)
