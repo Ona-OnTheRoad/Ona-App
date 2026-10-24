@@ -25,10 +25,11 @@ export function useThemeAndProSheet(session: SessionStateResult) {
     backendUserId,
   } = session;
 
-  // Keep html[data-theme] + page stage in sync so full app flips light↔dark
+  // Keep html[data-theme] + html.dark + page stage in sync so full app flips light↔dark
   useEffect(() => {
     const root = document.documentElement;
     root.dataset.theme = theme;
+    root.classList.toggle("dark", theme === "dark");
     root.style.colorScheme = theme;
     // Explicit stage so body/html match phone shell outer (opposite themes)
     const stage = theme === "light" ? "#060d0a" : "#0a0605";

@@ -194,7 +194,7 @@ export function OsmLocationPicker({
             }
           }}
           placeholder="Search place, street, or company…"
-          className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-900 outline-none focus:border-emerald-500"
+          className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-900 outline-none focus:outline-none"
           autoComplete="off"
         />
         {showPanel ? (

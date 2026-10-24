@@ -18,14 +18,14 @@ export function ProWizardHeader({
   showProgress = currentStep > 0,
 }: ProWizardHeaderProps) {
   return (
-    <div className="w-full bg-white dark:bg-[#121316] pt-3 pb-2 px-4">
+    <div className="w-full bg-ona-bg pt-3 pb-2 px-4">
       {/* Top Bar with Back, Logo, and balancing spacer */}
       <div className="relative flex items-center justify-between h-10">
         {showBack ? (
           <button
             type="button"
             onClick={onBack}
-            className="flex items-center justify-center w-9 h-9 -ml-1 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+            className="flex items-center justify-center w-9 h-9 -ml-1 text-ona-ink hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors cursor-pointer"
             aria-label="Go back"
           >
             <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
@@ -34,8 +34,8 @@ export function ProWizardHeader({
           <div className="w-9" />
         )}
 
-        <div className="text-xl font-bold tracking-tight text-slate-900 dark:text-white font-sans">
-          Ona<span className="text-[#FF6B35]">.</span>
+        <div className="text-xl font-bold tracking-tight text-ona-ink font-sans">
+          Ona<span className="text-brand">.</span>
         </div>
 
         <div className="w-9" />
@@ -51,7 +51,7 @@ export function ProWizardHeader({
               <div
                 key={stepNum}
                 className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-                  isActive ? "bg-[#FF6B35]" : "bg-slate-200 dark:bg-slate-800"
+                  isActive ? "bg-brand" : "bg-ona-border"
                 }`}
               />
             );

@@ -108,7 +108,7 @@ export function ProSignupV2() {
   };
 
   return (
-    <div className="flex flex-col min-h-[100dvh] w-full max-w-md mx-auto bg-white dark:bg-[#121316]">
+    <div className="ona2 flex flex-col h-full w-full max-w-md mx-auto bg-ona-bg text-ona-ink overflow-hidden">
       {/* Header with back button, Ona. logo and progress bar on wizard steps */}
       <ProWizardHeader
         currentStep={step}
@@ -119,7 +119,7 @@ export function ProSignupV2() {
       />
 
       {/* Wizard Steps */}
-      <div className="flex flex-col flex-1">
+      <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
         {step === 0 && (
           <Step0Password
             password={form.password}

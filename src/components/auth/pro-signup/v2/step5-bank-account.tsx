@@ -53,14 +53,14 @@ export function Step5BankAccount({
   };
 
   return (
-    <div className="flex flex-col flex-1 px-5 pt-4 pb-6 bg-white dark:bg-[#121316]">
+    <div className="flex flex-col flex-1 px-5 pt-4 pb-6 bg-ona-bg text-ona-ink">
       {/* Title & Subtitle */}
       <div className="mb-5">
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+        <h1 className="text-xl font-bold text-ona-ink tracking-tight">
           Bank Account
         </h1>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-          This helps your professional arrive with the right tools and parts.
+        <p className="mt-1 text-xs text-ona-muted">
+          Add your payout bank account for earning withdrawals. You can also skip and set this up later.
         </p>
       </div>
 
@@ -68,7 +68,7 @@ export function Step5BankAccount({
       <div className="flex flex-col gap-4 flex-1 overflow-y-auto">
         {/* Bank Selection */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <label className="text-xs font-semibold text-ona-ink">
             Bank
           </label>
           <SheetSelect
@@ -82,11 +82,11 @@ export function Step5BankAccount({
               value: `${b.code}::${b.name}`,
               label: b.name,
             }))}
-            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 text-sm text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
-            chevronClassName="right-3.5 text-slate-400"
+            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink font-medium outline-none focus:outline-none"
+            chevronClassName="right-3.5 text-ona-muted"
           />
           {bankCode && (
-            <span className="text-[11px] text-slate-400 dark:text-slate-500 pl-0.5">
+            <span className="text-[11px] text-ona-muted pl-0.5">
               Bank code: {bankCode}
             </span>
           )}
@@ -94,7 +94,7 @@ export function Step5BankAccount({
 
         {/* Account Number */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <label className="text-xs font-semibold text-ona-ink">
             Account number (10 DIGITS)
           </label>
           <input
@@ -104,26 +104,26 @@ export function Step5BankAccount({
             value={bankAccountNumber}
             onChange={(e) => onAccountNumberChange(e.target.value)}
             placeholder="0123456789"
-            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 tracking-wider font-mono focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
+            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted tracking-wider font-mono outline-none focus:outline-none"
           />
         </div>
 
         {/* Account Name Lookup */}
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <label className="text-xs font-semibold text-ona-ink">
               {resolving ? "Account name · Looking up …" : "Account name"}
             </label>
             {resolving && (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#FF6B35]" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-brand" />
             )}
           </div>
-          <div className="w-full min-h-[46px] flex items-center bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3">
+          <div className="w-full min-h-[46px] flex items-center bg-ona-field border border-ona-border rounded-xl px-3.5 py-3">
             <span
               className={`text-sm uppercase tracking-wide ${
                 bankAccountName
-                  ? "text-slate-900 dark:text-white font-semibold"
-                  : "text-slate-400 italic"
+                  ? "text-ona-ink font-semibold"
+                  : "text-ona-muted italic"
               }`}
             >
               {bankAccountName || "Enter 10 digits to resolve name"}
@@ -138,10 +138,10 @@ export function Step5BankAccount({
           type="button"
           onClick={handleContinue}
           disabled={!hasValidAccount || busy}
-          className={`w-full py-3.5 px-6 rounded-full font-semibold text-sm transition-all duration-200 shadow-sm flex items-center justify-center gap-2 ${
+          className={`w-full py-3.5 px-6 rounded-full font-semibold text-sm transition-all duration-200 shadow-sm flex items-center justify-center gap-2 cursor-pointer ${
             hasValidAccount && !busy
-              ? "bg-[#FF6B35] hover:bg-[#e85a26] text-white active:scale-[0.99]"
-              : "bg-[#FF6B35]/50 text-white cursor-not-allowed"
+              ? "bg-brand hover:opacity-90 text-white active:scale-[0.99]"
+              : "bg-brand/50 text-white cursor-not-allowed"
           }`}
         >
           {busy ? (
@@ -158,7 +158,7 @@ export function Step5BankAccount({
           type="button"
           onClick={onSkip}
           disabled={busy}
-          className="w-full py-2.5 text-center text-sm font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
+          className="w-full py-2.5 text-center text-sm font-semibold text-ona-muted hover:text-ona-ink transition-colors cursor-pointer"
         >
           Skip
         </button>

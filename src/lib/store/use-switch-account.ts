@@ -1,16 +1,19 @@
 import { useCallback } from "react";
 import { resetNavStack } from "@/lib/navigation";
-import { getVaultProfile, saveProfileToVault } from "@/lib/profiles-vault";
+import { saveProfileToVault } from "@/lib/profiles-vault";
 import {
   backendDualRoleFlags,
   backendSetProOnline,
   backendSwitchRole,
-  backendUpdateProfile,
   isAppBackendOnline,
 } from "@/lib/supabase/app-api";
 import type { AccountType, UserMode, UserProfile } from "@/lib/types";
 import { MODE_KEY } from "./constants";
 import { readStoredPrimaryAccount } from "./storage";
+import {
+  inheritDonorBank,
+  mergeSwitchedVerification,
+} from "./switch-account-helpers";
 import type { SessionStateResult } from "./use-session-state";
 import type { ApplySessionResult } from "./use-apply-session";
 
@@ -99,72 +102,13 @@ export function useSwitchAccount(
           accountType ||
           "motorist";
         // One bank per login: if this role has no bank, reuse the other role's bank
-        // so Repair Pro never asks for a "fresh" bank when Customer already saved one.
-        let switched: UserProfile = {
+        // One bank per login: reuse other role's bank if none saved on this role
+        const baseSwitched: UserProfile = {
           ...res.profile,
           primaryAccountType: primary,
         };
-        const bankComplete = (p: UserProfile | null | undefined) =>
-          Boolean(
-            p &&
-            (p.bankCode || "").trim() &&
-            (p.bankAccountName || "").trim() &&
-            (p.bankAccountNumber || "").replace(/\D/g, "").length === 10,
-          );
-        if (!bankComplete(switched)) {
-          const vaultMot = getVaultProfile("motorist");
-          const vaultPro = getVaultProfile("professional");
-          const donor =
-            (bankComplete(vaultMot) && vaultMot) ||
-            (bankComplete(vaultPro) && vaultPro) ||
-            (bankComplete(userProfile) && userProfile) ||
-            null;
-          if (donor) {
-            switched = {
-              ...switched,
-              bankCode: donor.bankCode,
-              bankName: donor.bankName,
-              bankAccountName: donor.bankAccountName,
-              bankAccountNumber: donor.bankAccountNumber,
-            };
-            // Persist to the active role side-table + identity bank sync
-            if (isAppBackendOnline() && res.userId) {
-              void (async () => {
-                try {
-                  const { ensureAppSession } =
-                    await import("@/lib/supabase/session");
-                  const s = await ensureAppSession();
-                  if (!s?.accessToken) return;
-                  await backendUpdateProfile(s.accessToken, {
-                    bankCode: donor.bankCode,
-                    bankName: donor.bankName,
-                    bankAccountName: donor.bankAccountName,
-                    bankAccountNumber: donor.bankAccountNumber,
-                  });
-                } catch {
-                  /* non-fatal UI already has bank */
-                }
-              })();
-            }
-          }
-        }
-        // Carry verification flags from server + preserve Customer T2 if API omits
-        const prev = userProfile;
-        const withFlags: UserProfile = {
-          ...switched,
-          phoneVerified: Boolean(switched.phoneVerified || prev?.phoneVerified),
-          identityReviewStatus:
-            switched.identityReviewStatus || prev?.identityReviewStatus,
-          govIdVerified: Boolean(switched.govIdVerified || prev?.govIdVerified),
-          identityVerifiedAt:
-            switched.identityVerifiedAt || prev?.identityVerifiedAt,
-          identitySubmittedAt:
-            switched.identitySubmittedAt || prev?.identitySubmittedAt,
-          govIdKind: switched.govIdKind || prev?.govIdKind,
-          govIdFrontUrl: switched.govIdFrontUrl || prev?.govIdFrontUrl,
-          ninVerified: Boolean(switched.ninVerified || prev?.ninVerified),
-          bvnVerified: Boolean(switched.bvnVerified || prev?.bvnVerified),
-        };
+        const switched = inheritDonorBank(baseSwitched, userProfile, res.userId);
+        const withFlags = mergeSwitchedVerification(switched, userProfile);
         saveProfileToVault(withFlags);
 
         const dualToPro =
@@ -186,6 +130,17 @@ export function useSwitchAccount(
             applySession({ ...withFlags, phoneVerified: false });
             setPostSwitchPhoneOtpRequired(true);
             setProOnboardingSheetRequired(true);
+          }
+        } else if (type === "motorist") {
+          // Pro → Customer: smooth switch if phone verified; re-OTP if not
+          if (t1Done) {
+            applySession(withFlags);
+            setPostSwitchPhoneOtpRequired(false);
+            setProOnboardingSheetRequired(false);
+          } else {
+            applySession({ ...withFlags, phoneVerified: false });
+            setPostSwitchPhoneOtpRequired(true);
+            setProOnboardingSheetRequired(false);
           }
         } else {
           // Other switches: session re-OTP still required
@@ -222,6 +177,7 @@ export function useSwitchAccount(
       setHasProAccount,
       setPostSwitchPhoneOtpRequired,
       setProLiveState,
+      setProOnboardingSheetRequired,
       setSwitchingRole,
     ],
   );

@@ -76,6 +76,31 @@
     background-color: var(--o-bg);
     color: var(--o-ink);
   }
+
+  /* Remove all colored focus rings, outlines, and box shadows on inputs, textareas, and controls */
+  input,
+  textarea,
+  select,
+  [role="combobox"],
+  [role="slider"] {
+    outline: none !important;
+  }
+
+  input:focus,
+  input:focus-visible,
+  textarea:focus,
+  textarea:focus-visible,
+  select:focus,
+  select:focus-visible,
+  [role="combobox"]:focus,
+  [role="combobox"]:focus-visible,
+  [role="slider"]:focus,
+  [role="slider"]:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    --tw-ring-offset-shadow: 0 0 #0000 !important;
+    --tw-ring-shadow: 0 0 #0000 !important;
+  }
 }
 
 [data-theme="dark"] .ona2,

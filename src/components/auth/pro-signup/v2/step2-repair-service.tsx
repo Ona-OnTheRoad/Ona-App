@@ -48,13 +48,13 @@ export function Step2RepairService({
     businessName.trim().length >= 2;
 
   return (
-    <div className="flex flex-col flex-1 px-5 pt-4 pb-6 bg-white dark:bg-[#121316]">
+    <div className="flex flex-col flex-1 px-5 pt-4 pb-6 bg-ona-bg text-ona-ink">
       {/* Title & Subtitle */}
       <div className="mb-5">
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+        <h1 className="text-xl font-bold text-ona-ink tracking-tight">
           Your Repair Service
         </h1>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        <p className="mt-1 text-xs text-ona-muted">
           Tell us what you do so nearby customers can find you.
         </p>
       </div>
@@ -63,54 +63,54 @@ export function Step2RepairService({
       <div className="flex flex-col gap-4 flex-1">
         {/* Trade Field */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <label className="text-xs font-semibold text-ona-ink">
             Trade
           </label>
           <button
             type="button"
             onClick={() => setShowTradeSheet(true)}
-            className="w-full flex items-center justify-between bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 text-left focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
+            className="w-full flex items-center justify-between bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-left outline-none focus:outline-none cursor-pointer"
           >
             <span
               className={`text-sm ${
                 selectedTradeLabel
-                  ? "text-slate-900 dark:text-white font-medium"
-                  : "text-slate-400"
+                  ? "text-ona-ink font-medium"
+                  : "text-ona-muted"
               }`}
             >
               {selectedTradeLabel || "Choose only one trade"}
             </span>
-            <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+            <ChevronDown className="w-4 h-4 text-ona-muted shrink-0" />
           </button>
         </div>
 
         {/* Trade Focus Field */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <label className="text-xs font-semibold text-ona-ink">
             Your trade focus
           </label>
           <button
             type="button"
             disabled={!skill}
             onClick={() => setShowSpecialtySheet(true)}
-            className="w-full flex items-center justify-between bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 text-left disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
+            className="w-full flex items-center justify-between bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-left disabled:opacity-60 outline-none focus:outline-none cursor-pointer"
           >
             <span
               className={`text-sm ${
                 specialty
-                  ? "text-slate-900 dark:text-white font-medium"
-                  : "text-slate-400"
+                  ? "text-ona-ink font-medium"
+                  : "text-ona-muted"
               }`}
             >
               {specialty || "Where do you mainly work?"}
             </span>
-            <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+            <ChevronDown className="w-4 h-4 text-ona-muted shrink-0" />
           </button>
         </div>
 
         {/* Workshop / Business Name */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <label className="text-xs font-semibold text-ona-ink">
             Workshop / Business Name
           </label>
           <input
@@ -118,13 +118,13 @@ export function Step2RepairService({
             value={businessName}
             onChange={(e) => setBusinessName(e.target.value)}
             placeholder="e.g. Yaba, Lekki"
-            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
+            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted outline-none focus:outline-none"
           />
         </div>
 
         {/* Years of Experience */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <label className="text-xs font-semibold text-ona-ink">
             Years of Experience
           </label>
           <SheetSelect
@@ -137,14 +137,14 @@ export function Step2RepairService({
               value: String(y),
               label: experienceLabel(y),
             }))}
-            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 text-sm text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
-            chevronClassName="right-3.5 text-slate-400"
+            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink font-medium outline-none focus:outline-none"
+            chevronClassName="right-3.5 text-ona-muted"
           />
         </div>
 
         {/* Bio */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <label className="text-xs font-semibold text-ona-ink">
             Bio
           </label>
           <textarea
@@ -152,7 +152,7 @@ export function Step2RepairService({
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             placeholder="Write text here …"
-            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
+            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted resize-none outline-none focus:outline-none"
           />
         </div>
       </div>
@@ -163,10 +163,10 @@ export function Step2RepairService({
           type="button"
           onClick={onContinue}
           disabled={!isValid}
-          className={`w-full py-3.5 px-6 rounded-full font-semibold text-sm transition-all duration-200 shadow-sm ${
+          className={`w-full py-3.5 px-6 rounded-full font-semibold text-sm transition-all duration-200 shadow-sm cursor-pointer ${
             isValid
-              ? "bg-[#FF6B35] hover:bg-[#e85a26] text-white active:scale-[0.99]"
-              : "bg-[#FF6B35]/50 text-white cursor-not-allowed"
+              ? "bg-brand hover:opacity-90 text-white active:scale-[0.99]"
+              : "bg-brand/50 text-white cursor-not-allowed"
           }`}
         >
           Continue

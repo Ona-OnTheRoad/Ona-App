@@ -61,7 +61,7 @@ export function SavePinCard({ onSave, isSaving = false }: SavePinCardProps) {
             value={customLabel}
             onChange={(e) => setCustomLabel(e.target.value)}
             placeholder="Enter a label (e.g mum’s house)"
-            className="h-12 w-full rounded-2xl border border-ona-border bg-white dark:bg-ona-surface px-4 text-[12px] font-normal text-ona-ink placeholder:text-ona-muted shadow-2xs outline-none focus:border-[#F05A30] transition-all"
+            className="h-12 w-full rounded-2xl border border-ona-border bg-white dark:bg-ona-surface px-4 text-[12px] font-normal text-ona-ink placeholder:text-ona-muted shadow-2xs outline-none focus:outline-none transition-all"
           />
         </div>
       )}

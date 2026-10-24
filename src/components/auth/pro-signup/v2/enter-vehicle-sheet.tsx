@@ -53,23 +53,23 @@ export function EnterVehicleSheet({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end">
+    <div className="ona2 fixed inset-0 z-50 flex flex-col justify-end">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
         onClick={onClose}
       />
 
       {/* Sheet Content */}
-      <div className="relative z-10 w-full max-w-md mx-auto bg-white dark:bg-[#121316] rounded-t-3xl shadow-xl flex flex-col max-h-[90vh] animate-in slide-in-from-bottom duration-200">
+      <div className="relative z-10 w-full max-w-md mx-auto bg-ona-surface text-ona-ink rounded-t-3xl shadow-xl flex flex-col max-h-[90vh] animate-in slide-in-from-bottom duration-200 border-t border-ona-border">
         {/* Handle bar */}
         <div className="flex justify-center pt-3 pb-2">
-          <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-750" />
+          <div className="w-10 h-1.5 rounded-full bg-ona-muted/30" />
         </div>
 
         {/* Header */}
-        <div className="px-5 pt-1 pb-3 border-b border-slate-100 dark:border-slate-800">
-          <h2 className="text-base font-bold text-slate-900 dark:text-white">
+        <div className="px-5 pt-1 pb-3 border-b border-ona-border">
+          <h2 className="text-base font-bold text-ona-ink">
             Enter vehicle
           </h2>
         </div>
@@ -78,7 +78,7 @@ export function EnterVehicleSheet({
         <div className="flex flex-col gap-4 p-5 overflow-y-auto">
           {/* Vehicle Type */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <label className="text-xs font-semibold text-ona-ink">
               Vehicle type
             </label>
             <SheetSelect
@@ -91,14 +91,14 @@ export function EnterVehicleSheet({
                 value: String(t),
                 label: t,
               }))}
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 text-sm text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
-              chevronClassName="right-3.5 text-slate-400"
+              className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink font-medium outline-none focus:outline-none"
+              chevronClassName="right-3.5 text-ona-muted"
             />
           </div>
 
           {/* Make */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <label className="text-xs font-semibold text-ona-ink">
               Make
             </label>
             <input
@@ -106,14 +106,14 @@ export function EnterVehicleSheet({
               value={make}
               onChange={(e) => setMake(e.target.value)}
               placeholder="Search make (e.g. Toyota)"
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
+              className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted outline-none focus:outline-none"
             />
           </div>
 
           {/* Model & Year in two columns */}
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <label className="text-xs font-semibold text-ona-ink">
                 Model
               </label>
               <input
@@ -121,12 +121,12 @@ export function EnterVehicleSheet({
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
                 placeholder="e.g. Corolla"
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
+                className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted outline-none focus:outline-none"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <label className="text-xs font-semibold text-ona-ink">
                 Year
               </label>
               <input
@@ -134,19 +134,19 @@ export function EnterVehicleSheet({
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
                 placeholder="e.g. 2018"
-                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
+                className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted outline-none focus:outline-none"
               />
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-[#121316]">
+        <div className="p-5 border-t border-ona-border bg-ona-surface">
           <button
             type="button"
             disabled={!isValid}
             onClick={handleSave}
-            className="w-full py-3.5 px-6 rounded-full font-semibold text-sm bg-[#FF6B35] hover:bg-[#e85a26] text-white disabled:opacity-50 transition-colors shadow-sm"
+            className="w-full py-3.5 px-6 rounded-full font-semibold text-sm bg-brand hover:opacity-90 text-white disabled:opacity-50 transition-colors shadow-sm cursor-pointer"
           >
             Save changes
           </button>

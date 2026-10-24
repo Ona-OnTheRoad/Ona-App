@@ -56,27 +56,35 @@ export function ProfileMenuCard({
         href: "/signup/pro?from=profile&attach=1&next=/dashboard",
       };
 
-  const customerGatewayItem: ProfileMenuItem = {
-    id: "switch-customer",
-    title: "Switch to Customer",
-    subtitle: "Book repairs and services",
-    iconSrc: "/icons/profile-pricing-and-services.png",
-    href: "/",
-    onClick: async (e: React.MouseEvent) => {
-      e.preventDefault();
-      if (switching) return;
-      setSwitching(true);
-      try {
-        await switchAccount("motorist");
-        router.push("/");
-      } finally {
-        setSwitching(false);
+  const customerGatewayItem: ProfileMenuItem = hasMotoristAccount
+    ? {
+        id: "switch-customer",
+        title: "Switch to Customer",
+        subtitle: "Book repairs and services",
+        iconSrc: "/icons/profile-pricing-and-services.png",
+        href: "/",
+        onClick: async (e: React.MouseEvent) => {
+          e.preventDefault();
+          if (switching) return;
+          setSwitching(true);
+          try {
+            await switchAccount("motorist");
+            router.push("/");
+          } finally {
+            setSwitching(false);
+          }
+        },
       }
-    },
-  };
+    : {
+        id: "become-customer",
+        title: "Become a Customer",
+        subtitle: "Request repairs & roadside services",
+        iconSrc: "/icons/profile-pricing-and-services.png",
+        href: "/signup/motorist?from=profile&attach=1&next=/",
+      };
 
   const defaultItems = isPro
-    ? (hasMotoristAccount ? [...PRO_PROFILE_MENU_ITEMS, customerGatewayItem] : PRO_PROFILE_MENU_ITEMS)
+    ? [...PRO_PROFILE_MENU_ITEMS, customerGatewayItem]
     : [...MOTORIST_PROFILE_MENU_ITEMS, proGatewayItem];
 
   const items = customItems ?? defaultItems;
