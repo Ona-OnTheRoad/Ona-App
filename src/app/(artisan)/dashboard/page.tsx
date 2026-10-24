@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { BankForcePanel } from "@/components/auth/bank-force-panel";
 import { CustomerModeShell } from "@/components/dashboard/customer-mode-shell";
@@ -32,6 +33,7 @@ import {
 import { useApp } from "@/lib/store";
 
 export default function TechnicianDashboardPage() {
+  const router = useRouter();
   const {
     theme,
     proLive,
@@ -101,10 +103,7 @@ export default function TechnicianDashboardPage() {
   const hasActiveJobs = showIncoming || showOngoing || showRecent || payoutProcessing.length > 0;
 
   const handleContinueVerification = () => {
-    setProOnboardingSheetRequired(true);
-    void import("@/components/pro/pro-onboarding-sheet").then((m) =>
-      m.requestProOnboardingSheetExpand(),
-    );
+    router.push("/verify/tier-2");
   };
 
   // Always paint a shell never blank when role/session is mid-switch

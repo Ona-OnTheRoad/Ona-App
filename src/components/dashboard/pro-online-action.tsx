@@ -1,7 +1,6 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface ProOnlineActionProps {
   proLive: boolean;
@@ -15,15 +14,15 @@ export function ProOnlineAction({
   onToggle,
 }: ProOnlineActionProps) {
   return (
-    <section className="space-y-3 pt-1">
+    <section className="space-y-2 pt-0.5">
       <div>
-        <p className="text-[13px] font-bold text-ona-ink">
+        <p className="text-xs font-semibold text-slate-900 dark:text-white">
           {proLive ? "You are online" : "Go online"}
         </p>
-        <p className="text-[11px] font-medium text-ona-muted">
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
           {proLive
             ? "Customers nearby can find you."
-            : "Customers nearby can't find you when you're offline."}
+            : "Customers nearby can find you when you're online."}
         </p>
       </div>
 
@@ -31,12 +30,11 @@ export function ProOnlineAction({
         type="button"
         disabled={liveBusy}
         onClick={() => void onToggle()}
-        className={cn(
-          "flex h-12 w-full items-center justify-center rounded-xl font-bold text-[14px] transition active:scale-[0.99] cursor-pointer disabled:opacity-50",
+        className={`flex h-12 w-full items-center justify-center rounded-2xl font-semibold text-sm transition active:scale-[0.99] cursor-pointer disabled:opacity-50 ${
           proLive
-            ? "border border-[#FF6B35] bg-transparent text-[#FF6B35] hover:bg-[#FF6B35]/5"
-            : "border-0 bg-[#FF6B35] text-white shadow-sm hover:opacity-95",
-        )}
+            ? "border border-[#FF6B35] bg-white dark:bg-[#121316] text-[#FF6B35] hover:bg-orange-50/30"
+            : "bg-[#FF6B35] hover:bg-[#e85a26] text-white shadow-xs"
+        }`}
       >
         {liveBusy ? (
           <Loader2 className="h-5 w-5 animate-spin" />

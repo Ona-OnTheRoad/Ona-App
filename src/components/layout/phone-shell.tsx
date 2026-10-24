@@ -17,13 +17,7 @@ import { isPublicPath } from "@/lib/routes";
  * first-load JavaScript. This keeps the shared bundle small on slow connections (the onboarding
  * sheet alone pulls in the whole Repair Pro onboarding wizard and the Nigerian places data).
  */
-const ProOnboardingSheet = dynamic(
-  () =>
-    import("@/components/pro/pro-onboarding-sheet").then(
-      (m) => m.ProOnboardingSheet,
-    ),
-  { ssr: false },
-);
+
 const PostSwitchPhoneOtpGate = dynamic(
   () =>
     import("@/components/auth/post-switch-phone-otp-gate").then(
@@ -285,7 +279,6 @@ export function PhoneShell({
           {children}
           {gatesReady && !isAuthOrPublic ? (
             <>
-              <ProOnboardingSheet />
               <PostSwitchPhoneOtpGate />
               <AcceptTripPopup />
               <IncomingJobPopup />

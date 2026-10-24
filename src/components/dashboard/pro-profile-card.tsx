@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 import Image from "next/image";
-import { cn } from "@/lib/utils";
 
 interface ProProfileCardProps {
   displayName?: string | null;
@@ -25,47 +24,49 @@ export function ProProfileCard({
   const name = displayName?.trim() || "Repair Pro";
 
   return (
-    <div className="flex items-center justify-between rounded-2xl border border-ona-border bg-ona-surface px-4 py-3 shadow-sm">
+    <div className="flex items-center justify-between py-1">
       <div className="flex items-center gap-3 min-w-0">
-        <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full border border-ona-border bg-ona-field">
-          {avatarUrl ? (
-            <Image
-              src={avatarUrl}
-              alt={name}
-              fill
-              sizes="44px"
-              className="object-cover"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-[15px] font-bold text-ona-muted">
-              {name.charAt(0).toUpperCase()}
-            </div>
-          )}
+        <div className="relative h-11 w-11 shrink-0">
+          <div className="h-full w-full overflow-hidden rounded-full border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800">
+            {avatarUrl ? (
+              <Image
+                src={avatarUrl}
+                alt={name}
+                fill
+                sizes="44px"
+                className="object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-sm font-bold text-slate-600 dark:text-slate-300">
+                {name.charAt(0).toUpperCase()}
+              </div>
+            )}
+          </div>
+          {/* Active status indicator dot at top-right of avatar */}
+          <span className="absolute -top-0.5 right-0 h-3 w-3 rounded-full bg-[#15803D] ring-2 ring-white dark:ring-[#121316]" />
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="text-[12px] font-medium text-ona-muted leading-tight">
+          <p className="text-[15px] font-bold text-slate-900 dark:text-white leading-tight">
             {greeting}
           </p>
-          <p className="truncate text-[15px] font-bold text-ona-ink leading-snug">
+          <p className="truncate text-xs text-slate-500 dark:text-slate-400 font-normal leading-tight mt-0.5">
             {name}
           </p>
         </div>
       </div>
 
       <div
-        className={cn(
-          "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold transition-colors",
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border shadow-xs transition-colors ${
           proLive
-            ? "border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-            : "border border-ona-border bg-ona-field text-ona-muted",
-        )}
+            ? "border-emerald-200 dark:border-emerald-900/40 bg-white dark:bg-slate-900 text-[#10B981]"
+            : "border-red-200 dark:border-red-900/40 bg-white dark:bg-slate-900 text-[#EF4444]"
+        }`}
       >
         <span
-          className={cn(
-            "h-1.5 w-1.5 rounded-full",
-            proLive ? "bg-emerald-500" : "bg-ona-muted",
-          )}
+          className={`h-1.5 w-1.5 rounded-full ${
+            proLive ? "bg-[#10B981]" : "bg-[#EF4444]"
+          }`}
         />
         {proLive ? "Online" : "Offline"}
       </div>

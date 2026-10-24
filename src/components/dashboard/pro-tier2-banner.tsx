@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, ShieldCheck } from "lucide-react";
+import { ChevronRight, Scan, User } from "lucide-react";
 
 interface ProTier2BannerProps {
   onContinue: () => void;
@@ -9,29 +9,31 @@ interface ProTier2BannerProps {
 
 export function ProTier2Banner({
   onContinue,
-  tierNumber = 2,
+  tierNumber = 3,
 }: ProTier2BannerProps) {
   return (
     <button
       type="button"
       onClick={onContinue}
-      className="flex w-full items-center justify-between rounded-2xl border border-[#FF6B35]/25 bg-[#FF6B35]/[0.04] p-3.5 text-left transition hover:bg-[#FF6B35]/[0.08] cursor-pointer"
+      className="flex w-full items-center justify-between rounded-2xl border border-[#FDE5D6] dark:border-orange-900/40 bg-[#FFF4ED] dark:bg-orange-950/20 p-3.5 px-4 text-left transition hover:bg-[#FFEAE0] active:scale-[0.99] cursor-pointer"
     >
       <div className="flex items-center gap-3 min-w-0">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#FF6B35]/15 text-[#FF6B35]">
-          <ShieldCheck className="h-5 w-5" strokeWidth={2.2} />
+        <div className="relative flex h-8 w-8 shrink-0 items-center justify-center text-[#FF6B35]">
+          <Scan className="h-7 w-7 stroke-[1.8]" />
+          <User className="absolute h-3.5 w-3.5 stroke-[2.2]" />
         </div>
+
         <div className="min-w-0 flex-1">
-          <span className="inline-block rounded-md bg-[#FF6B35]/15 px-1.5 py-0.5 text-[10px] font-bold text-[#FF6B35] uppercase tracking-wide">
-            Tier {tierNumber}
-          </span>
-          <p className="mt-0.5 text-[14px] font-bold text-ona-ink leading-tight">
+          <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 tracking-wider uppercase">
+            TIER {tierNumber}
+          </p>
+          <p className="mt-0.5 text-sm font-semibold text-slate-900 dark:text-white leading-tight">
             Continue Verification
           </p>
         </div>
       </div>
 
-      <ChevronRight className="h-5 w-5 shrink-0 text-ona-muted" />
+      <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
     </button>
   );
 }
