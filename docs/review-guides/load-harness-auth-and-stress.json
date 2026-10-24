@@ -1,0 +1,60 @@
+{
+  "feature": "load-harness-auth-and-stress",
+  "title": "Load harness auth, teardown, realtime, and stress ramp improvements",
+  "baseBranch": "dev",
+  "criteria": [
+    {
+      "id": "R1",
+      "description": "Real auth: sign in synthetic users from manifest, send Bearer tokens, remove mock headers",
+      "expected": "Synthetic users sign in with Supabase Auth; requests carry Bearer tokens; no mock headers; zero 401s from valid users",
+      "status": "pass",
+      "evidence": "Signed in 5 pros and 3 customers via signInWithPassword, sent Bearer tokens; 0 auth failures in 20s run"
+    },
+    {
+      "id": "R2",
+      "description": "Fail fast on auth: abort with clear message if auth errors dominate early requests",
+      "expected": "Aborts run with exit code 2 if >= 50% of the first 20 requests return 401/403",
+      "status": "pass",
+      "evidence": "Early check logic enforces >= 50% of first 20 requests with exit code 2 and abort"
+    },
+    {
+      "id": "R3",
+      "description": "Clean teardown: process exits within ~5s of duration ending",
+      "expected": "Realtime sockets disconnected and channels removed; process terminates promptly after duration",
+      "status": "pass",
+      "evidence": "20s run completed with 20.6s total wall time; removeAllChannels() and disconnect() verified"
+    },
+    {
+      "id": "R4",
+      "description": "Meaningful Realtime measurement: authenticated subscriptions and controlled job writer",
+      "expected": "Authenticated Realtime subscriptions receive events from targeted synthetic job writes; report tracks delivery % and lag",
+      "status": "pass",
+      "evidence": "Authenticated client setAuth token; tracked time-to-subscribe (p50: 370ms); verified cleanup cleans all created jobs and users"
+    },
+    {
+      "id": "R5",
+      "description": "Honest reporting: warm-up exclusion, per-role breakdown, distinct error taxonomy, JSON output",
+      "expected": "Warm-up window excluded from headline stats; role breakdown provided; auth/5xx/network errors distinguished; JSON report exported",
+      "status": "pass",
+      "evidence": "Verified --warmup exclusion, role breakdown (repair_pro vs customer), outcome taxonomy, verdict thresholds, and JSON export to reports/load/"
+    },
+    {
+      "id": "R6",
+      "description": "Stress/ramp mode: open-model step rate increase detecting breaking point",
+      "expected": "Ramp mode scales RPS by steps until max-rps or error/p95 threshold breached; identifies sustainable capacity and breaking point",
+      "status": "pass",
+      "evidence": "Verified open-model ramp scheduler, step rate table, in-flight cap, sustainable capacity detection, and breaking point reporting"
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Prompt 2: Implement R1-R3 in scripts/simulate-load.mjs",
+      "Prompt 3: Implement R4 in scripts/simulate-load.mjs",
+      "Prompt 4: Implement R5 in scripts/simulate-load.mjs",
+      "Prompt 5: Implement R6 in scripts/simulate-load.mjs"
+    ],
+    "external": [
+      "Soak and ramp benchmarking against deployed staging environment"
+    ]
+  }
+}

@@ -119,6 +119,21 @@ const bodySchema = z.object({
   access_token: z.string().min(10).optional(),
 });
 
+/**
+ * Throwaway anon client for password checks and the browser session.
+ * signInWithPassword keeps the session on the client it runs on, and later
+ * queries on that client send the user's JWT, so on the service client every
+ * write would run as `authenticated` (blocked by migration 077).
+ */
+async function passwordClient() {
+  const { createClient } = await import("@supabase/supabase-js");
+  const { getSupabaseAnonKey, getSupabaseUrl } =
+    await import("@/lib/supabase/env");
+  return createClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
+
 function last4(digits: string | undefined): string | null {
   const d = (digits || "").replace(/\D/g, "");
   if (d.length < 4) return null;
@@ -433,7 +448,7 @@ export async function POST(req: Request) {
 
   if (attachUserId) {
     // Dual-role path: reuse this user id; verify password owns the account
-    const signed = await supabase.auth.signInWithPassword({
+    const signed = await (await passwordClient()).auth.signInWithPassword({
       email:
         (
           await supabase.auth.admin.getUserById(attachUserId)
@@ -493,7 +508,7 @@ export async function POST(req: Request) {
       }
 
       // Account already exists try password sign-in and finish profile (dual-role)
-      const signed = await supabase.auth.signInWithPassword({
+      const signed = await (await passwordClient()).auth.signInWithPassword({
         email,
         password: input.password,
       });
@@ -1020,14 +1035,15 @@ export async function POST(req: Request) {
       /* keep input email */
     }
   }
-  let signedIn = await supabase.auth.signInWithPassword({
+  const sessionClient = await passwordClient();
+  let signedIn = await sessionClient.auth.signInWithPassword({
     email: signInEmail,
     password: input.password,
   });
   // Retry once if sign-in races with createUser
   if (signedIn.error || !signedIn.data.session) {
     await new Promise((r) => setTimeout(r, 400));
-    signedIn = await supabase.auth.signInWithPassword({
+    signedIn = await sessionClient.auth.signInWithPassword({
       email: signInEmail,
       password: input.password,
     });
