@@ -41,13 +41,13 @@ export function Step0Password({
     confirmPassword === password;
 
   return (
-    <div className="flex flex-col flex-1 px-5 pt-4 pb-6 bg-white dark:bg-[#121316]">
+    <div className="flex flex-col flex-1 px-5 pt-4 pb-6 bg-ona-bg text-ona-ink">
       {/* Title */}
       <div className="mb-6">
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+        <h1 className="text-xl font-bold text-ona-ink tracking-tight">
           Set your password
         </h1>
-        <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+        <p className="mt-1.5 text-xs text-ona-muted leading-relaxed">
           Choose a strong password with at least 10 characters, a number, and a
           symbol.
         </p>
@@ -57,7 +57,7 @@ export function Step0Password({
       <div className="flex flex-col gap-5 flex-1">
         {/* Password */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <label className="text-xs font-semibold text-ona-ink">
             Password
           </label>
           <div className="relative">
@@ -71,12 +71,12 @@ export function Step0Password({
               onBlur={() => setTouched(true)}
               placeholder="Create a password"
               autoComplete="new-password"
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
+              className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 pr-10 text-sm text-ona-ink placeholder:text-ona-muted focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
             />
             <button
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ona-muted hover:text-ona-ink cursor-pointer"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? (
@@ -87,12 +87,12 @@ export function Step0Password({
             </button>
           </div>
           {pwdError && (
-            <p className="text-[12px] font-medium text-rose-500">{pwdError}</p>
+            <p className="text-[12px] font-medium text-ona-danger">{pwdError}</p>
           )}
         </div>
 
         {/* Requirements */}
-        <div className="rounded-xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/40 p-3.5">
+        <div className="rounded-xl border border-ona-border bg-ona-surface p-3.5">
           <OnaRuleList
             title="Password requirements"
             rules={passwordChecklist(password)}
@@ -101,7 +101,7 @@ export function Step0Password({
 
         {/* Confirm Password */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <label className="text-xs font-semibold text-ona-ink">
             Confirm password
           </label>
           <div className="relative">
@@ -115,12 +115,12 @@ export function Step0Password({
               onBlur={() => setConfirmTouched(true)}
               placeholder="Re-enter your password"
               autoComplete="new-password"
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 pr-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
+              className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 pr-10 text-sm text-ona-ink placeholder:text-ona-muted focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
             />
             <button
               type="button"
               onClick={() => setShowConfirm((prev) => !prev)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ona-muted hover:text-ona-ink cursor-pointer"
               aria-label={showConfirm ? "Hide password" : "Show password"}
             >
               {showConfirm ? (
@@ -131,7 +131,7 @@ export function Step0Password({
             </button>
           </div>
           {matchError && (
-            <p className="text-[12px] font-medium text-rose-500">
+            <p className="text-[12px] font-medium text-ona-danger">
               {matchError}
             </p>
           )}
@@ -144,10 +144,10 @@ export function Step0Password({
           type="button"
           onClick={onContinue}
           disabled={!isValid}
-          className={`w-full py-3.5 px-6 rounded-full font-semibold text-sm transition-all duration-200 shadow-sm ${
+          className={`w-full py-3.5 px-6 rounded-full font-semibold text-sm transition-all duration-200 shadow-sm cursor-pointer ${
             isValid
-              ? "bg-[#FF6B35] hover:bg-[#e85a26] text-white active:scale-[0.99]"
-              : "bg-[#FF6B35]/50 text-white cursor-not-allowed"
+              ? "bg-brand hover:opacity-90 text-white active:scale-[0.99]"
+              : "bg-brand/50 text-white cursor-not-allowed"
           }`}
         >
           Continue

@@ -108,7 +108,7 @@ export function ProSignupV2() {
   };
 
   return (
-    <div className="flex flex-col min-h-[100dvh] w-full max-w-md mx-auto bg-white dark:bg-[#121316]">
+    <div className="ona2 flex flex-col min-h-[100dvh] w-full max-w-md mx-auto bg-ona-bg text-ona-ink">
       {/* Header with back button, Ona. logo and progress bar on wizard steps */}
       <ProWizardHeader
         currentStep={step}

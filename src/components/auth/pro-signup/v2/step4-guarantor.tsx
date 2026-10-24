@@ -69,13 +69,13 @@ export function Step4Guarantor({
     guarantorRelationship.trim().length >= 2;
 
   return (
-    <div className="flex flex-col flex-1 px-5 pt-4 pb-6 bg-white dark:bg-[#121316]">
+    <div className="flex flex-col flex-1 px-5 pt-4 pb-6 bg-ona-bg text-ona-ink">
       {/* Title & Subtitle */}
       <div className="mb-5">
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+        <h1 className="text-xl font-bold text-ona-ink tracking-tight">
           Guarantor
         </h1>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        <p className="mt-1 text-xs text-ona-muted">
           Provide a guarantor reference. Must be at least name, phone, and your
           relationship.
         </p>
@@ -86,7 +86,7 @@ export function Step4Guarantor({
         {/* First & Last Name */}
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <label className="text-xs font-semibold text-ona-ink">
               First name
             </label>
             <input
@@ -94,12 +94,12 @@ export function Step4Guarantor({
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="e.g. Sarah"
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
+              className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <label className="text-xs font-semibold text-ona-ink">
               Last name
             </label>
             <input
@@ -107,21 +107,21 @@ export function Step4Guarantor({
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               placeholder="e.g. Jenkins"
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
+              className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
             />
           </div>
         </div>
 
         {/* Phone number */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <label className="text-xs font-semibold text-ona-ink">
             Phone number
           </label>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 shrink-0">
+            <div className="flex items-center gap-1.5 px-3 py-3 rounded-xl border border-ona-border bg-ona-field text-xs font-semibold text-ona-ink shrink-0">
               <span>🇳🇬</span>
               <span>+234</span>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              <ChevronDown className="w-3.5 h-3.5 text-ona-muted" />
             </div>
             <input
               type="tel"
@@ -133,14 +133,14 @@ export function Step4Guarantor({
                 )
               }
               placeholder="Enter phone number"
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
+              className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
             />
           </div>
         </div>
 
         {/* Occupation */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <label className="text-xs font-semibold text-ona-ink">
             Occupation
           </label>
           <input
@@ -148,13 +148,13 @@ export function Step4Guarantor({
             value={guarantorOccupation}
             onChange={(e) => setGuarantorOccupation(e.target.value)}
             placeholder="e.g. Business Owner"
-            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
+            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
           />
         </div>
 
         {/* Residential address */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <label className="text-xs font-semibold text-ona-ink">
             Residential address
           </label>
           <input
@@ -162,13 +162,13 @@ export function Step4Guarantor({
             value={guarantorAddress}
             onChange={(e) => setGuarantorAddress(e.target.value)}
             placeholder="e.g. 25 Awolowo Road, Ikeja"
-            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
+            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
           />
         </div>
 
         {/* Relationship */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <label className="text-xs font-semibold text-ona-ink">
             Relationship to you
           </label>
           <SheetSelect
@@ -178,8 +178,8 @@ export function Step4Guarantor({
             onChange={(v) => setGuarantorRelationship(v)}
             placeholder="Select relationship"
             options={RELATIONSHIPS.map((r) => ({ value: String(r), label: r }))}
-            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-3 text-sm text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-[#FF6B35]/20 focus:border-[#FF6B35]"
-            chevronClassName="right-3.5 text-slate-400"
+            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink font-medium focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+            chevronClassName="right-3.5 text-ona-muted"
           />
         </div>
       </div>
@@ -190,10 +190,10 @@ export function Step4Guarantor({
           type="button"
           onClick={onContinue}
           disabled={!isValid}
-          className={`w-full py-3.5 px-6 rounded-full font-semibold text-sm transition-all duration-200 shadow-sm ${
+          className={`w-full py-3.5 px-6 rounded-full font-semibold text-sm transition-all duration-200 shadow-sm cursor-pointer ${
             isValid
-              ? "bg-[#FF6B35] hover:bg-[#e85a26] text-white active:scale-[0.99]"
-              : "bg-[#FF6B35]/50 text-white cursor-not-allowed"
+              ? "bg-brand hover:opacity-90 text-white active:scale-[0.99]"
+              : "bg-brand/50 text-white cursor-not-allowed"
           }`}
         >
           Continue
