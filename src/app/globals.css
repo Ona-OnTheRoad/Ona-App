@@ -410,7 +410,7 @@ html[data-a11y-hc="1"] #ona-phone [class*="text-white/65"] {
   overflow: hidden;
   border-radius: 0;
   box-shadow: none;
-  touch-action: pan-x pan-y;
+  touch-action: pan-x pan-y pinch-zoom;
   margin-left: auto;
   margin-right: auto;
   flex-shrink: 0;

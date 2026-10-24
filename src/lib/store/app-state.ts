@@ -135,7 +135,10 @@ export interface AppState {
    * Each type is a separate account; one person may register both.
    * Requires live Supabase fails if the database write does not succeed.
    */
-  completeSignup: (profile: UserProfile) => Promise<string | null>;
+  completeSignup: (
+    profile: UserProfile,
+    opts?: { onErrorCode?: (code: string) => void },
+  ) => Promise<string | null>;
   /**
    * Post-signup NIN + BVN verification. Unlocks unlimited book/accept.
    * Returns error message or null on success.

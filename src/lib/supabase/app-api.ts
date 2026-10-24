@@ -89,7 +89,13 @@ export async function backendSignUp(input: {
   refCode?: string;
   /** Dual-role: bind new role to this session identity */
   access_token?: string;
-}): Promise<{ error: string | null; userId?: string; profile?: UserProfile }> {
+}): Promise<{
+  error: string | null;
+  /** Server error code (e.g. "password_required") when the API gave one. */
+  code?: string;
+  userId?: string;
+  profile?: UserProfile;
+}> {
   /**
    * Server-side signup (service role, email auto-confirmed).
    * Avoids Supabase browser signUp confirmation emails that hit:
@@ -213,7 +219,7 @@ export async function backendSignUp(input: {
       (res.status === 429
         ? "Too many sign-up attempts. Wait about a minute, then try once."
         : "Sign-up failed. Please try again.");
-    return { error: msg };
+    return { error: msg, code: json?.error?.code };
   }
 
   // Establish browser session so the app is logged in immediately
