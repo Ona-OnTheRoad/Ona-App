@@ -122,8 +122,8 @@ export function HelpAddressBar({
             className={cn(
               "om-help-where-input h-9 w-full border-0 border-b bg-transparent pl-5 pr-7 text-[13px] font-medium outline-none transition-colors",
               isLight
-                ? "border-slate-400/50 text-slate-900 placeholder:text-slate-400 focus:border-brand/60"
-                : "border-white/20 text-white placeholder:text-white/40 focus:border-brand/50",
+                ? "border-slate-400/50 text-slate-900 placeholder:text-slate-400"
+                : "border-white/20 text-white placeholder:text-white/40",
             )}
           />
           {suggestOpen && knownHits.length > 0 ? (

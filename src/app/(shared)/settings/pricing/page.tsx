@@ -119,7 +119,7 @@ export default function SettingsPricingPage() {
                   type="text"
                   inputMode="decimal"
                   placeholder="Leave empty for quote on request"
-                  className="w-full rounded-ona-ctl border border-ona-border bg-ona-field px-3.5 py-3 text-[13px] text-ona-ink outline-none transition-colors focus:border-brand placeholder:text-ona-muted"
+                  className="w-full rounded-ona-ctl border border-ona-border bg-ona-field px-3.5 py-3 text-[13px] text-ona-ink outline-none focus:outline-none placeholder:text-ona-muted"
                 />
               </div>
             ) : (
@@ -139,7 +139,7 @@ export default function SettingsPricingPage() {
                       }))
                     }
                     placeholder="Leave empty for quote on request"
-                    className="w-full rounded-ona-ctl border border-ona-border bg-ona-field px-3.5 py-3 text-[13px] text-ona-ink outline-none transition-colors focus:border-brand placeholder:text-ona-muted"
+                    className="w-full rounded-ona-ctl border border-ona-border bg-ona-field px-3.5 py-3 text-[13px] text-ona-ink outline-none focus:outline-none placeholder:text-ona-muted"
                   />
                 </div>
               ))

@@ -91,7 +91,7 @@ export function EnterVehicleSheet({
                 value: String(t),
                 label: t,
               }))}
-              className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink font-medium focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+              className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink font-medium outline-none focus:outline-none"
               chevronClassName="right-3.5 text-ona-muted"
             />
           </div>
@@ -106,7 +106,7 @@ export function EnterVehicleSheet({
               value={make}
               onChange={(e) => setMake(e.target.value)}
               placeholder="Search make (e.g. Toyota)"
-              className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+              className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted outline-none focus:outline-none"
             />
           </div>
 
@@ -121,7 +121,7 @@ export function EnterVehicleSheet({
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
                 placeholder="e.g. Corolla"
-                className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+                className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted outline-none focus:outline-none"
               />
             </div>
 
@@ -134,7 +134,7 @@ export function EnterVehicleSheet({
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
                 placeholder="e.g. 2018"
-                className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+                className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted outline-none focus:outline-none"
               />
             </div>
           </div>

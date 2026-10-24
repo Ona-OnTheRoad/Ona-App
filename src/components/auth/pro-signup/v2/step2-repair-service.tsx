@@ -69,7 +69,7 @@ export function Step2RepairService({
           <button
             type="button"
             onClick={() => setShowTradeSheet(true)}
-            className="w-full flex items-center justify-between bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-left focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand cursor-pointer"
+            className="w-full flex items-center justify-between bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-left outline-none focus:outline-none cursor-pointer"
           >
             <span
               className={`text-sm ${
@@ -93,7 +93,7 @@ export function Step2RepairService({
             type="button"
             disabled={!skill}
             onClick={() => setShowSpecialtySheet(true)}
-            className="w-full flex items-center justify-between bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-left disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand cursor-pointer"
+            className="w-full flex items-center justify-between bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-left disabled:opacity-60 outline-none focus:outline-none cursor-pointer"
           >
             <span
               className={`text-sm ${
@@ -118,7 +118,7 @@ export function Step2RepairService({
             value={businessName}
             onChange={(e) => setBusinessName(e.target.value)}
             placeholder="e.g. Yaba, Lekki"
-            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted outline-none focus:outline-none"
           />
         </div>
 
@@ -137,7 +137,7 @@ export function Step2RepairService({
               value: String(y),
               label: experienceLabel(y),
             }))}
-            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink font-medium focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink font-medium outline-none focus:outline-none"
             chevronClassName="right-3.5 text-ona-muted"
           />
         </div>
@@ -152,7 +152,7 @@ export function Step2RepairService({
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             placeholder="Write text here …"
-            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted resize-none focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted resize-none outline-none focus:outline-none"
           />
         </div>
       </div>

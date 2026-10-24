@@ -79,7 +79,7 @@ export function Step1BaseLocation({
             onChange={(v) => setCity(v)}
             placeholder="Select a city"
             options={CITIES.map((c) => ({ value: String(c), label: c }))}
-            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink font-medium focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink font-medium outline-none focus:outline-none"
             chevronClassName="right-3.5 text-ona-muted"
           />
         </div>
@@ -95,7 +95,7 @@ export function Step1BaseLocation({
               value={area}
               onChange={(e) => setArea(e.target.value)}
               placeholder="e.g. Yaba, Lekki"
-              className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+              className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted outline-none focus:outline-none"
             />
           </div>
         </div>
@@ -124,7 +124,7 @@ export function Step1BaseLocation({
               <Slider.Range className="absolute bg-brand rounded-full h-full" />
             </Slider.Track>
             <Slider.Thumb
-              className="block w-6 h-6 bg-white dark:bg-ona-surface shadow-md border border-ona-border rounded-full focus:outline-none focus:ring-2 focus:ring-brand/30 transition-transform active:scale-110 cursor-pointer"
+              className="block w-6 h-6 bg-white dark:bg-ona-surface shadow-md border border-ona-border rounded-full outline-none focus:outline-none transition-transform active:scale-110 cursor-pointer"
               aria-label="Radius value"
             />
           </Slider.Root>

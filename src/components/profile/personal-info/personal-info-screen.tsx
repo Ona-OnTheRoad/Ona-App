@@ -60,7 +60,16 @@ export function PersonalInfoScreen({ isLight: propIsLight }: PersonalInfoScreenP
         )}
 
         {isPro ? (
-          <ProPersonalInfoCard userProfile={userProfile} isLight={isLight} />
+          <ProPersonalInfoCard
+            userProfile={userProfile}
+            isLight={isLight}
+            accessToken={accessToken}
+            onAvatarUpdated={(url) => {
+              updateUserProfile({ avatarUrl: url });
+              p.setMsg("Profile photo updated.");
+            }}
+            onError={p.setErr}
+          />
         ) : (
           <>
             <section className="mt-2">

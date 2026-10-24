@@ -71,7 +71,7 @@ export function Step0Password({
               onBlur={() => setTouched(true)}
               placeholder="Create a password"
               autoComplete="new-password"
-              className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 pr-10 text-sm text-ona-ink placeholder:text-ona-muted focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+              className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 pr-10 text-sm text-ona-ink placeholder:text-ona-muted outline-none focus:outline-none"
             />
             <button
               type="button"
@@ -115,7 +115,7 @@ export function Step0Password({
               onBlur={() => setConfirmTouched(true)}
               placeholder="Re-enter your password"
               autoComplete="new-password"
-              className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 pr-10 text-sm text-ona-ink placeholder:text-ona-muted focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+              className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 pr-10 text-sm text-ona-ink placeholder:text-ona-muted outline-none focus:outline-none"
             />
             <button
               type="button"

@@ -94,7 +94,7 @@ export function Step4Guarantor({
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="e.g. Sarah"
-              className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+              className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted outline-none focus:outline-none"
             />
           </div>
 
@@ -107,7 +107,7 @@ export function Step4Guarantor({
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               placeholder="e.g. Jenkins"
-              className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+              className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted outline-none focus:outline-none"
             />
           </div>
         </div>
@@ -133,7 +133,7 @@ export function Step4Guarantor({
                 )
               }
               placeholder="Enter phone number"
-              className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+              className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted outline-none focus:outline-none"
             />
           </div>
         </div>
@@ -148,7 +148,7 @@ export function Step4Guarantor({
             value={guarantorOccupation}
             onChange={(e) => setGuarantorOccupation(e.target.value)}
             placeholder="e.g. Business Owner"
-            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted outline-none focus:outline-none"
           />
         </div>
 
@@ -162,7 +162,7 @@ export function Step4Guarantor({
             value={guarantorAddress}
             onChange={(e) => setGuarantorAddress(e.target.value)}
             placeholder="e.g. 25 Awolowo Road, Ikeja"
-            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted outline-none focus:outline-none"
           />
         </div>
 
@@ -178,7 +178,7 @@ export function Step4Guarantor({
             onChange={(v) => setGuarantorRelationship(v)}
             placeholder="Select relationship"
             options={RELATIONSHIPS.map((r) => ({ value: String(r), label: r }))}
-            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink font-medium focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink font-medium outline-none focus:outline-none"
             chevronClassName="right-3.5 text-ona-muted"
           />
         </div>

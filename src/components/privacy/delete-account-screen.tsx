@@ -256,7 +256,7 @@ export function DeleteAccountScreen() {
                   }}
                   placeholder={confirmWord}
                   autoComplete="off"
-                  className="h-12 w-full rounded-ona-ctl border border-ona-border bg-ona-field px-4 text-[14px] font-bold tracking-wider text-ona-ink placeholder:text-ona-muted/40 placeholder:font-normal focus:border-[#C70036] focus:ring-1 focus:ring-[#C70036] outline-none transition-all"
+                  className="h-12 w-full rounded-ona-ctl border border-ona-border bg-ona-field px-4 text-[14px] font-bold tracking-wider text-ona-ink placeholder:text-ona-muted/40 placeholder:font-normal outline-none focus:outline-none transition-all"
                 />
                 {isConfirmed && (
                   <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-emerald-500">

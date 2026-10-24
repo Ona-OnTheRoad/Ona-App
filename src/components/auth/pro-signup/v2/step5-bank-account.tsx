@@ -82,7 +82,7 @@ export function Step5BankAccount({
               value: `${b.code}::${b.name}`,
               label: b.name,
             }))}
-            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink font-medium focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink font-medium outline-none focus:outline-none"
             chevronClassName="right-3.5 text-ona-muted"
           />
           {bankCode && (
@@ -104,7 +104,7 @@ export function Step5BankAccount({
             value={bankAccountNumber}
             onChange={(e) => onAccountNumberChange(e.target.value)}
             placeholder="0123456789"
-            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted tracking-wider font-mono focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted tracking-wider font-mono outline-none focus:outline-none"
           />
         </div>
 

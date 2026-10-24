@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import Image from "next/image";
-import { AlertCircle, ChevronRight, Loader2 } from "lucide-react";
+import { AlertCircle, Camera, ChevronRight, Loader2 } from "lucide-react";
+import { AvatarFileInput } from "@/components/profile/shared/avatar-picker";
 import type { UserProfile } from "@/lib/types";
 import { avatarInitials, DEFAULT_VENDOR_PHOTO } from "@/lib/brand";
 import { formatProSkill } from "@/lib/pro-service-id";
@@ -12,9 +13,18 @@ import { useApp } from "@/lib/store";
 interface ProPersonalInfoCardProps {
   userProfile: UserProfile;
   isLight?: boolean;
+  accessToken: string;
+  onAvatarUpdated: (url: string) => void;
+  onError: (msg: string) => void;
 }
 
-export function ProPersonalInfoCard({ userProfile }: ProPersonalInfoCardProps) {
+export function ProPersonalInfoCard({
+  userProfile,
+  accessToken,
+  onAvatarUpdated,
+  onError,
+}: ProPersonalInfoCardProps) {
+  const fileRef = useRef<HTMLInputElement>(null);
   const { proLive, setProLive, proServices } = useApp();
   const avatarUrl = userProfile.avatarUrl || DEFAULT_VENDOR_PHOTO;
   const name = userProfile.fullName || "Repair Pro";
@@ -61,6 +71,21 @@ export function ProPersonalInfoCard({ userProfile }: ProPersonalInfoCardProps) {
             </div>
             {/* Small yellow badge */}
             <span className="absolute -bottom-0.5 -left-0.5 h-3.5 w-3.5 rounded-full bg-amber-400 ring-2 ring-ona-bg" />
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="absolute -bottom-1 -right-1 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-brand text-white shadow-sm ring-2 ring-ona-bg transition-all hover:opacity-90 active:scale-95"
+              aria-label="Change profile photo"
+              title="Change photo"
+            >
+              <Camera className="h-3.5 w-3.5" />
+            </button>
+            <AvatarFileInput
+              fileRef={fileRef}
+              accessToken={accessToken}
+              onUrl={onAvatarUpdated}
+              onError={onError}
+            />
           </div>
 
           <div className="min-w-0 flex-1">
