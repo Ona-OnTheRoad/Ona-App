@@ -1,44 +1,44 @@
 "use client";
 
-import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { useEffect, useState } from "react";
-import { PageHeader } from "@/components/layout/page-header";
-import {
-  SettingsComingSoon,
-  SettingsField,
-  SettingsSaveBar,
-  settingsInputClass,
-} from "@/components/settings/settings-ui";
-import { MAX_RADIUS_KM } from "@/lib/matching";
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
+import * as Slider from "@radix-ui/react-slider";
+import { useFeedbackToast } from "@/lib/use-feedback-toast";
+import { navigateBack } from "@/lib/navigation";
 import { useApp } from "@/lib/store";
-import { cn } from "@/lib/utils";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+const MAX_RADIUS = 5;
 
 export default function SettingsAvailabilityPage() {
+  const router = useRouter();
   const {
-    theme,
     accountType,
     userProfile,
     updateUserProfile,
     setProLive,
     proLive,
   } = useApp();
-  const isLight = theme === "light";
-  const [radius, setRadius] = useState(8);
+
+  const [radius, setRadius] = useState(2);
   const [vacation, setVacation] = useState(false);
-  const [days, setDays] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(DAYS.map((d) => [d, true])),
-  );
+  const [days, setDays] = useState<Record<string, boolean>>(() => ({
+    Mon: true,
+    Tue: false,
+    Wed: false,
+    Thu: false,
+    Fri: false,
+    Sat: false,
+    Sun: false,
+  }));
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   useFeedbackToast(msg ?? "", err ?? "");
 
   useEffect(() => {
     if (userProfile?.serviceRadiusKm != null) {
-      setRadius(
-        Math.min(MAX_RADIUS_KM, Math.max(1, userProfile.serviceRadiusKm)),
-      );
+      setRadius(Math.min(MAX_RADIUS, Math.max(1, userProfile.serviceRadiusKm)));
     }
     try {
       const raw = localStorage.getItem(
@@ -53,23 +53,9 @@ export default function SettingsAvailabilityPage() {
         if (typeof p.vacation === "boolean") setVacation(p.vacation);
       }
     } catch {
-      /* */
+      /* ignore */
     }
   }, [userProfile]);
-
-  if (accountType !== "professional") {
-    return (
-      <div
-        className={cn(
-          "flex h-full flex-col",
-          isLight ? "bg-[#c8c9cd]" : "bg-black",
-        )}
-      >
-        <PageHeader title="Availability" backHref="/settings" />
-        <p className="px-4 text-[13px]">Repair Pros only.</p>
-      </div>
-    );
-  }
 
   const save = () => {
     setErr(null);
@@ -87,7 +73,7 @@ export default function SettingsAvailabilityPage() {
         JSON.stringify({ days, vacation }),
       );
     } catch {
-      /* */
+      /* ignore */
     }
     if (vacation && proLive) {
       void setProLive(false);
@@ -99,122 +85,147 @@ export default function SettingsAvailabilityPage() {
     );
   };
 
-  return (
-    <div
-      className={cn(
-        "flex h-full flex-col",
-        isLight ? "bg-[#c8c9cd]" : "bg-black",
-      )}
-    >
-      <PageHeader
-        title="Availability & scheduling"
-        subtitle="Hours, time off, coverage"
-        backHref="/settings"
-      />
-      <div className="flex-1 space-y-3 overflow-y-auto px-3 pb-6 scrollbar-hide">
-        <div
-          className={cn(
-            "flex items-center justify-between rounded-md px-3 py-3",
-            "bg-transparent",
-          )}
-        >
-          <div>
-            <p
-              className={cn(
-                "text-[13px] font-bold",
-                isLight ? "text-slate-900" : "text-white",
-              )}
-            >
-              Vacation mode
-            </p>
-            <p
-              className={cn(
-                "text-[11px] font-medium",
-                isLight ? "text-slate-600" : "text-white/60",
-              )}
-            >
-              Pauses new job requests (turns Live off).
-            </p>
-          </div>
+  if (accountType !== "professional") {
+    return (
+      <div className="ona2 flex h-full flex-col bg-ona-bg text-ona-ink">
+        <header className="flex items-center gap-3 px-4 py-3">
           <button
             type="button"
-            role="switch"
-            aria-label="Vacation mode"
-            aria-checked={vacation}
-            onClick={() => setVacation((v) => !v)}
-            className={cn(
-              "h-7 w-12 shrink-0 rounded-full border-0",
-              vacation
-                ? "bg-[#FF6B35]"
-                : isLight
-                  ? "bg-black/20"
-                  : "bg-white/20",
-            )}
+            onClick={() => navigateBack(router, "/settings/sections/availability", accountType)}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-ona-ink"
+            aria-label="Back"
           >
-            <span
-              className={cn(
-                "block h-5 w-5 rounded-full bg-white transition-transform",
-                vacation ? "translate-x-6" : "translate-x-1",
-              )}
-            />
+            <ArrowLeft className="h-5 w-5" />
           </button>
-        </div>
+          <h1 className="text-[20px] font-semibold tracking-tight">Hours & vacation</h1>
+        </header>
+        <p className="px-4 text-[13px] text-ona-muted">Repair Pros only.</p>
+      </div>
+    );
+  }
 
-        <div className={cn("rounded-md px-3 py-3", "bg-transparent")}>
-          <p
-            className={cn(
-              "mb-2 text-[13px] font-bold",
-              isLight ? "text-slate-900" : "text-white",
-            )}
-          >
-            Available days
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {DAYS.map((d) => (
-              <button
-                key={d}
-                type="button"
-                onClick={() => setDays((prev) => ({ ...prev, [d]: !prev[d] }))}
-                className={cn(
-                  "rounded-md border-0 px-2.5 py-1.5 text-[11px] font-bold",
-                  days[d]
-                    ? "bg-[#FF6B35] text-white"
-                    : isLight
-                      ? "bg-black/10 text-slate-700"
-                      : "bg-white/10 text-white/70",
-                )}
-              >
-                {d}
-              </button>
-            ))}
+  return (
+    <div className="ona2 flex h-full min-h-0 flex-col overflow-y-auto scrollbar-hide bg-ona-bg text-ona-ink">
+      <div className="w-full max-w-lg mx-auto flex min-h-full flex-col justify-between px-4 pb-8 pt-3">
+        <div>
+          {/* Back button */}
+          <div className="flex items-center mb-3">
+            <button
+              type="button"
+              onClick={() => navigateBack(router, "/settings/sections/availability", "professional")}
+              className="-ml-2 flex h-10 w-10 items-center justify-center rounded-full text-ona-ink hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+              aria-label="Back to Availability & Scheduling"
+            >
+              <ArrowLeft className="h-5 w-5" strokeWidth={2.4} />
+            </button>
           </div>
-          <SettingsComingSoon
-            isLight={isLight}
-            title="Hourly time blocks (e.g. 9:00-17:00)"
-          />
+
+          {/* Heading */}
+          <h1 className="text-[20px] font-semibold tracking-tight text-ona-ink">
+            Hours & vacation
+          </h1>
+
+          <div className="mt-6 space-y-6">
+            {/* Vacation Mode Card */}
+            <div className="rounded-ona-card border border-ona-border bg-ona-surface p-4 flex items-center justify-between shadow-2xs">
+              <div>
+                <p className="text-[13px] font-bold text-ona-ink">
+                  Vacation mode
+                </p>
+                <p className="text-[11px] text-ona-muted mt-0.5">
+                  Pauses new job requests (turns Live off).
+                </p>
+              </div>
+
+              <button
+                type="button"
+                role="switch"
+                aria-label="Vacation mode"
+                aria-checked={vacation}
+                onClick={() => setVacation((v) => !v)}
+                className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  vacation ? "bg-[#ea580c]" : "bg-ona-field-strong border border-ona-border"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                    vacation ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Available Days */}
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-ona-muted mb-2.5">
+                AVAILABLE DAYS
+              </p>
+
+              <div className="flex items-center justify-between gap-1.5">
+                {DAYS.map((d) => {
+                  const selected = Boolean(days[d]);
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setDays((prev) => ({ ...prev, [d]: !prev[d] }))}
+                      className={`flex h-10 w-10 items-center justify-center rounded-full text-[12px] font-semibold transition-all cursor-pointer ${
+                        selected
+                          ? "border border-[#ea580c] bg-ona-brand-soft text-[#ea580c]"
+                          : "border border-ona-border bg-ona-field text-ona-ink hover:border-brand/40"
+                      }`}
+                    >
+                      {d}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <p className="text-[11px] text-ona-muted text-center mt-3">
+                Hourly time blocks (e.g. 9:00-17:00) coming soon
+              </p>
+            </div>
+
+            {/* Coverage Radius Card */}
+            <div className="rounded-ona-card border border-ona-border bg-ona-surface p-4 shadow-2xs">
+              <div className="flex items-center justify-between mb-3.5">
+                <span className="text-[13px] font-semibold text-ona-ink">
+                  Coverage radius <span className="text-ona-muted font-normal">(max {MAX_RADIUS})</span>
+                </span>
+                <span className="text-[13px] font-bold text-ona-ink">
+                  {radius} km
+                </span>
+              </div>
+
+              <Slider.Root
+                className="relative flex items-center select-none touch-none w-full h-5 cursor-pointer"
+                value={[radius]}
+                onValueChange={(val) => setRadius(val[0])}
+                min={1}
+                max={MAX_RADIUS}
+                step={0.5}
+              >
+                <Slider.Track className="bg-ona-field relative grow rounded-full h-2 border border-ona-border/50">
+                  <Slider.Range className="absolute bg-[#ea580c] rounded-full h-full" />
+                </Slider.Track>
+                <Slider.Thumb
+                  className="block w-5 h-5 bg-white border border-black/10 shadow-md rounded-full hover:scale-105 focus:outline-none transition-transform"
+                  aria-label="Coverage Radius"
+                />
+              </Slider.Root>
+            </div>
+          </div>
         </div>
 
-        <div className={cn("rounded-md px-3 py-3", "bg-transparent")}>
-          <SettingsField
-            label={`Coverage radius · ${radius} km (max ${MAX_RADIUS_KM})`}
-            isLight={isLight}
+        {/* Bottom CTA Button */}
+        <div className="pt-8 pb-4">
+          <button
+            type="button"
+            onClick={save}
+            className="flex h-12 w-full items-center justify-center rounded-ona-card bg-[#ea580c] hover:bg-[#d94e08] active:scale-[0.99] font-bold text-sm text-white shadow-xs transition cursor-pointer"
           >
-            <input
-              type="range"
-              min={1}
-              max={MAX_RADIUS_KM}
-              step={0.5}
-              value={radius}
-              onChange={(e) => setRadius(Number(e.target.value))}
-              className="radius-slider w-full"
-              style={
-                {
-                  ["--pct" as string]: `${(radius / MAX_RADIUS_KM) * 100}%`,
-                } as React.CSSProperties
-              }
-            />
-          </SettingsField>
-          <SettingsSaveBar onSave={save} />
+            Save changes
+          </button>
         </div>
       </div>
     </div>

@@ -1,59 +1,68 @@
 "use client";
 
-import { CalendarClock, MapPin } from "lucide-react";
-import { PageHeader } from "@/components/layout/page-header";
-import { SettingsRow } from "@/components/settings/settings-ui";
-import { useT } from "@/lib/i18n";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, ChevronRight } from "lucide-react";
+import { navigateBack } from "@/lib/navigation";
 import { useApp } from "@/lib/store";
-import { cn } from "@/lib/utils";
 
 export default function SettingsAvailabilitySectionPage() {
-  const { theme, accountType } = useApp();
-  const t = useT();
-  const isLight = theme === "light";
-  const isPro = accountType === "professional";
+  const router = useRouter();
+  const { accountType } = useApp();
 
   return (
-    <div
-      className={cn(
-        "flex h-full flex-col",
-        isLight ? "bg-[#c8c9cd]" : "bg-black",
-      )}
-    >
-      <PageHeader
-        title={t("settings.hub.availability")}
-        subtitle={t("settings.hub.availabilityDetail")}
-        backHref="/settings"
-      />
-      <div className="flex-1 space-y-0.5 overflow-y-auto px-3 pb-8 scrollbar-hide">
-        {isPro ? (
-          <>
-            <SettingsRow
-              first
-              isLight={isLight}
-              icon={CalendarClock}
-              label="Hours & vacation"
-              detail="Schedule, time off, Live pause"
-              href="/settings/availability"
-            />
-            <SettingsRow
-              isLight={isLight}
-              icon={MapPin}
-              label="Service area"
-              detail="Coverage radius & location"
-              href="/settings/location"
-            />
-          </>
-        ) : (
-          <SettingsRow
-            first
-            isLight={isLight}
-            icon={MapPin}
-            label="Addresses & location"
-            detail="Home, Work, service pin"
-            href="/settings/location"
-          />
-        )}
+    <div className="ona2 flex h-full min-h-0 flex-col overflow-y-auto scrollbar-hide bg-ona-bg text-ona-ink">
+      <div className="w-full max-w-lg mx-auto px-4 pb-20 pt-3">
+        {/* Back arrow */}
+        <div className="flex items-center mb-3">
+          <button
+            type="button"
+            onClick={() => navigateBack(router, "/profile", accountType)}
+            className="-ml-2 flex h-10 w-10 items-center justify-center rounded-full text-ona-ink hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            aria-label="Back to Profile"
+          >
+            <ArrowLeft className="h-5 w-5" strokeWidth={2.4} />
+          </button>
+        </div>
+
+        {/* Screen Title */}
+        <h1 className="text-[20px] font-semibold tracking-tight text-ona-ink mb-6">
+          Availability & Scheduling
+        </h1>
+
+        {/* Card with 2 Rows */}
+        <div className="rounded-ona-card border border-ona-border bg-ona-surface divide-y divide-ona-border overflow-hidden shadow-2xs">
+          {/* Row 1: Hours & vacation */}
+          <div
+            onClick={() => router.push("/settings/availability")}
+            className="p-4 flex items-center justify-between cursor-pointer hover:bg-black/1 dark:hover:bg-white/2 transition-colors"
+          >
+            <div>
+              <p className="text-[13px] font-bold text-ona-ink">
+                Hours & vacation
+              </p>
+              <p className="text-[11px] text-ona-muted mt-0.5">
+                Schedule, time off, Live pause
+              </p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-ona-muted" strokeWidth={2} />
+          </div>
+
+          {/* Row 2: Service area */}
+          <div
+            onClick={() => router.push("/settings/location")}
+            className="p-4 flex items-center justify-between cursor-pointer hover:bg-black/1 dark:hover:bg-white/2 transition-colors"
+          >
+            <div>
+              <p className="text-[13px] font-bold text-ona-ink">
+                Service area
+              </p>
+              <p className="text-[11px] text-ona-muted mt-0.5">
+                Coverage radius & location
+              </p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-ona-muted" strokeWidth={2} />
+          </div>
+        </div>
       </div>
     </div>
   );
