@@ -88,7 +88,7 @@ export function BankDetailsFields({
         </span>
         <input
           className={cn(
-            "mt-1 h-11 w-full rounded-lg border-0 px-3 text-[13px] font-semibold outline-none",
+            "mt-1 h-11 w-full rounded-lg border-0 px-3 text-[13px] font-semibold outline-none focus:outline-none focus:ring-0",
             field,
           )}
           value={bankAccountNumber}
@@ -110,7 +110,7 @@ export function BankDetailsFields({
         </span>
         <input
           className={cn(
-            "mt-1 h-11 w-full rounded-lg border-0 px-3 text-[13px] font-semibold outline-none",
+            "mt-1 h-11 w-full rounded-lg border-0 px-3 text-[13px] font-semibold outline-none focus:outline-none focus:ring-0",
             field,
             resolving && "opacity-80",
           )}
