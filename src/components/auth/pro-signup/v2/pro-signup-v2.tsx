@@ -76,16 +76,17 @@ export function ProSignupV2() {
   const handleFinalSubmit = async (bankDetails?: BankDetailsValue) => {
     try {
       setBusy(true);
-      if (bankDetails?.bankCode) {
-        // Save bank details into profile vault or state
-        if (userProfile) {
-          userProfile.bankCode = bankDetails.bankCode;
-          userProfile.bankName = bankDetails.bankName;
-          userProfile.bankAccountNumber = bankDetails.bankAccountNumber;
-          userProfile.bankAccountName = bankDetails.bankAccountName;
-        }
+      if (userProfile && bankDetails?.bankCode) {
+        const { saveProfileToVault } = await import("@/lib/profiles-vault");
+        saveProfileToVault({
+          ...userProfile,
+          bankCode: bankDetails.bankCode,
+          bankName: bankDetails.bankName,
+          bankAccountNumber: bankDetails.bankAccountNumber,
+          bankAccountName: bankDetails.bankAccountName,
+        });
       }
-      await finish();
+      await finish(bankDetails);
       setDone(true);
     } catch (e) {
       setFormError(e instanceof Error ? e.message : "Failed to create account");
