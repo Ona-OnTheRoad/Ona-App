@@ -41,7 +41,7 @@ export function Step0Password({
     confirmPassword === password;
 
   return (
-    <div className="flex flex-col flex-1 px-5 pt-4 pb-6 bg-ona-bg text-ona-ink">
+    <div className="flex flex-col flex-1 px-5 pt-4 pb-10 bg-ona-bg text-ona-ink">
       {/* Title */}
       <div className="mb-6">
         <h1 className="text-xl font-bold text-ona-ink tracking-tight">
