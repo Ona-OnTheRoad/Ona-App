@@ -46,7 +46,7 @@ export function BankAccountFields({
             const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
             onAccountNumberChange(digits);
           }}
-          className="h-12 w-full rounded-ona-ctl border border-ona-border bg-ona-field px-4 text-[13px] font-medium text-ona-ink outline-none transition-colors focus:border-ona-ink"
+          className="h-12 w-full rounded-ona-ctl border border-ona-border bg-ona-field px-4 text-[13px] font-medium text-ona-ink outline-none focus:outline-none focus:ring-0 transition-colors focus:border-ona-ink"
         />
       </div>
 
@@ -75,7 +75,7 @@ export function BankAccountFields({
               : "Select bank + enter number to auto-fill"
           }
           readOnly={resolving}
-          className={`h-12 w-full rounded-ona-ctl border border-ona-border bg-ona-field px-4 text-[13px] font-medium text-ona-ink outline-none transition-colors focus:border-ona-ink ${
+          className={`h-12 w-full rounded-ona-ctl border border-ona-border bg-ona-field px-4 text-[13px] font-medium text-ona-ink outline-none focus:outline-none focus:ring-0 transition-colors focus:border-ona-ink ${
             resolving ? "opacity-75" : ""
           }`}
         />

@@ -76,31 +76,54 @@
     background-color: var(--o-bg);
     color: var(--o-ink);
   }
+}
 
-  /* Remove all colored focus rings, outlines, and box shadows on inputs, textareas, and controls */
-  input,
-  textarea,
-  select,
-  [role="combobox"],
-  [role="slider"] {
-    outline: none !important;
-  }
+/* Universal removal of all colored focus rings, outlines, and box shadows on all inputs, textareas, and controls across the app */
+input,
+textarea,
+select,
+[contenteditable="true"],
+[role="combobox"],
+[role="searchbox"],
+[role="slider"],
+[role="spinbutton"] {
+  outline: none !important;
+  outline-width: 0 !important;
+  outline-style: none !important;
+  outline-color: transparent !important;
+  outline-offset: 0 !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
 
-  input:focus,
-  input:focus-visible,
-  textarea:focus,
-  textarea:focus-visible,
-  select:focus,
-  select:focus-visible,
-  [role="combobox"]:focus,
-  [role="combobox"]:focus-visible,
-  [role="slider"]:focus,
-  [role="slider"]:focus-visible {
-    outline: none !important;
-    box-shadow: none !important;
-    --tw-ring-offset-shadow: 0 0 #0000 !important;
-    --tw-ring-shadow: 0 0 #0000 !important;
-  }
+input:focus,
+input:focus-visible,
+input:focus-within,
+textarea:focus,
+textarea:focus-visible,
+textarea:focus-within,
+select:focus,
+select:focus-visible,
+select:focus-within,
+[contenteditable="true"]:focus,
+[contenteditable="true"]:focus-visible,
+[role="combobox"]:focus,
+[role="combobox"]:focus-visible,
+[role="searchbox"]:focus,
+[role="searchbox"]:focus-visible,
+[role="slider"]:focus,
+[role="slider"]:focus-visible,
+[role="spinbutton"]:focus,
+[role="spinbutton"]:focus-visible {
+  outline: none !important;
+  outline-width: 0 !important;
+  outline-style: none !important;
+  outline-color: transparent !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-color: transparent !important;
 }
 
 [data-theme="dark"] .ona2,
@@ -273,12 +296,27 @@ html .rfd-sheet {
 
 .ona2 .o-focus:focus-visible,
 .ona2 button:focus-visible,
-.ona2 a:focus-visible,
+.ona2 a:focus-visible {
+  outline: 2px solid var(--o-brand);
+  outline-offset: 2px;
+}
+
+.ona2 input,
+.ona2 select,
+.ona2 textarea,
+.ona2 input:focus,
+.ona2 select:focus,
+.ona2 textarea:focus,
 .ona2 input:focus-visible,
 .ona2 select:focus-visible,
 .ona2 textarea:focus-visible {
-  outline: 2px solid var(--o-brand);
-  outline-offset: 2px;
+  outline: none !important;
+  outline-width: 0 !important;
+  outline-style: none !important;
+  outline-color: transparent !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
 }
 
 /* Native <select>/<input> carry no stock chrome inside redesigned screens */
@@ -747,18 +785,17 @@ body {
   filter: brightness(1.05);
 }
 
-/* Search: no border at rest; hairline orange ring only on focus */
+/* Search: no border at rest; no colored ring on focus */
 .search-metal-orange {
   border: none;
-  box-shadow: none;
-  outline: none;
+  box-shadow: none !important;
+  outline: none !important;
   transition: box-shadow 0.15s ease;
 }
 .search-metal-orange:focus {
   border: none;
-  outline: none;
-  /* ~0.5px hairline — thinner than 1px solid */
-  box-shadow: 0 0 0 0.5px #ff6b35;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .card-surface {
@@ -1766,9 +1803,37 @@ button.om-cta-dark-gray:disabled,
   [role="switch"],
   [role="tab"],
   [role="menuitem"],
-  [tabindex]:not([tabindex="-1"])
+  [tabindex]:not([tabindex="-1"]):not(input):not(textarea):not(select)
 ):focus-visible {
   outline: 2px solid #ffffff;
   outline-offset: 0;
   box-shadow: 0 0 0 4px #ff6b35;
+}
+
+:where(input, textarea, select, [contenteditable="true"]):focus,
+:where(input, textarea, select, [contenteditable="true"]):focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* No zoom while using the app.
+   iOS Safari zooms the page when a focused field's font-size is under 16px,
+   so every text control is 16px on touch screens (it never reads as "big":
+   the design sizes stay for desktop). Double-tap zoom is off too. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+      [type="file"]
+    ):not([type="button"]):not([type="submit"]),
+  textarea,
+  select,
+  [contenteditable="true"] {
+    /* Follows the Text size setting (html font-size %) but never below 16px,
+       the iOS focus-zoom threshold. */
+    font-size: max(16px, 1rem) !important;
+  }
 }

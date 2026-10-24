@@ -36,7 +36,7 @@ const Slider = React.forwardRef<
           ? getAriaValueText(props.value[0])
           : undefined
       }
-      className="block h-6 w-6 rounded-full border border-ona-border bg-white shadow-md outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ona-brand disabled:pointer-events-none disabled:opacity-50"
+      className="block h-6 w-6 rounded-full border border-ona-border bg-white shadow-md outline-none focus:outline-none transition-shadow disabled:pointer-events-none disabled:opacity-50"
     />
   </SliderPrimitive.Root>
 ));

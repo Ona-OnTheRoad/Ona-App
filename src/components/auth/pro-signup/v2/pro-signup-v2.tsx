@@ -31,10 +31,8 @@ export function ProSignupV2() {
   const fromMenu = searchParams.get("from") === "menu";
   const fromProfile = searchParams.get("from") === "profile";
 
-  // Step 0: Set password (shown after role selection), then 1..5 for Pro profile details
-  const [step, setStep] = useState<0 | 1 | 2 | 3 | 4 | 5>(
-    fromMenu || fromProfile ? 1 : 0,
-  );
+  // Step 0: Set password (or confirm password for dual role), then 1..5 for Pro profile details
+  const [step, setStep] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
   const [anyVehicles, setAnyVehicles] = useState(true);
 
   const flow = useProSignupFlow();
@@ -74,14 +72,6 @@ export function ProSignupV2() {
       }
       return;
     }
-    if (step === 1) {
-      if (fromMenu || fromProfile) {
-        router.back();
-      } else {
-        setStep(0);
-      }
-      return;
-    }
     setStep((prev) => (prev - 1) as 0 | 1 | 2 | 3 | 4 | 5);
   };
 
@@ -98,7 +88,11 @@ export function ProSignupV2() {
           bankAccountName: bankDetails.bankAccountName,
         });
       }
-      await finish(bankDetails);
+      const res = await finish(bankDetails);
+      if (!res?.ok) {
+        if (res?.error) setFormError(res.error);
+        return;
+      }
       setDone(true);
     } catch (e) {
       setFormError(e instanceof Error ? e.message : "Failed to create account");
@@ -127,6 +121,7 @@ export function ProSignupV2() {
             confirmPassword={form.confirmPassword}
             setConfirmPassword={form.setConfirmPassword}
             onContinue={() => setStep(1)}
+            isDual={fromMenu || fromProfile}
           />
         )}
 
