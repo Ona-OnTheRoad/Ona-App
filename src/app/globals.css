@@ -118,7 +118,7 @@
   --rfd-offset: 0.5rem;
   /* track padding 0.25rem x2 + tab 2.75rem, plus the gap around the dock */
   --rfd-height: calc(
-    3.25rem + var(--rfd-offset) * 2 + env(safe-area-inset-bottom, 0px)
+    3.625rem + max(0.5rem, calc(env(safe-area-inset-bottom, 0px) - 16px))
   );
 }
 html .rfd-bar,
@@ -142,6 +142,7 @@ html [data-rfd-theme] {
 html .rfd-bar {
   --rfd-bg: color-mix(in srgb, var(--o-surface) 58%, transparent);
   --rfd-border: color-mix(in srgb, var(--o-surface) 60%, transparent);
+  bottom: max(0.5rem, calc(env(safe-area-inset-bottom, 0px) - 16px)) !important;
 }
 html .rfd-track {
   padding: 0.25rem;
