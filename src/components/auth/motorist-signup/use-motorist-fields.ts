@@ -17,8 +17,10 @@ import { composeFullName } from "./name-utils";
 export function useMotoristFields() {
   const { userProfile, isAuthenticated } = useApp();
   const phoneCodes = useMemo(() => getPhoneCodeOptions(), []);
-  // Referral: read-only when it came from ?ref=, otherwise optional input.
-  const urlRef = useSearchParams().get("ref") || "";
+  const searchParams = useSearchParams();
+  const urlRef = searchParams.get("ref") || "";
+  const fromMenu = searchParams.get("from") === "menu";
+  const fromProfile = searchParams.get("from") === "profile";
   const [refInput, setRefInput] = useState(urlRef);
   /** Per-field errors shown on blur when leaving a field */
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -82,6 +84,17 @@ export function useMotoristFields() {
 
   // Prefill from existing Repair Pro lock only fields that already have values
   useEffect(() => {
+    const dualRole = fromMenu || fromProfile;
+    if (!dualRole || !isAuthenticated) {
+      setDualSignup(false);
+      setNameLocked(false);
+      setGenderLocked(false);
+      setPhoneLocked(false);
+      setEmailLocked(false);
+      setNinLocked(false);
+      setBvnLocked(false);
+      return;
+    }
     const vaultPro = getVaultProfile("professional");
     const livePro =
       userProfile?.accountType === "professional" ? userProfile : null;
@@ -90,7 +103,7 @@ export function useMotoristFields() {
       isAuthenticated && userProfile && userProfile.accountType !== "motorist"
         ? userProfile
         : null;
-    const pro = vaultPro || livePro || sessionSource;
+    const pro = livePro || sessionSource || vaultPro;
     if (!pro) {
       setDualSignup(false);
       setNameLocked(false);
