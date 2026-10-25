@@ -25,7 +25,7 @@ Inspect each requirement in `signup-dual-role-service-client.json` against the r
 | R3 | Motorist side preserved | `motorist_profiles` row still exists after attach | Route test; live DB check | code + live |
 | R4 | Password check still enforced | Wrong password on attach returns 401 `password_required` and writes nothing | Route test | code |
 | R5 | New-account signup unchanged | Same status, body shape and returned session | Route test | code |
-| R6 | 077 lockdown untouched | No migration or grant changes; `scripts/verify/client-write-lockdown.sql` still passes | Diff check; run verify SQL | code + live |
+| R6 | 077 lockdown untouched | No migration or grant changes; 077 still behaves as tested; hosted grants, guard triggers and dropped policies match 077 | Diff check; `scripts/verify/client-write-lockdown.sql` in a disposable local database only; read-only `scripts/verify/client-write-lockdown-hosted.sql` on the deployed database | code + live |
 | R7 | Success events logged | A `signup_events` success row appears after signup (believed to be silently dropped today because it ran after the user sign-in) | Live DB check | live |
 | R8 | No regressions | Full test suite, typecheck and lint pass; lint compared to baseline | Commands | code |
 
@@ -38,8 +38,10 @@ Inspect each requirement in `signup-dual-role-service-client.json` against the r
 ## Remaining work
 
 - Code (follow-up, separate change): `src/app/api/security/action/route.ts` (change password, including a stray `signInWithPassword` with `email: ""`) and `src/app/api/admin/auth/login/route.ts` also sign in on the service client.
-- External: live checks for R1, R3, R6 and R7 on the deployed environment.
+- External: R6 live (run `scripts/verify/client-write-lockdown-hosted.sql` on the deployed database; every row `ok = true`) and R7 on the deployed environment; independent human review against `d4d1ff2`.
 
 ## Closeout
 
 Update `docs/BACKEND_FIXES_STATUS.md` with the issue state and the same remaining code and external work.
+
+Merged to dev in PR #46 (`8b98687`); implementation commit `d4d1ff2`. Code/test: R2, R4, R5 and R8 pass. Live: QA validated R1 and R3 after merge (reported 2026-10-25; environment and accounts not recorded here). R6 and R7 remain pending, as does independent human review.
