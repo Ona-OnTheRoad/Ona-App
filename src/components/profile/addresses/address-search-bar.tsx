@@ -30,6 +30,7 @@ export function AddressSearchBar({
 
   const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
   const debounceTimerRef = useRef<number | null>(null);
+  const activeRequestIdRef = useRef<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on click outside
@@ -40,11 +41,18 @@ export function AddressSearchBar({
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      if (debounceTimerRef.current) {
+        window.clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, []);
 
   const handleInputChange = (text: string) => {
     onChange(text);
+    const currentReqId = ++activeRequestIdRef.current;
+
     if (text.trim().length < 2) {
       setKnownHits([]);
       setGoogleHits([]);
@@ -53,17 +61,60 @@ export function AddressSearchBar({
     }
 
     setOpenSuggest(true);
-    // Instant curated places match
-    const known = matchKnownPlaces(text, 4).map((r) => r.place);
+    // Instant curated places match (covers Lagos and Nigeria POIs at 0ms latency)
+    const known = matchKnownPlaces(text, 5).map((r) => r.place);
     setKnownHits(known);
 
-    // Debounced Google Places suggestions
+    // Debounced remote suggestions (Google Places with internal /api/geocode fallback)
     if (debounceTimerRef.current) window.clearTimeout(debounceTimerRef.current);
-    debounceTimerRef.current = window.setTimeout(() => {
-      if (typeof window !== "undefined" && window.google?.maps?.places) {
-        requestGooglePredictions(text.trim(), sessionTokenRef, setGoogleHits);
+    debounceTimerRef.current = window.setTimeout(async () => {
+      const trimmed = text.trim();
+      const hasGoogle =
+        typeof window !== "undefined" &&
+        Boolean(window.google?.maps?.places) &&
+        sessionStorage.getItem("om_google_maps_failed") !== "1";
+
+      if (hasGoogle) {
+        requestGooglePredictions(trimmed, sessionTokenRef, (hits) => {
+          // Sequence guard: discard if newer input has already arrived
+          if (currentReqId !== activeRequestIdRef.current) return;
+          if (hits && hits.length > 0) {
+            setGoogleHits(hits);
+          } else {
+            void fetchServerSuggestions(trimmed, currentReqId);
+          }
+        });
+      } else {
+        void fetchServerSuggestions(trimmed, currentReqId);
       }
-    }, 200);
+    }, 350);
+  };
+
+  const fetchServerSuggestions = async (queryText: string, reqId: number) => {
+    try {
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(queryText)}&limit=5`);
+      // Sequence guard: discard if newer query already initiated
+      if (reqId !== activeRequestIdRef.current) return;
+
+      if (res.ok) {
+        const data = await res.json();
+        if (reqId !== activeRequestIdRef.current) return;
+
+        if (Array.isArray(data?.results) && data.results.length > 0) {
+          const hits: GoogleSuggestion[] = data.results.map(
+            (item: { id: string; primary: string; secondary: string; lat: number; lng: number }) => ({
+              id: item.id,
+              primary: item.primary,
+              secondary: item.secondary,
+              placeId: `coords:${item.lat}:${item.lng}`,
+            }),
+          );
+          setGoogleHits(hits);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
   };
 
   const handlePickKnown = (place: KnownPlace) => {
@@ -86,7 +137,18 @@ export function AddressSearchBar({
       return;
     }
 
-    // Geocode Google place
+    // Direct coordinates from server suggestion
+    if (suggestion.placeId.startsWith("coords:") || suggestion.placeId.startsWith("osm:")) {
+      const parts = suggestion.placeId.split(":");
+      const lat = parseFloat(parts[1]);
+      const lng = parseFloat(parts[2]);
+      if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+        onSelectPlace({ label: fullLabel, lat, lng });
+        return;
+      }
+    }
+
+    // Geocode Google place if Google Maps is live
     if (typeof window !== "undefined" && window.google?.maps) {
       try {
         const geocoder = new window.google.maps.Geocoder();
@@ -105,17 +167,19 @@ export function AddressSearchBar({
       }
     }
 
-    // Nominatim fallback geocode
+    // Server-side fallback geocode (via /api/geocode)
     try {
-      const q = encodeURIComponent(`${suggestion.primary}, Lagos, Nigeria`);
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&limit=1`);
-      const data = await res.json();
-      if (data?.[0]?.lat && data?.[0]?.lon) {
-        onSelectPlace({
-          label: fullLabel,
-          lat: parseFloat(data[0].lat),
-          lng: parseFloat(data[0].lon),
-        });
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(suggestion.primary)}&limit=1`);
+      if (res.ok) {
+        const data = await res.json();
+        const hit = data.results?.[0];
+        if (hit && typeof hit.lat === "number" && typeof hit.lng === "number") {
+          onSelectPlace({
+            label: fullLabel,
+            lat: hit.lat,
+            lng: hit.lng,
+          });
+        }
       }
     } catch {
       /* ignore */
@@ -160,16 +224,18 @@ export function AddressSearchBar({
         }
       }
 
-      // Nominatim search fallback
-      const q = encodeURIComponent(`${text}, Lagos, Nigeria`);
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&limit=1`);
-      const data = await res.json();
-      if (data?.[0]?.lat && data?.[0]?.lon) {
-        onSelectPlace({
-          label: text,
-          lat: parseFloat(data[0].lat),
-          lng: parseFloat(data[0].lon),
-        });
+      // Server-side geocode search fallback
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(text)}&limit=1`);
+      if (res.ok) {
+        const data = await res.json();
+        const hit = data.results?.[0];
+        if (hit && typeof hit.lat === "number" && typeof hit.lng === "number") {
+          onSelectPlace({
+            label: text,
+            lat: hit.lat,
+            lng: hit.lng,
+          });
+        }
       }
     } catch {
       /* ignore */

@@ -1,11 +1,11 @@
 import { ChevronRight } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { getDisplayTotalMajor } from "@/lib/callout/payable";
+import { getDisplayTotalMajor, jobEscrowAmountMinor } from "@/lib/callout/payable";
 import { formatMoney } from "@/lib/pricing";
 import { JobChargeLines } from "@/components/jobs/callout-fee-lines";
-import { jobEscrowAmountMinor } from "@/lib/callout/payable";
 import type { JobRecord } from "@/lib/jobs/types";
+import { avatarInitials } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 /** Shared list row for Requests and History. */
@@ -81,7 +81,7 @@ export function JobRow({
           <Avatar className="h-6 w-6">
             <AvatarImage src={photoUrl || undefined} alt="" />
             <AvatarFallback className="text-[10px]">
-              {(name || "?").trim().charAt(0).toUpperCase()}
+              {avatarInitials(name)}
             </AvatarFallback>
           </Avatar>
           <span className="truncate text-[13px] text-ona-ink">{name}</span>

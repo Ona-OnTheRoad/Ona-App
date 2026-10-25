@@ -129,3 +129,25 @@ export function writeSettings(userKey: string, s: NotificationSettingsState) {
     /* ignore quota */
   }
 }
+
+export function hasPendingSync(userKey: string): boolean {
+  if (typeof window === "undefined" || !userKey || userKey === "guest") return false;
+  try {
+    return localStorage.getItem(`${STORAGE_KEY}-pending:${userKey}`) === "true";
+  } catch {
+    return false;
+  }
+}
+
+export function setPendingSync(userKey: string, pending: boolean): void {
+  if (typeof window === "undefined" || !userKey || userKey === "guest") return;
+  try {
+    if (pending) {
+      localStorage.setItem(`${STORAGE_KEY}-pending:${userKey}`, "true");
+    } else {
+      localStorage.removeItem(`${STORAGE_KEY}-pending:${userKey}`);
+    }
+  } catch {
+    /* ignore quota */
+  }
+}

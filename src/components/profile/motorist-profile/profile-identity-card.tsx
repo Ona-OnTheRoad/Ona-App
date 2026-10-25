@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { avatarInitials, DEFAULT_VENDOR_PHOTO } from "@/lib/brand";
+import { avatarInitials } from "@/lib/brand";
 import { formatProSkill } from "@/lib/pro-service-id";
 import type { UserProfile } from "@/lib/types";
 import { isMotoristVerified } from "@/lib/verification-gate";
@@ -20,7 +20,7 @@ export function ProfileIdentityCard({
 }: ProfileIdentityCardProps) {
   const { accountType, proLive, proServices } = useApp();
   const isPro = accountType === "professional";
-  const avatarUrl = userProfile.avatarUrl || DEFAULT_VENDOR_PHOTO;
+  const avatarUrl = userProfile.avatarUrl?.trim() || undefined;
 
   const proTrade =
     formatProSkill(userProfile.services?.[0] || proServices?.[0]);
@@ -30,11 +30,13 @@ export function ProfileIdentityCard({
       {/* Centered avatar with badge */}
       <div className="relative inline-block">
         <Avatar className="h-16 w-16 overflow-hidden rounded-full ring-2 ring-ona-border shadow-sm">
-          <AvatarImage
-            src={avatarUrl}
-            alt={userProfile.fullName}
-            className="object-cover"
-          />
+          {avatarUrl ? (
+            <AvatarImage
+              src={avatarUrl}
+              alt={userProfile.fullName}
+              className="object-cover"
+            />
+          ) : null}
           <AvatarFallback className="bg-brand font-bold text-white text-lg">
             {avatarInitials(userProfile.fullName)}
           </AvatarFallback>
@@ -70,7 +72,7 @@ export function ProfileIdentityCard({
           <p className="mt-0.5 text-[13px] font-medium text-ona-muted text-center">
             {proTrade}
           </p>
-          <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 py-0.5 text-xs font-semibold shadow-2xs">
+          <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-ona-border dark:border-ona-brand-soft bg-white dark:bg-ona-brand-soft px-2.5 py-0.5 text-xs font-semibold shadow-2xs">
             <span
               className={`h-1.5 w-1.5 rounded-full ${
                 proLive ? "bg-[#10B981]" : "bg-[#EF4444]"

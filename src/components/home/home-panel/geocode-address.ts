@@ -1,6 +1,6 @@
 import { knownPlaceToPick, resolveKnownPlace } from "@/lib/known-places";
 
-/** Fallback geocode when Places is unavailable (curated places first). */
+/** Fallback geocode when Places is unavailable (curated places first, then /api/geocode). */
 export async function geocodeAddress(
   query: string,
 ): Promise<{ lat: number; lng: number; label: string } | null> {
@@ -12,26 +12,18 @@ export async function geocodeAddress(
     return { lat: p.lat, lng: p.lng, label: p.label };
   }
   try {
-    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(
-      q,
-    )}`;
-    const res = await fetch(url, {
-      headers: { Accept: "application/json" },
-    });
-    const data = (await res.json()) as {
-      lat?: string;
-      lon?: string;
-      display_name?: string;
-    }[];
-    const hit = data?.[0];
-    if (!hit?.lat || !hit?.lon) return null;
-    const lat = Number(hit.lat);
-    const lng = Number(hit.lon);
-    // Real Nominatim label do not snap coords to curated POI names
+    const url = `/api/geocode?q=${encodeURIComponent(q)}&limit=1`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const json = (await res.json()) as {
+      results?: Array<{ lat: number; lng: number; label: string }>;
+    };
+    const hit = json.results?.[0];
+    if (!hit || typeof hit.lat !== "number" || typeof hit.lng !== "number") return null;
     return {
-      lat,
-      lng,
-      label: hit.display_name || q,
+      lat: hit.lat,
+      lng: hit.lng,
+      label: hit.label || q,
     };
   } catch {
     return null;

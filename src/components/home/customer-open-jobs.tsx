@@ -1,6 +1,7 @@
 "use client";
 
-import { DEFAULT_VENDOR_PHOTO } from "@/lib/brand";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { avatarInitials } from "@/lib/brand";
 import type { JobFlowStatus, JobRecord } from "@/lib/jobs/types";
 import { PRO_SERVICE_LABELS } from "@/lib/pro-service-id";
 import { cn } from "@/lib/utils";
@@ -64,12 +65,18 @@ export function CustomerOpenJobs({
             )}
           >
             <span className="flex min-w-0 items-center gap-2.5">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={j.repairProPhoto || DEFAULT_VENDOR_PHOTO}
-                alt=""
-                className="h-10 w-10 shrink-0 rounded-full object-cover"
-              />
+              <Avatar className="h-10 w-10 shrink-0 rounded-full">
+                {j.repairProPhoto?.trim() ? (
+                  <AvatarImage
+                    src={j.repairProPhoto.trim()}
+                    alt=""
+                    className="object-cover"
+                  />
+                ) : null}
+                <AvatarFallback className="bg-brand text-xs font-bold text-white">
+                  {avatarInitials(j.repairProName || PRO_SERVICE_LABELS[j.serviceType] || "Pro")}
+                </AvatarFallback>
+              </Avatar>
               <span className="min-w-0">
                 <span
                   className={cn("block truncate text-[13px] font-bold", ink)}

@@ -15,10 +15,10 @@ export function ProTier2Banner({
     <button
       type="button"
       onClick={onContinue}
-      className="flex w-full items-center justify-between rounded-2xl border border-[#FDE5D6] dark:border-orange-900/40 bg-[#FFF4ED] dark:bg-orange-950/20 p-3.5 px-4 text-left transition hover:bg-[#FFEAE0] active:scale-[0.99] cursor-pointer"
+      className="flex w-full items-center justify-between rounded-2xl border border-ona-brand-soft bg-ona-brand-soft p-3.5 px-4 text-left transition hover:bg-ona-brand-active active:scale-[0.99] cursor-pointer"
     >
       <div className="flex items-center gap-3 min-w-0">
-        <div className="relative flex h-8 w-8 shrink-0 items-center justify-center text-[#FF6B35]">
+        <div className="relative flex h-8 w-8 shrink-0 items-center justify-center text-brand">
           <Scan className="h-7 w-7 stroke-[1.8]" />
           <User className="absolute h-3.5 w-3.5 stroke-[2.2]" />
         </div>

@@ -13,7 +13,7 @@ import { SkillsChips } from "@/components/profile/skills-chips";
 import { VerificationMark } from "@/components/profile/verification-mark";
 import { OnlineStatusDot } from "@/components/ui/online-status-dot";
 import { StarRatingDisplay } from "@/components/ui/star-rating";
-import { avatarInitials, DEFAULT_VENDOR_PHOTO } from "@/lib/brand";
+import { avatarInitials } from "@/lib/brand";
 import {
   detectCurrency,
   formatMoney,
@@ -78,7 +78,7 @@ export function ProPublicView({
         }),
     ]),
   );
-  const photo = tech.photo?.trim() || DEFAULT_VENDOR_PHOTO;
+  const photo = tech.photo?.trim() || undefined;
   const skillLabel =
     tech.roleLabel || skills[0] || tech.serviceType || "Repair Pro";
   const statusText =
@@ -118,11 +118,13 @@ export function ProPublicView({
       <ProfileSection isLight={isLight}>
         <div className="flex items-start gap-3">
           <Avatar className="h-20 w-20 shrink-0 overflow-hidden rounded-full border-0 ring-0">
-            <AvatarImage
-              src={photo}
-              alt={tech.name}
-              className="h-full w-full object-cover"
-            />
+            {photo ? (
+              <AvatarImage
+                src={photo}
+                alt={tech.name}
+                className="h-full w-full object-cover"
+              />
+            ) : null}
             <AvatarFallback className="bg-brand text-sm font-bold text-white">
               {avatarInitials(tech.name)}
             </AvatarFallback>

@@ -20,7 +20,7 @@ export function PublicIdentityCard({
   isLight: boolean;
   theme: PublicProfileTheme;
   skillLabel: string;
-  photoSrc: string;
+  photoSrc?: string;
   statusText: string | null;
 }) {
   const { card, cardBg, inset, insetBg, ink, muted, soft } = theme;
@@ -35,16 +35,18 @@ export function PublicIdentityCard({
       <div className="flex items-center gap-3">
         <Avatar
           className={cn(
-            "h-[4.75rem] w-[4.75rem] shrink-0 overflow-hidden rounded-full border-0 shadow-none ring-0",
+            "h-19 w-19 shrink-0 overflow-hidden rounded-full shadow-none ring-0",
             inset,
           )}
           style={isLight ? undefined : { backgroundColor: insetBg }}
         >
-          <AvatarImage
-            src={photoSrc}
-            alt={tech.name}
-            className="h-full w-full scale-100 object-cover object-center"
-          />
+          {photoSrc ? (
+            <AvatarImage
+              src={photoSrc}
+              alt={tech.name}
+              className="h-full w-full scale-100 object-cover object-center"
+            />
+          ) : null}
           <AvatarFallback className="bg-brand text-sm font-bold text-white">
             {avatarInitials(tech.name)}
           </AvatarFallback>

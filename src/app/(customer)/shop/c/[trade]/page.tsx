@@ -56,7 +56,7 @@ function ShopTradePageInner() {
     searched,
   });
 
-  const bg = isLight ? "bg-[#c8c9cd]" : "bg-black";
+  const bg = isLight ? "bg-white" : "bg-black";
   const tone: TradeTone = {
     isLight,
     accentText,

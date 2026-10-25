@@ -3,7 +3,8 @@ import { INCOMING_POPUP_VISIBLE_SEC } from "@/lib/jobs/incoming-popup-timing";
 import type { JobRecord } from "@/lib/jobs/types";
 import { jobEscrowAmountMinor } from "@/lib/callout/payable";
 import { JobChargeLines } from "@/components/jobs/callout-fee-lines";
-import { DEFAULT_VENDOR_PHOTO } from "@/lib/brand";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { avatarInitials } from "@/lib/brand";
 import { VoiceNotePlayer } from "@/components/jobs/voice-note-player";
 import { JobProblemQA } from "@/components/jobs/job-problem-qa";
 import { cn } from "@/lib/utils";
@@ -43,25 +44,18 @@ export function IncomingCard({
   return (
     <div className="shrink-0 rounded-xl p-2.5" style={{ border: "none" }}>
       <div className="flex items-center gap-2">
-        {job.motoristPhoto ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            loading="lazy"
-            decoding="async"
-            src={job.motoristPhoto}
-            alt=""
-            className="h-7 w-7 shrink-0 rounded-full object-cover"
-          />
-        ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            loading="lazy"
-            decoding="async"
-            src={DEFAULT_VENDOR_PHOTO}
-            alt=""
-            className="h-7 w-7 shrink-0 rounded-full object-cover"
-          />
-        )}
+        <Avatar className="h-7 w-7 shrink-0 rounded-full">
+          {job.motoristPhoto?.trim() ? (
+            <AvatarImage
+              src={job.motoristPhoto.trim()}
+              alt=""
+              className="object-cover"
+            />
+          ) : null}
+          <AvatarFallback className="bg-brand text-[10px] font-bold text-white">
+            {avatarInitials(job.motoristName || "Motorist")}
+          </AvatarFallback>
+        </Avatar>
         <div className="min-w-0 flex-1">
           <p
             className="truncate text-[14px] font-black leading-tight"
