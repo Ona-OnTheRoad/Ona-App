@@ -87,6 +87,7 @@ export function useSignup(
       }
 
       if (!normalized.gender || !normalized.dateOfBirth) {
+        opts?.onErrorCode?.("missing_identity");
         return "Gender and date of birth are required.";
       }
 

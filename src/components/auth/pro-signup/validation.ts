@@ -130,3 +130,15 @@ export function validateStep5(f: ContactValues): string | null {
     confirmPasswordError(f.password, f.confirmPassword)
   );
 }
+
+type IdentityValues = Pick<ProSignupForm, "gender" | "dateOfBirth">;
+
+/** Gender and date of birth are required by the server on every signup; checked before submit so the wizard can ask for them. */
+export function validateIdentity(f: IdentityValues): string | null {
+  return genderError(f.gender) || dobError(f.dateOfBirth);
+}
+
+/** True when gender or date of birth still needs to be collected in the wizard. */
+export function needsIdentityStep(f: IdentityValues): boolean {
+  return Boolean(validateIdentity(f));
+}

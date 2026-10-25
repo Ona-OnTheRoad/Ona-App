@@ -26,9 +26,11 @@ export function Step5BankAccount({
     bankAccountName,
     bankAccountNumber,
     resolving,
+    resolveMsg,
     selectVal,
     onSelectBank,
     onAccountNumberChange,
+    onAccountNameChange,
   } = useBankDetailsFields({
     initial: initialDetails,
     signupFullName,
@@ -108,27 +110,37 @@ export function Step5BankAccount({
           />
         </div>
 
-        {/* Account Name Lookup */}
+        {/* Account Name */}
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold text-ona-ink">
+            <label htmlFor="step5-account-name" className="text-xs font-semibold text-ona-ink">
               {resolving ? "Account name · Looking up …" : "Account name"}
             </label>
             {resolving && (
               <Loader2 className="w-3.5 h-3.5 animate-spin text-brand" />
             )}
           </div>
-          <div className="w-full min-h-[46px] flex items-center bg-ona-field border border-ona-border rounded-xl px-3.5 py-3">
+          <input
+            id="step5-account-name"
+            type="text"
+            value={bankAccountName}
+            onChange={(e) => onAccountNameChange(e.target.value)}
+            placeholder="Enter account name"
+            autoComplete="name"
+            className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted uppercase font-medium tracking-wide outline-none focus:outline-none"
+          />
+          {resolveMsg && (
             <span
-              className={`text-sm uppercase tracking-wide ${
-                bankAccountName
-                  ? "text-ona-ink font-semibold"
-                  : "text-ona-muted italic"
+              className={`text-[11px] font-semibold pl-0.5 ${
+                resolveMsg === "Name verified" ||
+                resolveMsg.toLowerCase().includes("verified")
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-ona-muted"
               }`}
             >
-              {bankAccountName || "Enter 10 digits to resolve name"}
+              {resolveMsg}
             </span>
-          </div>
+          )}
         </div>
       </div>
 

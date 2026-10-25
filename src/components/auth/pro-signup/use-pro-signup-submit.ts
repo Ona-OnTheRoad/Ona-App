@@ -9,9 +9,10 @@ import type { SkillSelection } from "./use-skill-selection";
 import type { VehicleFocus } from "./use-vehicle-focus";
 import type { VehiclesCanFix } from "./use-vehicles-can-fix";
 import type { BankDetailsValue } from "@/components/auth/bank-details-fields/types";
-import { validateStep5 } from "./validation";
+import { validateIdentity, validateStep5 } from "./validation";
 
 const PASSWORD_REQUIRED = "password_required";
+const MISSING_IDENTITY = "missing_identity";
 export const PASSWORD_MISMATCH_MESSAGE =
   "That password doesn't match your Customer account";
 
@@ -32,6 +33,8 @@ type SubmitArgs = {
   replace: (href: string) => void;
   /** Wizard hook: return the user to the password step. */
   onPasswordRejected?: () => void;
+  /** Wizard hook: take the user to the step that collects gender / date of birth. */
+  onFixIdentity?: () => void;
 };
 
 /** Final "Finish and create account" action (identity checks → profile → signup). */
@@ -47,6 +50,7 @@ export function useProSignupSubmit({
   completeSignup,
   replace,
   onPasswordRejected,
+  onFixIdentity,
 }: SubmitArgs) {
   const { busy, setBusy, setFormError, setStep, setDone } = flow;
   const { skill, specialty, skillAnswers } = skillSel;
@@ -67,6 +71,13 @@ export function useProSignupSubmit({
       setFormError(v5);
       setStep(5);
       return { ok: false, error: v5 };
+    }
+    // Required by the server on every signup: ask in the wizard, never fail at the end.
+    const identityMsg = validateIdentity(form);
+    if (identityMsg) {
+      setFormError(identityMsg);
+      onFixIdentity?.();
+      return { ok: false, error: identityMsg };
     }
     setBusy(true);
     setFormError("");
@@ -151,6 +162,11 @@ export function useProSignupSubmit({
     if (err) {
       setBusy(false);
       // Wrong Customer password: send them back to the password step, keep steps 1-5.
+      if (errorCode === MISSING_IDENTITY) {
+        setFormError(err);
+        onFixIdentity?.();
+        return { ok: false, error: err };
+      }
       if (errorCode === PASSWORD_REQUIRED) {
         form.setPassword("");
         form.setConfirmPassword("");
