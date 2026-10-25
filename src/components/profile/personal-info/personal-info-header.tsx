@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Camera } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AvatarFileInput } from "@/components/profile/shared/avatar-picker";
-import { avatarInitials, DEFAULT_VENDOR_PHOTO } from "@/lib/brand";
+import { avatarInitials } from "@/lib/brand";
 import { useI18n } from "@/lib/i18n";
 import { memberSinceLabel } from "@/lib/profile-system";
 import { navigateBack } from "@/lib/navigation";
@@ -29,7 +29,7 @@ export function PersonalInfoHeader({
   const fileRef = useRef<HTMLInputElement>(null);
   const { t } = useI18n();
 
-  const avatarUrl = userProfile.avatarUrl || DEFAULT_VENDOR_PHOTO;
+  const avatarUrl = userProfile.avatarUrl?.trim() || undefined;
   const memberSince = memberSinceLabel(userProfile.registeredAt);
 
   return (
@@ -56,11 +56,13 @@ export function PersonalInfoHeader({
         {/* Avatar with brand camera badge button */}
         <div className="relative shrink-0">
           <Avatar className="h-17.5 w-17.5 overflow-hidden rounded-full ring-2 ring-ona-border shadow-sm">
-            <AvatarImage
-              src={avatarUrl}
-              alt={userProfile.fullName}
-              className="object-cover"
-            />
+            {avatarUrl ? (
+              <AvatarImage
+                src={avatarUrl}
+                alt={userProfile.fullName}
+                className="object-cover"
+              />
+            ) : null}
             <AvatarFallback className="bg-brand font-bold text-white text-lg">
               {avatarInitials(userProfile.fullName)}
             </AvatarFallback>

@@ -169,8 +169,8 @@ export function SupportScreen() {
               setBody(e.target.value);
               setSent(false);
             }}
-            placeholder="What do you need help with? Include job oraccount details if you can."
-            className="w-full min-h-[110px] rounded-ona-ctl border border-ona-border bg-ona-field p-3 text-[12px] font-normal text-ona-ink placeholder:text-ona-muted/60 outline-none focus:outline-none transition-all resize-none"
+            placeholder="What do you need help with? Include job or account details if you can."
+            className="w-full min-h-27.5 rounded-ona-ctl border border-ona-border bg-ona-field p-3 text-[12px] font-normal text-ona-ink placeholder:text-ona-muted/60 outline-none focus:outline-none transition-all resize-none"
           />
 
           {sent && (

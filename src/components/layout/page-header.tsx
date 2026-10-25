@@ -65,10 +65,10 @@ export function PageHeader({
     <header
       className={cn(
         "flex items-center gap-2 px-3 py-2.5",
-        isLight ? "bg-[#c8c9cd]" : "bg-black",
+        isLight ? "bg-white" : "bg-black",
         className,
       )}
-      style={style ?? { backgroundColor: isLight ? "#c8c9cd" : "#000000" }}
+      style={style ?? { backgroundColor: isLight ? "#FFFFFF" : "#000000" }}
     >
       {showBack ? (
         <button

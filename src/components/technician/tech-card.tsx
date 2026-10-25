@@ -7,7 +7,7 @@ import { MapBadgeGlyph } from "@/components/profile/achievement-badges";
 import { NewAccountBadge } from "@/components/profile/new-account-badge";
 import { OnlineStatusDot } from "@/components/ui/online-status-dot";
 import { StarRatingDisplay } from "@/components/ui/star-rating";
-import { avatarInitials, DEFAULT_VENDOR_PHOTO } from "@/lib/brand";
+import { avatarInitials } from "@/lib/brand";
 import {
   proCtaKind,
   proCtaLabel,
@@ -70,15 +70,13 @@ export function TechCard({
         onClick={(e) => e.stopPropagation()}
       >
         <Avatar className="h-10 w-10 overflow-hidden rounded-full border-0 bg-transparent shadow-none ring-0">
-          <AvatarImage
-            src={
-              tech.photo && tech.photo.trim().length > 0
-                ? tech.photo
-                : DEFAULT_VENDOR_PHOTO
-            }
-            alt={tech.name}
-            className="h-full w-full object-cover object-center"
-          />
+          {tech.photo?.trim() ? (
+            <AvatarImage
+              src={tech.photo.trim()}
+              alt={tech.name}
+              className="h-full w-full object-cover object-center"
+            />
+          ) : null}
           <AvatarFallback className="bg-brand text-[11px] font-bold text-white">
             {avatarInitials(tech.name, tech.shortName || "PR")}
           </AvatarFallback>

@@ -53,17 +53,59 @@ export function AddressSearchBar({
     }
 
     setOpenSuggest(true);
-    // Instant curated places match
-    const known = matchKnownPlaces(text, 4).map((r) => r.place);
+    // Instant curated places match (covers Lagos and Nigeria POIs)
+    const known = matchKnownPlaces(text, 5).map((r) => r.place);
     setKnownHits(known);
 
-    // Debounced Google Places suggestions
+    // Debounced Google Places suggestions with OSM Nominatim fallback
     if (debounceTimerRef.current) window.clearTimeout(debounceTimerRef.current);
-    debounceTimerRef.current = window.setTimeout(() => {
-      if (typeof window !== "undefined" && window.google?.maps?.places) {
-        requestGooglePredictions(text.trim(), sessionTokenRef, setGoogleHits);
+    debounceTimerRef.current = window.setTimeout(async () => {
+      const trimmed = text.trim();
+      const hasGoogle =
+        typeof window !== "undefined" &&
+        Boolean(window.google?.maps?.places) &&
+        sessionStorage.getItem("om_google_maps_failed") !== "1";
+
+      if (hasGoogle) {
+        requestGooglePredictions(trimmed, sessionTokenRef, (hits) => {
+          if (hits && hits.length > 0) {
+            setGoogleHits(hits);
+          } else {
+            void fetchOsmSuggestions(trimmed);
+          }
+        });
+      } else {
+        void fetchOsmSuggestions(trimmed);
       }
-    }, 200);
+    }, 250);
+  };
+
+  const fetchOsmSuggestions = async (queryText: string) => {
+    try {
+      const q = encodeURIComponent(`${queryText}, Nigeria`);
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${q}&countrycodes=ng&addressdetails=1&limit=5`,
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          const hits: GoogleSuggestion[] = data.map((item: { place_id: number; display_name: string; name?: string; lat: string; lon: string }) => {
+            const parts = (item.display_name || "").split(",");
+            const primary = parts[0]?.trim() || item.name || queryText;
+            const secondary = parts.slice(1, 4).join(",").trim() || "Nigeria";
+            return {
+              id: `osm-${item.place_id}`,
+              primary,
+              secondary,
+              placeId: `osm:${item.lat}:${item.lon}`,
+            };
+          });
+          setGoogleHits(hits);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
   };
 
   const handlePickKnown = (place: KnownPlace) => {
@@ -84,6 +126,17 @@ export function AddressSearchBar({
     if (known) {
       onSelectPlace({ label: fullLabel, lat: known.lat, lng: known.lng });
       return;
+    }
+
+    // Direct OSM coordinates from Nominatim suggestion
+    if (suggestion.placeId.startsWith("osm:")) {
+      const parts = suggestion.placeId.split(":");
+      const lat = parseFloat(parts[1]);
+      const lng = parseFloat(parts[2]);
+      if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+        onSelectPlace({ label: fullLabel, lat, lng });
+        return;
+      }
     }
 
     // Geocode Google place

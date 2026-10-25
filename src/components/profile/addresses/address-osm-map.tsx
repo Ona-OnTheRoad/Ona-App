@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import React, { Component, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -8,6 +8,28 @@ import L from "leaflet";
 interface AddressOsmMapProps {
   pin: { lat: number; lng: number };
   onPinChange: (lat: number, lng: number) => void;
+  isLight?: boolean;
+  onError?: () => void;
+}
+
+class OsmErrorBoundary extends Component<
+  { onError?: () => void; children: ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch() {
+    this.props.onError?.();
+  }
+
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
 }
 
 function MapEvents({ onPick }: { onPick: (lat: number, lng: number) => void }) {
@@ -27,7 +49,10 @@ function MapCenterSync({ center }: { center: { lat: number; lng: number } }) {
   return null;
 }
 
-export default function AddressOsmMap({ pin, onPinChange }: AddressOsmMapProps) {
+function AddressOsmMapInner({ pin, onPinChange, onError }: AddressOsmMapProps) {
+  const failedTilesCount = useRef(0);
+  const loadedTilesCount = useRef(0);
+
   const redPinIcon = useMemo(() => {
     return L.divIcon({
       className: "ona-red-drop-pin",
@@ -54,6 +79,17 @@ export default function AddressOsmMap({ pin, onPinChange }: AddressOsmMapProps) 
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          eventHandlers={{
+            tileerror: () => {
+              failedTilesCount.current += 1;
+              if (failedTilesCount.current >= 4 && loadedTilesCount.current === 0) {
+                onError?.();
+              }
+            },
+            tileload: () => {
+              loadedTilesCount.current += 1;
+            },
+          }}
         />
         <MapEvents onPick={onPinChange} />
         <MapCenterSync center={pin} />
@@ -71,5 +107,13 @@ export default function AddressOsmMap({ pin, onPinChange }: AddressOsmMapProps) 
         />
       </MapContainer>
     </div>
+  );
+}
+
+export default function AddressOsmMap(props: AddressOsmMapProps) {
+  return (
+    <OsmErrorBoundary onError={props.onError}>
+      <AddressOsmMapInner {...props} />
+    </OsmErrorBoundary>
   );
 }

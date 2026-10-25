@@ -65,6 +65,7 @@ export function VerificationScreen({ isLight: propIsLight }: VerificationScreenP
             otpMsg={v.otpMsg}
             sendDemoOtp={v.sendDemoOtp}
             confirmPhone={v.confirmPhone}
+            isPro={isPro}
           />
 
           {/* Card 2: Tier 2 Government ID Card */}
@@ -74,6 +75,7 @@ export function VerificationScreen({ isLight: propIsLight }: VerificationScreenP
             submitted={v.submitted}
             tier2Ok={v.tier2Ok}
             onClick={() => router.push("/verify/tier-2")}
+            isPro={isPro}
           />
 
           {/* Tier 3 & Tier 4 rendered ONLY for Repair Pro (Image 2 Screen 1) */}

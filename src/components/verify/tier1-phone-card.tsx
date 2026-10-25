@@ -13,6 +13,7 @@ interface Tier1PhoneCardProps {
   otpMsg: string | null;
   sendDemoOtp: () => void;
   confirmPhone: () => Promise<void>;
+  isPro?: boolean;
 }
 
 export function Tier1PhoneCard({
@@ -24,6 +25,7 @@ export function Tier1PhoneCard({
   otpMsg,
   sendDemoOtp,
   confirmPhone,
+  isPro = false,
 }: Tier1PhoneCardProps) {
   return (
     <div className="rounded-ona-ctl border border-ona-border bg-ona-surface p-4.5 transition-colors shadow-xs">
@@ -61,7 +63,9 @@ export function Tier1PhoneCard({
       {/* Subtitle / Unverified Flow */}
       {phoneOk ? (
         <p className="text-[13px] leading-normal font-normal text-ona-muted">
-          Free booking for 30 days from your first request.
+          {isPro
+            ? "Verified phone for incoming jobs and emergency dispatches."
+            : "Free booking for 30 days from your first request."}
         </p>
       ) : (
         <div className="space-y-3 pt-0.5">

@@ -47,9 +47,6 @@ export function useProfilePersistence(session: SessionStateResult) {
   const verifyCustomerPhoneOtp = useCallback(
     async (code: string): Promise<string | null> => {
       if (!userProfile) return "Sign in first.";
-      if (userProfile.accountType !== "motorist") {
-        return "Phone verify here is for Customer accounts.";
-      }
       const dig = code.replace(/\D/g, "");
       if (dig.length < 4) return "Enter the 6-digit code.";
 
@@ -66,7 +63,7 @@ export function useProfilePersistence(session: SessionStateResult) {
             channel: "phone",
             target: userProfile.phone,
             code: dig,
-            preferType: "motorist",
+            preferType: userProfile.accountType,
           }),
         });
         const json = (await r.json().catch(() => null)) as {
@@ -103,9 +100,6 @@ export function useProfilePersistence(session: SessionStateResult) {
       mode?: "submit" | "approve";
     }): Promise<string | null> => {
       if (!userProfile) return "Sign in to verify your identity.";
-      if (userProfile.accountType !== "motorist") {
-        return "This check is for Customer accounts only.";
-      }
 
       const primary = (input.primaryId || input.nin || "").trim();
       const bank = (input.bankId || input.bvn || "").trim();

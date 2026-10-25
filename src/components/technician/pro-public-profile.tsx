@@ -12,7 +12,6 @@ import {
 import { PublicIdentityCard } from "@/components/technician/pro-public-profile/identity-card";
 import { PublicInfoSections } from "@/components/technician/pro-public-profile/info-sections";
 import { publicProfileTheme } from "@/components/technician/pro-public-profile/theme";
-import { DEFAULT_VENDOR_PHOTO } from "@/lib/brand";
 import { publicSkillRows } from "@/lib/skill-questions";
 import { PRO_SERVICE_LABELS } from "@/lib/services";
 import type { Technician } from "@/lib/types";
@@ -40,8 +39,7 @@ export function ProPublicProfile({
   const skillLabel =
     PRO_SERVICE_LABELS[tech.serviceType] ?? tech.roleLabel ?? "Repair Pro";
   const skillRows = publicSkillRows(tech.serviceType, tech.skillAnswers);
-  const hasCustomPhoto = Boolean(tech.photo && tech.photo.trim().length > 0);
-  const photoSrc = hasCustomPhoto ? tech.photo.trim() : DEFAULT_VENDOR_PHOTO;
+  const photoSrc = tech.photo?.trim() || undefined;
 
   const serviceFocus = serviceFocusRows(tech);
   const experienceLabel = experienceLabelFor(tech);

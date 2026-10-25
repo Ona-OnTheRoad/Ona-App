@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import Image from "next/image";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { avatarInitials } from "@/lib/brand";
 
 interface ProProfileCardProps {
   displayName?: string | null;
@@ -22,26 +23,24 @@ export function ProProfileCard({
   }, []);
 
   const name = displayName?.trim() || "Repair Pro";
+  const validAvatarUrl = avatarUrl?.trim() || undefined;
 
   return (
     <div className="flex items-center justify-between py-1">
       <div className="flex items-center gap-3 min-w-0">
         <div className="relative h-11 w-11 shrink-0">
-          <div className="h-full w-full overflow-hidden rounded-full border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800">
-            {avatarUrl ? (
-              <Image
-                src={avatarUrl}
+          <Avatar className="h-full w-full overflow-hidden rounded-full border border-slate-200 dark:border-slate-800 shadow-sm">
+            {validAvatarUrl ? (
+              <AvatarImage
+                src={validAvatarUrl}
                 alt={name}
-                fill
-                sizes="44px"
                 className="object-cover"
               />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-sm font-bold text-slate-600 dark:text-slate-300">
-                {name.charAt(0).toUpperCase()}
-              </div>
-            )}
-          </div>
+            ) : null}
+            <AvatarFallback className="bg-brand text-sm font-bold text-white">
+              {avatarInitials(displayName, "PR")}
+            </AvatarFallback>
+          </Avatar>
           {/* Active status indicator dot at top-right of avatar */}
           <span className="absolute -top-0.5 right-0 h-3 w-3 rounded-full bg-[#15803D] ring-2 ring-white dark:ring-[#121316]" />
         </div>
@@ -60,7 +59,7 @@ export function ProProfileCard({
         className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border shadow-xs transition-colors ${
           proLive
             ? "border-emerald-200 dark:border-emerald-900/40 bg-white dark:bg-slate-900 text-[#10B981]"
-            : "border-red-200 dark:border-red-900/40 bg-white dark:bg-slate-900 text-[#EF4444]"
+            : "bg-ona-brand-soft text-[#EF4444]"
         }`}
       >
         <span

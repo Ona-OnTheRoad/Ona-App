@@ -111,7 +111,7 @@ export function QuietHoursCard({
               : "bg-[#FFD3C4] dark:bg-brand/25 text-white dark:text-brand"
           }`}
         >
-          {saving ? "Saving…" : dirty ? "Save preferences" : "Saved"}
+          {saving ? "Saving…" : dirty ? "Saving…" : "Save preferences"}
         </button>
 
         <p className="text-[12px] font-normal text-ona-muted mt-2">

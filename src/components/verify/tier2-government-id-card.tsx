@@ -9,6 +9,7 @@ interface Tier2GovernmentIdCardProps {
   submitted?: boolean;
   tier2Ok?: boolean;
   onClick: () => void;
+  isPro?: boolean;
 }
 
 export function Tier2GovernmentIdCard({
@@ -16,6 +17,7 @@ export function Tier2GovernmentIdCard({
   submitted = false,
   tier2Ok = false,
   onClick,
+  isPro = false,
 }: Tier2GovernmentIdCardProps) {
   const isClickable = phoneOk && !submitted && !tier2Ok;
 
@@ -81,7 +83,9 @@ export function Tier2GovernmentIdCard({
         </p>
       ) : submitted && !tier2Ok ? (
         <p className="text-[12px] mt-2.5 text-amber-600 dark:text-amber-400 font-medium">
-          Under review · Full booking unlocks when Care approves your ID.
+          {isPro
+            ? "Under review · Unlocks once Care approves your ID."
+            : "Under review · Full booking unlocks when Care approves your ID."}
         </p>
       ) : null}
     </div>

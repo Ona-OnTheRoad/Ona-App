@@ -142,14 +142,14 @@ export const PRO_PROFILE_MENU_ITEMS: ProfileMenuItem[] = [
     title: "Availability & Scheduling",
     subtitle: "Hours, location & coverage",
     iconSrc: "/icons/profile-addresses-and-location.png",
-    href: "/settings/availability",
+    href: "/settings/sections/availability",
   },
   {
     id: "pricing",
     title: "Pricing & Services",
     subtitle: "Labour fees & skills",
     iconSrc: "/icons/profile-pricing-and-services.png",
-    href: "/settings/pricing",
+    href: "/settings/sections/pricing",
   },
   {
     id: "security",

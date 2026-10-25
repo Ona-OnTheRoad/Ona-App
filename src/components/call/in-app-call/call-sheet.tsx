@@ -1,7 +1,7 @@
 import { createPortal } from "react-dom";
 import { Mic, MicOff, PhoneOff, Volume2, VolumeX } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { avatarInitials, DEFAULT_VENDOR_PHOTO } from "@/lib/brand";
+import { avatarInitials } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import type {
   CallMode,
@@ -51,7 +51,7 @@ export function CallSheet({
   return createPortal(
     <div
       className={cn(
-        "absolute inset-0 z-[200] flex flex-col",
+        "absolute inset-0 z-200 flex flex-col",
         isLight ? "bg-[#0a1610]" : "bg-[#0a0000]",
       )}
       role="dialog"
@@ -64,17 +64,19 @@ export function CallSheet({
             phase === "ringing" ||
             phase === "connecting") && (
             <>
-              <span className="om-call-ring absolute inset-[-10px] rounded-full" />
-              <span className="om-call-ring om-call-ring-delay absolute inset-[-10px] rounded-full" />
+              <span className="om-call-ring absolute -inset-2.5 rounded-full" />
+              <span className="om-call-ring om-call-ring-delay absolute -inset-2.5 rounded-full" />
             </>
           )}
           <Avatar className="relative h-24 w-24 overflow-hidden rounded-full ring-2 ring-brand/50">
-            <AvatarImage
-              src={target.photo?.trim() || DEFAULT_VENDOR_PHOTO}
-              alt={target.name}
-              className="object-cover"
-            />
-            <AvatarFallback className="bg-brand text-lg font-bold text-white">
+            {target.photo?.trim() ? (
+              <AvatarImage
+                src={target.photo.trim()}
+                alt={target.name}
+                className="object-cover"
+              />
+            ) : null}
+            <AvatarFallback className="bg-brand text-2xl font-bold text-white">
               {avatarInitials(target.name)}
             </AvatarFallback>
           </Avatar>
@@ -101,13 +103,13 @@ export function CallSheet({
           </p>
         )}
         {statusHint && (
-          <p className="mt-3 max-w-[280px] text-center text-[11px] leading-snug text-white/55">
+          <p className="mt-3 max-w-70 text-center text-[11px] leading-snug text-white/55">
             {statusHint}
           </p>
         )}
 
         {phase === "ringing" && incoming && (
-          <div className="mt-8 flex w-full max-w-[280px] gap-3">
+          <div className="mt-8 flex w-full max-w-70 gap-3">
             <button
               type="button"
               onClick={onReject}

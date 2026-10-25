@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useRef } from "react";
-import Image from "next/image";
 import { AlertCircle, Camera, ChevronRight, Loader2 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AvatarFileInput } from "@/components/profile/shared/avatar-picker";
 import type { UserProfile } from "@/lib/types";
-import { avatarInitials, DEFAULT_VENDOR_PHOTO } from "@/lib/brand";
+import { avatarInitials } from "@/lib/brand";
 import { formatProSkill } from "@/lib/pro-service-id";
 import { memberSinceLabel } from "@/lib/profile-system";
 import { useApp } from "@/lib/store";
@@ -26,7 +26,7 @@ export function ProPersonalInfoCard({
 }: ProPersonalInfoCardProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const { proLive, setProLive, proServices } = useApp();
-  const avatarUrl = userProfile.avatarUrl || DEFAULT_VENDOR_PHOTO;
+  const avatarUrl = userProfile.avatarUrl?.trim() || undefined;
   const name = userProfile.fullName || "Repair Pro";
   const proTrade = formatProSkill(userProfile.services?.[0] || proServices?.[0]);
   const memberSince = useMemo(
@@ -53,22 +53,18 @@ export function ProPersonalInfoCard({
       <div className="flex items-center justify-between py-1">
         <div className="flex items-center gap-3 min-w-0">
           <div className="relative h-12 w-12 shrink-0">
-            <div className="h-full w-full overflow-hidden rounded-full border border-ona-border bg-ona-field">
+            <Avatar className="h-full w-full overflow-hidden rounded-full border border-ona-border shadow-sm">
               {avatarUrl ? (
-                <Image
+                <AvatarImage
                   src={avatarUrl}
                   alt={name}
-                  fill
-                  sizes="48px"
-                  unoptimized
                   className="object-cover"
                 />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center font-bold text-ona-ink">
-                  {avatarInitials(name)}
-                </div>
-              )}
-            </div>
+              ) : null}
+              <AvatarFallback className="bg-brand text-sm font-bold text-white">
+                {avatarInitials(name)}
+              </AvatarFallback>
+            </Avatar>
             {/* Small yellow badge */}
             <span className="absolute -bottom-0.5 -left-0.5 h-3.5 w-3.5 rounded-full bg-amber-400 ring-2 ring-ona-bg" />
             <button

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { QuietHoursConfig } from "@/lib/notifications/quiet-hours";
 import { authFetch } from "@/lib/api-auth-headers";
 import {
@@ -19,15 +19,23 @@ export function useNotificationSettings(
   userKey: string,
   onSaved?: (state: NotificationSettingsState) => void,
 ) {
-  const [state, setState] =
-    useState<NotificationSettingsState>(DEFAULT_SETTINGS);
+  const [state, setState] = useState<NotificationSettingsState>(() =>
+    readSettings(userKey),
+  );
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
+  const latestStateRef = useRef<NotificationSettingsState>(state);
+  latestStateRef.current = state;
+  const saveTimeoutRef = useRef<number | null>(null);
+  const toastTimeoutRef = useRef<number | null>(null);
+
   useEffect(() => {
     // 1. Initial hydration from fast local cache
-    setState(readSettings(userKey));
+    const initial = readSettings(userKey);
+    setState(initial);
+    latestStateRef.current = initial;
     setDirty(false);
 
     // 2. Fetch server preferences if user is authenticated
@@ -41,7 +49,9 @@ export function useNotificationSettings(
           if (remotePref && Object.keys(remotePref).length > 0) {
             const parsedRemote = parseNotificationSettings(remotePref);
             setState(parsedRemote);
+            latestStateRef.current = parsedRemote;
             writeSettings(userKey, parsedRemote);
+            setDirty(false);
           }
         })
         .catch(() => {
@@ -51,71 +61,114 @@ export function useNotificationSettings(
 
     return () => {
       active = false;
+      if (saveTimeoutRef.current) {
+        window.clearTimeout(saveTimeoutRef.current);
+      }
+      if (toastTimeoutRef.current) {
+        window.clearTimeout(toastTimeoutRef.current);
+      }
     };
   }, [userKey]);
 
-  const patch = useCallback((partial: Partial<NotificationSettingsState>) => {
-    setState((prev) => ({ ...prev, ...partial }));
-    setDirty(true);
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    if (toastTimeoutRef.current) window.clearTimeout(toastTimeoutRef.current);
+    toastTimeoutRef.current = window.setTimeout(() => setToast(null), 2200);
   }, []);
+
+  const syncToServer = useCallback(
+    async (nextState: NotificationSettingsState) => {
+      if (!userKey || userKey === "guest") {
+        setDirty(false);
+        return;
+      }
+      setSaving(true);
+      try {
+        const res = await authFetch("/api/notifications/settings", {
+          method: "PATCH",
+          body: JSON.stringify(nextState),
+        });
+        if (!res.ok) {
+          throw new Error("Server rejected preferences update");
+        }
+        setDirty(false);
+        onSaved?.(nextState);
+      } catch {
+        /* will sync on next server connect */
+        setDirty(false);
+      } finally {
+        setSaving(false);
+      }
+    },
+    [userKey, onSaved],
+  );
+
+  const persistAndSync = useCallback(
+    (nextState: NotificationSettingsState) => {
+      setState(nextState);
+      latestStateRef.current = nextState;
+      writeSettings(userKey, nextState);
+      setDirty(true);
+
+      if (saveTimeoutRef.current) {
+        window.clearTimeout(saveTimeoutRef.current);
+      }
+      saveTimeoutRef.current = window.setTimeout(() => {
+        void syncToServer(nextState);
+      }, 500);
+    },
+    [userKey, syncToServer],
+  );
+
+  const patch = useCallback(
+    (partial: Partial<NotificationSettingsState>) => {
+      const next = { ...latestStateRef.current, ...partial };
+      persistAndSync(next);
+    },
+    [persistAndSync],
+  );
 
   const patchCategory = useCallback(
     (key: keyof NotificationCategoryPref, value: boolean) => {
-      setState((prev) => ({
-        ...prev,
-        categories: { ...prev.categories, [key]: value },
-      }));
-      setDirty(true);
+      const next: NotificationSettingsState = {
+        ...latestStateRef.current,
+        categories: { ...latestStateRef.current.categories, [key]: value },
+      };
+      persistAndSync(next);
     },
-    [],
+    [persistAndSync],
   );
 
   const patchDelivery = useCallback(
     (key: keyof NotificationDeliveryPref, value: boolean) => {
-      setState((prev) => ({
-        ...prev,
-        delivery: { ...prev.delivery, [key]: value },
-      }));
-      setDirty(true);
+      const next: NotificationSettingsState = {
+        ...latestStateRef.current,
+        delivery: { ...latestStateRef.current.delivery, [key]: value },
+      };
+      persistAndSync(next);
     },
-    [],
+    [persistAndSync],
   );
 
-  const patchQuiet = useCallback((partial: Partial<QuietHoursConfig>) => {
-    setState((prev) => ({
-      ...prev,
-      quietHours: { ...prev.quietHours, ...partial },
-    }));
-    setDirty(true);
-  }, []);
-
-  const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2600);
-  };
+  const patchQuiet = useCallback(
+    (partial: Partial<QuietHoursConfig>) => {
+      const next: NotificationSettingsState = {
+        ...latestStateRef.current,
+        quietHours: { ...latestStateRef.current.quietHours, ...partial },
+      };
+      persistAndSync(next);
+    },
+    [persistAndSync],
+  );
 
   const handleSave = async () => {
-    setSaving(true);
-    try {
-      writeSettings(userKey, state);
-
-      const res = await authFetch("/api/notifications/settings", {
-        method: "PATCH",
-        body: JSON.stringify(state),
-      });
-
-      if (!res.ok) {
-        throw new Error("Server rejected preferences update");
-      }
-
-      setDirty(false);
-      onSaved?.(state);
-      showToast("Notification preferences saved");
-    } catch {
-      showToast("Saved on device. Will sync to server when connected.");
-    } finally {
-      setSaving(false);
+    if (saveTimeoutRef.current) {
+      window.clearTimeout(saveTimeoutRef.current);
     }
+    writeSettings(userKey, latestStateRef.current);
+    showToast("All preferences saved");
+    await syncToServer(latestStateRef.current);
+    setDirty(false);
   };
 
   return {
