@@ -12,7 +12,11 @@ vi.mock("@/lib/signup-draft", () => ({ clearSignupDraft: vi.fn() }));
 vi.mock("../build-pro-profile", () => ({
   buildProProfile: () => ({ bankCode: "044" }),
 }));
-vi.mock("../validation", () => ({ validateStep5: () => null }));
+vi.mock("../validation", () => ({
+  validateStep5: () => null,
+  validateIdentity: (f: { gender: string }) =>
+    f.gender ? null : "Please select your gender.",
+}));
 
 import {
   PASSWORD_MISMATCH_MESSAGE,
@@ -33,6 +37,7 @@ function setup(
     setDone: vi.fn(),
   };
   const form = {
+    gender: "male",
     dualSignup: true,
     idNumber: "",
     bvn: "",
@@ -41,6 +46,7 @@ function setup(
   };
   const replace = vi.fn();
   const onPasswordRejected = vi.fn();
+  const onFixIdentity = vi.fn();
   const { result } = renderHook(() =>
     useProSignupSubmit({
       form,
@@ -54,9 +60,10 @@ function setup(
       completeSignup,
       replace,
       onPasswordRejected,
+      onFixIdentity,
     } as never),
   );
-  return { result, flow, form, replace, onPasswordRejected };
+  return { result, flow, form, replace, onPasswordRejected, onFixIdentity };
 }
 
 describe("useProSignupSubmit password_required", () => {
@@ -92,5 +99,31 @@ describe("useProSignupSubmit password_required", () => {
       expect.stringContaining("/signup/error"),
     );
     expect(onPasswordRejected).not.toHaveBeenCalled();
+  });
+});
+
+describe("useProSignupSubmit missing identity", () => {
+  it("asks for gender/DOB in the wizard before calling the server", async () => {
+    const completeSignup = vi.fn(async () => null);
+    const { result, form, replace, onFixIdentity } = setup(completeSignup);
+    form.gender = "";
+    await act(async () => {
+      await result.current.finish();
+    });
+    expect(completeSignup).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
+    expect(onFixIdentity).toHaveBeenCalled();
+  });
+
+  it("routes a missing_identity server code back to the wizard", async () => {
+    const { result, replace, onFixIdentity } = setup(async (_p, o) => {
+      o?.onErrorCode?.("missing_identity");
+      return "Gender and date of birth are required.";
+    });
+    await act(async () => {
+      await result.current.finish();
+    });
+    expect(replace).not.toHaveBeenCalled();
+    expect(onFixIdentity).toHaveBeenCalled();
   });
 });
