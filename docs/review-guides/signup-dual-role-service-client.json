@@ -10,10 +10,10 @@
       "stage": "code+live",
       "expectation": "A signed-in motorist completes pro signup; profiles.role = repair_pro and a repair_pro_profiles row exists.",
       "verification": "Route test for the attach path; live attempt on a test account.",
-      "status": "pending",
+      "status": "pass",
       "evidence": [
         "code: 'src/app/api/auth/signup/__tests__/route.test.ts' attach test passes (200, profiles.role=repair_pro, repair_pro_profiles row); failed with 500 before the fix.",
-        "live: not run."
+        "live: QA validated (reported 2026-10-25) after merge to dev in PR #46 (8b98687); test environment and accounts not recorded here. Signed-in motorist completed pro attach."
       ]
     },
     {
@@ -31,10 +31,10 @@
       "stage": "code+live",
       "expectation": "The motorist_profiles row is kept after a pro attach.",
       "verification": "Route test asserts no motorist_profiles delete; live DB check.",
-      "status": "pending",
+      "status": "pass",
       "evidence": [
         "code: 'src/app/api/auth/signup/__tests__/route.test.ts' asserts motorist_profiles row unchanged after attach.",
-        "live: not run."
+        "live: QA validated (reported 2026-10-25) after merge to dev in PR #46 (8b98687); test environment and accounts not recorded here. Motorist side kept after attach."
       ]
     },
     {
@@ -60,12 +60,13 @@
     {
       "id": "R6",
       "stage": "code+live",
-      "expectation": "Migration 077 grants, policies and guard triggers are unchanged.",
-      "verification": "Diff shows no migration changes; run scripts/verify/client-write-lockdown.sql against the deployed DB.",
+      "expectation": "Migration 077 grants, policies and guard triggers are unchanged by this fix and still in force on the deployed database.",
+      "verification": "Diff shows no migration changes; run scripts/verify/client-write-lockdown.sql only in a disposable local database (never Supabase: it creates tables and regrants); run the read-only scripts/verify/client-write-lockdown-hosted.sql on the deployed database and expect every row ok = true.",
       "status": "pending",
       "evidence": [
         "code: diff touches no files under supabase/migrations or scripts/verify.",
-        "live: client-write-lockdown.sql not run."
+        "code: client-write-lockdown.sql passed in a disposable local PostgreSQL 16 (2026-10-25). client-write-lockdown-hosted.sql returned 48/48 ok on a clean local 077 apply and flagged each injected drift (disabled guard trigger, recreated profiles_update_own policy, column UPDATE grant, blanket regrant).",
+        "live: client-write-lockdown-hosted.sql not run on the deployed database."
       ]
     },
     {
@@ -95,7 +96,8 @@
       "Follow-up: move signInWithPassword off the service client in src/app/api/security/action/route.ts (change_password) and src/app/api/admin/auth/login/route.ts."
     ],
     "external": [
-      "Live checks for R1, R3, R6 and R7 on the deployed environment."
+      "Live checks for R6 (run the read-only scripts/verify/client-write-lockdown-hosted.sql on the deployed database; every row ok = true) and R7 (signup_events success row) on the deployed environment.",
+      "Independent human review against d4d1ff2."
     ]
   }
 }
