@@ -17,6 +17,8 @@ import { useVehicleFocus } from "../use-vehicle-focus";
 import { useVehiclesCanFix } from "../use-vehicles-can-fix";
 import { ProWizardHeader } from "./pro-wizard-header";
 import { Step0Password } from "./step0-password";
+import { StepIdentity } from "./step-identity";
+import { needsIdentityStep } from "../validation";
 import { Step1BaseLocation } from "./step1-base-location";
 import { Step2RepairService } from "./step2-repair-service";
 import { Step3Vehicles } from "./step3-vehicles";
@@ -33,7 +35,10 @@ export function ProSignupV2() {
   const fromProfile = searchParams.get("from") === "profile";
 
   // Step 0: Set password (or confirm password for dual role), then 1..5 for Pro profile details
-  const [step, setStep] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
+  // Step 6 is the identity top-up (gender / date of birth), shown only when missing.
+  const [step, setStep] = useState<0 | 1 | 2 | 3 | 4 | 5 | 6>(0);
+  /** Where the identity step continues to (the end when sent back from submit). */
+  const [afterIdentity, setAfterIdentity] = useState<1 | 5>(1);
   const [anyVehicles, setAnyVehicles] = useState(true);
 
   const flow = useProSignupFlow();
@@ -66,6 +71,10 @@ export function ProSignupV2() {
     completeSignup,
     replace: (href) => router.replace(href),
     onPasswordRejected: () => setStep(0),
+    onFixIdentity: () => {
+      setAfterIdentity(5);
+      setStep(6);
+    },
   });
 
   const handleBack = () => {
@@ -75,6 +84,10 @@ export function ProSignupV2() {
       } else {
         go("/login/role");
       }
+      return;
+    }
+    if (step === 6) {
+      setStep(afterIdentity === 5 ? 5 : 0);
       return;
     }
     setStep((prev) => (prev - 1) as 0 | 1 | 2 | 3 | 4 | 5);
@@ -114,7 +127,7 @@ export function ProSignupV2() {
         totalSteps={5}
         onBack={handleBack}
         showBack={true}
-        showProgress={step > 0}
+        showProgress={step > 0 && step < 6}
       />
 
       {/* Wizard Steps */}
@@ -125,9 +138,24 @@ export function ProSignupV2() {
             setPassword={form.setPassword}
             confirmPassword={form.confirmPassword}
             setConfirmPassword={form.setConfirmPassword}
-            onContinue={() => setStep(1)}
+            onContinue={() => {
+              setAfterIdentity(1);
+              setStep(needsIdentityStep(form) ? 6 : 1);
+            }}
             isDual={form.dualSignup}
             onVerify={form.dualSignup ? verifyAccountPassword : undefined}
+          />
+        )}
+
+        {step === 6 && (
+          <StepIdentity
+            gender={form.gender}
+            setGender={form.setGender}
+            dateOfBirth={form.dateOfBirth}
+            setDateOfBirth={form.setDateOfBirth}
+            genderLocked={form.genderLocked}
+            dobLocked={form.dobLocked}
+            onContinue={() => setStep(afterIdentity)}
           />
         )}
 
