@@ -43,3 +43,9 @@ The fixture creates roles/tables, reapplies the migration, checks protected
 client writes before/after blanket regrants, and verifies own/other-Pro presence,
 new trust columns, service-role writes and trusted SECURITY DEFINER operations.
 It is not part of Vitest and does not reproduce the full Supabase schema.
+
+`client-write-lockdown-hosted.sql` is the read-only counterpart for a hosted
+database (Supabase SQL editor or `psql`). It only reads catalogs and checks that
+`authenticated`/`anon` hold no protected INSERT/UPDATE/DELETE grants (including
+column grants), the guard triggers exist and are enabled, the dropped policies
+are still absent and the guard functions exist. Every row should be `ok = true`.
