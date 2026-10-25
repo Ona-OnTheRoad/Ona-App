@@ -47,13 +47,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ results: [] });
   }
 
-  const cacheKey = q.toLowerCase();
+  const cacheKey = `${q.toLowerCase()}|${limit}`;
   const cached = CACHE.get(cacheKey);
   if (cached && cached.expiresAt > Date.now()) {
     return NextResponse.json({ results: cached.results.slice(0, limit), cached: true });
   }
 
   const results: GeocodeResult[] = [];
+  let upstreamFailed = false;
   const seenPlaceKeys = new Set<string>();
 
   // 1. High-priority local curated places
@@ -82,6 +83,9 @@ export async function GET(req: NextRequest) {
       const gRes = await fetch(gUrl);
       if (gRes.ok) {
         const gData = await gRes.json();
+        if (gData.status !== "OK" && gData.status !== "ZERO_RESULTS") {
+          upstreamFailed = true;
+        }
         if (gData.status === "OK" && Array.isArray(gData.results)) {
           for (const item of gData.results) {
             if (results.length >= limit) break;
@@ -106,8 +110,11 @@ export async function GET(req: NextRequest) {
             }
           }
         }
+      } else {
+        upstreamFailed = true;
       }
     } catch {
+      upstreamFailed = true;
       /* fallback below */
     }
   }
@@ -151,21 +158,27 @@ export async function GET(req: NextRequest) {
             }
           }
         }
+      } else {
+        upstreamFailed = true;
       }
     } catch {
+      upstreamFailed = true;
       /* ignore network drop */
     }
   }
 
-  // Save in cache
-  if (CACHE.size >= MAX_CACHE_SIZE) {
-    const oldestKey = CACHE.keys().next().value;
-    if (oldestKey) CACHE.delete(oldestKey);
+  // Don't cache degraded answers: a transient upstream failure must not
+  // pin an empty/partial list for the full TTL.
+  if (!upstreamFailed) {
+    if (CACHE.size >= MAX_CACHE_SIZE) {
+      const oldestKey = CACHE.keys().next().value;
+      if (oldestKey) CACHE.delete(oldestKey);
+    }
+    CACHE.set(cacheKey, {
+      results,
+      expiresAt: Date.now() + CACHE_TTL_MS,
+    });
   }
-  CACHE.set(cacheKey, {
-    results,
-    expiresAt: Date.now() + CACHE_TTL_MS,
-  });
 
   return NextResponse.json({ results: results.slice(0, limit), cached: false });
 }

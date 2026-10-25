@@ -37,3 +37,22 @@ describe("GET /api/geocode", () => {
     expect(json2.results).toEqual(json1.results);
   });
 });
+
+describe("GET /api/geocode caching", () => {
+  it("does not share cache entries across different limits", async () => {
+    const one = await (await GET(new NextRequest("http://localhost:3000/api/geocode?q=Yaba&limit=1"))).json();
+    const many = await (await GET(new NextRequest("http://localhost:3000/api/geocode?q=Yaba&limit=5"))).json();
+    expect(one.results.length).toBeLessThanOrEqual(1);
+    expect(many.cached).toBe(false);
+  });
+
+  it("does not cache results when upstream fails", async () => {
+    const spy = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("down"));
+    const q = "zzzunknownplace";
+    const first = await (await GET(new NextRequest(`http://localhost:3000/api/geocode?q=${q}`))).json();
+    const second = await (await GET(new NextRequest(`http://localhost:3000/api/geocode?q=${q}`))).json();
+    expect(first.cached).toBe(false);
+    expect(second.cached).toBe(false);
+    spy.mockRestore();
+  });
+});
