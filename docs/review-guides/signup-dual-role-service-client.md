@@ -38,10 +38,10 @@ Inspect each requirement in `signup-dual-role-service-client.json` against the r
 ## Remaining work
 
 - Code (follow-up, separate change): `src/app/api/security/action/route.ts` (change password, including a stray `signInWithPassword` with `email: ""`) and `src/app/api/admin/auth/login/route.ts` also sign in on the service client.
-- External: R6 live (run `scripts/verify/client-write-lockdown-hosted.sql` on the deployed database; every row `ok = true`) and R7 on the deployed environment; independent human review against `d4d1ff2`.
+- External: R7 live on the deployed environment (signup_events success row); independent human review against `d4d1ff2`.
 
 ## Closeout
 
 Update `docs/BACKEND_FIXES_STATUS.md` with the issue state and the same remaining code and external work.
 
-Merged to dev in PR #46 (`8b98687`); implementation commit `d4d1ff2`. Code/test: R2, R4, R5 and R8 pass. Live: QA validated R1 and R3 after merge (reported 2026-10-25; environment and accounts not recorded here). R6 and R7 remain pending, as does independent human review.
+Merged to dev in PR #46 (`8b98687`); implementation commit `d4d1ff2`. Code/test: R2, R4, R5, R6, and R8 pass. Live: QA validated R1 and R3 after merge (reported 2026-10-25; environment and accounts not recorded here); R6 validated against hosted database with `client-write-lockdown-hosted.sql`. R7 remains pending, as does independent human review.
