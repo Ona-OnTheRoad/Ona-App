@@ -71,9 +71,9 @@
       "stage": "code",
       "expectation": "Pros with docs_status 'under_review' or 'rejected' are only shown to customers within DOCS_PENDING_MAX_RADIUS_KM (2 km), not the full marketplace radius.",
       "verification": "Unit test asserting /api/pros excludes a docs-pending pro beyond 2 km but within the normal 5 km radius; code review of the distance filter.",
-      "status": "fail",
+      "status": "pass",
       "evidence": [
-        "Pre-existing defect, surfaced on 2026-10-10 while removing backendFetchPros's client fallback. The deleted fallback enforced Math.min(MAX_RADIUS_KM, DOCS_PENDING_MAX_RADIUS_KM) for docs-pending pros, but /api/pros (src/app/api/pros/route.ts:231-241) applies a flat MAX_RADIUS_KM + 0.75 (5.75 km) to every pro regardless of docs_status — it only reports docsPendingRadiusKm in the response meta, it never filters on it. Removing the fallback eliminates the only enforcement that existed, which was itself unreliable since it only ran when /api/pros failed. Per stakeholder decision, this is tracked here and fixed separately rather than folded into the fallback-removal change."
+        "Fixed in src/app/api/pros/route.ts by dynamically capping maxAllowedRadius to DOCS_PENDING_MAX_RADIUS_KM (2 km) when docsStatus is under_review or rejected. Verified by src/app/api/pros/__tests__/route.test.ts (pro at 1.3 km included, pros at 2.8 km excluded). See docs/review-guides/pros-docs-pending-radius-filter.md."
       ]
     },
     {

@@ -236,8 +236,13 @@ export async function GET(req: Request) {
         ) {
           return false;
         }
-        // One simple rule: Live + real pin + within 5 km of customer
-        return t.distanceKm <= MAX_RADIUS_KM + 0.75;
+        // Cap discovery radius to 2 km while docs verification is pending or rejected
+        const maxAllowedRadius =
+          t.docsStatus === "under_review" || t.docsStatus === "rejected"
+            ? DOCS_PENDING_MAX_RADIUS_KM
+            : MAX_RADIUS_KM + 0.75;
+
+        return t.distanceKm <= maxAllowedRadius;
       });
 
     const techniciansFinal = technicians
