@@ -33,9 +33,9 @@
       "stage": "code",
       "expectation": "There is one bank-account-uniqueness check, not two disagreeing implementations.",
       "verification": "Compare src/app/api/profile/update/route.ts's isBankAccountTakenByOtherUser against the new isBankAccountTaken in bank-lookup.ts.",
-      "status": "fail",
+      "status": "pass",
       "evidence": [
-        "Found during slice 1 research: src/app/api/profile/update/route.ts has its own isBankAccountTakenByOtherUser (lines 19-78) that duplicates check-bank-unique's old matcher but never checks payout_methods -- so the same bank account could be flagged 'taken' by one endpoint and not the other. Pre-existing, not introduced by slice 1. Deliberately not fixed in slice 1 (profile/update is outside 'payments route handlers' scope); tracked here so it isn't lost."
+        "Replaced private duplicate isBankAccountTakenByOtherUser in src/app/api/profile/update/route.ts with canonical isBankAccountTaken from @/lib/server/payments/bank-lookup. Now checks motorist_profiles, repair_pro_profiles, and payout_methods consistently across both endpoints. Verified by src/app/api/profile/update/__tests__/route.test.ts. See docs/review-guides/unified-bank-uniqueness-check.md."
       ]
     },
     {
