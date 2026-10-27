@@ -1,12 +1,17 @@
 import { cookies } from "next/headers";
 import { z } from "zod";
+import { createClient } from "@supabase/supabase-js";
 import {
   ADMIN_SESSION_COOKIE,
   encodeAdminSession,
 } from "@/lib/server/admin-auth";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { createServiceSupabase } from "@/lib/supabase/server";
-import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
+import {
+  getSupabaseAnonKey,
+  getSupabaseUrl,
+  isSupabaseAdminConfigured,
+} from "@/lib/supabase/env";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,9 +43,14 @@ export async function POST(req: Request) {
   }
 
   const { email, password } = parsed.data;
-  const supabase = createServiceSupabase();
 
-  const { data, error } = await supabase.auth.signInWithPassword({
+  // Use a throwaway anon client for authentication so the service client
+  // never holds a user session or loses service_role authority.
+  const authClient = createClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const { data, error } = await authClient.auth.signInWithPassword({
     email,
     password,
   });
@@ -48,6 +58,8 @@ export async function POST(req: Request) {
   if (error || !data.user || !data.session) {
     return apiFail("Invalid email or password", 401, "invalid_credentials");
   }
+
+  const supabase = createServiceSupabase();
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")

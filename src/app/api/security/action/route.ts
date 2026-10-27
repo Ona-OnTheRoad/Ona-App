@@ -1,7 +1,12 @@
 import { z } from "zod";
+import { createClient } from "@supabase/supabase-js";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { createServiceSupabase } from "@/lib/supabase/server";
-import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
+import {
+  getSupabaseAnonKey,
+  getSupabaseUrl,
+  isSupabaseAdminConfigured,
+} from "@/lib/supabase/env";
 import {
   isAfricaTalkingConfigured,
   normalizeNgPhone,
@@ -295,17 +300,18 @@ export async function POST(req: Request) {
 
       // Verify current password
       if (!currentPassword) return apiFail("Current password is required", 400);
-      const { error: signInErr } = await supabase.auth.signInWithPassword({
-        email: "", // Will be populated below
-        password: currentPassword,
-      });
 
       // Get user email for re-auth
       const { data: userData } = await supabase.auth.admin.getUserById(userId);
       const userEmail = userData?.user?.email;
       if (!userEmail) return apiFail("Could not identify user", 500);
 
-      const { error: authErr } = await supabase.auth.signInWithPassword({
+      // Verify password on a throwaway anon client so the service client
+      // never holds a user session or drops its service_role privileges.
+      const authClient = createClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { error: authErr } = await authClient.auth.signInWithPassword({
         email: userEmail,
         password: currentPassword,
       });
