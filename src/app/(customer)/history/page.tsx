@@ -34,7 +34,8 @@ import { cn } from "@/lib/utils";
 type HistoryFilter =
   "completed" | "cancelled" | "expired" | "refunded" | "disputed";
 
-const FILTERS: { id: HistoryFilter; label: string }[] = [
+const FILTERS: { id: HistoryFilter | null; label: string }[] = [
+  { id: null, label: "All" },
   { id: "completed", label: "Completed" },
   { id: "cancelled", label: "Cancelled" },
   { id: "expired", label: "Expired" },
@@ -113,23 +114,23 @@ export default function HistoryPage() {
   return (
     <div className="ona2 relative flex h-full min-h-0 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-hide flex flex-col pb-[calc(var(--dock-space,4.5rem)+1rem)]">
-        <h1 className="px-5 pt-5 text-[22px] font-bold leading-tight tracking-tight text-ona-ink">
+        <h1 className="shrink-0 px-5 pt-5 text-[22px] font-bold leading-tight tracking-tight text-ona-ink">
           Booking History
         </h1>
 
         <div
           role="group"
           aria-label="Filter bookings"
-          className="mt-3 flex gap-2 overflow-x-auto px-5 scrollbar-hide"
+          className="mt-3 flex shrink-0 gap-2 overflow-x-auto px-5 scrollbar-hide"
         >
           {FILTERS.map((f) => {
             const on = filter === f.id;
             return (
               <button
-                key={f.id}
+                key={f.id ?? "all"}
                 type="button"
                 aria-pressed={on}
-                onClick={() => setFilter(filter === f.id ? null : f.id)}
+                onClick={() => setFilter(f.id)}
                 className="flex h-11 shrink-0 items-center border-0 bg-transparent px-0.5 cursor-pointer"
               >
                 <span
