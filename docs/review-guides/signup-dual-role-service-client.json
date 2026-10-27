@@ -92,11 +92,9 @@
     }
   ],
   "remainingWork": {
-    "code": [
-      "Follow-up: move signInWithPassword off the service client in src/app/api/security/action/route.ts (change_password) and src/app/api/admin/auth/login/route.ts."
-    ],
+    "code": [],
     "external": [
-      "Live checks for R6 (run the read-only scripts/verify/client-write-lockdown-hosted.sql on the deployed database; every row ok = true) and R7 (signup_events success row) on the deployed environment.",
+      "Live check for R7 (signup_events success row) on the deployed environment.",
       "Independent human review against d4d1ff2."
     ]
   }
