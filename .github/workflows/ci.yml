@@ -46,9 +46,32 @@ jobs:
 
       - run: npm test
 
+  migration-paths:
+    name: Detect migration-related changes
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    outputs:
+      should_run: ${{ steps.filter.outputs.migrations }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            migrations:
+              - 'supabase/**'
+              - 'scripts/prepare-migration-ci.mjs'
+              - 'scripts/configure-migration-ci.mjs'
+              - 'scripts/verify-migration-ci.mjs'
+
   build:
     name: Build
     needs: [lint-and-typecheck, test, migrations]
+    if: |
+      always() &&
+      needs.lint-and-typecheck.result == 'success' &&
+      needs.test.result == 'success' &&
+      (needs.migrations.result == 'success' || needs.migrations.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -69,8 +92,19 @@ jobs:
 
   migrations:
     name: Fresh Supabase migrations
+    needs: [migration-paths]
+    if: |
+      always() &&
+      (needs.migration-paths.result == 'success' || needs.migration-paths.result == 'skipped') &&
+      (
+        github.event_name != 'pull_request' ||
+        needs.migration-paths.outputs.should_run == 'true'
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -81,11 +115,25 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: 2.75.0
+      - name: Login to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
       - name: Prepare isolated CLI migration project
         run: node scripts/prepare-migration-ci.mjs "$RUNNER_TEMP/ona-migration-ci"
       - name: Apply complete history to local Supabase
         run: |
-          supabase start --workdir "$RUNNER_TEMP/ona-migration-ci"
+          set -euo pipefail
+          start_with_registry() {
+            local registry="$1"
+            echo "Starting local Supabase via ${registry}..."
+            SUPABASE_INTERNAL_IMAGE_REGISTRY="$registry" \
+              supabase start --workdir "$RUNNER_TEMP/ona-migration-ci"
+          }
+          if ! start_with_registry ghcr.io; then
+            echo "ghcr.io pull failed; falling back to docker.io"
+            supabase stop --no-backup --workdir "$RUNNER_TEMP/ona-migration-ci" || true
+            sleep 15
+            start_with_registry docker.io
+          fi
           node scripts/configure-migration-ci.mjs "$RUNNER_TEMP/ona-migration-ci"
           supabase migration up --local --workdir "$RUNNER_TEMP/ona-migration-ci"
       - name: Check migration count, schema and role boundaries
