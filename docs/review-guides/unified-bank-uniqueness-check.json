@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "unified-bank-uniqueness-check",
+  "title": "Unify bank account uniqueness check between profile update and payments",
+  "plan": "docs/review-guides/unified-bank-uniqueness-check.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "R1",
+      "stage": "code",
+      "expectation": "src/app/api/profile/update/route.ts uses canonical isBankAccountTaken from @/lib/server/payments/bank-lookup, and private duplicate isBankAccountTakenByOtherUser is deleted.",
+      "verification": "Grep and diff inspection.",
+      "status": "pass",
+      "evidence": [
+        "code: diff check in src/app/api/profile/update/route.ts confirms isBankAccountTakenByOtherUser (68 lines) is deleted and replaced with isBankAccountTaken."
+      ]
+    },
+    {
+      "id": "R2",
+      "stage": "code",
+      "expectation": "Saving a bank account in profile update checks motorist_profiles, repair_pro_profiles, and payout_methods for duplicates, returning 409 if taken.",
+      "verification": "Route test asserting conflict against payout_methods.",
+      "status": "pass",
+      "evidence": [
+        "code: src/app/api/profile/update/__tests__/route.test.ts asserts 409 bank_account_in_use when isBankAccountTaken returns true."
+      ]
+    },
+    {
+      "id": "R3",
+      "stage": "code",
+      "expectation": "Users can save other profile fields without being blocked by their own already-saved bank details.",
+      "verification": "Route test asserting excludeUserId allows own bank account.",
+      "status": "pass",
+      "evidence": [
+        "code: src/app/api/profile/update/__tests__/route.test.ts asserts 200 ok and excludeUserId is passed to isBankAccountTaken."
+      ]
+    },
+    {
+      "id": "R4",
+      "stage": "code",
+      "expectation": "Defect tracked in docs/review-guides/supabase-core-separation-stage-4.json is marked as passed.",
+      "verification": "JSON guide inspection.",
+      "status": "pass",
+      "evidence": [
+        "code: bank-uniqueness-checks-consistent in docs/review-guides/supabase-core-separation-stage-4.json marked pass."
+      ]
+    },
+    {
+      "id": "R5",
+      "stage": "code",
+      "expectation": "Full test suite, typecheck, and lint pass cleanly.",
+      "verification": "Run vitest, tsc --noEmit, and eslint.",
+      "status": "pass",
+      "evidence": [
+        "code: 203 Vitest files (1,833 tests) pass; tsc --noEmit exits 0; eslint exits 0 with 0 errors."
+      ]
+    }
+  ],
+  "remainingWork": {
+    "code": [],
+    "external": [
+      "Live verification on deployed environment."
+    ]
+  }
+}
