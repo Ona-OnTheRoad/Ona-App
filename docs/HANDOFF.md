@@ -5,6 +5,8 @@
 
 This file is the index. Read it once, then follow the frozen docs and the code.
 
+**Git / PR attribution:** [`GIT_ATTRIBUTION.md`](GIT_ATTRIBUTION.md) — never attribute commits or PRs to an AI or agent. Local agent entrypoints (`AGENTS.md`, `CLAUDE.md`, gitignored) should point here.
+
 Before new feature work, follow the [review-guide reminder and plan-first workflow](review-guides/README.md). Guides live in `docs/review-guides/`; code checks and live deployment checks must be recorded separately.
 
 ---
