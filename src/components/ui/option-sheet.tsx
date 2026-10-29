@@ -275,7 +275,7 @@ export function SheetSelect({
         className={cn(
           bare
             ? "flex w-full items-center gap-2 pr-9 text-left disabled:cursor-not-allowed"
-            : "flex h-12 w-full items-center gap-2 rounded-ona-ctl border border-ona-border bg-ona-field px-3.5 pr-9 text-left text-[14px] font-medium text-ona-ink outline-none transition-colors focus-visible:border-ona-ink disabled:cursor-not-allowed disabled:opacity-60",
+            : "flex h-12 w-full items-center gap-2 rounded-ona-ctl border border-ona-border bg-ona-field px-3.5 pr-9 text-left text-[14px] font-medium text-ona-ink outline-none transition-colors focus-visible:border-ona-ink dark:focus-visible:border-ona-border disabled:cursor-not-allowed disabled:opacity-60",
           invalid && !bare && "border-ona-danger",
           className,
         )}

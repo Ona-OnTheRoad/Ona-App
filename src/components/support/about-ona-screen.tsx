@@ -25,7 +25,7 @@ export function AboutOnaScreen() {
         <SupportScreenHeader title="About Ona" onBack={handleBack} />
 
         {/* Brand Card */}
-        <div className="rounded-ona-card border border-ona-border bg-ona-surface p-6 shadow-xs text-center space-y-3">
+        <div className="rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-6 shadow-xs text-center space-y-3">
           <div className="flex justify-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand text-white text-[22px] font-black shadow-sm">
               Ona
@@ -58,7 +58,7 @@ export function AboutOnaScreen() {
         </div>
 
         {/* Overview Details Card */}
-        <div className="rounded-ona-card border border-ona-border bg-ona-surface shadow-xs divide-y divide-ona-border overflow-hidden">
+        <div className="rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent shadow-xs divide-y divide-ona-border dark:divide-[#18181B] overflow-hidden">
           <div className="flex items-center justify-between p-4">
             <p className="text-[12px] font-medium text-ona-ink">Platform</p>
             <p className="text-[11px] font-normal text-ona-muted">

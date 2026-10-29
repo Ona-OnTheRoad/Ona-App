@@ -137,7 +137,7 @@ export function DeleteAccountScreen() {
                 SELECT WHAT TO DELETE
               </p>
 
-              <div className="rounded-ona-card border border-ona-border bg-ona-surface shadow-xs divide-y divide-ona-border overflow-hidden">
+              <div className="rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent shadow-xs divide-y divide-ona-border dark:divide-[#18181B] overflow-hidden">
                 <label className="flex items-center justify-between p-4 cursor-pointer hover:bg-ona-field/50 transition-colors">
                   <div className="min-w-0 pr-3">
                     <p className="text-[14px] font-bold text-ona-ink">
@@ -204,7 +204,7 @@ export function DeleteAccountScreen() {
               BEFORE YOU GO
             </p>
 
-            <div className="rounded-ona-card border border-ona-border bg-ona-surface p-4 shadow-xs divide-y divide-ona-border">
+            <div className="rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4 shadow-xs divide-y divide-ona-border dark:divide-[#18181B]">
               {consequences.map((item, idx) => {
                 const Icon = item.icon;
                 return (
@@ -235,7 +235,7 @@ export function DeleteAccountScreen() {
               CONFIRMATION
             </p>
 
-            <div className="rounded-ona-card border border-ona-border bg-ona-surface p-4 shadow-xs space-y-3">
+            <div className="rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4 shadow-xs space-y-3">
               <label
                 htmlFor="confirm-delete-input"
                 className="block text-[13px] font-semibold text-ona-ink"

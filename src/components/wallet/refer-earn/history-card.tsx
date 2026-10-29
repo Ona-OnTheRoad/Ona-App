@@ -57,7 +57,7 @@ export function HistoryCard({
   return (
     <div
       className={cn(
-        "rounded-ona-card border border-ona-border bg-ona-surface transition-colors shadow-2xs overflow-hidden",
+        "rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent transition-colors shadow-2xs overflow-hidden",
         !hasItems && "p-6 min-h-80 flex flex-col items-center justify-center text-center",
       )}
     >
@@ -84,7 +84,7 @@ export function HistoryCard({
           </p>
         </div>
       ) : activeTab === "referral" ? (
-        <div className="divide-y divide-ona-border">
+        <div className="divide-y divide-ona-border dark:divide-[#18181B]">
           {referralEvents.map((evt) => {
             const evtRecord = evt as unknown as Record<string, unknown>;
             const name =
@@ -120,7 +120,7 @@ export function HistoryCard({
           })}
         </div>
       ) : (
-        <div className="divide-y divide-ona-border">
+        <div className="divide-y divide-ona-border dark:divide-[#18181B]">
           {cashoutTxs.map((tx) => {
             const txRecord = tx as unknown as Record<string, unknown>;
             const isCredit =

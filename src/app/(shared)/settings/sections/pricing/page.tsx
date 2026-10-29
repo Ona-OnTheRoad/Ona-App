@@ -32,7 +32,7 @@ export default function SettingsPricingSectionPage() {
         {/* Pricing & Services Row Card */}
         <div
           onClick={() => router.push("/settings/pricing")}
-          className="rounded-ona-card border border-ona-border bg-ona-surface p-4 flex items-center justify-between cursor-pointer hover:bg-black/1 dark:hover:bg-white/2 transition-colors shadow-2xs"
+          className="rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4 flex items-center justify-between cursor-pointer hover:bg-black/1 dark:hover:bg-white/2 transition-colors shadow-2xs"
         >
           <div>
             <p className="text-[13px] font-bold text-ona-ink">

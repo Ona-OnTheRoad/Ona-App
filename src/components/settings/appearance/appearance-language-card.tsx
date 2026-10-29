@@ -27,7 +27,7 @@ export function AppearanceLanguageCard({
       {/* Card Container */}
       <div
         onClick={onOpenSelect}
-        className="rounded-ona-ctl border border-ona-border bg-ona-surface shadow-sm p-4 cursor-pointer transition-colors flex items-center justify-between group hover:bg-black/2 active:bg-black/4 dark:hover:bg-white/3 dark:active:bg-white/5"
+        className="rounded-ona-ctl border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent shadow-sm p-4 cursor-pointer transition-colors flex items-center justify-between group hover:bg-black/2 active:bg-black/4 dark:hover:bg-white/3 dark:active:bg-white/5"
       >
         <span className="text-[12px] font-medium leading-tight text-ona-ink">
           {displayLabel}

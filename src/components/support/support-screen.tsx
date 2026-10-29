@@ -88,7 +88,7 @@ export function SupportScreen() {
         />
 
         {/* Contact Card */}
-        <div className="rounded-ona-card border border-ona-border bg-ona-surface p-4 shadow-xs">
+        <div className="rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4 shadow-xs">
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ona-muted mb-2">
             CONTACT
           </p>
@@ -118,12 +118,12 @@ export function SupportScreen() {
         </div>
 
         {/* Common Questions Card */}
-        <div className="rounded-ona-card border border-ona-border bg-ona-surface p-4 shadow-xs">
+        <div className="rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4 shadow-xs">
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ona-muted mb-1">
             COMMON QUESTIONS
           </p>
 
-          <div className="divide-y divide-ona-border">
+          <div className="divide-y divide-ona-border dark:divide-[#18181B]">
             {FAQ_ITEMS.map((item, idx) => {
               const isOpen = openIndex === idx;
               return (
@@ -156,7 +156,7 @@ export function SupportScreen() {
         </div>
 
         {/* Message Care Card */}
-        <div className="rounded-ona-card border border-ona-border bg-ona-surface p-4 shadow-xs space-y-3">
+        <div className="rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4 shadow-xs space-y-3">
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ona-muted">
             MESSAGE CARE
           </p>

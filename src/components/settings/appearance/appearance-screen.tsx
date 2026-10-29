@@ -55,7 +55,7 @@ export function AppearanceScreen({ isLight: propIsLight }: AppearanceScreenProps
           {/* Card 3: Accessibility */}
           <Link
             href="/settings/accessibility"
-            className="flex items-center justify-between rounded-ona-ctl border border-ona-border bg-ona-surface px-4 py-4 transition-colors hover:bg-black/2 active:bg-black/4 dark:hover:bg-white/3 dark:active:bg-white/6 group"
+            className="flex items-center justify-between rounded-ona-ctl border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent px-4 py-4 transition-colors hover:bg-black/2 active:bg-black/4 dark:hover:bg-white/3 dark:active:bg-white/6 group"
           >
             <div className="flex items-center gap-3.5">
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-ona-brand-soft">

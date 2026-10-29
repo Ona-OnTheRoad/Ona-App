@@ -18,11 +18,11 @@ export function ProDashboardHeader({
   return (
     <header className="flex shrink-0 items-center justify-between px-5 pt-4 pb-2">
       <div className="flex items-center gap-2.5">
-        <h1 className="text-[20px] font-bold tracking-tight text-ona-ink">
+        <h1 className="text-[20px] font-bold dark:font-semibold tracking-tight text-ona-ink">
           {title}
         </h1>
         {trade ? (
-          <span className="rounded-full bg-ona-field px-2.5 py-0.5 text-[12px] font-medium text-ona-muted">
+          <span className="rounded-full bg-ona-field px-2.5 py-0.5 text-[12px] font-medium text-ona-muted dark:hidden">
             {trade}
           </span>
         ) : null}
@@ -39,7 +39,7 @@ export function ProDashboardHeader({
       >
         <Bell className="h-5 w-5" strokeWidth={1.8} aria-hidden />
         {unreadCount > 0 ? (
-          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#FF6B35] ring-2 ring-ona-surface" />
+          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#FF6B35] dark:bg-ona-brand ring-2 ring-ona-surface" />
         ) : null}
       </Link>
     </header>

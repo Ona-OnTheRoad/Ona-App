@@ -29,7 +29,7 @@ export function ProJobsPage({
     <div className="ona2 relative flex h-full min-h-0 flex-col bg-ona-bg text-ona-ink">
       {/* Top Header */}
       <header className="px-5 pt-4 pb-2 shrink-0">
-        <h1 className="text-2xl font-bold tracking-tight text-ona-ink">
+        <h1 className="text-2xl font-bold dark:text-[20px] dark:font-semibold tracking-tight text-ona-ink">
           Jobs
         </h1>
       </header>
@@ -47,13 +47,13 @@ export function ProJobsPage({
         )}
 
         {/* Past job rows or Figma Empty State */}
-        {!loading && (
-          past.length === 0 ? (
+        {!loading &&
+          (past.length === 0 ? (
             <div className="flex-1 flex flex-col py-2">
               <ProEmptyState
                 title="No Jobs yet"
                 subtitle="Finished and cancelled jobs will appear here."
-                className="flex-1 h-full min-h-[460px]"
+                className="flex-1 h-full min-h-115"
               />
             </div>
           ) : (
@@ -72,8 +72,7 @@ export function ProJobsPage({
                 />
               ))}
             </ul>
-          )
-        )}
+          ))}
       </div>
 
       <ExpiredDialog

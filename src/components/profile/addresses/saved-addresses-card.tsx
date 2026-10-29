@@ -23,7 +23,7 @@ export function SavedAddressesCard({
   onDelete,
 }: SavedAddressesCardProps) {
   return (
-    <div className="rounded-2xl border border-ona-border bg-ona-surface p-4.5 shadow-2xs">
+    <div className="rounded-2xl border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4.5 shadow-2xs">
       <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ona-muted mb-2">
         SAVED ADDRESSES
       </p>
@@ -33,7 +33,7 @@ export function SavedAddressesCard({
           No saved addresses yet. Pick a location and tap &ldquo;Save labeled address&rdquo;.
         </p>
       ) : (
-        <div className="divide-y divide-ona-border/60">
+        <div className="divide-y divide-ona-border/60 dark:divide-[#18181B]">
           {addresses.map((item) => {
             const isActive = item.id === activeId || item.isActive;
             return (

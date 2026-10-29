@@ -79,7 +79,7 @@ export function AppearanceThemeCard({ isLight }: AppearanceThemeCardProps) {
       <div
         role="radiogroup"
         aria-label={headerLabel}
-        className="rounded-ona-ctl border border-ona-border bg-ona-surface divide-y divide-ona-border shadow-sm p-2 sm:p-3 overflow-hidden"
+        className="rounded-ona-ctl border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent divide-y divide-ona-border dark:divide-[#18181B] shadow-sm p-2 sm:p-3 overflow-hidden"
       >
         {themeOptions.map((opt) => {
           const Icon = opt.icon;

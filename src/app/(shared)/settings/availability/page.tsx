@@ -127,7 +127,7 @@ export default function SettingsAvailabilityPage() {
 
           <div className="mt-6 space-y-6">
             {/* Vacation Mode Card */}
-            <div className="rounded-ona-card border border-ona-border bg-ona-surface p-4 flex items-center justify-between shadow-2xs">
+            <div className="rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4 flex items-center justify-between shadow-2xs">
               <div>
                 <p className="text-[13px] font-bold text-ona-ink">
                   Vacation mode
@@ -187,7 +187,7 @@ export default function SettingsAvailabilityPage() {
             </div>
 
             {/* Coverage Radius Card */}
-            <div className="rounded-ona-card border border-ona-border bg-ona-surface p-4 shadow-2xs">
+            <div className="rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4 shadow-2xs">
               <div className="flex items-center justify-between mb-3.5">
                 <span className="text-[13px] font-semibold text-ona-ink">
                   Coverage radius <span className="text-ona-muted font-normal">(max {MAX_RADIUS})</span>

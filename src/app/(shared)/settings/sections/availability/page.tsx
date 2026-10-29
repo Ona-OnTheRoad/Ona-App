@@ -30,7 +30,7 @@ export default function SettingsAvailabilitySectionPage() {
         </h1>
 
         {/* Card with 2 Rows */}
-        <div className="rounded-ona-card border border-ona-border bg-ona-surface divide-y divide-ona-border overflow-hidden shadow-2xs">
+        <div className="rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent divide-y divide-ona-border dark:divide-[#18181B] overflow-hidden shadow-2xs">
           {/* Row 1: Hours & vacation */}
           <div
             onClick={() => router.push("/settings/availability")}

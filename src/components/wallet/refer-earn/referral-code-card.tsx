@@ -18,7 +18,7 @@ export function ReferralCodeCard({
   const displayCode = referralCode || "ONANTAV2B375E";
 
   return (
-    <div className="rounded-ona-ctl border border-ona-border bg-ona-surface p-4 shadow-2xs transition-colors">
+    <div className="rounded-ona-ctl border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4 shadow-2xs transition-colors">
       <p className="text-[11px] font-bold tracking-wider uppercase mb-1 text-ona-muted">
         Refer & Earn
       </p>

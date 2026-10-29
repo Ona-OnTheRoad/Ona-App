@@ -18,7 +18,7 @@ export function AvailableCreditCard({
   const spent = formatMoney(wallet?.serviceSpendCredits ?? 0);
 
   return (
-    <div className="rounded-ona-ctl border border-ona-border bg-ona-surface p-4 shadow-2xs transition-colors">
+    <div className="rounded-ona-ctl border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4 shadow-2xs transition-colors">
       <p className="text-[11px] font-bold tracking-wider uppercase mb-1 text-ona-muted">
         Available Credit
       </p>
@@ -29,7 +29,7 @@ export function AvailableCreditCard({
       </p>
 
       {/* 4-column breakdown strip */}
-      <div className="rounded-ona-ctl bg-ona-field py-2.5 px-1 grid grid-cols-4 divide-x divide-ona-border">
+      <div className="rounded-ona-ctl bg-ona-field py-2.5 px-1 grid grid-cols-4 divide-x divide-ona-border dark:divide-[#18181B]">
         {/* Total earned */}
         <div className="text-center px-1">
           <p className="text-[12px] font-bold truncate text-ona-ink">

@@ -10,7 +10,7 @@ export function ActivityMoneyCard({
   movesCount,
 }: ActivityMoneyCardProps) {
   return (
-    <div className="rounded-ona-ctl border border-ona-border bg-ona-surface p-5 shadow-xs">
+    <div className="rounded-ona-ctl dark:rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-5 shadow-xs">
       <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ona-muted">
         Money
       </p>

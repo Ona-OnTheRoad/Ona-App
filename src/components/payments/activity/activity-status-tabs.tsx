@@ -20,7 +20,7 @@ export function ActivityStatusTabs({
 }: ActivityStatusTabsProps) {
   return (
     <div
-      className="flex w-full border-b border-ona-border"
+      className="flex w-full border-b border-ona-border dark:border-transparent"
       role="tablist"
       aria-label="Activity status filter"
     >
@@ -35,14 +35,14 @@ export function ActivityStatusTabs({
             onClick={() => onChange(key)}
             className={`relative flex-1 py-3 text-center text-[12px] font-medium transition-colors cursor-pointer ${
               isActive
-                ? "text-brand"
+                ? "text-brand dark:text-ona-brand"
                 : "text-ona-muted hover:text-ona-ink"
             }`}
           >
             {label}
             {isActive ? (
               <span
-                className="absolute inset-x-2 bottom-0 h-[2.5px] rounded-full bg-brand"
+                className="absolute inset-x-2 bottom-0 h-[2.5px] rounded-full bg-brand dark:bg-ona-brand"
                 aria-hidden
               />
             ) : null}

@@ -241,7 +241,7 @@ export function PhoneShell({
         "sm:items-center sm:justify-center sm:min-h-screen sm:p-4 md:sm:p-5",
         isLight
           ? "bg-white sm:bg-[#060d0a]"
-          : "bg-black sm:bg-[#0a0605]",
+          : "bg-black sm:bg-black",
       )}
     >
       <a

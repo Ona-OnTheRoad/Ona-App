@@ -28,7 +28,7 @@ export function Tier1PhoneCard({
   isPro = false,
 }: Tier1PhoneCardProps) {
   return (
-    <div className="rounded-ona-ctl border border-ona-border bg-ona-surface p-4.5 transition-colors shadow-xs">
+    <div className="rounded-ona-ctl border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4.5 transition-colors shadow-xs">
       {/* Header Row: TIER 1 + Verified status */}
       <div className="flex items-center justify-between mb-3.5">
         <span className="text-[11px] font-bold uppercase tracking-wider text-ona-muted">
@@ -58,7 +58,7 @@ export function Tier1PhoneCard({
       </div>
 
       {/* Divider */}
-      <div className="border-b border-ona-border my-3.5" />
+      <div className="border-b border-ona-border dark:border-[#18181B] my-3.5" />
 
       {/* Subtitle / Unverified Flow */}
       {phoneOk ? (

@@ -18,9 +18,9 @@ export function ProOnlineAction({
   onVerify,
 }: ProOnlineActionProps) {
   return (
-    <section className="space-y-2 pt-0.5">
+    <section className="space-y-2 dark:space-y-2.5 pt-0.5">
       <div>
-        <p className="text-xs font-semibold text-ona-ink">
+        <p className="text-xs dark:text-[13px] font-semibold text-ona-ink">
           {proLive ? "You are online" : "Go online"}
         </p>
         <p className="text-xs text-ona-muted mt-0.5">
@@ -34,10 +34,10 @@ export function ProOnlineAction({
         type="button"
         disabled={liveBusy}
         onClick={() => void onToggle()}
-        className={`flex h-12 w-full items-center justify-center rounded-2xl font-semibold text-sm transition active:scale-[0.99] cursor-pointer disabled:opacity-50 ${
+        className={`flex h-12 w-full items-center justify-center rounded-2xl dark:rounded-xl font-semibold dark:font-medium text-sm dark:text-[15px] transition active:scale-[0.99] cursor-pointer disabled:opacity-50 ${
           proLive
-            ? "border border-brand bg-ona-surface text-brand hover:opacity-90"
-            : "bg-brand hover:opacity-90 text-white shadow-xs"
+            ? "border border-brand dark:border-ona-brand bg-ona-surface text-brand dark:text-ona-brand hover:opacity-90"
+            : "bg-brand dark:bg-ona-brand hover:opacity-90 text-white shadow-xs"
         }`}
       >
         {liveBusy ? (

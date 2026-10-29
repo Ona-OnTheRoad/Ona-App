@@ -11,3 +11,4 @@ export const FILTERS: {
   { id: "payments", label: "Wallet" },
   { id: "system", label: "System" },
 ];
+

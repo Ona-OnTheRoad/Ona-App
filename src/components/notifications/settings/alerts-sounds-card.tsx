@@ -14,7 +14,7 @@ export function AlertsSoundsCard({
   onChange,
 }: AlertsSoundsCardProps) {
   return (
-    <div className="rounded-ona-card border border-ona-border bg-ona-surface p-4 shadow-xs space-y-3">
+    <div className="rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4 shadow-xs space-y-3">
       <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ona-muted">
         ALERTS & SOUNDS
       </p>

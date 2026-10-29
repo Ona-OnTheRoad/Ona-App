@@ -32,7 +32,7 @@ export function useThemeAndProSheet(session: SessionStateResult) {
     root.classList.toggle("dark", theme === "dark");
     root.style.colorScheme = theme;
     // Explicit stage so body/html match phone shell outer (opposite themes)
-    const stage = theme === "light" ? "#060d0a" : "#0a0605";
+    const stage = theme === "light" ? "#060d0a" : "#000000";
     root.style.backgroundColor = stage;
     if (document.body) document.body.style.backgroundColor = stage;
   }, [theme]);

@@ -80,7 +80,7 @@ export function BankSelectDropdown({
       {bankCode ? (
         <p className="text-[12px] font-normal text-ona-muted pt-0.5">
           Bank code:{" "}
-          <span className="font-medium text-ona-ink">{bankCode}</span>
+          <span className="font-medium text-ona-ink dark:text-ona-muted">{bankCode}</span>
         </p>
       ) : null}
     </div>

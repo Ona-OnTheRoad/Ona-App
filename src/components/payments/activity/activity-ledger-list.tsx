@@ -19,7 +19,7 @@ export function ActivityLedgerList({
   isLight,
 }: ActivityLedgerListProps) {
   return (
-    <div className="rounded-ona-ctl border border-ona-border bg-ona-surface divide-y divide-ona-border overflow-hidden shadow-xs">
+    <div className="rounded-ona-ctl dark:rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent divide-y divide-ona-border dark:divide-[#18181B] overflow-hidden shadow-xs">
       {rows.map((p) => {
         const displayAmt =
           isPro && p.proPayoutMinor != null ? p.proPayoutMinor : p.amountMinor;
@@ -31,7 +31,7 @@ export function ActivityLedgerList({
             className="flex items-center justify-between px-4 py-3.5 no-underline transition-colors hover:bg-ona-field/50 active:bg-ona-field"
           >
             <div className="min-w-0 flex-1 pr-3">
-              <p className="text-[16px] font-bold tabular-nums tracking-tight text-brand">
+              <p className="text-[16px] font-bold tabular-nums tracking-tight text-brand dark:text-ona-brand">
                 {formatMoneyMinor(displayAmt, p.currency)}
               </p>
               <p className="mt-0.5 text-[12px] font-medium text-ona-muted">

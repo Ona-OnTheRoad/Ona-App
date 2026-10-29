@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import { createElement, Fragment, type ComponentType } from "react";
 import {
   Bell,
   Briefcase,
@@ -8,6 +8,7 @@ import {
   Home,
   Settings,
   ShoppingBag,
+  ShoppingCart,
   UserRound,
   Wallet,
   Zap,
@@ -18,6 +19,20 @@ import type { MenuIconName } from "../app-menu/menu-nav";
 
 type Icon = ComponentType<{ className?: string }>;
 
+function dualThemeIcon(LightIcon: Icon, DarkIcon: Icon): Icon {
+  return function ThemeScopedIcon({ className }: { className?: string }) {
+    return createElement(
+      Fragment,
+      null,
+      createElement(LightIcon, { className: `${className ?? ""} dark:hidden`.trim() }),
+      createElement(DarkIcon, { className: `${className ?? ""} hidden dark:block`.trim() }),
+    );
+  };
+}
+
+const PRO_PAYMENTS_ICON: Icon = dualThemeIcon(CreditCard, Wallet);
+const SHOP_ICON: Icon = dualThemeIcon(ShoppingBag, ShoppingCart);
+
 const ICONS: Record<MenuIconName, Icon> = {
   dashboard: Home,
   history: History,
@@ -25,10 +40,10 @@ const ICONS: Record<MenuIconName, Icon> = {
   referral: Gift,
   settings: Settings,
   jobs: Briefcase,
-  payments: CreditCard,
+  payments: PRO_PAYMENTS_ICON,
   notifications: Bell,
   service: Briefcase,
-  shop: ShoppingBag,
+  shop: SHOP_ICON,
   express: Zap,
 };
 
@@ -137,10 +152,10 @@ export function buildDockItems(
     label: labelFor(r),
     icon:
       r.href === "/settings/payments"
-        ? CreditCard
+        ? PRO_PAYMENTS_ICON
         : r.href === "/wallet"
           ? isPro
-            ? CreditCard
+            ? PRO_PAYMENTS_ICON
             : WALLET_ICON
           : r.href === "/profile" && profileIcon
             ? profileIcon

@@ -27,7 +27,7 @@ export function QuietHoursCard({
   onToggleSounds,
 }: QuietHoursCardProps) {
   return (
-    <div className="rounded-ona-card border border-ona-border bg-ona-surface p-4 shadow-xs space-y-4">
+    <div className="rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4 shadow-xs space-y-4">
       <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ona-muted">
         QUIET HOURS
       </p>
@@ -120,7 +120,7 @@ export function QuietHoursCard({
       </div>
 
       {/* Thin Divider */}
-      <div className="border-t border-ona-border pt-4">
+      <div className="border-t border-ona-border dark:border-[#18181B] pt-4">
         {/* App sounds */}
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1 pr-2">

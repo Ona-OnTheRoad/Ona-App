@@ -53,7 +53,7 @@ export function RecentAlertsSection({
           No security alerts yet.
         </p>
       ) : (
-        <div className="divide-y divide-ona-border">
+        <div className="divide-y divide-ona-border dark:divide-[#18181B]">
           {feed.map((a) => (
             <div
               key={a.id}

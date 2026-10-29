@@ -57,7 +57,7 @@ export function PersonalVehiclesCard({
       {/* Vehicle Cards List */}
       <div className="space-y-3">
         {vehicles.length === 0 && !addingVehicle && (
-          <div className="rounded-ona-ctl border border-ona-border bg-ona-surface p-4 text-center text-ona-muted">
+          <div className="rounded-ona-ctl border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4 text-center text-ona-muted">
             <p className="text-[13px] font-medium">No vehicles registered yet.</p>
             <button
               type="button"
@@ -76,7 +76,7 @@ export function PersonalVehiclesCard({
           return (
             <div
               key={v.id}
-              className="rounded-ona-ctl border border-ona-border bg-ona-surface shadow-sm p-4 flex items-center justify-between gap-3.5 transition-all"
+              className="rounded-ona-ctl border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent shadow-sm p-4 flex items-center justify-between gap-3.5 transition-all"
             >
               {/* Circular Brand Car Icon or Vehicle Photo */}
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full overflow-hidden bg-ona-brand-soft text-brand">
@@ -119,7 +119,7 @@ export function PersonalVehiclesCard({
 
         {/* Wizard when adding a new vehicle */}
         {addingVehicle && (
-          <div className="rounded-ona-ctl border border-ona-border bg-ona-surface p-4 shadow-sm">
+          <div className="rounded-ona-ctl border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4 shadow-sm">
             <MotoristVehicleWizard
               isLight={isLight}
               onCancel={() => setAddingVehicle(false)}

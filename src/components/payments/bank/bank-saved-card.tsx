@@ -22,10 +22,10 @@ export function BankSavedCard({
     : "Not set";
 
   return (
-    <div className="rounded-ona-ctl border border-ona-border bg-ona-surface p-5 shadow-xs space-y-4">
+    <div className="rounded-ona-ctl dark:rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-5 shadow-xs space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-ona-ctl bg-brand/10 text-brand">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-ona-ctl bg-ona-brand-soft text-brand dark:text-ona-brand">
             <Building2 className="h-5 w-5" strokeWidth={2.2} />
           </div>
           <div>
@@ -38,13 +38,13 @@ export function BankSavedCard({
         <button
           type="button"
           onClick={onEdit}
-          className="rounded-ona-ctl border border-ona-border bg-ona-surface px-3 py-1.5 text-[12px] font-bold text-ona-ink hover:bg-ona-field transition-colors cursor-pointer"
+          className="rounded-ona-ctl border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent px-3 py-1.5 text-[12px] font-bold text-ona-ink hover:bg-ona-field transition-colors cursor-pointer"
         >
           Edit
         </button>
       </div>
 
-      <div className="rounded-ona-ctl bg-ona-field/60 border border-ona-border p-3.5 space-y-3">
+      <div className="rounded-ona-ctl bg-ona-field/60 border border-ona-border dark:border-[#18181B] p-3.5 space-y-3">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-wider text-ona-muted">
             Bank

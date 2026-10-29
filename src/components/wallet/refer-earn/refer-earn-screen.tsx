@@ -39,7 +39,7 @@ export function ReferEarnScreen({ isLight: _propIsLight }: ReferEarnScreenProps)
             <Loader2 className="h-7 w-7 animate-spin text-brand" />
           </div>
         ) : !backendUserId ? (
-          <div className="rounded-ona-ctl border border-ona-border bg-ona-surface p-8 text-center text-ona-muted">
+          <div className="rounded-ona-ctl border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-8 text-center text-ona-muted">
             <p className="text-[12px] font-medium">
               Sign in to view your referral & earnings
             </p>

@@ -16,12 +16,12 @@ export function NotificationDeliveryCard({
   onToggle,
 }: NotificationDeliveryCardProps) {
   return (
-    <div className="rounded-ona-card border border-ona-border bg-ona-surface p-4 shadow-xs">
+    <div className="rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4 shadow-xs">
       <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ona-muted mb-1">
         DELIVERY
       </p>
 
-      <div className="divide-y divide-ona-border">
+      <div className="divide-y divide-ona-border dark:divide-[#18181B]">
         {DELIVERY_ROWS.map((row) => (
           <PrefRow
             key={row.key}

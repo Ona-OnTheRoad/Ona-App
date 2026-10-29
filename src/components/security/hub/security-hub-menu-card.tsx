@@ -15,7 +15,7 @@ interface SecurityHubMenuCardProps {
 
 export function SecurityHubMenuCard({ items }: SecurityHubMenuCardProps) {
   return (
-    <div className="rounded-ona-ctl border border-ona-border bg-ona-surface divide-y divide-ona-border overflow-hidden shadow-xs">
+    <div className="rounded-ona-ctl border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent divide-y divide-ona-border dark:divide-[#18181B] overflow-hidden shadow-xs">
       {items.map((item) => (
         <Link
           key={item.href}

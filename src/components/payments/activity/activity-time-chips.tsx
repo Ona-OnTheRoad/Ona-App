@@ -13,7 +13,7 @@ export function ActivityTimeChips({
 }: ActivityTimeChipsProps) {
   return (
     <div
-      className="flex items-center justify-between gap-1 overflow-x-auto scrollbar-hide py-3"
+      className="flex items-center justify-between gap-1 overflow-x-auto scrollbar-hide dark:border-b dark:border-ona-border py-3"
       role="tablist"
       aria-label="Time period filter"
     >

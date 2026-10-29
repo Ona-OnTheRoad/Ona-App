@@ -59,7 +59,7 @@ export function SessionItemRow({
   const lastActiveText = formatLastActive(session.last_seen_at || session.created_at);
 
   return (
-    <div className="flex items-center justify-between gap-3 py-4 border-b border-ona-border last:border-b-0">
+    <div className="flex items-center justify-between gap-3 py-4 border-b border-ona-border dark:border-[#18181B] last:border-b-0">
       <div className="flex items-start gap-3 min-w-0 flex-1">
         {/* Device Icon in outline container */}
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-ona-ctl border border-brand/30 bg-brand/5 text-brand mt-0.5">

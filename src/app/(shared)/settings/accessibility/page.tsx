@@ -110,7 +110,7 @@ export default function SettingsAccessibilityPage() {
 
         {/* Stronger Contrast Card */}
         <section>
-          <div className="flex items-center justify-between gap-3 rounded-ona-ctl border border-ona-border bg-ona-surface p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-3 rounded-ona-ctl border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4 shadow-sm">
             <div>
               <p className="text-[14px] font-semibold text-ona-ink">
                 Stronger contrast

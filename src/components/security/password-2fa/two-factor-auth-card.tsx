@@ -33,7 +33,7 @@ export function TwoFactorAuthCard({
     subtitle ?? (isOn ? "On - active" : "Off - recommended");
 
   return (
-    <div className="rounded-ona-ctl border border-ona-border bg-ona-surface p-4 shadow-xs transition-all">
+    <div className="rounded-ona-ctl border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4 shadow-xs transition-all">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-[14px] font-medium text-ona-ink">
@@ -68,7 +68,7 @@ export function TwoFactorAuthCard({
       </div>
 
       {children ? (
-        <div className="mt-3 pt-3 border-t border-ona-border animate-in fade-in duration-200">
+        <div className="mt-3 pt-3 border-t border-ona-border dark:border-[#18181B] animate-in fade-in duration-200">
           {children}
         </div>
       ) : null}

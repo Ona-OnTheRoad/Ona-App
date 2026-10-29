@@ -22,7 +22,7 @@ export function CashoutCard({
   const isValid = Boolean(amount && numericAmount >= 2000);
 
   return (
-    <div className="rounded-ona-ctl border border-ona-border bg-ona-surface p-4 shadow-2xs transition-colors">
+    <div className="rounded-ona-ctl border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4 shadow-2xs transition-colors">
       <p className="text-[11px] font-bold tracking-wider uppercase mb-1 text-ona-muted">
         Cash Out
       </p>
@@ -31,7 +31,7 @@ export function CashoutCard({
         Convert eligible credits to cash. Minimum ₦2,000.
       </p>
 
-      <div className="border-t border-ona-border pt-3 mb-1" />
+      <div className="border-t border-ona-border dark:border-[#18181B] pt-3 mb-1" />
 
       {/* Input + Request button row */}
       <div className="flex items-center gap-3">

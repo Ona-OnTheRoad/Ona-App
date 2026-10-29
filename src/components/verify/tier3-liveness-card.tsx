@@ -17,7 +17,7 @@ export function Tier3LivenessCard({
   return (
     <div
       onClick={isUnlocked ? onClick : undefined}
-      className={`rounded-ona-card border border-ona-border bg-ona-surface p-4 transition-all shadow-2xs ${
+      className={`rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4 transition-all shadow-2xs ${
         isUnlocked
           ? "cursor-pointer hover:bg-black/1 dark:hover:bg-white/2"
           : "cursor-default"

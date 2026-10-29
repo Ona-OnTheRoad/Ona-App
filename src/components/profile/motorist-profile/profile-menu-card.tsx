@@ -90,7 +90,7 @@ export function ProfileMenuCard({
   const items = customItems ?? defaultItems;
 
   return (
-    <div className="rounded-ona-ctl border border-ona-border bg-ona-surface shadow-sm overflow-hidden pb-1">
+    <div className="rounded-ona-ctl border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent shadow-sm overflow-hidden pb-1">
       {items.map((item) => {
         const itemTitle = item.titleKey ? t(item.titleKey) : item.title;
         const itemSubtitle = item.subtitleKey ? t(item.subtitleKey) : item.subtitle;
@@ -102,7 +102,7 @@ export function ProfileMenuCard({
             key={item.id}
             href={item.href}
             onClick={item.onClick}
-            className="flex items-center gap-3.5 mx-4 py-3.5 transition-colors border-b border-ona-border last:border-b-0 hover:bg-black/2 active:bg-black/4 dark:hover:bg-white/3 dark:active:bg-white/6 group"
+            className="flex items-center gap-3.5 mx-4 py-3.5 transition-colors border-b border-ona-border dark:border-[#18181B] last:border-b-0 hover:bg-black/2 active:bg-black/4 dark:hover:bg-white/3 dark:active:bg-white/6 group"
           >
             {/* Soft brand container for icon */}
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-ona-brand-soft">

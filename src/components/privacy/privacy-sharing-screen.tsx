@@ -68,7 +68,7 @@ export function PrivacySharingScreen() {
           />
 
           {/* Privacy Toggles Card */}
-          <div className="rounded-ona-card border border-ona-border bg-ona-surface shadow-xs divide-y divide-ona-border overflow-hidden">
+          <div className="rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent shadow-xs divide-y divide-ona-border dark:divide-[#18181B] overflow-hidden">
             <div className="flex items-center justify-between gap-3 p-4">
               <div className="min-w-0 flex-1 pr-2">
                 <p className="text-[12px] font-medium text-ona-ink">

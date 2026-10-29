@@ -21,7 +21,7 @@ export function ContactSecurityCard({
   updateUserProfile,
 }: ContactSecurityCardProps) {
   return (
-    <div className="rounded-ona-ctl border border-ona-border bg-ona-surface shadow-sm p-4 sm:p-5 transition-colors">
+    <div className="rounded-ona-ctl border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent shadow-sm p-4 sm:p-5 transition-colors">
       <h3 className="text-[11px] font-bold uppercase tracking-wider text-ona-muted mb-3.5">
         CONTACT &amp; SECURITY
       </h3>

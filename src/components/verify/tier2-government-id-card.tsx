@@ -25,7 +25,7 @@ export function Tier2GovernmentIdCard({
     <div
       onClick={isClickable ? onClick : undefined}
       className={cn(
-        "rounded-ona-ctl border border-ona-border bg-ona-surface p-4.5 transition-all shadow-xs group",
+        "rounded-ona-ctl border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4.5 transition-all shadow-xs group",
         isClickable
           ? "cursor-pointer hover:bg-black/1.5 active:bg-black/3 dark:hover:bg-white/2"
           : !phoneOk
@@ -74,7 +74,7 @@ export function Tier2GovernmentIdCard({
       </div>
 
       {/* Divider */}
-      <div className="border-b border-ona-border mt-3.5" />
+      <div className="border-b border-ona-border dark:border-[#18181B] mt-3.5" />
 
       {/* Helper text if locked or under review */}
       {!phoneOk ? (

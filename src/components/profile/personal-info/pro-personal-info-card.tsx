@@ -28,9 +28,12 @@ export function ProPersonalInfoCard({
   const { proLive, setProLive, proServices } = useApp();
   const avatarUrl = userProfile.avatarUrl?.trim() || undefined;
   const name = userProfile.fullName || "Repair Pro";
-  const proTrade = formatProSkill(userProfile.services?.[0] || proServices?.[0]);
+  const proTrade = formatProSkill(
+    userProfile.services?.[0] || proServices?.[0],
+  );
   const memberSince = useMemo(
-    () => memberSinceLabel(userProfile.registeredAt || new Date().toISOString()),
+    () =>
+      memberSinceLabel(userProfile.registeredAt || new Date().toISOString()),
     [userProfile.registeredAt],
   );
 
@@ -111,8 +114,8 @@ export function ProPersonalInfoCard({
       </div>
 
       {/* 2 Stat Tiles: Experience & Skill */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-ona-card border border-ona-border bg-ona-surface p-3 text-center">
+      <div className="grid grid-cols-2 gap-1 bg-white dark:bg-transparent">
+        <div className="rounded-ona-card bg-[#F3F4F6] dark:bg-transparent p-3 text-center">
           <p className="text-[10px] font-semibold text-ona-muted uppercase tracking-wider">
             Experience
           </p>
@@ -123,38 +126,40 @@ export function ProPersonalInfoCard({
           </p>
         </div>
 
-        <div className="rounded-ona-card border border-ona-border bg-ona-surface p-3 text-center">
+        <div className="rounded-ona-card bg-[#F3F4F6] dark:bg-transparent p-3 text-center">
           <p className="text-[10px] font-semibold text-ona-muted uppercase tracking-wider">
             Skill
           </p>
-          <p className="mt-0.5 text-sm font-bold text-ona-ink">
-            {proTrade}
-          </p>
+          <p className="mt-0.5 text-sm font-bold text-ona-ink">{proTrade}</p>
         </div>
       </div>
 
       {/* Bio Card */}
-      <div className="rounded-ona-card border border-ona-border bg-ona-surface p-4">
-        <p className="text-[10px] font-bold text-ona-muted uppercase tracking-wider">
-          Bio
-        </p>
-        <p className="mt-1 text-xs font-medium text-ona-ink">
-          {userProfile.bio || "I Love Working on Engine"}
-        </p>
+      <div className="rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-3.5 px-4 divide-y divide-ona-border dark:divide-[#18181B]">
+        <div className="pb-3.5">
+          <p className="text-[10px] font-bold text-ona-muted uppercase tracking-wider">
+            Bio
+          </p>
+          <p className="mt-1 text-xs font-medium text-ona-ink">
+            {userProfile.bio || "I Love Working on Engine"}
+          </p>
+        </div>
+
+        {/* Service Radius Card */}
+        <div className="pt-3.5">
+          <p className="text-[10px] font-bold text-ona-muted uppercase tracking-wider">
+            Service Radius
+          </p>
+          <p className="mt-1 text-xs font-medium text-ona-ink">
+            {userProfile.serviceRadiusKm || 5} km coverage
+          </p>
+        </div>
       </div>
 
-      {/* Service Radius Card */}
-      <div className="rounded-ona-card border border-ona-border bg-ona-surface p-4">
-        <p className="text-[10px] font-bold text-ona-muted uppercase tracking-wider">
-          Service Radius
-        </p>
-        <p className="mt-1 text-xs font-medium text-ona-ink">
-          {userProfile.serviceRadiusKm || 5} km coverage
-        </p>
-      </div>
+      <div className="border border-ona-border dark:border-[#18181B]"></div>
 
       {/* Contact & Security */}
-      <div className="rounded-ona-card border border-ona-border bg-ona-surface divide-y divide-ona-border overflow-hidden">
+      <div className="rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent overflow-hidden">
         <div className="p-3.5 px-4">
           <p className="text-[10px] font-bold text-ona-muted uppercase tracking-wider">
             Contact & Security
@@ -201,8 +206,10 @@ export function ProPersonalInfoCard({
         </div>
       </div>
 
+      <div className="border border-ona-border dark:border-[#18181B]"></div>
+
       {/* Guarantor */}
-      <div className="rounded-ona-card border border-ona-border bg-ona-surface p-4">
+      <div className="rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4">
         <p className="text-[10px] font-bold text-ona-muted uppercase tracking-wider">
           Guarantor
         </p>

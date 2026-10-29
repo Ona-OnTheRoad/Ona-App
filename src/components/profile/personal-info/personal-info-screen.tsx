@@ -80,7 +80,7 @@ export function PersonalInfoScreen({ isLight: propIsLight }: PersonalInfoScreenP
                 updateUserProfile={updateUserProfile}
               />
             </section>
-            <div className="my-6 border-t border-ona-border" />
+            <div className="my-6 border-t border-ona-border dark:border-[#18181B]" />
             <section>
               <PersonalVehiclesCard
                 isLight={isLight}

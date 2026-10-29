@@ -76,7 +76,7 @@ export function NotificationsView({
           </button>
         ) : null}
         <div className="mt-1 flex items-center justify-between gap-3">
-          <h2 className="text-[20px] font-bold leading-tight tracking-tight text-ona-ink">
+          <h2 className="text-[20px] font-bold dark:font-semibold leading-tight tracking-tight text-ona-ink">
             Notifications
           </h2>
           <button
@@ -84,10 +84,10 @@ export function NotificationsView({
             onClick={() => void markAllRead()}
             disabled={unreadCount === 0}
             className={cn(
-              "border-0 bg-transparent p-1 text-[13px] font-semibold transition-colors cursor-pointer disabled:cursor-default",
+              "border-0 bg-transparent p-1 text-[13px] font-semibold dark:font-medium dark:underline dark:underline-offset-4 dark:decoration-1 transition-colors cursor-pointer disabled:cursor-default",
               unreadCount > 0
-                ? "text-ona-brand-ink hover:opacity-85"
-                : "text-ona-muted opacity-60",
+                ? "text-ona-brand-ink dark:text-ona-brand hover:opacity-85"
+                : "text-ona-muted opacity-60 dark:opacity-70",
             )}
           >
             Mark all as read
@@ -99,7 +99,7 @@ export function NotificationsView({
       </div>
 
       {showChrome ? (
-        <div className="shrink-0 space-y-3 px-5 pt-4">
+        <div className="shrink-0 space-y-3 dark:space-y-3.5 px-5 pt-4">
           <div className="relative">
             <Search
               aria-hidden
@@ -111,7 +111,7 @@ export function NotificationsView({
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search notifications"
               aria-label="Search notifications"
-              className="h-10 w-full rounded-full border border-ona-border bg-ona-surface pl-10 pr-4 text-[13px] font-medium text-ona-ink placeholder:text-ona-muted outline-none transition-colors focus:border-ona-ink"
+              className="h-10 dark:h-11 w-full rounded-full dark:rounded-ona-card border border-ona-border bg-ona-surface dark:bg-ona-field pl-10 pr-4 text-[13px] font-medium dark:font-normal text-ona-ink placeholder:text-ona-muted outline-none transition-colors focus:border-ona-ink dark:focus:border-ona-border"
             />
           </div>
           <div
@@ -129,8 +129,9 @@ export function NotificationsView({
                   onClick={() => setFilter(f.id)}
                   className={cn(
                     "h-8 shrink-0 rounded-full border px-4 text-[12px] font-medium transition-colors cursor-pointer",
+                    f.id === "system" && "dark:hidden",
                     on
-                      ? "border-ona-brand bg-ona-brand-soft text-ona-brand-ink font-semibold"
+                      ? "border-ona-brand dark:border-ona-brand-border bg-ona-brand-soft text-ona-brand-ink font-semibold"
                       : "border-ona-border bg-ona-surface text-ona-muted hover:text-ona-ink",
                   )}
                 >
@@ -142,26 +143,29 @@ export function NotificationsView({
         </div>
       ) : null}
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 pt-4 scrollbar-hide flex flex-col">
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 pt-4 dark:pt-10 scrollbar-hide flex flex-col">
         {loading && (
           <p className="py-12 text-center text-[13px] font-medium text-ona-muted">
             Loading…
           </p>
         )}
         {!loading && sorted.length === 0 && (
-          <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border border-ona-border bg-ona-surface px-6 py-12 text-center my-auto min-h-[380px]">
-            <NoNotificationsIllustration className="h-44 w-48 mx-auto" />
-            <h3 className="mt-5 text-[16px] font-bold text-ona-ink">
-              No notifications yet
-            </h3>
-            <p className="mx-auto mt-2 max-w-[260px] text-[13px] leading-relaxed text-ona-muted">
-              You’re all caught up! Check back later for updates or new alerts.
-            </p>
+          <div className="my-auto flex min-h-[380px] dark:min-h-105 flex-1 flex-col rounded-2xl border border-ona-border bg-ona-surface px-6 py-12 items-center justify-center text-center dark:rounded-ona-sheet dark:border-[#333E4F] dark:bg-ona-bg dark:p-2.5">
+            <div className="flex flex-1 flex-col items-center justify-center text-center w-full dark:rounded-ona-card dark:border dark:border-[#18181B] dark:bg-ona-field dark:px-6 dark:py-12">
+              <NoNotificationsIllustration className="mx-auto h-44 w-48 dark:h-40 dark:w-44" />
+              <h3 className="mt-5 text-[16px] font-bold text-ona-ink">
+                No notifications yet
+              </h3>
+              <p className="mx-auto mt-2 max-w-65 text-[13px] leading-relaxed text-ona-muted">
+                You’re all caught up! Check back later for updates or new
+                alerts.
+              </p>
+            </div>
           </div>
         )}
 
         {sorted.length > 0 ? (
-          <ul className="list-none overflow-hidden rounded-2xl border border-ona-border bg-ona-surface divide-y divide-ona-border">
+          <ul className="list-none overflow-hidden rounded-2xl dark:rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent divide-y divide-ona-border dark:divide-y-0">
             {sorted.map((n) => (
               <NotificationRow
                 key={n.id}

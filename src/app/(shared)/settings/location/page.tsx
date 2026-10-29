@@ -120,13 +120,13 @@ export default function SettingsLocationPage() {
         </p>
 
         {/* Map Picker Component */}
-        <div className="w-full overflow-hidden rounded-ona-card border border-ona-border shadow-xs">
+        <div className="w-full overflow-hidden rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent shadow-xs">
           <LocationPickerMap value={value} onChange={onChange} />
         </div>
 
         {/* Customer Saved Addresses Section */}
         {!isPro ? (
-          <div className="mt-5 space-y-3 rounded-ona-card border border-ona-border bg-ona-surface p-4 shadow-2xs">
+          <div className="mt-5 space-y-3 rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4 shadow-2xs">
             <p className="text-[13px] font-bold text-ona-ink">Save current pin as</p>
             <div className="flex flex-wrap gap-1.5">
               {(["Home", "Work", "Other"] as AddressLabel[]).map((l) => (
@@ -164,7 +164,7 @@ export default function SettingsLocationPage() {
             </button>
 
             {addresses.length > 0 && (
-              <ul className="mt-3 space-y-2 border-t border-ona-border pt-3">
+              <ul className="mt-3 space-y-2 border-t border-ona-border dark:border-[#18181B] pt-3">
                 {addresses.map((a) => (
                   <li
                     key={a.id}

@@ -46,7 +46,7 @@ export function BankAccountFields({
             const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
             onAccountNumberChange(digits);
           }}
-          className="h-12 w-full rounded-ona-ctl border border-ona-border bg-ona-field px-4 text-[13px] font-medium text-ona-ink outline-none focus:outline-none focus:ring-0 transition-colors focus:border-ona-ink"
+          className="h-12 w-full rounded-ona-ctl border border-ona-border bg-ona-field px-4 text-[13px] font-medium text-ona-ink outline-none focus:outline-none focus:ring-0 transition-colors focus:border-ona-ink dark:focus:border-ona-border"
         />
       </div>
 
@@ -58,7 +58,7 @@ export function BankAccountFields({
         >
           Account name{" "}
           {resolving ? (
-            <span className="font-semibold text-brand normal-case">
+            <span className="font-semibold text-brand dark:text-ona-brand normal-case">
               . Looking up ...
             </span>
           ) : null}
@@ -75,14 +75,14 @@ export function BankAccountFields({
               : "Select bank + enter number to auto-fill"
           }
           readOnly={resolving}
-          className={`h-12 w-full rounded-ona-ctl border border-ona-border bg-ona-field px-4 text-[13px] font-medium text-ona-ink outline-none focus:outline-none focus:ring-0 transition-colors focus:border-ona-ink ${
+          className={`h-12 w-full rounded-ona-ctl border border-ona-border bg-ona-field px-4 text-[13px] font-medium text-ona-ink outline-none focus:outline-none focus:ring-0 transition-colors focus:border-ona-ink dark:focus:border-ona-border ${
             resolving ? "opacity-75" : ""
           }`}
         />
         {resolveMsg ? (
           <p
-            className={`text-[12px] font-semibold pt-0.5 ${
-              isVerified ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"
+            className={`text-[12px] font-semibold dark:font-normal pt-0.5 ${
+              isVerified ? "text-emerald-600 dark:text-ona-muted" : "text-red-500"
             }`}
           >
             {resolveMsg}

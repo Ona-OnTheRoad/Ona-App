@@ -38,7 +38,7 @@ export function SupportToolsHub() {
       <div className="w-full max-w-lg mx-auto px-4 pb-20 space-y-4">
         <SupportScreenHeader title="Support & Tools" onBack={handleBack} />
 
-        <div className="rounded-ona-card border border-ona-border bg-ona-surface shadow-xs divide-y divide-ona-border overflow-hidden">
+        <div className="rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent shadow-xs divide-y divide-ona-border dark:divide-[#18181B] overflow-hidden">
           {menuItems.map((item) => (
             <Link
               key={item.href}

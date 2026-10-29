@@ -161,7 +161,7 @@ export function AppPermissionsScreen() {
         />
 
         {/* Permissions List Card */}
-        <div className="rounded-ona-card border border-ona-border bg-ona-surface shadow-xs divide-y divide-ona-border overflow-hidden">
+        <div className="rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent shadow-xs divide-y divide-ona-border dark:divide-[#18181B] overflow-hidden">
           {permissions.map((item) => {
             const Icon = item.icon;
             const isGranted = item.state === "granted";
