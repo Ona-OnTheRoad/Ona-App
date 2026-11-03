@@ -9,79 +9,13 @@ import {
 import { createClient } from "@supabase/supabase-js";
 import { isProService } from "@/lib/services";
 import { clampProServiceRadiusKm } from "@/lib/profile-system";
+import { isBankAccountTaken } from "@/lib/server/payments/bank-lookup";
 import type { ProService } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type AdminClient = ReturnType<typeof createServiceSupabase>;
 
-/** True if another user already saved this bank code + NUBAN */
-async function isBankAccountTakenByOtherUser(
-  admin: AdminClient,
-  userId: string,
-  bankCode: string,
-  accountNumber: string,
-): Promise<boolean> {
-  const code = bankCode.trim();
-  const num = accountNumber.replace(/\D/g, "");
-  if (!code || num.length !== 10) return false;
-
-  const matchRow = (row: {
-    user_id?: string;
-    bank_code?: string | null;
-    bank_account_number?: string | null;
-  }) => {
-    if (!row || row.user_id === userId) return false;
-    const rCode = String(row.bank_code || "").trim();
-    const rNum = String(row.bank_account_number || "").replace(/\D/g, "");
-    return rCode === code && rNum === num;
-  };
-
-  try {
-    // Filter by account number first (most selective); code checked in JS
-    const [motRes, proRes] = await Promise.all([
-      admin
-        .from("motorist_profiles")
-        .select("user_id, bank_code, bank_account_number")
-        .eq("bank_account_number", num)
-        .neq("user_id", userId)
-        .limit(20),
-      admin
-        .from("repair_pro_profiles")
-        .select("user_id, bank_code, bank_account_number")
-        .eq("bank_account_number", num)
-        .neq("user_id", userId)
-        .limit(20),
-    ]);
-
-    const motHits = (motRes.data || []).some(matchRow);
-    const proHits = (proRes.data || []).some(matchRow);
-    if (motHits || proHits) return true;
-
-    // Fallback: some rows may store number with spaces/dashes scan by bank_code
-    const [motByCode, proByCode] = await Promise.all([
-      admin
-        .from("motorist_profiles")
-        .select("user_id, bank_code, bank_account_number")
-        .eq("bank_code", code)
-        .neq("user_id", userId)
-        .limit(50),
-      admin
-        .from("repair_pro_profiles")
-        .select("user_id, bank_code, bank_account_number")
-        .eq("bank_code", code)
-        .neq("user_id", userId)
-        .limit(50),
-    ]);
-    return (
-      (motByCode.data || []).some(matchRow) ||
-      (proByCode.data || []).some(matchRow)
-    );
-  } catch {
-    return false;
-  }
-}
 
 /**
  * Persist profile fields from the app (labour prices, vehicle, bank, etc.).
@@ -314,12 +248,11 @@ export async function POST(req: Request) {
     }
 
     if (bankCode && accountNumber.length === 10) {
-      const taken = await isBankAccountTakenByOtherUser(
-        admin,
-        userId,
-        bankCode,
+      const taken = await isBankAccountTaken({
         accountNumber,
-      );
+        bankCode,
+        excludeUserId: userId,
+      });
       if (taken) {
         return apiFail(
           "This bank is already used on another Ona account. Use a different one.",
