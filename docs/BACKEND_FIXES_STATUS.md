@@ -158,6 +158,12 @@ Approved scope and criteria: [Phase 4 review guide](review-guides/live-updates-p
 
 Code: 178 test files / 1,733 tests, `npm run typecheck`, `npm run lint` (0 errors), and `git diff --check` pass. Independent human review against the implementation commit remains pending. External: authenticated multi-tab browser maintenance capture (`L1`), hosted `/api/jobs/deadline-sweep` activation and unattended catch-up verification (`L2`), and Phase 1 representative baseline captures/targets remain pending.
 
+## Chat message notification dedupe (2026-11-01)
+
+Approved scope: [review guide](review-guides/chat-message-notification-dedupe.md). `POST /api/messages/send` used `groupKey: msg-{conversationId}`, so `insertNotification` skipped every alert after the first message in a thread. Keys are now `msg-{conversationId}-{message.id}`; unused `/api/messages/notify` aligned with optional `messageId` (UUID fallback). `insertNotification` skip-if-exists unchanged for payout/job keys.
+
+Code: `src/app/api/messages/__tests__/send.test.ts` — 8 passed. Independent human review and commit recording pending. External: two-party live smoke (subsequent toasts/center rows) pending.
+
 ## Signup dual-role attach — service client signed in as user (2026-10-24)
 
 Approved scope and criteria: [review guide](review-guides/signup-dual-role-service-client.md) on branch `fix/signup-dual-role-service-client` starting at dev `7517674`. `POST /api/auth/signup` called `signInWithPassword` on its `createServiceSupabase()` client; supabase-js then sent the user's JWT on later queries, so after migration 077 a signed-in motorist adding Repair Pro (and the signed-out existing-email recovery path) failed with `permission denied for table profiles`. Password checks and the browser session now use a throwaway anon client (`passwordClient()`), so every write stays `service_role`. Migration 077 grants, policies and triggers are unchanged. Side effect: `runIdentitySync`, `detectMergeCandidatesForUser` and the success `signup_events` row on these paths now run as service role instead of as the user.

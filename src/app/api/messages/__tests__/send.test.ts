@@ -122,7 +122,36 @@ describe("POST /api/messages/send", () => {
     expect(json.ok).toBe(true);
     expect(json.data).toEqual({ id: "msg-1", createdAt: "2026-10-10T00:00:00.000Z" });
     expect(insertNotificationMock).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: "pro-1", category: "messages" }),
+      expect.objectContaining({
+        userId: "pro-1",
+        category: "messages",
+        groupKey: "msg-conv-1-msg-1",
+      }),
+    );
+  });
+
+  it("uses a per-message groupKey so a second send is not skipped by dedupe", async () => {
+    requireUserMock.mockResolvedValue(authOk("motorist-1"));
+    makeSb({
+      insertResult: {
+        data: { id: "msg-2", created_at: "2026-10-10T00:01:00.000Z" },
+        error: null,
+      },
+    });
+    insertNotificationMock.mockResolvedValue({ id: "notif-2" });
+
+    const res = await POST(req({ conversationId: "conv-1", body: "second" }));
+    expect(res.status).toBe(200);
+    expect(insertNotificationMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "pro-1",
+        groupKey: "msg-conv-1-msg-2",
+        body: "second",
+      }),
+    );
+    // Must not reuse the conversation-only key that silenced later messages.
+    expect(insertNotificationMock.mock.calls[0][0].groupKey).not.toBe(
+      "msg-conv-1",
     );
   });
 
