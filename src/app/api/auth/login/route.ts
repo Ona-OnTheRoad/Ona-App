@@ -1,5 +1,4 @@
 import { rateLimitUnavailableResponse } from "@/lib/server/modules/rate-limit";
-import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import {
@@ -8,6 +7,7 @@ import {
   isSupabaseConfigured,
 } from "@/lib/supabase/env";
 import { loadLoginIdentity } from "@/lib/server/identity/login-identity";
+import { authLoginBodySchema as bodySchema } from "@/lib/server/openapi/schemas/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,10 +16,6 @@ export const dynamic = "force-dynamic";
  * Server-side email/password login reliable on Vercel.
  * Browser sets session from returned tokens; profile loaded via service role.
  */
-const bodySchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
-});
 
 function friendlyLoginError(message: string): string {
   const m = (message || "").toLowerCase();

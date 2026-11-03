@@ -25,6 +25,7 @@ Ona is a two-sided marketplace connecting motorists with repair professionals (m
 | Email | Resend |
 | Maps | Leaflet/OSM + Google Maps fallback |
 | Validation | Zod v4 |
+| API docs | OpenAPI 3.1 + Swagger UI (`/api/openapi`, `/api/docs`; gated — see `docs/OPENAPI_INVENTORY.md`) |
 
 ---
 

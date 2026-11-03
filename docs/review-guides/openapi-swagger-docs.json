@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "id": "openapi-swagger-docs",
+  "title": "OpenAPI / Swagger docs for Next.js App Router",
+  "plan": "docs/review-guides/openapi-swagger-docs.md",
+  "reviewedCommit": null,
+  "implementationBranch": "feat/openapi-swagger-docs",
+  "implementationState": "Stages 0-6 implemented locally; independent review and hosted gate evidence pending",
+  "implementationNotes": "42 registered product paths (auth/jobs/payments/shop). Admin/webhook/cron/internal excluded. Drift guard: npm run check:openapi-drift.",
+  "independentReview": {
+    "status": "Not started",
+    "findings": [],
+    "scope": "Review stage criteria; confirm no protected business-logic changes and no secret leakage in the OpenAPI document."
+  },
+  "requirements": [
+    {
+      "id": "s0-route-inventory",
+      "stage": "code",
+      "phase": "0",
+      "expectation": "All src/app/api route handlers are inventoried into buckets with Stage 2-5 domain targets listed.",
+      "verification": "docs/OPENAPI_INVENTORY.md and inventory.ts",
+      "status": "pass",
+      "evidence": ["docs/OPENAPI_INVENTORY.md", "src/lib/server/openapi/inventory.ts"]
+    },
+    {
+      "id": "s0-access-and-library",
+      "stage": "code",
+      "phase": "0",
+      "expectation": "Docs access policy and Zod 4 OpenAPI bridge choice recorded.",
+      "verification": "inventory + enabled.ts + package.json @asteasolutions/zod-to-openapi",
+      "status": "pass",
+      "evidence": ["src/lib/server/openapi/enabled.ts", "package.json"]
+    },
+    {
+      "id": "s1-registry-and-envelope",
+      "stage": "code",
+      "phase": "1",
+      "expectation": "Server-only OpenAPI registry with ok/fail envelopes and security stubs; protected logic unchanged.",
+      "verification": "document.test.ts envelope components; protected greps clean in this diff",
+      "status": "pass",
+      "evidence": ["src/lib/server/openapi/__tests__/document.test.ts"]
+    },
+    {
+      "id": "s1-openapi-json-route",
+      "stage": "code",
+      "phase": "1",
+      "expectation": "GET /api/openapi returns parseable OpenAPI 3 when enabled; denied when disabled.",
+      "verification": "src/app/api/openapi/__tests__/route.test.ts",
+      "status": "pass",
+      "evidence": ["src/app/api/openapi/__tests__/route.test.ts"]
+    },
+    {
+      "id": "s1-swagger-ui-gated",
+      "stage": "code",
+      "phase": "1",
+      "expectation": "Swagger UI at /api/docs only when enabled; production default off.",
+      "verification": "docs route tests + enabled.ts",
+      "status": "pass",
+      "evidence": ["src/app/api/docs/__tests__/route.test.ts"]
+    },
+    {
+      "id": "s1-no-secret-leak",
+      "stage": "code",
+      "phase": "1",
+      "expectation": "OpenAPI document and docs UI do not embed env secrets or provider keys.",
+      "verification": "Generated document uses schemas/examples without env values; x-ona-inventory is structural only",
+      "status": "pass",
+      "evidence": ["src/lib/server/openapi/__tests__/document.test.ts"]
+    },
+    {
+      "id": "s2-auth-paths-documented",
+      "stage": "code",
+      "phase": "2",
+      "expectation": "Core auth routes documented; login/OTP share Zod with handlers.",
+      "verification": "paths/auth.ts + login/otp routes import schemas/auth.ts",
+      "status": "pass",
+      "evidence": ["src/lib/server/openapi/paths/auth.ts", "src/app/api/auth/login/route.ts"]
+    },
+    {
+      "id": "s3-jobs-product-paths",
+      "stage": "code",
+      "phase": "3",
+      "expectation": "Product job routes documented; sweeps omitted from public Swagger.",
+      "verification": "document.test.ts asserts pairing-sweep absent; paths/jobs.ts",
+      "status": "pass",
+      "evidence": ["src/lib/server/openapi/paths/jobs.ts"]
+    },
+    {
+      "id": "s4-payments-product-paths",
+      "stage": "code",
+      "phase": "4",
+      "expectation": "Product payment routes documented; Flutterwave webhook excluded from try-it-out.",
+      "verification": "document.test.ts asserts webhook path absent; paths/payments.ts",
+      "status": "pass",
+      "evidence": ["src/lib/server/openapi/paths/payments.ts"]
+    },
+    {
+      "id": "s5-shop-product-paths",
+      "stage": "code",
+      "phase": "5",
+      "expectation": "Customer-facing shop API routes documented; admin shop omitted.",
+      "verification": "paths/shop.ts; no /api/admin/shop in registered paths",
+      "status": "pass",
+      "evidence": ["src/lib/server/openapi/paths/shop.ts"]
+    },
+    {
+      "id": "s6-path-drift-guard",
+      "stage": "code",
+      "phase": "6",
+      "expectation": "Script fails when a registered OpenAPI path has no matching route.ts; residuals listed.",
+      "verification": "npm run check:openapi-drift; OPENAPI_INVENTORY residuals",
+      "status": "pass",
+      "evidence": ["scripts/verify-openapi-drift.mjs", "docs/OPENAPI_INVENTORY.md"]
+    },
+    {
+      "id": "hosted-docs-gate",
+      "stage": "release",
+      "phase": "1+",
+      "expectation": "Non-production host can enable docs; production remains gated/off unless explicitly enabled.",
+      "verification": "Hosted URL evidence",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      {
+        "id": "optional-schema-extract",
+        "item": "Optionally extract remaining inline Zod from jobs/payments/shop/auth handlers into shared modules (login/OTP already shared)."
+      },
+      {
+        "id": "optional-domain-expand",
+        "item": "Messages, notifications, profile, express and other authenticated product routes remain residual."
+      },
+      {
+        "id": "optional-self-host-swagger-assets",
+        "item": "Swagger UI currently loads swagger-ui-dist@5.17.14 from unpkg; self-host if CDN policy requires."
+      }
+    ],
+    "external": [
+      {
+        "id": "hosted-enablement-unrun",
+        "item": "Enable OPENAPI_DOCS_ENABLED on a non-production host and record sanitized reachability; confirm production default remains off."
+      }
+    ]
+  }
+}
