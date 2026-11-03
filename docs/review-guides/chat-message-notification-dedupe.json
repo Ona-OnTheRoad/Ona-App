@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "chat-message-notification-dedupe",
+  "title": "Chat: per-message notification groupKey",
+  "plan": "docs/review-guides/chat-message-notification-dedupe.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "send-unique-group-key",
+      "stage": "code",
+      "expectation": "POST /api/messages/send passes groupKey msg-{conversationId}-{message.id} into insertNotification so a second message in the same conversation is not skipped by dedupe.",
+      "verification": "Unit test asserts insertNotification groupKey includes conversation id and message id; inspect send route.",
+      "status": "pass",
+      "evidence": [
+        "src/app/api/messages/send/route.ts uses groupKey `msg-${conversationId}-${message.id}`",
+        "vitest src/app/api/messages/__tests__/send.test.ts — 8 passed (2026-11-01), including per-message groupKey assertion for msg-2"
+      ]
+    },
+    {
+      "id": "notify-route-aligned",
+      "stage": "code",
+      "expectation": "Unused POST /api/messages/notify uses the same per-message key shape when a messageId is available (unique fallback otherwise) so it cannot reintroduce conversation-level skip.",
+      "verification": "Inspect notify route groupKey construction.",
+      "status": "pass",
+      "evidence": [
+        "src/app/api/messages/notify/route.ts: optional messageId; groupKey `msg-${conversationId}-${messageId ?? crypto.randomUUID()}`"
+      ]
+    },
+    {
+      "id": "dedupe-helper-unchanged",
+      "stage": "code",
+      "expectation": "insertNotification still skips when the same group_key already exists (payout / job-complete behavior preserved).",
+      "verification": "Inspect src/lib/server/notifications.ts; no semantic change required for this fix.",
+      "status": "pass",
+      "evidence": [
+        "src/lib/server/notifications.ts unchanged; skip-if-existing group_key still in place"
+      ]
+    },
+    {
+      "id": "live-subsequent-message-toast",
+      "stage": "release",
+      "expectation": "With two authenticated clients on a live job chat, a second inbound message while the peer is not on the thread surfaces another in-app toast or center unread row.",
+      "verification": "Manual two-device or two-browser smoke on a non-production host; record sanitized evidence.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent human review against the implementation commit; set reviewedCommit when recorded."
+    ],
+    "external": [
+      "Authenticated live smoke: two subsequent messages → toast/center each time while peer is off-thread."
+    ]
+  },
+  "implementationState": "Code + unit tests done; live smoke and formal review pending"
+}

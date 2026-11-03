@@ -117,7 +117,9 @@ export async function POST(req: Request) {
         href: `/messages/${conversationId}`,
         actionType: "open_chat",
         actionPayload: { conversationId },
-        groupKey: `msg-${conversationId}`,
+        // Per-message key: conversation-only keys made insertNotification
+        // skip forever after the first chat alert for that thread.
+        groupKey: `msg-${conversationId}-${message.id}`,
         jobId: conv.request_id ? String(conv.request_id) : null,
         messageText: String(preview || "New message").slice(0, 200),
       });
