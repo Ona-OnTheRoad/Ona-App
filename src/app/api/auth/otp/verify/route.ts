@@ -1,5 +1,4 @@
 import { createHash } from "crypto";
-import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { normalizeNgPhone } from "@/lib/server/africastalking";
 import { phoneOrFilter, phonesMatch } from "@/lib/server/phone-match";
@@ -15,16 +14,10 @@ import { profileToUserProfile } from "@/lib/supabase/mappers";
 import type { ProfileRow } from "@/lib/supabase/types";
 import type { AccountType, ProService } from "@/lib/types";
 import { isProService } from "@/lib/services";
+import { authOtpVerifyBodySchema as bodySchema } from "@/lib/server/openapi/schemas/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const bodySchema = z.object({
-  channel: z.enum(["phone", "email"]),
-  target: z.string().min(3).max(120),
-  code: z.string().min(4).max(8),
-  preferType: z.enum(["motorist", "professional"]).optional(),
-});
 
 function hashCode(dest: string, code: string): string {
   return createHash("sha256")
