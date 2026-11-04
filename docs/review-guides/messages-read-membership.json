@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "messages-read-membership",
+  "title": "Messages: require conversation membership on read",
+  "plan": "docs/review-guides/messages-read-membership.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "membership-check",
+      "stage": "code",
+      "expectation": "POST /api/messages/read returns 403 when auth.userId is not motorist_id or repair_pro_id for the conversation.",
+      "verification": "Unit test with non-participant session; inspect route.",
+      "status": "pass",
+      "evidence": [
+        "src/app/api/messages/read/route.ts checks motorist_id / repair_pro_id before update",
+        "vitest read.test.ts — non-participant → 403; messages.update not called"
+      ]
+    },
+    {
+      "id": "missing-conversation",
+      "stage": "code",
+      "expectation": "Unknown conversationId returns 404 before any messages update.",
+      "verification": "Unit test; inspect route order.",
+      "status": "pass",
+      "evidence": [
+        "read.test.ts: missing conversation → 404; update not called"
+      ]
+    },
+    {
+      "id": "userId-session",
+      "stage": "code",
+      "expectation": "Body userId must still equal the signed-in user.",
+      "verification": "Unit test mismatch → 403.",
+      "status": "pass",
+      "evidence": [
+        "read.test.ts: body userId ≠ session → 403 before conversations.from"
+      ]
+    },
+    {
+      "id": "participant-success",
+      "stage": "code",
+      "expectation": "A conversation participant can mark the other party's unread messages read.",
+      "verification": "Unit test expects 200 and messages update filters.",
+      "status": "pass",
+      "evidence": [
+        "read.test.ts: motorist participant → 200; update({ read_at }) called"
+      ]
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent human review; set reviewedCommit when recorded."
+    ],
+    "external": [
+      "Verified none — deploy of the API route only; no hosted push or schema work."
+    ]
+  },
+  "implementationState": "Code + unit tests done (vitest read.test.ts: 4 passed); formal review pending"
+}

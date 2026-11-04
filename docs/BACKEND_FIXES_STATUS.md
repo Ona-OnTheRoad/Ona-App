@@ -158,6 +158,12 @@ Approved scope and criteria: [Phase 4 review guide](review-guides/live-updates-p
 
 Code: 178 test files / 1,733 tests, `npm run typecheck`, `npm run lint` (0 errors), and `git diff --check` pass. Independent human review against the implementation commit remains pending. External: authenticated multi-tab browser maintenance capture (`L1`), hosted `/api/jobs/deadline-sweep` activation and unattended catch-up verification (`L2`), and Phase 1 representative baseline captures/targets remain pending.
 
+## Messages read membership (2026-11-04)
+
+Approved scope: [review guide](review-guides/messages-read-membership.md). `POST /api/messages/read` used service role without checking conversation membership. Route now loads the conversation and requires `auth.userId` to be `motorist_id` or `repair_pro_id` (same as send); unknown conversation → 404.
+
+Code: read route + `src/app/api/messages/__tests__/read.test.ts`. Independent review pending. External: none beyond deploying the API route.
+
 ## Chat message Web Push (2026-11-04)
 
 Approved scope: [review guide](review-guides/chat-message-web-push.md). Always call `sendPushToUser` after chat in-app notify; OS `tag: msg-{conversationId}` (one tray item); `priority: "high"` / `category: "messages"` (prefs still gated; no quiet-hours suppression on the push path). Push failures do not fail message send.
