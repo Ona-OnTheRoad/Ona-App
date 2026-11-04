@@ -164,6 +164,12 @@ Approved scope: [review guide](review-guides/conversations-request-id-unique.md)
 
 Code: migration + ensure route + unit tests. Independent review pending. External: apply/verify migration 083 on target Supabase.
 
+## Messages read membership (2026-11-04)
+
+Approved scope: [review guide](review-guides/messages-read-membership.md). `POST /api/messages/read` used service role without checking conversation membership. Route now loads the conversation and requires `auth.userId` to be `motorist_id` or `repair_pro_id` (same as send); unknown conversation → 404.
+
+Code: read route + `src/app/api/messages/__tests__/read.test.ts`. Independent review pending. External: none beyond deploying the API route.
+
 ## Chat message Web Push (2026-11-04)
 
 Approved scope: [review guide](review-guides/chat-message-web-push.md). Always call `sendPushToUser` after chat in-app notify; OS `tag: msg-{conversationId}` (one tray item); `priority: "high"` / `category: "messages"` (prefs still gated; no quiet-hours suppression on the push path). Push failures do not fail message send.
