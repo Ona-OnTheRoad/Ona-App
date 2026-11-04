@@ -31,6 +31,26 @@ export type PushPayload = {
   priority?: NotificationPriority;
 };
 
+const NON_RETRYABLE_FAILURES = new Set([
+  "vapid_unconfigured",
+  "db_unavailable",
+  "push_disabled_master",
+  "push_disabled_by_user",
+  "push_category_disabled",
+  "no_subscriptions",
+]);
+
+/** Failures that will not succeed on cron retry without a user/config change. */
+export function isNonRetryablePushFailure(failures: string[]): boolean {
+  if (failures.length === 0) return true;
+  return failures.every(
+    (f) =>
+      NON_RETRYABLE_FAILURES.has(f) ||
+      f.startsWith("404:") ||
+      f.startsWith("410:"),
+  );
+}
+
 let vapidReady = false;
 
 function ensureVapid(): boolean {
@@ -45,22 +65,70 @@ function ensureVapid(): boolean {
   return true;
 }
 
+async function enqueuePushRetry(
+  userId: string,
+  payload: PushPayload,
+  failures: string[],
+): Promise<void> {
+  try {
+    const { enqueueNotificationDelivery } = await import(
+      "@/lib/server/notifications-retry"
+    );
+    await enqueueNotificationDelivery({
+      userId,
+      channel: "push",
+      title: payload.title,
+      body: payload.body,
+      payload: {
+        url: payload.url,
+        tag: payload.tag,
+        icon: payload.icon,
+        category: payload.category,
+        priority: payload.priority,
+      },
+      lastError: failures.join("; ").slice(0, 500),
+      attempts: 1,
+    });
+  } catch {
+    /* enqueue best-effort */
+  }
+}
+
 /**
  * Best-effort push to every subscription of a user. Dead subscriptions
  * (410 Gone / 404) are pruned so we never hammer a stale endpoint.
  * Never throws the caller must not let notification failures block the
  * underlying job transition.
+ *
+ * Transient zero-send failures are queued for `/api/cron/notification-retry`
+ * unless `opts.noEnqueue` is set (used by the retry processor itself).
  */
 export async function sendPushToUser(
   userId: string,
   payload: PushPayload,
-  _opts?: { noEnqueue?: boolean },
+  opts?: { noEnqueue?: boolean },
 ): Promise<{ sent: number; failures: string[] }> {
-  if (!ensureVapid()) return { sent: 0, failures: ["vapid_unconfigured"] };
+  const finish = async (result: {
+    sent: number;
+    failures: string[];
+  }): Promise<{ sent: number; failures: string[] }> => {
+    if (
+      !opts?.noEnqueue &&
+      result.sent === 0 &&
+      !isNonRetryablePushFailure(result.failures)
+    ) {
+      await enqueuePushRetry(userId, payload, result.failures);
+    }
+    return result;
+  };
+
+  if (!ensureVapid()) {
+    return finish({ sent: 0, failures: ["vapid_unconfigured"] });
+  }
   let sb;
   try {
     sb = createServiceSupabase();
-    if (!sb) return { sent: 0, failures: ["db_unavailable"] };
+    if (!sb) return finish({ sent: 0, failures: ["db_unavailable"] });
 
     // Gate push delivery based on user's notification preferences
     try {
@@ -93,13 +161,13 @@ export async function sendPushToUser(
 
         if (!isCritical) {
           if (isMasterDisabled) {
-            return { sent: 0, failures: ["push_disabled_master"] };
+            return finish({ sent: 0, failures: ["push_disabled_master"] });
           }
           if (isPushDisabled) {
-            return { sent: 0, failures: ["push_disabled_by_user"] };
+            return finish({ sent: 0, failures: ["push_disabled_by_user"] });
           }
           if (isCatDisabled) {
-            return { sent: 0, failures: ["push_category_disabled"] };
+            return finish({ sent: 0, failures: ["push_category_disabled"] });
           }
         }
       }
@@ -111,8 +179,9 @@ export async function sendPushToUser(
       .from("push_subscriptions")
       .select("endpoint,p256dh,auth")
       .eq("user_id", userId);
-    if (error || !data || data.length === 0)
-      return { sent: 0, failures: ["no_subscriptions"] };
+    if (error || !data || data.length === 0) {
+      return finish({ sent: 0, failures: ["no_subscriptions"] });
+    }
 
     const failures: string[] = [];
     let sent = 0;
@@ -155,12 +224,12 @@ export async function sendPushToUser(
         }
       }
     }
-    return { sent, failures };
+    return finish({ sent, failures });
   } catch (e) {
     /* push is best-effort never block the job transition */
-    return {
+    return finish({
       sent: 0,
       failures: [e instanceof Error ? e.message : "push_failed"],
-    };
+    });
   }
 }

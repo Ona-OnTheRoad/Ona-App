@@ -158,6 +158,12 @@ Approved scope and criteria: [Phase 4 review guide](review-guides/live-updates-p
 
 Code: 178 test files / 1,733 tests, `npm run typecheck`, `npm run lint` (0 errors), and `git diff --check` pass. Independent human review against the implementation commit remains pending. External: authenticated multi-tab browser maintenance capture (`L1`), hosted `/api/jobs/deadline-sweep` activation and unattended catch-up verification (`L2`), and Phase 1 representative baseline captures/targets remain pending.
 
+## Notification push retry enqueue (2026-11-04)
+
+Approved scope: [review guide](review-guides/notification-push-retry-enqueue.md). `enqueueNotificationDelivery` existed but `sendPushToUser` never called it, so the notification-retry cron had nothing useful to process. Transient zero-send push failures now enqueue; prefs / no subscriptions / 404·410 / `noEnqueue` skip the queue.
+
+Code: `webpush.ts` + unit tests. Independent review pending. External: confirm `/api/cron/notification-retry` is scheduled with secret on the target host.
+
 ## Conversations request_id uniqueness (2026-11-04)
 
 Approved scope: [review guide](review-guides/conversations-request-id-unique.md). Concurrent `/api/conversations/ensure` could insert two threads for one job because `request_id` was not unique. Migration `083` dedupes (keep oldest, reassign messages) and adds partial unique index `conversations_request_id_uidx`; ensure recovers from insert `23505` by re-selecting the winner.

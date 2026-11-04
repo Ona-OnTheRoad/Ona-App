@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "notification-push-retry-enqueue",
+  "title": "Push: enqueue failed deliveries for cron retry",
+  "plan": "docs/review-guides/notification-push-retry-enqueue.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "enqueue-transient",
+      "stage": "code",
+      "expectation": "sendPushToUser enqueues a push delivery when sent===0 and failures are retryable.",
+      "verification": "Unit test mocks enqueueNotificationDelivery.",
+      "status": "pass",
+      "evidence": [
+        "webpush.ts finish() enqueues when sent===0 and not non-retryable",
+        "vitest webpush.test.ts — 9 passed; enqueues on 503 endpoint failure"
+      ]
+    },
+    {
+      "id": "skip-permanent",
+      "stage": "code",
+      "expectation": "Preference disables, vapid_unconfigured, and no_subscriptions do not enqueue.",
+      "verification": "Unit tests assert enqueue not called.",
+      "status": "pass",
+      "evidence": [
+        "webpush.test.ts: master/push/category disabled and no_subscriptions do not enqueue"
+      ]
+    },
+    {
+      "id": "no-enqueue-flag",
+      "stage": "code",
+      "expectation": "opts.noEnqueue true skips enqueue (cron re-entry).",
+      "verification": "Unit test.",
+      "status": "pass",
+      "evidence": [
+        "webpush.test.ts: noEnqueue true → enqueueNotificationDelivery not called"
+      ]
+    },
+    {
+      "id": "hosted-cron",
+      "stage": "release",
+      "expectation": "notification-retry cron is authorized and runs on the target host so pending rows are processed.",
+      "verification": "Ops check of cron schedule + secret; sanitized evidence.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent human review; set reviewedCommit when recorded."
+    ],
+    "external": [
+      "Confirm /api/cron/notification-retry is scheduled with secret on the target host."
+    ]
+  },
+  "implementationState": "Code + unit tests done; hosted cron confirmation and formal review pending"
+}
