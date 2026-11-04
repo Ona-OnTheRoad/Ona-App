@@ -14,6 +14,8 @@ const bodySchema = z.object({
 
 /**
  * Mark all messages from the other party as read for this conversation.
+ * Service-role write — conversation membership is checked explicitly
+ * (same boundary as POST /api/messages/send).
  */
 export async function POST(req: Request) {
   if (!isSupabaseAdminConfigured()) {
@@ -40,6 +42,21 @@ export async function POST(req: Request) {
 
   const { conversationId } = parsed.data;
   const sb = createServiceSupabase();
+
+  const { data: conv, error: convError } = await sb
+    .from("conversations")
+    .select("id, motorist_id, repair_pro_id")
+    .eq("id", conversationId)
+    .maybeSingle();
+  if (convError) return apiFail(convError.message, 500);
+  if (!conv) return apiFail("Conversation not found", 404);
+
+  const motoristId = String(conv.motorist_id || "");
+  const proId = String(conv.repair_pro_id || "");
+  if (auth.userId !== motoristId && auth.userId !== proId) {
+    return apiFail("Forbidden", 403, "forbidden");
+  }
+
   const now = new Date().toISOString();
 
   const { error } = await sb
