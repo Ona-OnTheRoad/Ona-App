@@ -158,6 +158,12 @@ Approved scope and criteria: [Phase 4 review guide](review-guides/live-updates-p
 
 Code: 178 test files / 1,733 tests, `npm run typecheck`, `npm run lint` (0 errors), and `git diff --check` pass. Independent human review against the implementation commit remains pending. External: authenticated multi-tab browser maintenance capture (`L1`), hosted `/api/jobs/deadline-sweep` activation and unattended catch-up verification (`L2`), and Phase 1 representative baseline captures/targets remain pending.
 
+## Conversations request_id uniqueness (2026-11-04)
+
+Approved scope: [review guide](review-guides/conversations-request-id-unique.md). Concurrent `/api/conversations/ensure` could insert two threads for one job because `request_id` was not unique. Migration `083` dedupes (keep oldest, reassign messages) and adds partial unique index `conversations_request_id_uidx`; ensure recovers from insert `23505` by re-selecting the winner.
+
+Code: migration + ensure route + unit tests. Independent review pending. External: apply/verify migration 083 on target Supabase.
+
 ## Chat message Web Push (2026-11-04)
 
 Approved scope: [review guide](review-guides/chat-message-web-push.md). Always call `sendPushToUser` after chat in-app notify; OS `tag: msg-{conversationId}` (one tray item); `priority: "high"` / `category: "messages"` (prefs still gated; no quiet-hours suppression on the push path). Push failures do not fail message send.
