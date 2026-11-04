@@ -5,6 +5,7 @@ import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { requireUser } from "@/lib/server/auth-utils";
 import { insertNotification } from "@/lib/server/notifications";
+import { sendPushToUser } from "@/lib/server/push/webpush";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 
@@ -63,12 +64,13 @@ export async function POST(req: Request) {
     }
 
     const href = `/messages/${conversationId}`;
+    const notifBody = preview.slice(0, 160);
     const res = await insertNotification({
       userId: recipientId,
       category: "messages",
       priority: "high",
       title: name,
-      body: preview.slice(0, 160),
+      body: notifBody,
       href,
       actionType: "open_chat",
       actionPayload: { conversationId },
@@ -78,6 +80,18 @@ export async function POST(req: Request) {
       messageText: preview.slice(0, 200),
     });
     if ("error" in res) return apiFail(res.error, 500);
+    try {
+      await sendPushToUser(recipientId, {
+        title: name,
+        body: notifBody,
+        url: href,
+        tag: `msg-${conversationId}`,
+        category: "messages",
+        priority: "high",
+      });
+    } catch {
+      /* push best-effort */
+    }
     return apiOk({ id: res.id });
   } catch (e) {
     return apiFail(e instanceof Error ? e.message : "Notify failed", 500);

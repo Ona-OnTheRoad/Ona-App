@@ -2,6 +2,7 @@ import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { requireUser } from "@/lib/server/auth-utils";
 import { insertNotification } from "@/lib/server/notifications";
+import { sendPushToUser } from "@/lib/server/push/webpush";
 import { serverLogger } from "@/lib/server/structured-logger";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
@@ -108,13 +109,16 @@ export async function POST(req: Request) {
         name = String(prof?.full_name || "New message").trim() || "New message";
       }
       const preview = previewFromBody(body);
+      const title = name;
+      const notifBody = String(preview || "New message").slice(0, 160);
+      const href = `/messages/${conversationId}`;
       const res = await insertNotification({
         userId: recipientId,
         category: "messages",
         priority: "high",
-        title: name,
-        body: String(preview || "New message").slice(0, 160),
-        href: `/messages/${conversationId}`,
+        title,
+        body: notifBody,
+        href,
         actionType: "open_chat",
         actionPayload: { conversationId },
         // Per-message key: conversation-only keys made insertNotification
@@ -128,6 +132,25 @@ export async function POST(req: Request) {
           "messages.send.notify_failed",
           { operation: "messages.send", outcome: "notify_failed" },
           req,
+        );
+      }
+      // Always attempt OS push (prefs gated inside sendPushToUser).
+      // tag collapses the tray to one item per conversation.
+      try {
+        await sendPushToUser(recipientId, {
+          title,
+          body: notifBody,
+          url: href,
+          tag: `msg-${conversationId}`,
+          category: "messages",
+          priority: "high",
+        });
+      } catch (pushErr) {
+        serverLogger.warn(
+          "messages.send.push_failed",
+          { operation: "messages.send", outcome: "push_threw" },
+          req,
+          pushErr,
         );
       }
     } catch (e) {

@@ -16,10 +16,15 @@ vi.mock("@/lib/server/notifications", () => ({
   insertNotification: vi.fn(async () => ({ id: "notif-1" })),
 }));
 
+vi.mock("@/lib/server/push/webpush", () => ({
+  sendPushToUser: vi.fn(async () => ({ sent: 1, failures: [] })),
+}));
+
 import { requireUser } from "@/lib/server/auth-utils";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { insertNotification } from "@/lib/server/notifications";
+import { sendPushToUser } from "@/lib/server/push/webpush";
 import { serverLogger } from "@/lib/server/structured-logger";
 import { POST } from "@/app/api/messages/send/route";
 
@@ -27,6 +32,7 @@ const requireUserMock = vi.mocked(requireUser);
 const isSupabaseAdminConfiguredMock = vi.mocked(isSupabaseAdminConfigured);
 const createServiceSupabaseMock = vi.mocked(createServiceSupabase);
 const insertNotificationMock = vi.mocked(insertNotification);
+const sendPushToUserMock = vi.mocked(sendPushToUser);
 
 function authOk(userId: string): Awaited<ReturnType<typeof requireUser>> {
   return { ok: true, userId, email: null, token: "t", user: {} as never };
@@ -108,6 +114,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   isSupabaseAdminConfiguredMock.mockReturnValue(true);
   insertNotificationMock.mockResolvedValue({ id: "notif-1" });
+  sendPushToUserMock.mockResolvedValue({ sent: 1, failures: [] });
 });
 
 describe("POST /api/messages/send", () => {
@@ -128,6 +135,38 @@ describe("POST /api/messages/send", () => {
         groupKey: "msg-conv-1-msg-1",
       }),
     );
+    expect(sendPushToUserMock).toHaveBeenCalledWith(
+      "pro-1",
+      expect.objectContaining({
+        title: "Sender",
+        body: "hello",
+        url: "/messages/conv-1",
+        tag: "msg-conv-1",
+        category: "messages",
+        priority: "high",
+      }),
+    );
+  });
+
+  it("still returns success when sendPushToUser throws", async () => {
+    requireUserMock.mockResolvedValue(authOk("motorist-1"));
+    makeSb({});
+    sendPushToUserMock.mockRejectedValueOnce(new Error("push down"));
+    const warnSpy = vi.spyOn(serverLogger, "warn").mockImplementation(() => {});
+
+    const res = await POST(req({ conversationId: "conv-1", body: "hello" }));
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.ok).toBe(true);
+    expect(json.data.id).toBe("msg-1");
+    expect(warnSpy).toHaveBeenCalledWith(
+      "messages.send.push_failed",
+      expect.objectContaining({ outcome: "push_threw" }),
+      expect.anything(),
+      expect.anything(),
+    );
+    warnSpy.mockRestore();
   });
 
   it("uses a per-message groupKey so a second send is not skipped by dedupe", async () => {
