@@ -28,12 +28,11 @@ export function useTypingChannel(
       return;
     }
     if (!sb) return;
-    const channel = sb.channel(
-      `om-typing:${id}-${Math.random().toString(36).slice(2, 8)}`,
-      {
-        config: { broadcast: { self: false } },
-      },
-    );
+    // Stable topic so both peers join the same broadcast channel.
+    // self:false + userId filter already ignore own echoes.
+    const channel = sb.channel(`om-typing:${id}`, {
+      config: { broadcast: { self: false } },
+    });
     channel
       .on(
         "broadcast",

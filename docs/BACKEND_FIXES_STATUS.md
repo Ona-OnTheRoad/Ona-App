@@ -158,6 +158,12 @@ Approved scope and criteria: [Phase 4 review guide](review-guides/live-updates-p
 
 Code: 178 test files / 1,733 tests, `npm run typecheck`, `npm run lint` (0 errors), and `git diff --check` pass. Independent human review against the implementation commit remains pending. External: authenticated multi-tab browser maintenance capture (`L1`), hosted `/api/jobs/deadline-sweep` activation and unattended catch-up verification (`L2`), and Phase 1 representative baseline captures/targets remain pending.
 
+## Chat typing channel (2026-11-04)
+
+Approved scope: [review guide](review-guides/chat-typing-channel.md). `useTypingChannel` joined `om-typing:{id}-{random}`, so peers never shared a Realtime broadcast topic and typing indicators never appeared. Topic is now stable `om-typing:{conversationId}`; `self:false` and `userId` filtering unchanged.
+
+Code: `src/components/messages/__tests__/use-typing-channel.test.tsx`. Independent human review and commit recording pending. External: two-browser live typing smoke pending.
+
 ## Chat message notification dedupe (2026-11-01)
 
 Approved scope: [review guide](review-guides/chat-message-notification-dedupe.md). `POST /api/messages/send` used `groupKey: msg-{conversationId}`, so `insertNotification` skipped every alert after the first message in a thread. Keys are now `msg-{conversationId}-{message.id}`; unused `/api/messages/notify` aligned with optional `messageId` (UUID fallback). `insertNotification` skip-if-exists unchanged for payout/job keys.
