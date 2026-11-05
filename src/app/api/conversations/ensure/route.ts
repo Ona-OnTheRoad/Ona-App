@@ -17,6 +17,9 @@ const bodySchema = z.object({
  * from the service_requests row itself, never from client input, since
  * trusting client-supplied party ids here would let a caller attach an
  * arbitrary conversation to someone else's request.
+ *
+ * DB enforces one row per non-null request_id (conversations_request_id_uidx).
+ * Concurrent inserts recover via unique_violation → re-select.
  */
 export async function POST(req: Request) {
   if (!isSupabaseAdminConfigured()) {
@@ -53,6 +56,8 @@ export async function POST(req: Request) {
       .from("conversations")
       .select("id")
       .eq("request_id", requestId)
+      .order("created_at", { ascending: true })
+      .limit(1)
       .maybeSingle();
     if (existingError) return apiFail(existingError.message, 500);
     if (existing?.id) {
@@ -69,8 +74,26 @@ export async function POST(req: Request) {
       })
       .select("id")
       .single();
-    if (error || !data) {
-      return apiFail(error?.message || "Chat create failed", 500);
+
+    if (error) {
+      // Twin ensure won the unique index — return their row.
+      if (String((error as { code?: string }).code) === "23505") {
+        const { data: raced, error: racedError } = await sb
+          .from("conversations")
+          .select("id")
+          .eq("request_id", requestId)
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        if (racedError) return apiFail(racedError.message, 500);
+        if (raced?.id) {
+          return apiOk({ conversationId: raced.id as string });
+        }
+      }
+      return apiFail(error.message || "Chat create failed", 500);
+    }
+    if (!data) {
+      return apiFail("Chat create failed", 500);
     }
 
     return apiOk({ conversationId: data.id as string });

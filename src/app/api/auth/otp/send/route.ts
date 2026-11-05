@@ -1,6 +1,5 @@
 import { rateLimitAsync, rateLimitUnavailableResponse } from "@/lib/server/modules/rate-limit";
 import { createHash, randomInt } from "crypto";
-import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import {
   isAfricaTalkingConfigured,
@@ -16,23 +15,10 @@ import {
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { runIdempotent } from "@/lib/server/idempotency";
+import { authOtpSendBodySchema as bodySchema } from "@/lib/server/openapi/schemas/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const bodySchema = z.object({
-  channel: z.enum(["phone", "email"]),
-  /** Phone number or email depending on channel */
-  target: z.string().min(3).max(120),
-  /**
-   * Client idempotency sticker. Retrying with the SAME opKey after a lost
-   * response replays the already-issued code (no second SMS, no code
-   * rotation). A deliberate resend uses a FRESH opKey to rotate + re-send.
-   */
-  opKey: z.string().min(1).max(100).optional().nullable(),
-  /** Client-echoed actor (echoed back on /api/ops/status verify). */
-  opActorId: z.string().min(1).max(200).optional().nullable(),
-});
 
 function hashCode(dest: string, code: string): string {
   return createHash("sha256")

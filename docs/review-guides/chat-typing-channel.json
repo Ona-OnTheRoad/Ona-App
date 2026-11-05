@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "chat-typing-channel",
+  "title": "Chat: stable typing broadcast topic",
+  "plan": "docs/review-guides/chat-typing-channel.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "stable-topic",
+      "stage": "code",
+      "expectation": "useTypingChannel subscribes with channel name exactly om-typing:{conversationId} (no random suffix).",
+      "verification": "Unit test mocks createBrowserSupabase.channel and asserts the topic; inspect hook.",
+      "status": "pass",
+      "evidence": [
+        "src/components/messages/use-typing-channel.ts uses `om-typing:${id}`",
+        "vitest use-typing-channel.test.tsx — 2 passed (2026-11-04), asserts channel('om-typing:conv-1', …)"
+      ]
+    },
+    {
+      "id": "self-filter",
+      "stage": "code",
+      "expectation": "Own typing still ignored via broadcast self:false and userId payload check.",
+      "verification": "Inspect use-typing-channel.ts channel config and broadcast handler.",
+      "status": "pass",
+      "evidence": [
+        "channel config still { broadcast: { self: false } }; handler ignores p.userId === backendUserId"
+      ]
+    },
+    {
+      "id": "closed-chat",
+      "stage": "code",
+      "expectation": "No Realtime subscribe when chatClosed, missing backendUserId, or local chat-* id.",
+      "verification": "Unit test asserts channel() not called for those cases.",
+      "status": "pass",
+      "evidence": [
+        "use-typing-channel.test.tsx covers closed, chat-* id, and null userId"
+      ]
+    },
+    {
+      "id": "live-typing",
+      "stage": "release",
+      "expectation": "Two authenticated browsers on the same live job chat: peer sees typing indicator while the other types.",
+      "verification": "Manual two-browser smoke; record sanitized evidence.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent human review against the implementation commit; set reviewedCommit when recorded."
+    ],
+    "external": [
+      "Two-browser live typing smoke on a live job chat."
+    ]
+  },
+  "implementationState": "Code + unit tests done; live smoke and formal review pending"
+}

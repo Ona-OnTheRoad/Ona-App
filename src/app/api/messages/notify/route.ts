@@ -5,6 +5,7 @@ import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { requireUser } from "@/lib/server/auth-utils";
 import { insertNotification } from "@/lib/server/notifications";
+import { sendPushToUser } from "@/lib/server/push/webpush";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 
@@ -16,6 +17,8 @@ const bodySchema = z.object({
   senderId: z.string().min(1),
   preview: z.string().min(1).max(280),
   senderName: z.string().optional(),
+  /** Prefer the persisted message id so keys match /api/messages/send. */
+  messageId: z.string().min(1).optional(),
 });
 
 export async function POST(req: Request) {
@@ -28,7 +31,7 @@ export async function POST(req: Request) {
 
     const parsed = bodySchema.safeParse(await req.json());
     if (!parsed.success) return apiFail("Invalid body", 400);
-    const { conversationId, preview, senderName } = parsed.data;
+    const { conversationId, preview, senderName, messageId } = parsed.data;
     const senderId = auth.userId;
     if (parsed.data.senderId !== auth.userId) {
       return apiFail("senderId must match signed-in user", 403);
@@ -61,20 +64,34 @@ export async function POST(req: Request) {
     }
 
     const href = `/messages/${conversationId}`;
+    const notifBody = preview.slice(0, 160);
     const res = await insertNotification({
       userId: recipientId,
       category: "messages",
       priority: "high",
       title: name,
-      body: preview.slice(0, 160),
+      body: notifBody,
       href,
       actionType: "open_chat",
       actionPayload: { conversationId },
-      groupKey: `msg-${conversationId}`,
+      // Match send route: unique per message so dedupe does not silence the thread.
+      groupKey: `msg-${conversationId}-${messageId ?? crypto.randomUUID()}`,
       jobId: conv.request_id ? String(conv.request_id) : null,
       messageText: preview.slice(0, 200),
     });
     if ("error" in res) return apiFail(res.error, 500);
+    try {
+      await sendPushToUser(recipientId, {
+        title: name,
+        body: notifBody,
+        url: href,
+        tag: `msg-${conversationId}`,
+        category: "messages",
+        priority: "high",
+      });
+    } catch {
+      /* push best-effort */
+    }
     return apiOk({ id: res.id });
   } catch (e) {
     return apiFail(e instanceof Error ? e.message : "Notify failed", 500);

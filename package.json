@@ -20,9 +20,11 @@
     "backup:local:watch": "node \"Local BackUp/scripts/schedule-24h.mjs\"",
     "vehicles:catalog": "node scripts/download-vehicle-catalog.mjs",
     "jobs:deadline-sweep": "node scripts/run-deadline-sweep.mjs",
-    "check:server-boundaries": "node scripts/verify-server-only-build.mjs"
+    "check:server-boundaries": "node scripts/verify-server-only-build.mjs",
+    "check:openapi-drift": "node scripts/verify-openapi-drift.mjs"
   },
   "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^9.1.0",
     "@mediapipe/tasks-vision": "^0.10.35",
     "@radix-ui/react-avatar": "^1.2.2",
     "@radix-ui/react-slider": "^1.6.1",

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "conversations-request-id-unique",
+  "title": "Conversations: unique request_id",
+  "plan": "docs/review-guides/conversations-request-id-unique.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "unique-index",
+      "stage": "code",
+      "expectation": "Partial unique index conversations_request_id_uidx on request_id where not null.",
+      "verification": "Inspect migration 083.",
+      "status": "pass",
+      "evidence": [
+        "supabase/migrations/20261104_083_conversations_request_id_unique.sql creates conversations_request_id_uidx"
+      ]
+    },
+    {
+      "id": "dedupe",
+      "stage": "code",
+      "expectation": "Migration dedupes duplicate request_id rows: keep oldest, reassign messages, delete extras before creating the index.",
+      "verification": "Inspect migration SQL.",
+      "status": "pass",
+      "evidence": [
+        "Migration CTE reassigns messages to keeper then deletes rn > 1 before create unique index"
+      ]
+    },
+    {
+      "id": "race-recovery",
+      "stage": "code",
+      "expectation": "POST /api/conversations/ensure recovers from insert unique_violation by returning the existing conversation id.",
+      "verification": "Unit test mocks 23505 then re-select.",
+      "status": "pass",
+      "evidence": [
+        "vitest ensure/route.test.ts — 7 passed; recovers when concurrent ensure wins unique index → conv-winner"
+      ]
+    },
+    {
+      "id": "existing-fast-path",
+      "stage": "code",
+      "expectation": "When a conversation already exists for request_id, ensure returns it without inserting.",
+      "verification": "Existing unit test.",
+      "status": "pass",
+      "evidence": [
+        "ensure/route.test.ts: returns existing conversation id without inserting"
+      ]
+    },
+    {
+      "id": "hosted-migration",
+      "stage": "release",
+      "expectation": "Migration 083 applied on the intended Supabase project.",
+      "verification": "Migration ledger / index presence check; sanitized evidence.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent human review; set reviewedCommit when recorded."
+    ],
+    "external": [
+      "Apply and verify migration 083 on the target Supabase project."
+    ]
+  },
+  "implementationState": "Code + unit tests done; hosted migration and formal review pending"
+}

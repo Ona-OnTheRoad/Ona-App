@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "chat-message-web-push",
+  "title": "Chat: Web Push on message send",
+  "plan": "docs/review-guides/chat-message-web-push.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "send-calls-push",
+      "stage": "code",
+      "expectation": "POST /api/messages/send calls sendPushToUser for the other participant with category messages, priority high, url /messages/{conversationId}, tag msg-{conversationId}.",
+      "verification": "Unit test mocks sendPushToUser and asserts payload.",
+      "status": "pass",
+      "evidence": [
+        "src/app/api/messages/send/route.ts calls sendPushToUser after insertNotification",
+        "vitest send.test.ts — 9 passed (2026-11-04); asserts tag msg-conv-1, category messages, priority high"
+      ]
+    },
+    {
+      "id": "push-best-effort",
+      "stage": "code",
+      "expectation": "Message send still returns 200 if sendPushToUser throws or returns failures.",
+      "verification": "Unit test forces push throw; assert 200 and message id.",
+      "status": "pass",
+      "evidence": [
+        "send.test.ts: still returns success when sendPushToUser throws; logs messages.send.push_failed"
+      ]
+    },
+    {
+      "id": "notify-route-aligned",
+      "stage": "code",
+      "expectation": "Unused /api/messages/notify uses the same push tag/url/category/priority shape when notifying.",
+      "verification": "Inspect notify route.",
+      "status": "pass",
+      "evidence": [
+        "src/app/api/messages/notify/route.ts: same sendPushToUser payload; errors swallowed"
+      ]
+    },
+    {
+      "id": "live-background-push",
+      "stage": "release",
+      "expectation": "With VAPID + a registered subscription, a backgrounded peer receives an OS notification for a new chat message; a second message updates the same tray tag.",
+      "verification": "Two-device or two-browser smoke on a non-production host with push enabled; sanitized evidence.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent human review; set reviewedCommit when recorded."
+    ],
+    "external": [
+      "Confirm VAPID on target env; two-device background push smoke."
+    ]
+  },
+  "implementationState": "Code + unit tests done; live smoke and formal review pending"
+}

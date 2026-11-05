@@ -44,8 +44,10 @@ function makeSb(opts: {
   existing?: { data: { id: string } | null; error?: { message: string } | null };
   insertResult?: {
     data: { id: string } | null;
-    error?: { message: string } | null;
+    error?: { message: string; code?: string } | null;
   };
+  /** Second select after a unique-violation race. */
+  raced?: { data: { id: string } | null; error?: { message: string } | null };
 }) {
   const job = opts.job ?? {
     data: { id: "req-1", motorist_id: "motorist-1", repair_pro_id: "pro-1" },
@@ -56,13 +58,23 @@ function makeSb(opts: {
     data: { id: "conv-1" },
     error: null,
   };
+  const raced = opts.raced ?? { data: null, error: null };
 
+  let conversationSelectCalls = 0;
   const conversationsTable = {
-    select: vi.fn(() => ({
-      eq: vi.fn(() => ({
-        maybeSingle: vi.fn(async () => existing),
-      })),
-    })),
+    select: vi.fn(() => {
+      const chain = {
+        eq: vi.fn(() => chain),
+        order: vi.fn(() => chain),
+        limit: vi.fn(() => chain),
+        maybeSingle: vi.fn(async () => {
+          conversationSelectCalls += 1;
+          if (conversationSelectCalls === 1) return existing;
+          return raced;
+        }),
+      };
+      return chain;
+    }),
     insert: vi.fn(() => ({
       select: vi.fn(() => ({
         single: vi.fn(async () => insertResult),
@@ -125,7 +137,9 @@ describe("POST /api/conversations/ensure", () => {
 
   it("returns the existing conversation id without inserting", async () => {
     requireUserMock.mockResolvedValue(authOk("motorist-1"));
-    const sb = makeSb({ existing: { data: { id: "conv-existing" }, error: null } });
+    const sb = makeSb({
+      existing: { data: { id: "conv-existing" }, error: null },
+    });
 
     const res = await POST(req({ requestId: "req-1" }));
     const json = await res.json();
@@ -135,6 +149,24 @@ describe("POST /api/conversations/ensure", () => {
       (_r, i) => sb.from.mock.calls[i][0] === "conversations",
     )!.value as { insert: ReturnType<typeof vi.fn> };
     expect(conversationsTable.insert).not.toHaveBeenCalled();
+  });
+
+  it("recovers when a concurrent ensure wins the unique index", async () => {
+    requireUserMock.mockResolvedValue(authOk("motorist-1"));
+    makeSb({
+      existing: { data: null, error: null },
+      insertResult: {
+        data: null,
+        error: { message: "duplicate key", code: "23505" },
+      },
+      raced: { data: { id: "conv-winner" }, error: null },
+    });
+
+    const res = await POST(req({ requestId: "req-1" }));
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.data).toEqual({ conversationId: "conv-winner" });
   });
 
   it("rejects a caller who isn't the motorist or repair pro on the request", async () => {
