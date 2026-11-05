@@ -7,9 +7,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Pending care items for nav badges:
- * - Customer: ID submitted, account pending action, or re-submit requested
- * - Pro: ID submitted, skill docs under review, account status pending, re-submit
+ * Counts for nav badges and care review queues:
+ * - Customers: total count for nav badge, plus pending care items
+ * - Pros: total count for nav badge, plus pending care items
  */
 export async function GET() {
   if (!isSupabaseAdminConfigured()) {
@@ -20,12 +20,21 @@ export async function GET() {
     const sb = createServiceSupabase();
 
     const [
+      totalCustomers,
+      totalPros,
       custSubmitted,
       custNoneWithAccount,
       proIdSubmitted,
       proDocs,
       proPendingStatus,
     ] = await Promise.all([
+      sb
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("role", "motorist"),
+      sb
+        .from("repair_pro_profiles")
+        .select("user_id", { count: "exact", head: true }),
       sb
         .from("motorist_profiles")
         .select("user_id", { count: "exact", head: true })
@@ -139,22 +148,24 @@ export async function GET() {
 
     return apiOk({
       customers: {
+        total: totalCustomers.count ?? 0,
         pending: unattendedCount,
         noId: custNoneWithAccount.count ?? 0,
         totalOpen: unattendedCount + (custNoneWithAccount.count ?? 0),
         sequence: customerSequence,
       },
       pros: {
+        total: totalPros.count ?? 0,
         idPending: proIdSubmitted.count ?? 0,
         docsPending: proDocs.count ?? 0,
         accountPending: proPendingStatus.count ?? 0,
         totalOpen: proNeeds.length,
         sequence: proSequence,
       },
-      // Nav total badges only unattended (not yet opened by care)
+      // Nav total badges matching total directory count
       nav: {
-        customers: unattendedCount,
-        pros: proNeeds.length,
+        customers: totalCustomers.count ?? unattendedCount,
+        pros: totalPros.count ?? proNeeds.length,
       },
     });
   } catch (e) {

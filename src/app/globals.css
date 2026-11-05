@@ -40,6 +40,8 @@
   --radius-ona-sheet: 20px;
 }
 
+:root,
+.om-admin-root,
 .ona2,
 [data-rfd-theme],
 .rfd-bar,
@@ -54,10 +56,10 @@
   /* Coral from the design file (#E2654F) for accents. White text on it is only
      ~3.3:1, so filled buttons use --o-brand-btn (>=4.5:1, same hue, a shade
      deeper) and coral TEXT on white uses --o-brand-ink. */
-  --o-brand: #e2654f;
-  --o-brand-btn: #cb4a34;
-  --o-brand-press: #b63f2b;
-  --o-brand-ink: #b3402c;
+  --o-brand: #f05638;
+  --o-brand-btn: #f05638;
+  --o-brand-press: #d9482b;
+  --o-brand-ink: #f05638;
   --o-brand-soft: #fdeeea;
   --o-brand-border: #fdeeea;
   --o-disabled-bg: #dadada;
@@ -129,6 +131,9 @@ select:focus-within,
   --tw-ring-color: transparent !important;
 }
 
+:root[data-theme="dark"],
+.dark,
+.om-admin-root[data-theme="dark"],
 [data-theme="dark"] .ona2,
 [data-theme="dark"] [data-rfd-theme],
 [data-theme="dark"] .rfd-bar,
@@ -140,7 +145,10 @@ select:focus-within,
   --o-border: #27272a;
   --o-ink: #ffffff;
   --o-muted: #a1a1aa;
-  --o-brand-ink: #e2654f;
+  --o-brand: #f05638;
+  --o-brand-btn: #f05638;
+  --o-brand-press: #d9482b;
+  --o-brand-ink: #f05638;
   --o-brand-soft: rgba(226, 101, 79, 0.16);
   --o-brand-border: rgba(226, 101, 79, 0.38);
   --o-disabled-bg: #27272a;

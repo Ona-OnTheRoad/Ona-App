@@ -3,18 +3,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { useAdminGate } from "@/components/admin/use-admin-gate";
-import { AdminGuideBanner } from "@/components/admin/admin-guide-banner";
-import { fmtClock } from "@/components/admin/dispatch/format";
-import type { DispatchJob, Summary } from "@/components/admin/dispatch/types";
 import { DispatchStatCards } from "@/components/admin/dispatch/stat-cards";
-import {
-  JobCooldownCell,
-  JobStatusCell,
-} from "@/components/admin/dispatch/job-cells";
-import { JobControlsCell } from "@/components/admin/dispatch/job-controls-cell";
+import { DispatchQueueTable } from "@/components/admin/dispatch/dispatch-queue-table";
+import type { DispatchJob, Summary } from "@/components/admin/dispatch/types";
+import { Loader2 } from "lucide-react";
 
 export default function AdminDispatchPage() {
-  const { adminName, ready, api, router } = useAdminGate();
+  const { adminName, ready, api } = useAdminGate();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [queue, setQueue] = useState<DispatchJob[]>([]);
   const [availablePros, setAvailablePros] = useState<
@@ -91,83 +86,54 @@ export default function AdminDispatchPage() {
     void load();
   }
 
+  if (!ready) {
+    return (
+      <AdminShell
+        adminName={adminName}
+        title="Dispatch board"
+        subtitle="Live provider pairing, active timers, and queues."
+      >
+        <div className="flex items-center justify-center min-h-[50vh] text-gray-400 dark:text-gray-500 text-sm">
+          <Loader2 className="w-5 h-5 animate-spin mr-2 text-ona-brand" />
+          Loading dispatch session…
+        </div>
+      </AdminShell>
+    );
+  }
+
   return (
-    <AdminShell adminName={adminName}>
-      <h1 className="om-admin-h1">Dispatch board</h1>
-      <p className="om-admin-sub">
-        Live request/dispatch monitoring SSPE pairing (66s per pro), searching,
-        negotiation, deferrals (5 min), per-request decline exclusions, and
-        admin controls to reroute, reassign, clear cooldowns, or expire.
-      </p>
+    <AdminShell
+      adminName={adminName}
+      title="Dispatch board"
+      subtitle="Live provider pairing, active timers, and queues."
+    >
+      {/* Notifications / Alerts */}
+      {error ? (
+        <div className="mb-5 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-medium leading-relaxed">
+          {error}
+        </div>
+      ) : null}
+      {msg ? (
+        <div className="mb-5 p-3.5 rounded-xl bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-xs font-medium leading-relaxed">
+          {msg}
+        </div>
+      ) : null}
 
-      <AdminGuideBanner pageId="jobs" />
-
-      {error ? <div className="om-admin-error">{error}</div> : null}
-      {msg ? <div className="om-admin-success">{msg}</div> : null}
-
+      {/* 6 Metric Cards across full width */}
       <DispatchStatCards summary={summary} />
 
-      <div className="om-admin-panel" style={{ marginTop: 14 }}>
-        <div className="om-admin-toolbar">
-          <strong>
-            Active requests{" "}
-            <span className="om-admin-muted">
-              · refresh {lastRefresh || "…"} (auto 5s)
-            </span>
-          </strong>
-        </div>
-        <div className="om-admin-table-scroll">
-          <table className="om-admin-table">
-            <thead>
-              <tr>
-                <th>Request</th>
-                <th>Customer → Pro</th>
-                <th>Status</th>
-                <th>Cooldowns / timers</th>
-                <th>Controls</th>
-              </tr>
-            </thead>
-            <tbody>
-              {queue.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="om-admin-muted">
-                    No active requests right now.
-                  </td>
-                </tr>
-              ) : (
-                queue.map((j) => (
-                  <tr key={j.id}>
-                    <td>
-                      <div style={{ fontWeight: 700 }}>{j.serviceType}</div>
-                      <div className="om-admin-muted">{j.problem}</div>
-                      <div className="om-admin-muted" style={{ fontSize: 10 }}>
-                        {j.id.slice(0, 8)} · created {fmtClock(j.createdAt)}
-                      </div>
-                    </td>
-                    <td>
-                      <div>{j.motoristName}</div>
-                      <div className="om-admin-muted">↓</div>
-                      <div>{j.proName}</div>
-                    </td>
-                    <JobStatusCell j={j} />
-                    <JobCooldownCell j={j} />
-                    <JobControlsCell
-                      j={j}
-                      busyId={busyId}
-                      proValue={setProOptions.get(j.id) || ""}
-                      availablePros={availablePros}
-                      onAction={(action, job) => void runAction(action, job)}
-                      onProChange={(jobId, proId) =>
-                        setReassignPro((s) => ({ ...s, [jobId]: proId }))
-                      }
-                    />
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* Active Requests Table / Empty State */}
+      <DispatchQueueTable
+        queue={queue}
+        lastRefresh={lastRefresh}
+        busyId={busyId}
+        setProOptions={setProOptions}
+        availablePros={availablePros}
+        onAction={(action, job) => void runAction(action, job)}
+        onProChange={(jobId, proId) =>
+          setReassignPro((s) => ({ ...s, [jobId]: proId }))
+        }
+      />
     </AdminShell>
   );
 }

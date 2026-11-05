@@ -1,0 +1,11 @@
+<svg width="700" height="984" viewBox="0 0 700 984" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <clipPath id="admin-hero-clip">
+      <rect width="700" height="984" rx="28" fill="white" />
+    </clipPath>
+  </defs>
+  <g clip-path="url(#admin-hero-clip)">
+    <image href="/images/admin-signin-hero.png" width="700" height="984" preserveAspectRatio="xMidYMid slice" />
+  </g>
+</svg>
+

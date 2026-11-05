@@ -3,24 +3,22 @@
 import { useCallback, useEffect, useState } from "react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { useAdminGate } from "@/components/admin/use-admin-gate";
-import { AdminGuideBanner } from "@/components/admin/admin-guide-banner";
-import { cn } from "@/lib/utils";
+import { CreditControlStatCards } from "@/components/admin/credit-control/credit-control-stat-cards";
+import { CreditControlTabs } from "@/components/admin/credit-control/credit-control-tabs";
+import { ReferralsTab } from "@/components/admin/credit-control/referrals-tab";
+import { CreditsTab } from "@/components/admin/credit-control/credits-tab";
+import { CashoutsTab } from "@/components/admin/credit-control/cashouts-tab";
+import { SettingsTab } from "@/components/admin/credit-control/settings-tab";
 import {
-  TABS,
   rowsOf,
   sectionData,
   statsOf,
   type Tab,
 } from "@/components/admin/credit-control/types";
-import { OverviewTab } from "@/components/admin/credit-control/overview-tab";
-import { ReferralsTab } from "@/components/admin/credit-control/referrals-tab";
-import { CreditsTab } from "@/components/admin/credit-control/credits-tab";
-import { CashoutsTab } from "@/components/admin/credit-control/cashouts-tab";
-import { SettingsTab } from "@/components/admin/credit-control/settings-tab";
 
 export default function AdminCreditControlPage() {
   const gate = useAdminGate();
-  const [tab, setTab] = useState<Tab>("overview");
+  const [tab, setTab] = useState<Tab>("referrals");
   const [data, setData] = useState<Record<string, unknown>>({});
   const [loading, setLoading] = useState(false);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
@@ -33,14 +31,17 @@ export default function AdminCreditControlPage() {
       const json = await res.json();
       if (json.ok) setData((prev) => ({ ...prev, [section]: json.data }));
     } catch {
-      /* */
+      /* ignore */
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
     if (!gate.ready) return;
+    // Load overview stats for the top cards, and initial tab
     void fetchSection("overview");
+    void fetchSection("referrals");
   }, [gate.ready, fetchSection]);
 
   const onAction = useCallback(
@@ -56,6 +57,7 @@ export default function AdminCreditControlPage() {
         if (json.ok) {
           setActionMsg(`${action} succeeded`);
           void fetchSection(tab);
+          void fetchSection("overview");
         } else {
           setActionMsg(json.error || "Action failed");
         }
@@ -67,18 +69,10 @@ export default function AdminCreditControlPage() {
     [tab, fetchSection],
   );
 
-  if (!gate.ready)
-    return (
-      <AdminShell>
-        <div className="p-6 text-[var(--om-text-muted)]">Loading...</div>
-      </AdminShell>
-    );
-  if (gate.error)
-    return (
-      <AdminShell>
-        <div className="p-6 text-red-500">{gate.error}</div>
-      </AdminShell>
-    );
+  const handleTabChange = (newTab: Tab) => {
+    setTab(newTab);
+    void fetchSection(newTab);
+  };
 
   const overview = sectionData(data, "overview");
   const stats = statsOf(overview);
@@ -88,65 +82,47 @@ export default function AdminCreditControlPage() {
   const settings = rowsOf(sectionData(data, "settings"), "settings");
 
   return (
-    <AdminShell>
-      <div className="p-6">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-[18px] font-bold text-[var(--om-text)]">
-            Credit Control
-          </h1>
-          {actionMsg && (
-            <span
-              className={cn(
-                "rounded-lg px-3 py-1 text-[11px] font-semibold",
-                actionMsg.includes("succeeded")
-                  ? "bg-green-50 text-green-700"
-                  : "bg-red-50 text-red-700",
-              )}
-            >
-              {actionMsg}
-            </span>
-          )}
+    <AdminShell
+      adminName={gate.adminName}
+      title="Credit Control"
+      subtitle="User balances, dispute credits, and fee overrides."
+      guideKey="credit-control"
+    >
+      {/* Alert / Notification Feedback */}
+      {gate.error ? (
+        <div className="mb-5 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-medium leading-relaxed">
+          {gate.error}
         </div>
-
-        <AdminGuideBanner pageId="credit-control" />
-
-        <div className="mb-6 flex flex-wrap gap-1">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => {
-                setTab(t.key);
-                void fetchSection(t.key);
-              }}
-              className={cn(
-                "rounded-lg px-4 py-2 text-[12px] font-semibold transition-colors",
-                tab === t.key
-                  ? "bg-[var(--om-accent)] text-white"
-                  : "bg-[var(--om-nav)] text-[var(--om-text)] hover:bg-[var(--om-nav-hover)]",
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
+      ) : null}
+      {actionMsg ? (
+        <div
+          className={`mb-5 p-3.5 rounded-xl border text-xs font-medium leading-relaxed ${
+            actionMsg.includes("succeeded")
+              ? "bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300"
+              : "bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800 text-red-600 dark:text-red-300"
+          }`}
+        >
+          {actionMsg}
         </div>
+      ) : null}
 
-        {loading && (
-          <p className="text-[13px] text-[var(--om-text-muted)]">Loading...</p>
-        )}
+      {/* Top 5 Metric Cards */}
+      <CreditControlStatCards stats={stats} />
 
-        {tab === "overview" && <OverviewTab stats={stats} />}
-        {tab === "referrals" && (
-          <ReferralsTab refEvents={refEvents} onAction={onAction} />
-        )}
-        {tab === "credits" && <CreditsTab txs={txs} onAction={onAction} />}
-        {tab === "cashouts" && (
-          <CashoutsTab cashoutList={cashoutList} onAction={onAction} />
-        )}
-        {tab === "settings" && (
-          <SettingsTab settings={settings} onAction={onAction} />
-        )}
-      </div>
+      {/* Section Tabs Selector */}
+      <CreditControlTabs currentTab={tab} onTabChange={handleTabChange} />
+
+      {/* Tab Content */}
+      {tab === "referrals" && (
+        <ReferralsTab refEvents={refEvents} onAction={onAction} />
+      )}
+      {tab === "credits" && <CreditsTab txs={txs} onAction={onAction} />}
+      {tab === "cashouts" && (
+        <CashoutsTab cashoutList={cashoutList} onAction={onAction} />
+      )}
+      {tab === "settings" && (
+        <SettingsTab settings={settings} onAction={onAction} />
+      )}
     </AdminShell>
   );
 }

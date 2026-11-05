@@ -1,29 +1,53 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { useAdminGate } from "@/components/admin/use-admin-gate";
-import { AdminGuideBanner } from "@/components/admin/admin-guide-banner";
+import { CustomersStatCards } from "@/components/admin/customers/customers-stat-cards";
+import { CustomersTable, type CustomerItem } from "@/components/admin/customers/customers-table";
 import type { AdminUsersResult } from "@/lib/server/identity/admin-users";
+import { Loader2 } from "lucide-react";
 
 type MotoristRow = Extract<AdminUsersResult, { ok: true }>["users"][number];
 
+const ITEMS_PER_PAGE = 10;
+
 export default function AdminCustomersHubPage() {
   const { adminName, adminRole, ready, api, error: gateError } = useAdminGate();
-  const [users, setUsers] = useState<MotoristRow[]>([]);
+  const [customers, setCustomers] = useState<CustomerItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const res = await api<{ users: MotoristRow[] }>(
-      "/api/admin/users?role=motorist",
-      { cache: "no-store" },
-    );
-    if (res.ok) setUsers(res.data.users);
-    else setError(res.message);
-    setLoading(false);
+    try {
+      const res = await api<{ users: MotoristRow[] }>(
+        "/api/admin/users?role=motorist",
+        { cache: "no-store" },
+      );
+      if (res.ok && res.data?.users) {
+        setCustomers(
+          res.data.users.map((u) => ({
+            id: u.id,
+            full_name: u.full_name || "Unnamed Customer",
+            email: u.email || "",
+            phone: u.phone,
+            location: [u.area, u.city].filter(Boolean).join(", ") || "—",
+            is_active: Boolean(u.is_active),
+          })),
+        );
+      } else {
+        setCustomers([]);
+        if (!res.ok) setError(res.message || "Failed to load customers");
+      }
+    } catch {
+      setError("Failed to load customers from network");
+      setCustomers([]);
+    } finally {
+      setLoading(false);
+    }
   }, [api]);
 
   useEffect(() => {
@@ -32,37 +56,62 @@ export default function AdminCustomersHubPage() {
 
   const failure = gateError || error;
 
-  return (
-    <AdminShell adminName={adminName} adminRole={adminRole}>
-      <h1 className="om-admin-h1">Motorists Administration</h1>
-      <p className="om-admin-sub">Customer accounts with motorist as their primary role. Up to 300 recent accounts.</p>
-      <AdminGuideBanner pageId="admin-motorists" />
-      {failure ? <div className="om-admin-error" role="alert">{failure}</div> : null}
-      <div className="om-admin-panel">
-        <div className="om-admin-toolbar">
-          <button type="button" className="om-admin-btn" disabled={!ready || loading} onClick={() => void load()}>
-            Refresh
-          </button>
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(customers.length / ITEMS_PER_PAGE));
+  const paginatedCustomers = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return customers.slice(start, start + ITEMS_PER_PAGE);
+  }, [customers, currentPage]);
+
+  const t2PendingCount = useMemo(() => {
+    return customers.filter((c) => !c.is_active).length;
+  }, [customers]);
+
+  // Loading State - Matches Dashboard & Dispatch Tabs
+  if (!ready || (loading && customers.length === 0)) {
+    return (
+      <AdminShell
+        adminName={adminName}
+        title="Customers"
+        subtitle="Consumer accounts: verification, vehicle profiles, and booking history."
+        guideKey="customers"
+      >
+        <div className="flex items-center justify-center min-h-[50vh] text-gray-400 dark:text-gray-500 text-sm">
+          <Loader2 className="w-5 h-5 animate-spin mr-2 text-ona-brand" />
+          Loading customers…
         </div>
-        {loading && !failure ? <p role="status">Loading motorists…</p> : null}
-        {!loading && !failure ? (
-          <table className="om-admin-table">
-            <thead><tr><th>Name</th><th>Contact</th><th>Location</th><th>Status</th></tr></thead>
-            <tbody>
-              {users.length === 0 ? (
-                <tr><td colSpan={4} className="om-admin-muted">No motorists found.</td></tr>
-              ) : users.map((user) => (
-                <tr key={user.id}>
-                  <td>{user.full_name || "Unnamed motorist"}</td>
-                  <td><div>{user.email || "—"}</div><div className="om-admin-muted">{user.phone || "—"}</div></td>
-                  <td>{[user.area, user.city].filter(Boolean).join(", ") || "—"}</td>
-                  <td>{user.is_active ? "Active" : "Inactive"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : null}
-      </div>
+      </AdminShell>
+    );
+  }
+
+  return (
+    <AdminShell
+      adminName={adminName}
+      title="Customers"
+      subtitle="Consumer accounts: verification, vehicle profiles, and booking history."
+      guideKey="customers"
+    >
+      {failure ? (
+        <div className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-medium leading-relaxed">
+          {failure}
+        </div>
+      ) : null}
+
+      {/* Metric Stat Cards */}
+      <CustomersStatCards
+        totalCustomers={customers.length}
+        t2Pending={t2PendingCount}
+      />
+
+      {/* Customers Table */}
+      <CustomersTable
+        customers={paginatedCustomers}
+        loading={loading}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        onRefresh={() => void load()}
+      />
     </AdminShell>
   );
 }

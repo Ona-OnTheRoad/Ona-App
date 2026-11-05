@@ -8,7 +8,7 @@ type GuideEntry = {
   use: string;
 };
 
-const GUIDES: Record<string, GuideEntry> = {
+export const GUIDES: Record<string, GuideEntry> = {
   dashboard: {
     what: "This is the main screen you see when you open the admin panel. It shows you everything happening on Ona right now how many people signed up, how many jobs are open, and if anything needs your attention.",
     how: "The page automatically loads numbers and a live board. Cards at the top show totals. The board below shows jobs grouped by status (Requested, Matched, In Progress, etc.). You can search for any person or job using the search bar.",
@@ -28,6 +28,16 @@ const GUIDES: Record<string, GuideEntry> = {
     what: "This is the money control room. Every time someone pays for a service on Ona, the money sits in a special holding account (called escrow). This page lets you see all that money and decide when to release it to the repair pro.",
     how: "The page has tabs: Payments (all transactions), Disputes, Audit (history of who did what), Failed payouts, and Commission report. You can filter payments by status Held, Pending, Paid, Failed, Refunded, etc.",
     use: "Start on the Payments tab. Find a payment and click it to see details. From there you can release money to the pro (after the job is done), refund the customer (if the job wasn't done), or retry a failed payout. Sensitive actions need a temporary access code. Always write a note explaining why.",
+  },
+  shop: {
+    what: "This page manages vehicle parts orders, fulfillment tracking, and courier delivery logs.",
+    how: "Parts requests and orders appear here. You can monitor shipment status, verify inventory availability, coordinate dispatch delivery, and review audit logs.",
+    use: "Review pending parts orders, confirm fulfillment with suppliers, and track in-transit delivery to repair shops.",
+  },
+  deletion: {
+    what: "This page shows account deletion and data erasure requests under NDPR and data protection regulations.",
+    how: "When a user requests account deletion, a 30-day grace period is scheduled before permanent purge. You can force deletion immediately or restore accounts.",
+    use: "Review pending deletion requests, immediately delete accounts for compliance, or restore accounts if requested.",
   },
   "payments-manage": {
     what: "This is another way to see and control payments. It shows all payments in a list and lets you click each one to see who paid, who should get paid, and what's happening with the money.",
@@ -53,6 +63,11 @@ const GUIDES: Record<string, GuideEntry> = {
     what: "This page lists every customer on Ona. A customer is someone who requests services (like car repair or towing). You can find anyone who has ever signed up.",
     how: "The page has two tabs: Directory (all customers in a table) and ID Review (customers waiting for their identity to be checked). You can search by name, email, or phone. Click a customer row to open a detailed drawer with all their info.",
     use: "Use the Directory tab to browse all customers. Use the search box to find someone specific. Click a customer to see their full profile, ID documents, bank info, and job history. From the detail drawer you can approve their ID or freeze their account.",
+  },
+  accounts: {
+    what: "This page manages account reconciliation, dual-role profiles (Customer + Repair Pro), and duplicate identity resolution across Ona.",
+    how: "The system monitors identity documents (NIN, BVN) and phone records. When duplicates or role registry mismatches occur, candidates appear here for merge or review.",
+    use: "Review duplicate identity candidates and approve merges to combine histories into a single canonical identity. Check recent sync events to audit auth and payout synchronization.",
   },
   "customer-detail": {
     what: "This page shows everything about one single customer their name, contact info, ID documents, vehicle, bank details, job history, and more. It's like their complete file.",

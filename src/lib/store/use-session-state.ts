@@ -13,12 +13,29 @@ import {
   AUTH_NAME_KEY,
   PRIMARY_ACCOUNT_KEY,
   PROFILE_KEY,
+  DEVICE_THEME_KEY,
 } from "./constants";
 import type { AppTheme } from "./types";
+import { systemTheme } from "./storage";
+
+function getInitialTheme(): AppTheme {
+  if (typeof window === "undefined") return "light";
+  try {
+    if (window.location.pathname.startsWith("/admin")) {
+      const adminSaved = localStorage.getItem("ona-admin-theme") as AppTheme | null;
+      if (adminSaved === "light" || adminSaved === "dark") return adminSaved;
+    }
+    const saved = localStorage.getItem(DEVICE_THEME_KEY) as AppTheme | null;
+    if (saved === "light" || saved === "dark") return saved;
+    return systemTheme();
+  } catch {
+    return "light";
+  }
+}
 
 export function useSessionState() {
   // Default follows OS; may be overridden by double-click (stored)
-  const [theme, setThemeState] = useState<AppTheme>("light");
+  const [theme, setThemeState] = useState<AppTheme>(getInitialTheme);
   const [themeReady, setThemeReady] = useState(false);
   // Role / mode registration drives first open
   const [roleReady, setRoleReady] = useState(false);
