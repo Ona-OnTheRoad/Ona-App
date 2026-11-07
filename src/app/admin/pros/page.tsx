@@ -1,29 +1,76 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { useAdminGate } from "@/components/admin/use-admin-gate";
-import { AdminGuideBanner } from "@/components/admin/admin-guide-banner";
+import { ProsStatCards } from "@/components/admin/pros/pros-stat-cards";
+import { ProsTable, type ProItem } from "@/components/admin/pros/pros-table";
 import type { AdminUsersResult } from "@/lib/server/identity/admin-users";
 
 type ProRow = Extract<AdminUsersResult, { ok: true }>["users"][number];
 
+const ITEMS_PER_PAGE = 10;
+
 export default function AdminProsHubPage() {
   const { adminName, adminRole, ready, api, error: gateError } = useAdminGate();
-  const [users, setUsers] = useState<ProRow[]>([]);
+  const [pros, setPros] = useState<ProItem[]>([]);
+  const [counts, setCounts] = useState<{
+    totalPros: number;
+    needsAction: number;
+    t2Pending: number;
+    t4Pending: number;
+  }>({
+    totalPros: 0,
+    needsAction: 0,
+    t2Pending: 0,
+    t4Pending: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const res = await api<{ users: ProRow[] }>(
-      "/api/admin/users?role=repair_pro",
-      { cache: "no-store" },
-    );
-    if (res.ok) setUsers(res.data.users);
-    else setError(res.message);
-    setLoading(false);
+    try {
+      const usersRes = await api<{ users: ProRow[] }>(
+        "/api/admin/users?role=repair_pro",
+        { cache: "no-store" },
+      );
+
+      if (usersRes.ok && usersRes.data?.users) {
+        const mappedPros: ProItem[] = usersRes.data.users.map((u) => ({
+          id: u.id,
+          full_name: u.full_name || "Unnamed pro",
+          email: u.email || "",
+          phone: u.phone,
+          location: [u.area, u.city].filter(Boolean).join(", ") || "—",
+          trade: u.repair_pro_profiles?.primary_service || "—",
+          status: !u.is_active
+            ? "Inactive"
+            : u.repair_pro_profiles?.status || "—",
+          verified: Boolean(u.repair_pro_profiles?.verified),
+        }));
+        setPros(mappedPros);
+
+        setCounts({
+          totalPros: mappedPros.length,
+          needsAction: mappedPros.filter(
+            (p) => p.status.toLowerCase() === "pending",
+          ).length,
+          t2Pending: mappedPros.filter((p) => !p.verified).length,
+          t4Pending: 0,
+        });
+      } else {
+        setPros([]);
+        if (!usersRes.ok) setError(usersRes.message || "Failed to load repair pros");
+      }
+    } catch {
+      setError("Failed to load repair pros from network");
+      setPros([]);
+    } finally {
+      setLoading(false);
+    }
   }, [api]);
 
   useEffect(() => {
@@ -32,39 +79,49 @@ export default function AdminProsHubPage() {
 
   const failure = gateError || error;
 
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(pros.length / ITEMS_PER_PAGE));
+  const paginatedPros = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return pros.slice(start, start + ITEMS_PER_PAGE);
+  }, [pros, currentPage]);
+
   return (
-    <AdminShell adminName={adminName} adminRole={adminRole}>
-      <h1 className="om-admin-h1">Pros Administration</h1>
-      <p className="om-admin-sub">Repair Pro accounts, including dual-role accounts. Up to 400 recent pro profiles.</p>
-      <AdminGuideBanner pageId="admin-pros" />
-      {failure ? <div className="om-admin-error" role="alert">{failure}</div> : null}
-      <div className="om-admin-panel">
-        <div className="om-admin-toolbar">
-          <button type="button" className="om-admin-btn" disabled={!ready || loading} onClick={() => void load()}>
-            Refresh
-          </button>
+    <AdminShell
+      adminName={adminName}
+      adminRole={adminRole}
+      title="Repair Pros"
+      subtitle="Artisans, mechanics, and trade specialties."
+      guideKey="pros"
+    >
+      {failure ? (
+        <div
+          role="alert"
+          className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-medium leading-relaxed"
+        >
+          {failure}
         </div>
-        {loading && !failure ? <p role="status">Loading pros…</p> : null}
-        {!loading && !failure ? (
-          <table className="om-admin-table">
-            <thead><tr><th>Name</th><th>Contact</th><th>Location</th><th>Trade</th><th>Status</th><th>Verified</th></tr></thead>
-            <tbody>
-              {users.length === 0 ? (
-                <tr><td colSpan={6} className="om-admin-muted">No pros found.</td></tr>
-              ) : users.map((user) => (
-                <tr key={user.id}>
-                  <td>{user.full_name || "Unnamed pro"}</td>
-                  <td><div>{user.email || "—"}</div><div className="om-admin-muted">{user.phone || "—"}</div></td>
-                  <td>{[user.area, user.city].filter(Boolean).join(", ") || "—"}</td>
-                  <td>{user.repair_pro_profiles?.primary_service || "—"}</td>
-                  <td>{!user.is_active ? "Inactive" : user.repair_pro_profiles?.status || "—"}</td>
-                  <td>{user.repair_pro_profiles?.verified ? "Yes" : "No"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : null}
-      </div>
+      ) : null}
+
+      {/* 4 Metric Stat Cards */}
+      <ProsStatCards
+        totalPros={counts.totalPros}
+        needsAction={counts.needsAction}
+        t2Pending={counts.t2Pending}
+        t4Pending={counts.t4Pending}
+      />
+
+      {/* Repair Pros Table */}
+      <ProsTable
+        pros={paginatedPros}
+        totalCount={counts.totalPros}
+        loading={!ready || loading}
+        failure={Boolean(failure)}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        onRefresh={() => void load()}
+      />
     </AdminShell>
   );
 }

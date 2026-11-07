@@ -1,21 +1,19 @@
 "use client";
 
 /**
- * Customer Care desk primary daily workspace.
- * Search · live board · one-click actions (password popup only when needed).
+ * Admin Dashboard — primary daily workspace.
+ * Real-time platform metrics, active jobs, dispatch monitoring, escrow, and dispute resolution.
  */
 
 import { AdminShell } from "@/components/admin/admin-shell";
-import { AdminGuideBanner } from "@/components/admin/admin-guide-banner";
-import { BackupPanel } from "@/components/admin/care-desk/backup-panel";
-import { CaseActionsPanel } from "@/components/admin/care-desk/case-actions-panel";
-import { JobBoardPanel } from "@/components/admin/care-desk/job-board-panel";
-import { SearchPanel } from "@/components/admin/care-desk/search-panel";
-import {
-  LiveOpsCards,
-  TotalsCards,
-} from "@/components/admin/care-desk/stat-cards";
+import { DashboardMetrics } from "@/components/admin/care-desk/dashboard-metrics";
+import { DashboardLiveOps } from "@/components/admin/care-desk/dashboard-live-ops";
+import { DashboardJobBoard } from "@/components/admin/care-desk/dashboard-job-board";
+import { DashboardBackup } from "@/components/admin/care-desk/dashboard-backup";
+import { DashboardSearch } from "@/components/admin/care-desk/dashboard-search";
+import { DashboardCaseActions } from "@/components/admin/care-desk/dashboard-case-actions";
 import { useCareDesk } from "@/components/admin/care-desk/use-care-desk";
+import { Loader2 } from "lucide-react";
 
 export default function CareDeskPage() {
   const {
@@ -39,7 +37,6 @@ export default function CareDeskPage() {
     latestBackup,
     backupSearch,
     setBackupSearch,
-    backupSnaps,
     refreshBoard,
     runBackupNow,
     openJob,
@@ -48,18 +45,17 @@ export default function CareDeskPage() {
     flow,
   } = useCareDesk();
 
-  if (!ready) {
+  if (!ready || (!dash && !err)) {
     return (
       <AdminShell
         adminName={adminName}
         adminRole={adminRole}
         roleLabel={gateRoleLabel}
       >
-        <h1 className="om-admin-h1">Dashboard</h1>
-        <p className="om-admin-muted">
-          {gateError || "Loading admin session…"}
-        </p>
-        <AdminGuideBanner pageId="dashboard" />
+        <div className="flex items-center justify-center min-h-[50vh] text-gray-400 dark:text-gray-500 text-sm">
+          <Loader2 className="w-5 h-5 animate-spin mr-2 text-ona-brand" />
+          {gateError || "Loading dashboard data…"}
+        </div>
       </AdminShell>
     );
   }
@@ -70,76 +66,61 @@ export default function CareDeskPage() {
       adminRole={status?.adminRole || adminRole}
       roleLabel={status?.roleLabel || gateRoleLabel}
     >
-      <h1 className="om-admin-h1">Dashboard</h1>
-      <p className="om-admin-sub">
-        Live overview of Ona: totals, open jobs, and Care tools. Search people
-        or jobs, watch the board, and run escrow / freeze / dispute from here.
-      </p>
-
-      <AdminGuideBanner pageId="dashboard" />
-
-      <TotalsCards dash={dash} board={board} />
-
-      <p
-        className="om-admin-muted"
-        style={{ marginBottom: "1rem", fontSize: 12 }}
-      >
-        Super Admin can release escrow, freeze users, and resolve disputes
-        without a second password. Customer Care may still see a temporary staff
-        password popup on those actions only.
-      </p>
-
-      {/* Local BackUp money fallout protection */}
-      <BackupPanel
-        backupBusy={backupBusy}
-        busy={busy}
-        latestBackup={latestBackup}
-        backupSearch={backupSearch}
-        setBackupSearch={setBackupSearch}
-        backupSnaps={backupSnaps}
-        runBackupNow={runBackupNow}
-      />
-
-      {err ? <div className="om-admin-error">{err}</div> : null}
+      {/* Notifications / Errors */}
+      {err ? (
+        <div className="mb-5 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-medium leading-relaxed">
+          {err}
+        </div>
+      ) : null}
       {msg ? (
-        <div
-          className="om-admin-panel"
-          style={{ background: "var(--om-success-bg)", marginBottom: "1rem" }}
-        >
+        <div className="mb-5 p-3.5 rounded-xl bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-xs font-medium leading-relaxed">
           {msg}
         </div>
       ) : null}
 
-      {/* Search */}
-      <SearchPanel
-        query={query}
-        setQuery={setQuery}
-        hits={hits}
-        openJob={openJob}
-      />
+      {/* 1. Full-Width 8 Dashboard Metrics */}
+      <div className="w-full">
+        <DashboardMetrics dash={dash} board={board} />
+      </div>
 
-      {/* Live ops strip */}
-      <h2 className="om-admin-section-title">Live ops</h2>
-      <LiveOpsCards board={board} />
+      {/* 2. Two-Column Layout (Live ops & Job board on Left; Local BackUp on par on Right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start mt-5 sm:mt-6">
+        {/* Left Column (7 cols): Live ops + Live job board */}
+        <div className="lg:col-span-7 flex flex-col min-w-0">
+          <DashboardLiveOps board={board} />
+          <DashboardJobBoard
+            board={board}
+            selectedJobId={selectedJobId}
+            refreshBoard={refreshBoard}
+            openJob={openJob}
+          />
+        </div>
 
-      <div className="om-care-split">
-        {/* Live board */}
-        <JobBoardPanel
-          board={board}
-          selectedJobId={selectedJobId}
-          refreshBoard={refreshBoard}
-          openJob={openJob}
-        />
-
-        {/* Job actions */}
-        <CaseActionsPanel
-          jobDetail={jobDetail}
-          job={job}
-          flow={flow}
-          selectedJobId={selectedJobId}
-          busy={busy}
-          runAction={runAction}
-        />
+        {/* Right Column (5 cols): Local BackUp (on par with Live ops) + Search users + Case actions */}
+        <div className="lg:col-span-5 flex flex-col min-w-0">
+          <DashboardBackup
+            backupBusy={backupBusy}
+            busy={busy}
+            latestBackup={latestBackup}
+            backupSearch={backupSearch}
+            setBackupSearch={setBackupSearch}
+            runBackupNow={runBackupNow}
+          />
+          <DashboardSearch
+            query={query}
+            setQuery={setQuery}
+            hits={hits}
+            openJob={openJob}
+          />
+          <DashboardCaseActions
+            jobDetail={jobDetail}
+            job={job}
+            flow={flow}
+            selectedJobId={selectedJobId}
+            busy={busy}
+            runAction={runAction}
+          />
+        </div>
       </div>
     </AdminShell>
   );

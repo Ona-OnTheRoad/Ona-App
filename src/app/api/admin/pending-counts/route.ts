@@ -7,9 +7,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Pending care items for nav badges:
- * - Customer: ID submitted, account pending action, or re-submit requested
- * - Pro: ID submitted, skill docs under review, account status pending, re-submit
+ * Counts for nav badges and care review queues:
+ * - Customers: pending care review items for nav badge, plus total directory count for stat cards
+ * - Pros: pending care review items for nav badge, plus total directory count for stat cards
  */
 export async function GET() {
   if (!isSupabaseAdminConfigured()) {
@@ -20,12 +20,21 @@ export async function GET() {
     const sb = createServiceSupabase();
 
     const [
-      custSubmitted,
+      totalCustomers,
+      totalPros,
+      _custSubmitted,
       custNoneWithAccount,
       proIdSubmitted,
       proDocs,
       proPendingStatus,
     ] = await Promise.all([
+      sb
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("role", "motorist"),
+      sb
+        .from("repair_pro_profiles")
+        .select("user_id", { count: "exact", head: true }),
       sb
         .from("motorist_profiles")
         .select("user_id", { count: "exact", head: true })
@@ -48,8 +57,6 @@ export async function GET() {
         .eq("status", "pending"),
     ]);
 
-    // Unattended = open care work (B3)
-    const customersPending = custSubmitted.count ?? 0;
     // Pros: union is hard with head counts use max of queues as badge signal
     // Better: count distinct users needing action
     const { data: proRows } = await sb
@@ -139,19 +146,21 @@ export async function GET() {
 
     return apiOk({
       customers: {
+        total: totalCustomers.count ?? 0,
         pending: unattendedCount,
         noId: custNoneWithAccount.count ?? 0,
         totalOpen: unattendedCount + (custNoneWithAccount.count ?? 0),
         sequence: customerSequence,
       },
       pros: {
+        total: totalPros.count ?? 0,
         idPending: proIdSubmitted.count ?? 0,
         docsPending: proDocs.count ?? 0,
         accountPending: proPendingStatus.count ?? 0,
         totalOpen: proNeeds.length,
         sequence: proSequence,
       },
-      // Nav total badges only unattended (not yet opened by care)
+      // Nav badges: only unattended/pending items needing care attention
       nav: {
         customers: unattendedCount,
         pros: proNeeds.length,

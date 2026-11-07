@@ -5,38 +5,50 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { useAdminGate } from "@/components/admin/use-admin-gate";
-import { AdminGuideBanner } from "@/components/admin/admin-guide-banner";
 import { one, type Detail } from "@/components/admin/motorist-detail/types";
+import { CustomerStatCards } from "@/components/admin/motorist-detail/customer-stat-cards";
 import {
-  IdentityPanel,
-  ProfilePanel,
-  VehiclePanel,
-} from "@/components/admin/motorist-detail/profile-panels";
-import { SyncPanel } from "@/components/admin/motorist-detail/sync-panel";
-import {
-  BookingsPanel,
-  JobsPanel,
-  PaymentsPanel,
-} from "@/components/admin/motorist-detail/history-panels";
+  CustomerTabs,
+  type CustomerDetailTab,
+} from "@/components/admin/motorist-detail/customer-tabs";
+import { ProfileVehiclesTab } from "@/components/admin/motorist-detail/profile-vehicles-tab";
+import { CustomerJobsTab } from "@/components/admin/motorist-detail/customer-jobs-tab";
+import { CustomerBookingsTab } from "@/components/admin/motorist-detail/customer-bookings-tab";
+import { CustomerPaymentsTab } from "@/components/admin/motorist-detail/customer-payments-tab";
+import { CustomerSyncTab } from "@/components/admin/motorist-detail/customer-sync-tab";
+import { CustomerDetailSkeleton } from "@/components/admin/motorist-detail/customer-detail-skeleton";
+import { AlertCircle, RefreshCw } from "lucide-react";
 
 export default function AdminMotoristDetailPage() {
   const params = useParams();
   const id = String(params.id || "");
   const { adminName, ready, api, router } = useAdminGate();
   const [data, setData] = useState<Detail | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [currentTab, setCurrentTab] = useState<CustomerDetailTab>("profile");
 
   const load = useCallback(async () => {
     if (!id) return;
-    const res = await api<Detail>(`/api/admin/users/${id}`);
-    if (!res.ok) {
-      setError(res.message);
-      return;
-    }
-    setData(res.data);
+    setLoading(true);
     setError(null);
+    try {
+      const res = await api<Detail>(`/api/admin/users/${id}`);
+      if (!res.ok) {
+        setError(res.message || "Failed to load customer profile");
+        setData(null);
+        return;
+      }
+      setData(res.data);
+      setError(null);
+    } catch {
+      setError("Failed to load customer profile from network");
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
   }, [api, id]);
 
   useEffect(() => {
@@ -45,39 +57,49 @@ export default function AdminMotoristDetailPage() {
   }, [ready, load]);
 
   async function toggleActive() {
-    if (!data) return;
+    if (!data?.user) return;
     setBusy(true);
     setMsg(null);
-    const res = await api(`/api/admin/users/${id}/status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ is_active: !data.user.is_active }),
-    });
-    setBusy(false);
-    if (!res.ok) {
-      setError(res.message);
-      return;
+    try {
+      const res = await api(`/api/admin/users/${id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: !data.user.is_active }),
+      });
+      if (!res.ok) {
+        setError(res.message);
+        return;
+      }
+      setMsg(data.user.is_active ? "Customer deactivated" : "Customer activated");
+      await load();
+    } catch {
+      setError("Failed to update customer status");
+    } finally {
+      setBusy(false);
     }
-    setMsg(data.user.is_active ? "Deactivated" : "Activated");
-    await load();
   }
 
   async function hardDelete() {
     if (
       !window.confirm(
-        `Hard-delete ${data?.user.full_name || "this motorist"} permanently?`,
+        `Hard-delete ${data?.user.full_name || "this customer"} permanently? This action cannot be undone.`,
       )
     ) {
       return;
     }
     setBusy(true);
-    const res = await api(`/api/admin/users/${id}`, { method: "DELETE" });
-    setBusy(false);
-    if (!res.ok) {
-      setError(res.message);
-      return;
+    try {
+      const res = await api(`/api/admin/users/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        setError(res.message);
+        return;
+      }
+      router.replace("/admin/motorists");
+    } catch {
+      setError("Failed to delete customer");
+    } finally {
+      setBusy(false);
     }
-    router.replace("/admin/motorists");
   }
 
   async function reSync() {
@@ -85,96 +107,171 @@ export default function AdminMotoristDetailPage() {
     setBusy(true);
     setMsg(null);
     setError(null);
-    const res = await api(`/api/admin/users/${id}/sync`, { method: "POST" });
-    setBusy(false);
-    if (!res.ok) {
-      setError(res.message);
-      return;
+    try {
+      const res = await api(`/api/admin/users/${id}/sync`, { method: "POST" });
+      if (!res.ok) {
+        setError(res.message);
+        return;
+      }
+      setMsg("Identity sync completed successfully");
+      await load();
+    } catch {
+      setError("Identity sync re-run failed");
+    } finally {
+      setBusy(false);
     }
-    setMsg(
-      `Identity sync re-run: roles ${((res.data as { roles?: string[] } | undefined)?.roles || []).join(", ") || ""}`,
-    );
-    await load();
   }
 
-  const u = data?.user;
-  const mot = one(u?.motorist_profiles);
+  // Loading State - Matches Dashboard & Dispatch Tabs
+  if (!ready || loading) {
+    return (
+      <AdminShell
+        adminName={adminName}
+        title="Loading customer..."
+        subtitle="Single customer record: profile, identity, vehicle, bank, and job history from the live Ona database."
+        guideKey="customer-detail"
+      >
+        <CustomerDetailSkeleton />
+      </AdminShell>
+    );
+  }
+
+  // Error State or User Not Found
+  if (error || !data || !data.user) {
+    return (
+      <AdminShell
+        adminName={adminName}
+        title="Customer Record"
+        subtitle="Single customer record: profile, identity, vehicle, bank, and job history from the live Ona database."
+        guideKey="customer-detail"
+      >
+        {/* Breadcrumb */}
+        <div className="text-xs text-gray-500 dark:text-gray-400 -mt-2 mb-4 flex items-center gap-1.5 select-none">
+          <Link
+            href="/admin/motorists"
+            className="hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            Customers
+          </Link>
+          <span>&gt;</span>
+          <span className="text-gray-900 dark:text-gray-200 font-medium">
+            Customer profile
+          </span>
+        </div>
+
+        <div className="w-full bg-white dark:bg-[#0b0b0e] border border-gray-200 dark:border-[#27272a] rounded-2xl p-8 text-center max-w-lg mx-auto my-12 shadow-xs">
+          <div className="w-12 h-12 rounded-full bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-6 h-6" />
+          </div>
+          <h3 className="text-base font-bold text-gray-900 dark:text-white">
+            {error || "Customer Not Found"}
+          </h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">
+            The requested customer profile could not be retrieved from the server.
+          </p>
+          <div className="flex items-center justify-center gap-3 mt-6">
+            <button
+              type="button"
+              onClick={() => void load()}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-ona-brand-btn hover:bg-ona-brand-press text-white text-xs font-semibold cursor-pointer transition-colors"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Retry</span>
+            </button>
+            <Link
+              href="/admin/motorists"
+              className="px-4 py-2 rounded-xl border border-gray-200 dark:border-[#27272a] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#16151a] text-xs font-semibold transition-colors"
+            >
+              Back to Customers
+            </Link>
+          </div>
+        </div>
+      </AdminShell>
+    );
+  }
+
+  const u = data.user;
+  const mot = one(u.motorist_profiles);
 
   return (
-    <AdminShell adminName={adminName}>
-      <div className="om-admin-toolbar" style={{ marginBottom: 8 }}>
+    <AdminShell
+      adminName={adminName}
+      title={u.full_name || "Unnamed Customer"}
+      subtitle="Single customer record: profile, identity, vehicle, bank, and job history from the live Ona database."
+      guideKey="customer-detail"
+    >
+      {/* Breadcrumb */}
+      <div className="text-xs text-gray-500 dark:text-gray-400 -mt-2 mb-4 flex items-center gap-1.5 select-none">
         <Link
           href="/admin/motorists"
-          className="om-admin-btn ghost"
-          style={{ textDecoration: "none" }}
+          className="hover:text-gray-900 dark:hover:text-white transition-colors"
         >
-          ← All customers
+          Customers
         </Link>
+        <span>&gt;</span>
+        <span className="text-gray-900 dark:text-gray-200 font-medium">
+          Customer profile
+        </span>
       </div>
-      <h1 className="om-admin-h1">{u?.full_name || "Customer"}</h1>
-      <p className="om-admin-sub">
-        Single customer record: profile, identity, vehicle, bank, and job
-        history from the live Ona database. Approve ID or freeze the account
-        here.
-      </p>
 
-      <AdminGuideBanner pageId="customer-detail" />
-
-      {msg ? (
-        <div
-          className="om-admin-error"
-          style={{ background: "#14532d", color: "#bbf7d0", marginBottom: 12 }}
+      {/* Header action buttons row */}
+      <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2.5 mb-6 mt-2 sm:mt-0 sm:-mt-14">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={toggleActive}
+          className="px-4 py-2 rounded-xl bg-[#d90429] hover:bg-[#b00320] text-white text-xs font-semibold cursor-pointer disabled:opacity-50 transition-colors shadow-xs"
         >
+          {u.is_active ? "Deactivate" : "Activate"}
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={hardDelete}
+          className="px-4 py-2 rounded-xl border border-[#d90429] text-[#d90429] hover:bg-[#d90429]/10 text-xs font-semibold cursor-pointer disabled:opacity-50 transition-colors shadow-xs"
+        >
+          Delete permanently
+        </button>
+      </div>
+
+      {/* Feedback Messages */}
+      {msg ? (
+        <div className="mb-5 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-medium leading-relaxed">
           {msg}
         </div>
       ) : null}
-      {error ? <div className="om-admin-error">{error}</div> : null}
+      {error ? (
+        <div className="mb-5 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-medium leading-relaxed">
+          {error}
+        </div>
+      ) : null}
 
-      {!data ? (
-        <p className="om-admin-muted">Loading…</p>
-      ) : (
-        <>
-          <div className="om-admin-cards">
-            <div className="om-admin-card">
-              <div className="label">Status</div>
-              <div className="value" style={{ fontSize: 18 }}>
-                {u?.is_active ? "Active" : "Inactive"}
-              </div>
-            </div>
-            <div className="om-admin-card">
-              <div className="label">Jobs</div>
-              <div className="value">{data.jobs.length}</div>
-            </div>
-            <div className="om-admin-card">
-              <div className="label">Bookings</div>
-              <div className="value">{data.bookings.length}</div>
-            </div>
-            <div className="om-admin-card">
-              <div className="label">Payments</div>
-              <div className="value">{data.payments.length}</div>
-            </div>
-          </div>
+      {/* 4 Summary Stat Cards */}
+      <CustomerStatCards
+        isActive={Boolean(u.is_active)}
+        jobsCount={data.jobs?.length ?? 0}
+        bookingsCount={data.bookings?.length ?? 0}
+        paymentsCount={data.payments?.length ?? 0}
+      />
 
-          <ProfilePanel
-            u={u}
-            mot={mot}
-            busy={busy}
-            onToggleActive={() => toggleActive()}
-            onHardDelete={() => hardDelete()}
-          />
+      {/* Detail Segmented Tabs */}
+      <CustomerTabs currentTab={currentTab} onTabChange={setCurrentTab} />
 
-          <VehiclePanel mot={mot} />
-
-          <IdentityPanel mot={mot} />
-
-          <SyncPanel data={data} busy={busy} onReSync={() => void reSync()} />
-
-          <JobsPanel jobs={data.jobs} />
-
-          <BookingsPanel bookings={data.bookings} />
-
-          <PaymentsPanel payments={data.payments} />
-        </>
+      {/* Tab Panels */}
+      {currentTab === "profile" && <ProfileVehiclesTab u={u} mot={mot} />}
+      {currentTab === "jobs" && <CustomerJobsTab jobs={data.jobs || []} />}
+      {currentTab === "bookings" && (
+        <CustomerBookingsTab bookings={data.bookings || []} />
+      )}
+      {currentTab === "payments" && (
+        <CustomerPaymentsTab payments={data.payments || []} />
+      )}
+      {currentTab === "sync" && (
+        <CustomerSyncTab
+          data={data}
+          busy={busy}
+          onReSync={() => void reSync()}
+        />
       )}
     </AdminShell>
   );

@@ -1,253 +1,249 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminShell } from "@/components/admin/admin-shell";
-import { AdminGuideBanner } from "@/components/admin/admin-guide-banner";
-import Link from "next/link";
+import { useAdminGate } from "@/components/admin/use-admin-gate";
+import { UsersStatCards } from "@/components/admin/users/users-stat-cards";
+import { UsersTable, type UserItem } from "@/components/admin/users/users-table";
+import type { AdminUsersResult } from "@/lib/server/identity/admin-users";
+import { Loader2 } from "lucide-react";
 
-type UserRow = {
-  id: string;
-  role: "admin" | "motorist" | "repair_pro";
-  full_name: string;
-  phone: string | null;
-  email: string | null;
-  city: string | null;
-  is_active: boolean;
-  created_at: string;
-  repair_pro_profiles?:
-    | { status: string; primary_service: string; verified: boolean }
-    | { status: string; primary_service: string; verified: boolean }[]
-    | null;
-  motorist_profiles?:
-    | {
-        vehicle_make: string | null;
-        vehicle_model: string | null;
-        vehicle_year: string | null;
-        nin_verified: boolean;
-        bvn_verified: boolean;
-      }
-    | Array<{
-        vehicle_make: string | null;
-        vehicle_model: string | null;
-        vehicle_year: string | null;
-        nin_verified: boolean;
-        bvn_verified: boolean;
-      }>
-    | null;
-};
+type RawUserRow = Extract<AdminUsersResult, { ok: true }>["users"][number];
+
+interface PendingCountsResponse {
+  customers: { total: number; pending: number; noId: number; totalOpen: number };
+  pros: {
+    total: number;
+    idPending: number;
+    docsPending: number;
+    accountPending: number;
+    totalOpen: number;
+  };
+}
+
+const ITEMS_PER_PAGE = 10;
 
 export default function AdminUsersPage() {
-  const router = useRouter();
-  const [adminName, setAdminName] = useState("Admin");
-  const [users, setUsers] = useState<UserRow[]>([]);
-  const [q, setQ] = useState("");
-  const [role, setRole] = useState("");
+  const { adminName, adminRole, ready, api, error: gateError } = useAdminGate();
+  const [users, setUsers] = useState<UserItem[]>([]);
+  const [counts, setCounts] = useState({
+    customersCount: 0,
+    customerT2Pending: 0,
+    prosCount: 0,
+    proNeedsAction: 0,
+    proT2Pending: 0,
+    proT4Pending: 0,
+  });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+  const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const load = useCallback(async () => {
-    const params = new URLSearchParams();
-    if (q) params.set("q", q);
-    if (role) params.set("role", role);
-    const res = await fetch(`/api/admin/users?${params}`);
-    const json = await res.json();
-    if (!json.ok) {
-      if (res.status === 401 || res.status === 403) {
-        router.replace("/admin/login");
-        return;
+    setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams();
+      if (searchQuery.trim()) params.set("q", searchQuery.trim());
+      if (roleFilter) params.set("role", roleFilter);
+
+      const [usersRes, countsRes] = await Promise.all([
+        api<{ users: RawUserRow[] }>(`/api/admin/users?${params}`, {
+          cache: "no-store",
+        }),
+        api<PendingCountsResponse>("/api/admin/pending-counts", {
+          cache: "no-store",
+        }),
+      ]);
+
+      if (usersRes.ok && usersRes.data?.users) {
+        const mappedUsers: UserItem[] = usersRes.data.users.map((u) => {
+          const motRaw = u.motorist_profiles;
+          const mot = Array.isArray(motRaw) ? motRaw[0] : motRaw;
+          const proRaw = u.repair_pro_profiles;
+          const pro = Array.isArray(proRaw) ? proRaw[0] : proRaw;
+
+          let extra = "—";
+          if (u.role === "motorist") {
+            const vehicle = [mot?.vehicle_make, mot?.vehicle_model, mot?.vehicle_year]
+              .filter(Boolean)
+              .join(" ");
+            extra = vehicle || pro?.primary_service || "Customer";
+          } else if (u.role === "repair_pro") {
+            extra = pro?.primary_service || "Repair Pro";
+          } else {
+            extra = "Admin";
+          }
+
+          const isPending =
+            Boolean(pro && pro.status === "pending") ||
+            Boolean(mot && mot.identity_review_status === "submitted");
+
+          const statusText = !u.is_active
+            ? "Inactive"
+            : isPending
+            ? "Pending"
+            : "Active";
+
+          return {
+            id: u.id,
+            role: (u.role || "motorist") as "admin" | "motorist" | "repair_pro",
+            full_name: u.full_name || "Unnamed user",
+            email: u.email,
+            phone: u.phone,
+            city: u.city,
+            area: u.area,
+            is_active: Boolean(u.is_active),
+            created_at: u.created_at,
+            extra,
+            statusText,
+            isPending,
+            hasMotoristProfile: Boolean(mot),
+          };
+        });
+        setUsers(mappedUsers);
+
+        if (countsRes.ok && countsRes.data) {
+          const d = countsRes.data;
+          setCounts({
+            customersCount: d.customers?.total ?? 0,
+            customerT2Pending: d.customers?.pending ?? 0,
+            prosCount: d.pros?.total ?? 0,
+            proNeedsAction: d.pros?.totalOpen ?? 0,
+            proT2Pending: d.pros?.idPending ?? 0,
+            proT4Pending: d.pros?.docsPending ?? 0,
+          });
+        }
+      } else {
+        setUsers([]);
+        if (!usersRes.ok) setError(usersRes.message || "Failed to load users");
       }
-      setError(json.error?.message || "Failed");
-      return;
+    } catch {
+      setError("Failed to load users from network");
+      setUsers([]);
+    } finally {
+      setLoading(false);
     }
-    setUsers(json.data.users);
-  }, [q, role, router]);
+  }, [api, searchQuery, roleFilter]);
 
   useEffect(() => {
-    (async () => {
-      const me = await fetch("/api/admin/auth/me");
-      const meJson = await me.json();
-      if (!meJson.ok) {
-        router.replace("/admin/login");
-        return;
-      }
-      setAdminName(meJson.data.fullName || meJson.data.email);
-      await load();
-    })();
-  }, [load, router]);
+    if (ready) void load();
+  }, [ready, load]);
 
-  async function assignRole(id: string, nextRole: string) {
+  // Handle Role Assignment
+  async function handleAssignRole(id: string, nextRole: string) {
     setMsg(null);
     setError(null);
-    const res = await fetch(`/api/admin/users/${id}/role`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: nextRole }),
-    });
-    const json = await res.json();
-    if (!json.ok) {
-      setError(json.error?.message || "Save failed");
-      return;
+    try {
+      const res = await api(`/api/admin/users/${id}/role`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: nextRole }),
+      });
+      if (!res.ok) {
+        setError(res.message || "Failed to assign role");
+        return;
+      }
+      setMsg(`Role updated to ${nextRole}`);
+      await load();
+    } catch {
+      setError("Network error updating role");
     }
-    setMsg(`Saved role → ${nextRole}`);
-    await load();
   }
 
-  async function toggleActive(id: string, is_active: boolean) {
+  // Handle Active/Inactive Toggle
+  async function handleToggleActive(id: string, currentActive: boolean) {
     setMsg(null);
-    const res = await fetch(`/api/admin/users/${id}/status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ is_active }),
-    });
-    const json = await res.json();
-    if (!json.ok) {
-      setError(json.error?.message || "Save failed");
-      return;
+    setError(null);
+    try {
+      const res = await api(`/api/admin/users/${id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: !currentActive }),
+      });
+      if (!res.ok) {
+        setError(res.message || "Failed to update user status");
+        return;
+      }
+      setMsg(currentActive ? "User deactivated" : "User activated");
+      await load();
+    } catch {
+      setError("Network error updating status");
     }
-    setMsg(is_active ? "User activated" : "User deactivated");
-    await load();
+  }
+
+  const failure = gateError || error;
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(users.length / ITEMS_PER_PAGE));
+  const paginatedUsers = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return users.slice(start, start + ITEMS_PER_PAGE);
+  }, [users, currentPage]);
+
+  // Initial Loading State - Avoids Empty State Flash
+  if (!ready || (loading && users.length === 0)) {
+    return (
+      <AdminShell
+        adminName={adminName}
+        title="All users"
+        subtitle="Unified multi-role user directory."
+        guideKey="users"
+      >
+        <div className="flex items-center justify-center min-h-[50vh] text-gray-400 dark:text-gray-500 text-sm">
+          <Loader2 className="w-5 h-5 animate-spin mr-2 text-ona-brand" />
+          Loading users…
+        </div>
+      </AdminShell>
+    );
   }
 
   return (
-    <AdminShell adminName={adminName}>
-      <h1 className="om-admin-h1">Users & roles</h1>
-      <p className="om-admin-sub">
-        All people on Ona: admin · customer · repair pro. Live from Supabase
-        (new signups on Vercel show here). Full customer tools: open{" "}
-        <Link href="/admin/motorists">Customers</Link>.
-      </p>
-
-      <AdminGuideBanner pageId="users" />
-
+    <AdminShell
+      adminName={adminName}
+      title="All users"
+      subtitle="Unified multi-role user directory."
+      guideKey="users"
+    >
+      {/* Alert Messages */}
+      {failure ? (
+        <div className="mb-5 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-medium leading-relaxed">
+          {failure}
+        </div>
+      ) : null}
       {msg ? (
-        <div
-          className="om-admin-error"
-          style={{ background: "#14532d", color: "#bbf7d0", marginBottom: 12 }}
-        >
+        <div className="mb-5 p-3.5 rounded-xl bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-xs font-medium leading-relaxed">
           {msg}
         </div>
       ) : null}
-      {error ? <div className="om-admin-error">{error}</div> : null}
-      <div className="om-admin-panel">
-        <div className="om-admin-toolbar">
-          <input
-            placeholder="Search name, email, phone"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            style={{ minWidth: 220 }}
-          />
-          <select value={role} onChange={(e) => setRole(e.target.value)}>
-            <option value="">All roles</option>
-            <option value="admin">admin</option>
-            <option value="motorist">motorist</option>
-            <option value="repair_pro">repair_pro</option>
-          </select>
-          <button type="button" className="om-admin-btn" onClick={() => load()}>
-            Refresh
-          </button>
-        </div>
-        <table className="om-admin-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Contact</th>
-              <th>Role</th>
-              <th>Extra</th>
-              <th>Status</th>
-              <th>Assign role (save)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="om-admin-muted">
-                  No users yet. After Supabase is connected and seed admin runs,
-                  users appear here.
-                </td>
-              </tr>
-            ) : (
-              users.map((u) => {
-                const motRaw = u.motorist_profiles;
-                const mot = Array.isArray(motRaw) ? motRaw[0] : motRaw;
-                const proRaw = u.repair_pro_profiles;
-                const pro = Array.isArray(proRaw) ? proRaw[0] : proRaw;
-                const extra =
-                  u.role === "motorist"
-                    ? [mot?.vehicle_make, mot?.vehicle_model, mot?.vehicle_year]
-                        .filter(Boolean)
-                        .join(" ") || "Customer"
-                    : u.role === "repair_pro"
-                      ? `${pro?.primary_service || "pro"} · ${pro?.status || ""}`
-                      : "Admin";
-                return (
-                  <tr key={u.id}>
-                    <td>
-                      <div>{u.full_name || ""}</div>
-                      <div className="om-admin-muted">{u.id.slice(0, 8)}…</div>
-                    </td>
-                    <td>
-                      <div>{u.email || ""}</div>
-                      <div className="om-admin-muted">
-                        {u.phone || u.city || ""}
-                      </div>
-                    </td>
-                    <td>
-                      <span className={`om-admin-badge ${u.role}`}>
-                        {u.role}
-                      </span>
-                    </td>
-                    <td>
-                      <div>{extra}</div>
-                      {u.role === "motorist" && mot ? (
-                        <div className="om-admin-muted">
-                          NIN {mot.nin_verified ? "✓" : ""} · BVN{" "}
-                          {mot.bvn_verified ? "✓" : ""}
-                        </div>
-                      ) : null}
-                      {u.role === "motorist" ? (
-                        <a
-                          href={`/admin/motorists/${u.id}`}
-                          className="om-admin-muted"
-                          style={{ display: "inline-block", marginTop: 4 }}
-                        >
-                          Open motorist →
-                        </a>
-                      ) : null}
-                    </td>
-                    <td>
-                      <button
-                        type="button"
-                        className="om-admin-btn ghost"
-                        onClick={() => toggleActive(u.id, !u.is_active)}
-                      >
-                        {u.is_active ? "Active" : "Inactive"}
-                      </button>
-                    </td>
-                    <td>
-                      <div className="om-admin-row-actions">
-                        {(["motorist", "repair_pro", "admin"] as const).map(
-                          (r) => (
-                            <button
-                              key={r}
-                              type="button"
-                              className="om-admin-btn ghost"
-                              disabled={u.role === r}
-                              onClick={() => assignRole(u.id, r)}
-                            >
-                              {r}
-                            </button>
-                          ),
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+
+      {/* 6 Metric Stat Cards */}
+      <UsersStatCards
+        customersCount={counts.customersCount}
+        customerT2Pending={counts.customerT2Pending}
+        prosCount={counts.prosCount}
+        proNeedsAction={counts.proNeedsAction}
+        proT2Pending={counts.proT2Pending}
+        proT4Pending={counts.proT4Pending}
+      />
+
+      {/* All Users Table */}
+      <UsersTable
+        users={paginatedUsers}
+        loading={loading}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        roleFilter={roleFilter}
+        onRoleFilterChange={setRoleFilter}
+        onRefresh={() => void load()}
+        onAssignRole={handleAssignRole}
+        onToggleActive={handleToggleActive}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
     </AdminShell>
   );
 }

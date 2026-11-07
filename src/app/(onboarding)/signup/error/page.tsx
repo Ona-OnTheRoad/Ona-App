@@ -21,7 +21,7 @@ function simpleMessage(raw: string): string {
     return "Sign-up did not finish. Try again.";
   }
   if (m.includes("already") && (m.includes("phone") || m.includes("email"))) {
-    return "This phone or email is already registered. Log in instead.";
+    return "This phone number or email is already registered. Log in instead.";
   }
   if (m.includes("password")) {
     return "Check your password and try again.";

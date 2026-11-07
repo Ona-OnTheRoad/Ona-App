@@ -62,7 +62,7 @@ export function RegistrationComplete({
   return (
     <div
       className={cn(
-        "ona2 absolute inset-0 z-[400] flex items-center justify-center bg-transparent px-6 transition-opacity duration-200 ease-out",
+        "ona2 absolute inset-0 z-400 flex items-center justify-center bg-transparent px-6 transition-opacity duration-200 ease-out",
         visible && !exiting ? "opacity-100" : "opacity-0",
       )}
       role="dialog"
@@ -72,7 +72,7 @@ export function RegistrationComplete({
       <div aria-hidden className="absolute inset-0 bg-ona-overlay" />
       <div
         className={cn(
-          "relative w-full max-w-[300px] rounded-ona-sheet bg-ona-surface p-6 text-center shadow-[0_8px_30px_rgba(15,23,42,0.18)] transition-all duration-200 ease-out",
+          "relative w-full max-w-75 rounded-ona-sheet bg-ona-surface p-6 text-center shadow-[0_8px_30px_rgba(15,23,42,0.18)] transition-all duration-200 ease-out",
           visible && !exiting
             ? "translate-y-0 scale-100 opacity-100"
             : "translate-y-3 scale-95 opacity-0",

@@ -38,6 +38,14 @@ function platformUrl(): string | undefined {
 export function siteUrl(): string {
   const onPlatform = Boolean(process.env.NETLIFY || process.env.VERCEL);
   let raw = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (raw) {
+    raw = raw.replace(/^["']+|["']+$/g, "").trim();
+    try {
+      new URL(raw);
+    } catch {
+      raw = undefined;
+    }
+  }
   if (raw && onPlatform && LOCAL_ORIGIN.test(raw)) raw = undefined;
   return (
     raw ||
