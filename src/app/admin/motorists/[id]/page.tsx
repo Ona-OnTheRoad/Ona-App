@@ -85,11 +85,19 @@ export default function AdminMotoristDetailPage() {
     }
     setBusy(true);
     try {
-      const res = await api(`/api/admin/users/${id}`, { method: "DELETE" });
+      const res = await api<{ anonymized?: boolean; message?: string }>(
+        `/api/admin/users/${id}`,
+        { method: "DELETE" },
+      );
       if (!res.ok) {
         toastError(res.message);
         return;
       }
+      toastSuccess(
+        res.data.anonymized
+          ? res.data.message || "Account anonymised and disabled."
+          : "Customer deleted permanently.",
+      );
       router.replace("/admin/motorists");
     } catch {
       toastError("Failed to delete customer");
