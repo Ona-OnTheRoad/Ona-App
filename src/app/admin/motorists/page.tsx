@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toastError } from "@/lib/toast";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { useAdminGate } from "@/components/admin/use-admin-gate";
 import { CustomersStatCards } from "@/components/admin/customers/customers-stat-cards";
@@ -15,12 +16,12 @@ export default function AdminCustomersHubPage() {
   const { adminName, adminRole, ready, api, error: gateError } = useAdminGate();
   const [customers, setCustomers] = useState<CustomerItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setLoadFailed(false);
     try {
       const res = await api<{ users: MotoristRow[] }>(
         "/api/admin/users?role=motorist",
@@ -39,10 +40,14 @@ export default function AdminCustomersHubPage() {
         );
       } else {
         setCustomers([]);
-        if (!res.ok) setError(res.message || "Failed to load customers");
+        if (!res.ok) {
+          setLoadFailed(true);
+          toastError(res.message || "Failed to load customers");
+        }
       }
     } catch {
-      setError("Failed to load customers from network");
+      setLoadFailed(true);
+      toastError("Failed to load customers from network");
       setCustomers([]);
     } finally {
       setLoading(false);
@@ -53,7 +58,11 @@ export default function AdminCustomersHubPage() {
     if (ready) void load();
   }, [ready, load]);
 
-  const failure = gateError || error;
+  const failure = Boolean(gateError) || loadFailed;
+
+  useEffect(() => {
+    if (gateError) toastError(gateError);
+  }, [gateError]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(customers.length / ITEMS_PER_PAGE));
@@ -74,15 +83,6 @@ export default function AdminCustomersHubPage() {
       subtitle="Consumer accounts: verification, vehicle profiles, and booking history."
       guideKey="customers"
     >
-      {failure ? (
-        <div
-          role="alert"
-          className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-medium leading-relaxed"
-        >
-          {failure}
-        </div>
-      ) : null}
-
       {/* Metric Stat Cards */}
       <CustomersStatCards
         totalCustomers={customers.length}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { useAdminGate } from "@/components/admin/use-admin-gate";
+import { toastError } from "@/lib/toast";
 import {
   MessagesTabs,
   type MessagesTabKey,
@@ -29,7 +30,6 @@ export default function AdminMessagesPage() {
   const [reports, setReports] = useState<MessageReportRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [moderatingId, setModeratingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!ready) return;
@@ -45,7 +45,7 @@ export default function AdminMessagesPage() {
 
       if (cancelled) return;
       if (!res.ok) {
-        setError(res.message);
+        toastError(res.message);
         setLoading(false);
         return;
       }
@@ -71,12 +71,11 @@ export default function AdminMessagesPage() {
     );
 
     if (!res.ok) {
-      setError(res.message);
+      toastError(res.message);
       setModeratingId(null);
       return;
     }
 
-    setError(null);
     // Refresh data
     const fresh = await api<{
       conversations: ConversationRow[];
@@ -100,12 +99,6 @@ export default function AdminMessagesPage() {
       guideKey="messages"
     >
       <div className="w-full pb-16">
-        {error ? (
-          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-sm">
-            {error}
-          </div>
-        ) : null}
-
         {/* Tab Navigation */}
         <div className="mb-6">
           <MessagesTabs

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { useAdminGate } from "@/components/admin/use-admin-gate";
+import { toastError } from "@/lib/toast";
 import {
   ReviewsTable,
   type ReviewRow,
@@ -13,7 +14,6 @@ export default function AdminReviewsPage() {
   const { adminName, ready, api } = useAdminGate();
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!ready) return;
@@ -24,7 +24,7 @@ export default function AdminReviewsPage() {
       const res = await api<{ reviews: ReviewRow[] }>("/api/admin/reviews");
       if (cancelled) return;
       if (!res.ok) {
-        setError(res.message);
+        toastError(res.message);
         setLoading(false);
         return;
       }
@@ -46,12 +46,6 @@ export default function AdminReviewsPage() {
       guideKey="reviews"
     >
       <div className="w-full pb-16">
-        {error ? (
-          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-sm">
-            {error}
-          </div>
-        ) : null}
-
         {/* Loading state to eliminate empty-state flash */}
         {!ready || loading ? (
           <div className="rounded-2xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#141318] p-16 flex flex-col items-center justify-center text-center">

@@ -7,14 +7,13 @@ import { DisputesTable } from "@/components/admin/disputes/disputes-table";
 import { withSensitivePassword } from "@/components/admin/sensitive-unlock";
 import { useAdminGate } from "@/components/admin/use-admin-gate";
 import type { JobRecord } from "@/lib/jobs/types";
+import { toastError, toastSuccess } from "@/lib/toast";
 
 export default function AdminDisputesPage() {
   const { adminName, ready, api } = useAdminGate();
   const [jobs, setJobs] = useState<JobRecord[]>([]);
   const [totals, setTotals] = useState({ disputed: 0, underAppeal: 0 });
-  const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [flash, setFlash] = useState<string | null>(null);
   const [splitPct, setSplitPct] = useState<Record<string, number>>({});
 
   const load = useCallback(async () => {
@@ -23,7 +22,7 @@ export default function AdminDisputesPage() {
       totals: { disputed: number; underAppeal: number };
     }>("/api/admin/disputes");
     if (!res.ok) {
-      setError(res.message);
+      toastError(res.message);
       return;
     }
     setJobs(res.data.jobs);
@@ -44,8 +43,6 @@ export default function AdminDisputesPage() {
     kind: "dispute" | "appeal",
     outcome: "full_release_pro" | "full_refund_motorist" | "partial_split",
   ) => {
-    setError(null);
-    setFlash(null);
     await withSensitivePassword(
       {
         title: "Password required",
@@ -65,10 +62,10 @@ export default function AdminDisputesPage() {
             }),
           });
           if (!res.ok) {
-            setError(res.message);
+            toastError(res.message);
             return;
           }
-          setFlash(`Resolved ${jobId.slice(0, 8)}… → ${outcome}`);
+          toastSuccess(`Resolved ${jobId.slice(0, 8)}… → ${outcome}`);
           await load();
         } finally {
           setBusyId(null);
@@ -84,17 +81,6 @@ export default function AdminDisputesPage() {
       subtitle="Customer-pro mediation, evidence, and rulings."
       guideKey="disputes"
     >
-      {error && (
-        <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 text-xs font-medium border border-red-200 dark:border-red-900/50">
-          {error}
-        </div>
-      )}
-      {flash && (
-        <div className="mb-4 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 text-xs font-medium border border-emerald-200 dark:border-emerald-900/50">
-          {flash}
-        </div>
-      )}
-
       {/* 3 Metric Summary Cards */}
       <DisputesStatCards
         disputed={totals.disputed}

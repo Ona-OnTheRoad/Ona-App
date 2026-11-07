@@ -30,8 +30,7 @@ export default function CareDeskPage() {
     dash,
     selectedJobId,
     jobDetail,
-    msg,
-    err,
+    dashSettled,
     busy,
     backupBusy,
     latestBackup,
@@ -45,7 +44,7 @@ export default function CareDeskPage() {
     flow,
   } = useCareDesk();
 
-  if (!ready || (!dash && !err)) {
+  if (!ready || (!dash && !dashSettled)) {
     return (
       <AdminShell
         adminName={adminName}
@@ -66,18 +65,6 @@ export default function CareDeskPage() {
       adminRole={status?.adminRole || adminRole}
       roleLabel={status?.roleLabel || gateRoleLabel}
     >
-      {/* Notifications / Errors */}
-      {err ? (
-        <div className="mb-5 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-medium leading-relaxed">
-          {err}
-        </div>
-      ) : null}
-      {msg ? (
-        <div className="mb-5 p-3.5 rounded-xl bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-xs font-medium leading-relaxed">
-          {msg}
-        </div>
-      ) : null}
-
       {/* 1. Full-Width 8 Dashboard Metrics */}
       <div className="w-full">
         <DashboardMetrics dash={dash} board={board} />

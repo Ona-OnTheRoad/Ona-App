@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toastError, toastSuccess } from "@/lib/toast";
 import { apiCall, effectiveOf } from "./helpers";
 import type { Detail, FilterKey, Ops, Payment } from "./types";
 
@@ -11,10 +12,7 @@ export function usePaymentsConsole() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [filterCounts, setFilterCounts] = useState<Record<string, number>>({});
   const [ops, setOps] = useState<Ops | null>(null);
-  const [opsError, setOpsError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [filter, setFilter] = useState<FilterKey>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -57,17 +55,18 @@ export function usePaymentsConsole() {
     }>("/api/admin/payments");
     setLoading(false);
     if (!res.ok) {
-      setError(res.message);
+      toastError(res.message);
       return;
     }
     setPayments(Array.isArray(res.data.payments) ? res.data.payments : []);
     setFilterCounts(res.data.filterCounts || {});
     setOps(res.data.ops || null);
-    setOpsError(res.data.opsError || null);
+    if (res.data.opsError) {
+      toastError(`Balances unavailable: ${res.data.opsError}`);
+    }
     setCanCancel(Boolean(res.data.access?.canCancelEscrow));
     setCanRetry(Boolean(res.data.access?.canRetryPayout));
     setCanForce(Boolean(res.data.access?.canRetryPayout));
-    setError(null);
   }, []);
 
   useEffect(() => {
@@ -80,13 +79,12 @@ export function usePaymentsConsole() {
 
   const loadDetail = useCallback(async (id: string) => {
     setDetailLoading(true);
-    setError(null);
     const res = await apiCall<Detail>(
       `/api/admin/payments/${encodeURIComponent(id)}`,
     );
     setDetailLoading(false);
     if (!res.ok) {
-      setError(res.message);
+      toastError(res.message);
       return;
     }
     setDetail(res.data);
@@ -110,14 +108,12 @@ export function usePaymentsConsole() {
     setShowPassword(false);
     setPendingAction(null);
     setBusy(true);
-    setMsg(null);
-    setError(null);
     const unlock = await apiCall<{ expiresAt?: string }>(
       "/api/admin/care/unlock",
       { method: "POST", body: JSON.stringify({ password: password.trim() }) },
     );
     if (!unlock.ok) {
-      setError(unlock.message || "Invalid password");
+      toastError(unlock.message || "Invalid password");
       setBusy(false);
       setPassword("");
       return;
@@ -125,7 +121,7 @@ export function usePaymentsConsole() {
     try {
       await action();
     } catch {
-      setError("Action failed");
+      toastError("Action failed");
     }
     setBusy(false);
   }
@@ -140,14 +136,14 @@ export function usePaymentsConsole() {
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        setError(res.message);
+        toastError(res.message);
         return;
       }
       const r = res.data.result;
       if (r && r.ok === false) {
-        setError(r.message || "Action failed");
+        toastError(r.message || "Action failed");
       } else {
-        setMsg(res.data.message || okMsg);
+        toastSuccess(res.data.message || okMsg);
       }
       await loadPayments();
       if (selectedId) await loadDetail(selectedId);
@@ -210,12 +206,7 @@ export function usePaymentsConsole() {
     adminRole,
     payments,
     ops,
-    opsError,
     loading,
-    error,
-    setError,
-    msg,
-    setMsg,
     busy,
     filter,
     setFilter,

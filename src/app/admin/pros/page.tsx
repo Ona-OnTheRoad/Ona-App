@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toastError } from "@/lib/toast";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { useAdminGate } from "@/components/admin/use-admin-gate";
 import { ProsStatCards } from "@/components/admin/pros/pros-stat-cards";
@@ -26,12 +27,12 @@ export default function AdminProsHubPage() {
     t4Pending: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setLoadFailed(false);
     try {
       const usersRes = await api<{ users: ProRow[] }>(
         "/api/admin/users?role=repair_pro",
@@ -63,10 +64,14 @@ export default function AdminProsHubPage() {
         });
       } else {
         setPros([]);
-        if (!usersRes.ok) setError(usersRes.message || "Failed to load repair pros");
+        if (!usersRes.ok) {
+          setLoadFailed(true);
+          toastError(usersRes.message || "Failed to load repair pros");
+        }
       }
     } catch {
-      setError("Failed to load repair pros from network");
+      setLoadFailed(true);
+      toastError("Failed to load repair pros from network");
       setPros([]);
     } finally {
       setLoading(false);
@@ -77,7 +82,11 @@ export default function AdminProsHubPage() {
     if (ready) void load();
   }, [ready, load]);
 
-  const failure = gateError || error;
+  const failure = Boolean(gateError) || loadFailed;
+
+  useEffect(() => {
+    if (gateError) toastError(gateError);
+  }, [gateError]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(pros.length / ITEMS_PER_PAGE));
@@ -94,15 +103,6 @@ export default function AdminProsHubPage() {
       subtitle="Artisans, mechanics, and trade specialties."
       guideKey="pros"
     >
-      {failure ? (
-        <div
-          role="alert"
-          className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-medium leading-relaxed"
-        >
-          {failure}
-        </div>
-      ) : null}
-
       {/* 4 Metric Stat Cards */}
       <ProsStatCards
         totalPros={counts.totalPros}

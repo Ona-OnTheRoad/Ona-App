@@ -10,6 +10,7 @@ import { ContactChangesTab } from "@/components/admin/security/contact-changes-t
 import { NameChangesTab } from "@/components/admin/security/name-changes-tab";
 import { FraudTab } from "@/components/admin/security/fraud-tab";
 import { AuditTab } from "@/components/admin/security/audit-tab";
+import { toastError, toastSuccess } from "@/lib/toast";
 import {
   rowsOf,
   sectionData,
@@ -23,7 +24,6 @@ export default function AdminSecurityPage() {
   const [tab, setTab] = useState<Tab>("contact-changes");
   const [data, setData] = useState<Record<string, unknown>>({});
   const [loading, setLoading] = useState(false);
-  const [actionMsg, setActionMsg] = useState<string | null>(null);
 
   const fetchSection = useCallback(async (section: Tab, params?: string) => {
     setLoading(true);
@@ -46,9 +46,12 @@ export default function AdminSecurityPage() {
     void fetchSection("contact-changes", "status=pending");
   }, [gate.ready, fetchSection]);
 
+  useEffect(() => {
+    if (gate.error) toastError(gate.error);
+  }, [gate.error]);
+
   const onAction = useCallback(
     async (action: string, body: Record<string, unknown>) => {
-      setActionMsg(null);
       try {
         const res = await fetch("/api/admin/security", {
           method: "POST",
@@ -57,16 +60,15 @@ export default function AdminSecurityPage() {
         });
         const json = await res.json();
         if (json.ok) {
-          setActionMsg(`${action} succeeded`);
+          toastSuccess(`${action} succeeded`);
           void fetchSection(tab);
           void fetchSection("overview");
         } else {
-          setActionMsg(json.error || "Action failed");
+          toastError(json.error || "Action failed");
         }
       } catch {
-        setActionMsg("Network error");
+        toastError("Network error");
       }
-      setTimeout(() => setActionMsg(null), 3000);
     },
     [tab, fetchSection],
   );
@@ -90,24 +92,6 @@ export default function AdminSecurityPage() {
       subtitle="Staff sessions, IP logs, and access security."
       guideKey="security"
     >
-      {/* Alert / Notification Feedback */}
-      {gate.error ? (
-        <div className="mb-5 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-medium leading-relaxed">
-          {gate.error}
-        </div>
-      ) : null}
-      {actionMsg ? (
-        <div
-          className={`mb-5 p-3.5 rounded-xl border text-xs font-medium leading-relaxed ${
-            actionMsg.includes("succeeded")
-              ? "bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300"
-              : "bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800 text-red-600 dark:text-red-300"
-          }`}
-        >
-          {actionMsg}
-        </div>
-      ) : null}
-
       {/* Top 5 Metric Cards */}
       <SecurityStatCards stats={stats} />
 

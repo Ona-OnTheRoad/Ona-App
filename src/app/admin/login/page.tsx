@@ -3,6 +3,7 @@
 import { Suspense, FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
+import { toastError } from "@/lib/toast";
 import { AdminSigninHero } from "@/components/admin/admin-signin-hero";
 
 export default function AdminLoginPage() {
@@ -27,12 +28,10 @@ function AdminLoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
     setLoading(true);
     try {
       const res = await fetch("/api/admin/auth/login", {
@@ -43,13 +42,13 @@ function AdminLoginForm() {
       });
       const json = await res.json();
       if (!json.ok) {
-        setError(json.error?.message || "Login failed");
+        toastError(json.error?.message || "Login failed");
         return;
       }
       router.replace("/admin");
       router.refresh();
     } catch {
-      setError("Network error. Please check your connection.");
+      toastError("Network error. Please check your connection.");
     } finally {
       setLoading(false);
     }
@@ -71,15 +70,9 @@ function AdminLoginForm() {
             Staff sign in
           </h1>
 
-          {expired && !error ? (
+          {expired ? (
             <div className="mb-5 p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-xs font-medium leading-relaxed">
               ⏳ Your session expired. Sign in again to continue (sessions remain active up to 8 hours).
-            </div>
-          ) : null}
-
-          {error ? (
-            <div className="mb-5 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-200 text-xs font-medium leading-relaxed">
-              {error}
             </div>
           ) : null}
 

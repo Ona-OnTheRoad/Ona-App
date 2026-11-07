@@ -7,6 +7,7 @@ import { DispatchStatCards } from "@/components/admin/dispatch/stat-cards";
 import { DispatchQueueTable } from "@/components/admin/dispatch/dispatch-queue-table";
 import type { DispatchJob, Summary } from "@/components/admin/dispatch/types";
 import { Loader2 } from "lucide-react";
+import { toastError, toastSuccess } from "@/lib/toast";
 
 export default function AdminDispatchPage() {
   const { adminName, ready, api } = useAdminGate();
@@ -15,8 +16,6 @@ export default function AdminDispatchPage() {
   const [availablePros, setAvailablePros] = useState<
     { id: string; name: string }[]
   >([]);
-  const [msg, setMsg] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [reassignPro, setReassignPro] = useState<Record<string, string>>({});
   const [lastRefresh, setLastRefresh] = useState<string | null>(null);
@@ -29,13 +28,12 @@ export default function AdminDispatchPage() {
       availablePros: { id: string; name: string }[];
     }>("/api/admin/dispatch");
     if (!res.ok) {
-      setError(res.message);
+      toastError(res.message);
       return;
     }
     setSummary(res.data.summary);
     setQueue(res.data.queue);
     setAvailablePros(res.data.availablePros);
-    setError(null);
     setLastRefresh(new Date().toLocaleTimeString([], { hour12: false }));
   }, [api]);
 
@@ -57,14 +55,12 @@ export default function AdminDispatchPage() {
   }, [queue, reassignPro]);
 
   async function runAction(action: string, job: DispatchJob) {
-    setMsg(null);
-    setError(null);
     setBusyId(job.id);
     const body: Record<string, unknown> = { action, jobId: job.id };
     if (action === "reassign") {
       const proId = setProOptions.get(job.id);
       if (!proId) {
-        setError("Pick a pro first");
+        toastError("Pick a pro first");
         setBusyId(null);
         return;
       }
@@ -79,10 +75,10 @@ export default function AdminDispatchPage() {
     });
     setBusyId(null);
     if (!res.ok) {
-      setError(res.message);
+      toastError(res.message);
       return;
     }
-    setMsg(`Done: ${action} → ${res.data.job.flowStatus}`);
+    toastSuccess(`Done: ${action} → ${res.data.job.flowStatus}`);
     void load();
   }
 
@@ -107,18 +103,6 @@ export default function AdminDispatchPage() {
       title="Dispatch board"
       subtitle="Live provider pairing, active timers, and queues."
     >
-      {/* Notifications / Alerts */}
-      {error ? (
-        <div className="mb-5 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-medium leading-relaxed">
-          {error}
-        </div>
-      ) : null}
-      {msg ? (
-        <div className="mb-5 p-3.5 rounded-xl bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-xs font-medium leading-relaxed">
-          {msg}
-        </div>
-      ) : null}
-
       {/* 6 Metric Cards across full width */}
       <DispatchStatCards summary={summary} />
 

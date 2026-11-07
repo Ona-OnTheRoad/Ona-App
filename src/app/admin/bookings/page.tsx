@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { useAdminGate } from "@/components/admin/use-admin-gate";
+import { toastError } from "@/lib/toast";
 import { AdminGuideBanner } from "@/components/admin/admin-guide-banner";
 
 type Booking = {
@@ -19,14 +20,13 @@ type Booking = {
 export default function AdminBookingsPage() {
   const { adminName, ready, api } = useAdminGate();
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!ready) return;
     (async () => {
       const res = await api<{ bookings: Booking[] }>("/api/admin/bookings");
       if (!res.ok) {
-        setError(res.message);
+        toastError(res.message);
         return;
       }
       setBookings(res.data.bookings);
@@ -43,7 +43,6 @@ export default function AdminBookingsPage() {
 
       <AdminGuideBanner pageId="bookings" />
 
-      {error ? <div className="om-admin-error">{error}</div> : null}
       <div className="om-admin-panel">
         <div className="om-admin-toolbar">
           <strong>{bookings.length} booking(s)</strong>

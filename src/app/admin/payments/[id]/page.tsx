@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminGuideBanner } from "@/components/admin/admin-guide-banner";
+import { toastError, toastSuccess } from "@/lib/toast";
 import { useAdminGate } from "@/components/admin/use-admin-gate";
 import { withSensitivePassword } from "@/components/admin/sensitive-unlock";
 import {
@@ -38,8 +39,6 @@ export default function AdminPaymentDetailPage() {
   const canCancel = canCancelEscrowUi(role);
   const canForce = canForcePayoutUi(role);
 
-  const [error, setError] = useState<string | null>(null);
-  const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
   const [data, setData] = useState<PaymentDetailData | null>(null);
@@ -50,12 +49,11 @@ export default function AdminPaymentDetailPage() {
       `/api/admin/payments/${encodeURIComponent(id)}`,
     );
     if (!res.ok) {
-      setError(res.message);
+      toastError(res.message);
       setData(null);
       return;
     }
     setData(res.data as typeof data);
-    setError(null);
   }, [api, id]);
 
   useEffect(() => {
@@ -87,8 +85,6 @@ export default function AdminPaymentDetailPage() {
     okMsg: string,
   ) {
     setBusy(true);
-    setMsg(null);
-    setError(null);
     await withSensitivePassword({ title, detail }, async () => {
       const res = await api<{
         message?: string;
@@ -99,14 +95,14 @@ export default function AdminPaymentDetailPage() {
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        setError(res.message);
+        toastError(res.message);
         return;
       }
       const r = res.data.result;
       if (r && r.ok === false) {
-        setError(r.message || "Action did not complete");
+        toastError(r.message || "Action did not complete");
       } else {
-        setMsg(
+        toastSuccess(
           res.data.message ||
             (r?.alreadyReleased ? "Already paid (no second transfer)" : okMsg),
         );
@@ -119,7 +115,7 @@ export default function AdminPaymentDetailPage() {
   function requireNote(): string | null {
     const r = note.trim();
     if (r.length < 8) {
-      setError("Enter a reason (min 8 characters) in the note box first.");
+      toastError("Enter a reason (min 8 characters) in the note box first.");
       return null;
     }
     return r;
@@ -145,8 +141,6 @@ export default function AdminPaymentDetailPage() {
       </p>
 
       <AdminGuideBanner pageId="payment-detail" />
-      {error ? <div className="om-admin-error">{error}</div> : null}
-      {msg ? <div className="om-admin-success">{msg}</div> : null}
       {data?.doublePayRisk ? (
         <div className="om-admin-error" role="alert">
           {data.doublePayRisk}
@@ -159,7 +153,7 @@ export default function AdminPaymentDetailPage() {
         </div>
       ) : null}
 
-      {!data && !error ? <p className="om-admin-muted">Loading…</p> : null}
+      {!data ? <p className="om-admin-muted">Loading…</p> : null}
 
       {p ? (
         <>

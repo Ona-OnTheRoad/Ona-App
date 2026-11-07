@@ -18,7 +18,6 @@ type Props = {
   canRetry: boolean;
   note: string;
   setNote: (v: string) => void;
-  setError: (v: string | null) => void;
   loadDetail: (id: string) => Promise<void>;
   runAction: (body: Record<string, unknown>, okMsg: string) => Promise<void>;
   onClose: () => void;
@@ -37,7 +36,6 @@ export function DetailPanel({
   canRetry,
   note,
   setNote,
-  setError,
   loadDetail,
   runAction,
   onClose,
@@ -78,7 +76,6 @@ export function DetailPanel({
               canRetry={canRetry}
               note={note}
               setNote={setNote}
-              setError={setError}
               loadDetail={loadDetail}
               runAction={runAction}
             />
