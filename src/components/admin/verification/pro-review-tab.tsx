@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, RefreshCw, CheckCircle2, XCircle, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toastError, toastSuccess } from "@/lib/toast";
 import { useAdminGate } from "@/components/admin/use-admin-gate";
 
 interface ProQueueRow {
@@ -42,12 +43,9 @@ export function ProReviewTab({
   const [filter, setFilter] = useState<"needs_action" | "t2_pending" | "t4_pending" | "all">("needs_action");
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState<string | null>(null);
-  const [msg, setMsg] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       const res = await api<{
         pros: ProQueueRow[];
@@ -60,13 +58,13 @@ export function ProReviewTab({
       }>(`/api/admin/pro-review?filter=${filter}`);
 
       if (!res.ok) {
-        setError(res.message);
+        toastError(res.message);
         return;
       }
       setItems(res.data.pros || []);
       if (res.data.totals) setTotals(res.data.totals);
     } catch {
-      setError("Network error loading repair pro review queue");
+      toastError("Network error loading repair pro review queue");
     } finally {
       setLoading(false);
     }
@@ -78,8 +76,6 @@ export function ProReviewTab({
 
   async function handleAction(userId: string, action: "approve" | "reject") {
     setActingId(userId);
-    setMsg(null);
-    setError(null);
     try {
       const reason = action === "reject" ? "Submitted documents do not meet vetting criteria" : undefined;
       const res = await api<{ ok: boolean; message?: string }>("/api/admin/pro-review", {
@@ -87,14 +83,14 @@ export function ProReviewTab({
         body: JSON.stringify({ action, userId, reason }),
       });
       if (res.ok) {
-        setMsg(`Repair pro ${action === "approve" ? "approved" : "rejected"} successfully.`);
+        toastSuccess(`Repair pro ${action === "approve" ? "approved" : "rejected"} successfully.`);
         await load();
         onRefreshParent?.();
       } else {
-        setError(res.message || `Failed to ${action} repair pro`);
+        toastError(res.message || `Failed to ${action} repair pro`);
       }
     } catch {
-      setError("Network error submitting action");
+      toastError("Network error submitting action");
     } finally {
       setActingId(null);
     }
@@ -102,18 +98,6 @@ export function ProReviewTab({
 
   return (
     <div className="space-y-6">
-      {/* Feedback Messages */}
-      {msg && (
-        <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
-          {msg}
-        </div>
-      )}
-      {error && (
-        <div role="alert" className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-medium">
-          {error}
-        </div>
-      )}
-
       {/* Mini Stat Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-white dark:bg-[#18171c] border border-gray-200 dark:border-[#27272a] rounded-xl p-3.5 shadow-xs">

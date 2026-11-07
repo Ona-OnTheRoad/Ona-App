@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { useAdminGate } from "@/components/admin/use-admin-gate";
+import { toastError, toastSuccess } from "@/lib/toast";
 import { UsersStatCards } from "@/components/admin/users/users-stat-cards";
 import { UsersTable, type UserItem } from "@/components/admin/users/users-table";
 import type { AdminUsersResult } from "@/lib/server/identity/admin-users";
@@ -37,13 +38,10 @@ export default function AdminUsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [loading, setLoading] = useState(true);
-  const [msg, setMsg] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       const params = new URLSearchParams();
       if (searchQuery.trim()) params.set("q", searchQuery.trim());
@@ -118,10 +116,10 @@ export default function AdminUsersPage() {
         }
       } else {
         setUsers([]);
-        if (!usersRes.ok) setError(usersRes.message || "Failed to load users");
+        if (!usersRes.ok) toastError(usersRes.message || "Failed to load users");
       }
     } catch {
-      setError("Failed to load users from network");
+      toastError("Failed to load users from network");
       setUsers([]);
     } finally {
       setLoading(false);
@@ -134,8 +132,6 @@ export default function AdminUsersPage() {
 
   // Handle Role Assignment
   async function handleAssignRole(id: string, nextRole: string) {
-    setMsg(null);
-    setError(null);
     try {
       const res = await api(`/api/admin/users/${id}/role`, {
         method: "PATCH",
@@ -143,20 +139,18 @@ export default function AdminUsersPage() {
         body: JSON.stringify({ role: nextRole }),
       });
       if (!res.ok) {
-        setError(res.message || "Failed to assign role");
+        toastError(res.message || "Failed to assign role");
         return;
       }
-      setMsg(`Role updated to ${nextRole}`);
+      toastSuccess(`Role updated to ${nextRole}`);
       await load();
     } catch {
-      setError("Network error updating role");
+      toastError("Network error updating role");
     }
   }
 
   // Handle Active/Inactive Toggle
   async function handleToggleActive(id: string, currentActive: boolean) {
-    setMsg(null);
-    setError(null);
     try {
       const res = await api(`/api/admin/users/${id}/status`, {
         method: "PATCH",
@@ -164,17 +158,20 @@ export default function AdminUsersPage() {
         body: JSON.stringify({ is_active: !currentActive }),
       });
       if (!res.ok) {
-        setError(res.message || "Failed to update user status");
+        toastError(res.message || "Failed to update user status");
         return;
       }
-      setMsg(currentActive ? "User deactivated" : "User activated");
+      toastSuccess(currentActive ? "User deactivated" : "User activated");
       await load();
     } catch {
-      setError("Network error updating status");
+      toastError("Network error updating status");
     }
   }
 
-  const failure = gateError || error;
+  useEffect(() => {
+    if (gateError) toastError(gateError);
+  }, [gateError]);
+
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(users.length / ITEMS_PER_PAGE));
@@ -207,18 +204,6 @@ export default function AdminUsersPage() {
       subtitle="Unified multi-role user directory."
       guideKey="users"
     >
-      {/* Alert Messages */}
-      {failure ? (
-        <div className="mb-5 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-medium leading-relaxed">
-          {failure}
-        </div>
-      ) : null}
-      {msg ? (
-        <div className="mb-5 p-3.5 rounded-xl bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-xs font-medium leading-relaxed">
-          {msg}
-        </div>
-      ) : null}
-
       {/* 6 Metric Stat Cards */}
       <UsersStatCards
         customersCount={counts.customersCount}

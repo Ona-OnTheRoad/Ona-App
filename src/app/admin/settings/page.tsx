@@ -25,6 +25,7 @@ import type {
   CalloutTradeAdmin,
 } from "@/components/admin/matching/types";
 import { Loader2 } from "lucide-react";
+import { toastError, toastSuccess } from "@/lib/toast";
 
 function AdminSettingsContent() {
   const { adminName, adminRole, ready, api } = useAdminGate();
@@ -70,8 +71,6 @@ function AdminSettingsContent() {
   // UI state
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   // Load health snapshot
   const loadHealth = useCallback(
@@ -109,7 +108,7 @@ function AdminSettingsContent() {
     ]);
 
     if (!cfgRes.ok) {
-      setError(cfgRes.message);
+      toastError(cfgRes.message);
       setLoading(false);
       return;
     }
@@ -135,8 +134,6 @@ function AdminSettingsContent() {
   // Save App Settings
   async function saveAppSettings() {
     if (!config) return;
-    setMsg(null);
-    setError(null);
     await withSensitivePassword(
       {
         title: "Password required",
@@ -151,11 +148,11 @@ function AdminSettingsContent() {
             body: JSON.stringify({ key: "app", value: config.app }),
           });
           if (!res.ok) {
-            setError(res.message);
+            toastError(res.message);
             return;
           }
           setConfig(res.data.config);
-          setMsg("App settings saved frontend will pick them up.");
+          toastSuccess("App settings saved frontend will pick them up.");
         } finally {
           setSaving(false);
         }
@@ -166,8 +163,6 @@ function AdminSettingsContent() {
   // Save Feature Flags
   async function saveFeatureFlags() {
     if (!config) return;
-    setMsg(null);
-    setError(null);
     await withSensitivePassword(
       {
         title: "Password required",
@@ -182,11 +177,11 @@ function AdminSettingsContent() {
             body: JSON.stringify({ key: "features", value: config.features }),
           });
           if (!res.ok) {
-            setError(res.message);
+            toastError(res.message);
             return;
           }
           setConfig(res.data.config);
-          setMsg("Feature flags saved successfully.");
+          toastSuccess("Feature flags saved successfully.");
         } finally {
           setSaving(false);
         }
@@ -198,8 +193,6 @@ function AdminSettingsContent() {
   async function saveServicesCatalog() {
     if (!config) return;
     setSaving(true);
-    setMsg(null);
-    setError(null);
     try {
       const res = await api<{ config: AppConfig }>("/api/admin/settings", {
         method: "PATCH",
@@ -207,11 +200,11 @@ function AdminSettingsContent() {
         body: JSON.stringify({ key: "services", value: config.services }),
       });
       if (!res.ok) {
-        setError(res.message);
+        toastError(res.message);
         return;
       }
       setConfig(res.data.config);
-      setMsg("Service catalog saved successfully.");
+      toastSuccess("Service catalog saved successfully.");
     } finally {
       setSaving(false);
     }
@@ -221,8 +214,6 @@ function AdminSettingsContent() {
   async function saveMatchingRules() {
     if (!config) return;
     setSaving(true);
-    setMsg(null);
-    setError(null);
     try {
       const [resM, resV] = await Promise.all([
         api<{ config: AppConfig }>("/api/admin/settings", {
@@ -238,11 +229,11 @@ function AdminSettingsContent() {
       ]);
 
       if (!resM.ok) {
-        setError(resM.message);
+        toastError(resM.message);
         return;
       }
       if (!resV.ok) {
-        setError(resV.message);
+        toastError(resV.message);
         return;
       }
       setConfig(resV.data.config);
@@ -259,7 +250,7 @@ function AdminSettingsContent() {
         });
       }
 
-      setMsg("Matching, verification, and call-out rules saved.");
+      toastSuccess("Matching, verification, and call-out rules saved.");
     } finally {
       setSaving(false);
     }
@@ -269,8 +260,6 @@ function AdminSettingsContent() {
   async function saveContent() {
     if (!config) return;
     setSaving(true);
-    setMsg(null);
-    setError(null);
     const requestProblems = problemsText
       .split("\n")
       .map((s) => s.trim())
@@ -284,12 +273,12 @@ function AdminSettingsContent() {
         body: JSON.stringify({ key: "content", value }),
       });
       if (!res.ok) {
-        setError(res.message);
+        toastError(res.message);
         return;
       }
       setConfig(res.data.config);
       setProblemsText(res.data.config.content.requestProblems.join("\n"));
-      setMsg("Content saved request flow & home copy updated.");
+      toastSuccess("Content saved request flow & home copy updated.");
     } finally {
       setSaving(false);
     }
@@ -303,7 +292,7 @@ function AdminSettingsContent() {
       body: JSON.stringify({ id, resolved }),
     });
     if (!res.ok) {
-      setError(res.message);
+      toastError(res.message);
       return;
     }
     setSnapshot((prev) => {
@@ -318,8 +307,6 @@ function AdminSettingsContent() {
   // Staff set level
   async function handleSetLevel(userId: string, adminRoleNext: string) {
     setBusyStaffId(userId);
-    setMsg(null);
-    setError(null);
     await withSensitivePassword(
       {
         title: "Confirm staff level change",
@@ -332,10 +319,10 @@ function AdminSettingsContent() {
           body: JSON.stringify({ userId, adminRole: adminRoleNext }),
         });
         if (!res.ok) {
-          setError(res.message);
+          toastError(res.message);
           return;
         }
-        setMsg(`Access level updated → ${res.data.roleLabel}`);
+        toastSuccess(`Access level updated → ${res.data.roleLabel}`);
         await loadStaff();
       },
     );
@@ -365,18 +352,6 @@ function AdminSettingsContent() {
     >
       <SensitivePageGate pageName="System settings">
         <div className="w-full pb-16">
-        {/* Global Notifications */}
-        {error ? (
-          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-sm">
-            {error}
-          </div>
-        ) : null}
-        {msg ? (
-          <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-sm">
-            {msg}
-          </div>
-        ) : null}
-
         {/* Tabs Bar */}
         <SettingsTabs activeTab={activeTab} onTabChange={setActiveTab} />
 

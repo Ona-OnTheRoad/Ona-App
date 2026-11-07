@@ -1,5 +1,6 @@
 "use client";
 
+import { toastError, toastSuccess } from "@/lib/toast";
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { AdminShell } from "@/components/admin/admin-shell";
@@ -32,8 +33,9 @@ export default function AdminDeletionRequestsPage() {
       const res = await fetch("/api/admin/deletion-requests");
       const json = await res.json();
       if (json.ok) setRequests(json.data.requests ?? []);
+      else toastError(json.error?.message || "Failed to load deletion requests");
     } catch {
-      /* ignore */
+      toastError("Network error loading deletion requests");
     } finally {
       setLoading(false);
     }
@@ -52,9 +54,14 @@ export default function AdminDeletionRequestsPage() {
         body: JSON.stringify({ userId, action }),
       });
       const json = await res.json();
-      if (json.ok) void load();
+      if (json.ok) {
+        toastSuccess(action === "restore" ? "Account restored." : "Account deleted.");
+        void load();
+      } else {
+        toastError(json.error?.message || "Action failed");
+      }
     } catch {
-      /* ignore */
+      toastError("Network error submitting action");
     } finally {
       setActioning(null);
     }

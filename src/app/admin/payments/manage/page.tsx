@@ -6,6 +6,7 @@ import { OpsCards } from "@/components/admin/payments-manage/ops-cards";
 import { PasswordPanel } from "@/components/admin/payments-manage/password-panel";
 import { PaymentsList } from "@/components/admin/payments-manage/payments-list";
 import { styles } from "@/components/admin/payments-manage/styles";
+import { toastSuccess } from "@/lib/toast";
 import { usePaymentsConsole } from "@/components/admin/payments-manage/use-payments-console";
 
 export default function PaymentManagementPage() {
@@ -16,12 +17,7 @@ export default function PaymentManagementPage() {
     adminRole,
     payments,
     ops,
-    opsError,
     loading,
-    error,
-    setError,
-    msg,
-    setMsg,
     busy,
     filter,
     setFilter,
@@ -80,8 +76,7 @@ export default function PaymentManagementPage() {
             style={styles.btn}
             onClick={() => {
               void loadPayments();
-              setMsg("Refreshed");
-              setTimeout(() => setMsg(null), 2000);
+              toastSuccess("Refreshed");
             }}
           >
             Refresh
@@ -96,9 +91,6 @@ export default function PaymentManagementPage() {
       </div>
 
       <AdminGuideBanner pageId="payments-manage" />
-
-      {error ? <div style={styles.error}>{error}</div> : null}
-      {msg ? <div style={styles.success}>{msg}</div> : null}
 
       {showPassword && (
         <PasswordPanel
@@ -115,12 +107,6 @@ export default function PaymentManagementPage() {
       )}
 
       <OpsCards ops={ops} />
-
-      {opsError ? (
-        <p style={{ ...styles.error, marginBottom: 16 }}>
-          Balances unavailable: {opsError}
-        </p>
-      ) : null}
 
       <div style={{ display: "flex", gap: selectedId ? 16 : 0 }}>
         <PaymentsList
@@ -148,7 +134,6 @@ export default function PaymentManagementPage() {
             canRetry={canRetry}
             note={note}
             setNote={setNote}
-            setError={setError}
             loadDetail={loadDetail}
             runAction={runAction}
             onClose={() => {

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toastError } from "@/lib/toast";
 import {
   adminRoleLabel,
   normalizeAdminRoleUi,
@@ -14,7 +15,7 @@ export function useAdminGate() {
   const [adminRole, setAdminRole] = useState<AdminRoleUi>("super_admin");
   const [roleLabel, setRoleLabel] = useState("Super Admin");
   const [ready, setReady] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,7 +40,10 @@ export function useAdminGate() {
           setReady(true);
         }
       } catch {
-        if (!cancelled) setError("Network error");
+        if (!cancelled) {
+          setFailed(true);
+          toastError("Network error");
+        }
       }
     })();
     return () => {
@@ -85,8 +89,7 @@ export function useAdminGate() {
     adminRole,
     roleLabel,
     ready,
-    error,
-    setError,
+    error: failed ? "Network error" : null,
     api,
     router,
   };

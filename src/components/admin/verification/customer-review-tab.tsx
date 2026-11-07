@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, RefreshCw, CheckCircle2, XCircle, ExternalLink, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toastError, toastSuccess } from "@/lib/toast";
 import { useAdminGate } from "@/components/admin/use-admin-gate";
 
 interface CustomerQueueRow {
@@ -40,12 +41,9 @@ export function CustomerReviewTab({
   const [filter, setFilter] = useState<"submitted" | "approved" | "rejected" | "all">("submitted");
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState<string | null>(null);
-  const [msg, setMsg] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       const res = await api<{
         users: CustomerQueueRow[];
@@ -58,13 +56,13 @@ export function CustomerReviewTab({
       }>(`/api/admin/customer-review?status=${filter}`);
 
       if (!res.ok) {
-        setError(res.message);
+        toastError(res.message);
         return;
       }
       setItems(res.data.users || []);
       if (res.data.totals) setTotals(res.data.totals);
     } catch {
-      setError("Network error loading customer review queue");
+      toastError("Network error loading customer review queue");
     } finally {
       setLoading(false);
     }
@@ -76,8 +74,6 @@ export function CustomerReviewTab({
 
   async function handleAction(userId: string, action: "approve" | "reject") {
     setActingId(userId);
-    setMsg(null);
-    setError(null);
     try {
       const reason = action === "reject" ? "Document unreadable or invalid" : undefined;
       const res = await api<{ ok: boolean; message?: string }>("/api/admin/customer-review", {
@@ -85,14 +81,14 @@ export function CustomerReviewTab({
         body: JSON.stringify({ action, userId, reason }),
       });
       if (res.ok) {
-        setMsg(`Customer identity ${action === "approve" ? "approved" : "rejected"} successfully.`);
+        toastSuccess(`Customer identity ${action === "approve" ? "approved" : "rejected"} successfully.`);
         await load();
         onRefreshParent?.();
       } else {
-        setError(res.message || `Failed to ${action} customer`);
+        toastError(res.message || `Failed to ${action} customer`);
       }
     } catch {
-      setError("Network error submitting action");
+      toastError("Network error submitting action");
     } finally {
       setActingId(null);
     }
@@ -100,18 +96,6 @@ export function CustomerReviewTab({
 
   return (
     <div className="space-y-6">
-      {/* Messages */}
-      {msg && (
-        <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
-          {msg}
-        </div>
-      )}
-      {error && (
-        <div role="alert" className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-medium">
-          {error}
-        </div>
-      )}
-
       {/* Mini Stat Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-white dark:bg-[#18171c] border border-gray-200 dark:border-[#27272a] rounded-xl p-3.5 shadow-xs">

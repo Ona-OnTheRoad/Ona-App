@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { useAdminGate } from "@/components/admin/use-admin-gate";
+import { toastError, toastSuccess } from "@/lib/toast";
 import { one, type Detail } from "@/components/admin/motorist-detail/types";
 import { CustomerStatCards } from "@/components/admin/motorist-detail/customer-stat-cards";
 import {
@@ -25,26 +26,22 @@ export default function AdminMotoristDetailPage() {
   const { adminName, ready, api, router } = useAdminGate();
   const [data, setData] = useState<Detail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [currentTab, setCurrentTab] = useState<CustomerDetailTab>("profile");
 
   const load = useCallback(async () => {
     if (!id) return;
     setLoading(true);
-    setError(null);
     try {
       const res = await api<Detail>(`/api/admin/users/${id}`);
       if (!res.ok) {
-        setError(res.message || "Failed to load customer profile");
+        toastError(res.message || "Failed to load customer profile");
         setData(null);
         return;
       }
       setData(res.data);
-      setError(null);
     } catch {
-      setError("Failed to load customer profile from network");
+      toastError("Failed to load customer profile from network");
       setData(null);
     } finally {
       setLoading(false);
@@ -59,7 +56,6 @@ export default function AdminMotoristDetailPage() {
   async function toggleActive() {
     if (!data?.user) return;
     setBusy(true);
-    setMsg(null);
     try {
       const res = await api(`/api/admin/users/${id}/status`, {
         method: "PATCH",
@@ -67,13 +63,13 @@ export default function AdminMotoristDetailPage() {
         body: JSON.stringify({ is_active: !data.user.is_active }),
       });
       if (!res.ok) {
-        setError(res.message);
+        toastError(res.message);
         return;
       }
-      setMsg(data.user.is_active ? "Customer deactivated" : "Customer activated");
+      toastSuccess(data.user.is_active ? "Customer deactivated" : "Customer activated");
       await load();
     } catch {
-      setError("Failed to update customer status");
+      toastError("Failed to update customer status");
     } finally {
       setBusy(false);
     }
@@ -91,12 +87,12 @@ export default function AdminMotoristDetailPage() {
     try {
       const res = await api(`/api/admin/users/${id}`, { method: "DELETE" });
       if (!res.ok) {
-        setError(res.message);
+        toastError(res.message);
         return;
       }
       router.replace("/admin/motorists");
     } catch {
-      setError("Failed to delete customer");
+      toastError("Failed to delete customer");
     } finally {
       setBusy(false);
     }
@@ -105,18 +101,16 @@ export default function AdminMotoristDetailPage() {
   async function reSync() {
     if (!id) return;
     setBusy(true);
-    setMsg(null);
-    setError(null);
     try {
       const res = await api(`/api/admin/users/${id}/sync`, { method: "POST" });
       if (!res.ok) {
-        setError(res.message);
+        toastError(res.message);
         return;
       }
-      setMsg("Identity sync completed successfully");
+      toastSuccess("Identity sync completed successfully");
       await load();
     } catch {
-      setError("Identity sync re-run failed");
+      toastError("Identity sync re-run failed");
     } finally {
       setBusy(false);
     }
@@ -137,7 +131,7 @@ export default function AdminMotoristDetailPage() {
   }
 
   // Error State or User Not Found
-  if (error || !data || !data.user) {
+  if (!data || !data.user) {
     return (
       <AdminShell
         adminName={adminName}
@@ -164,7 +158,7 @@ export default function AdminMotoristDetailPage() {
             <AlertCircle className="w-6 h-6" />
           </div>
           <h3 className="text-base font-bold text-gray-900 dark:text-white">
-            {error || "Customer Not Found"}
+            Customer Not Found
           </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">
             The requested customer profile could not be retrieved from the server.
@@ -233,18 +227,6 @@ export default function AdminMotoristDetailPage() {
           Delete permanently
         </button>
       </div>
-
-      {/* Feedback Messages */}
-      {msg ? (
-        <div className="mb-5 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-medium leading-relaxed">
-          {msg}
-        </div>
-      ) : null}
-      {error ? (
-        <div className="mb-5 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-medium leading-relaxed">
-          {error}
-        </div>
-      ) : null}
 
       {/* 4 Summary Stat Cards */}
       <CustomerStatCards

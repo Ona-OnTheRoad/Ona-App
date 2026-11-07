@@ -7,9 +7,11 @@ const gate = vi.hoisted(() => ({ ready: true, error: null as string | null, api:
 vi.mock("@/components/admin/use-admin-gate", () => ({ useAdminGate: () => ({ ...gate, adminName: "Admin", adminRole: "super_admin" }) }));
 vi.mock("@/components/admin/admin-shell", () => ({ AdminShell: ({ children }: { children: ReactNode }) => <div>{children}</div> }));
 vi.mock("@/components/admin/admin-guide-banner", () => ({ AdminGuideBanner: () => null }));
+const toast = vi.hoisted(() => ({ toastError: vi.fn(), toastSuccess: vi.fn(), toastInfo: vi.fn() }));
+vi.mock("@/lib/toast", () => toast);
 import Page from "../page";
 
-beforeEach(() => { gate.ready = true; gate.error = null; gate.api.mockReset(); });
+beforeEach(() => { gate.ready = true; gate.error = null; gate.api.mockReset(); toast.toastError.mockReset(); });
 afterEach(cleanup);
 
 it("waits for auth, then requests pros and renders dual-role rows and optional-field fallbacks", async () => {
@@ -31,11 +33,10 @@ it("waits for auth, then requests pros and renders dual-role rows and optional-f
 it("shows failures rather than an empty list and recovers through manual refresh", async () => {
   gate.api.mockResolvedValueOnce({ ok: false, message: "Database unavailable" }).mockResolvedValueOnce({ ok: true, data: { users: [] } });
   render(<Page />);
-  expect((await screen.findByRole("alert")).textContent).toBe("Database unavailable");
+  await waitFor(() => expect(toast.toastError).toHaveBeenCalledWith("Database unavailable"));
   expect(screen.queryByText("No pros found.")).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
   expect(await screen.findByText("No pros found.")).toBeTruthy();
-  expect(screen.queryByRole("alert")).toBeNull();
   expect(gate.api).toHaveBeenCalledTimes(2);
 });
 
@@ -52,6 +53,6 @@ it("keeps loading visible until the list request resolves", async () => {
 it("displays auth network failure without requesting data", () => {
   gate.ready = false; gate.error = "Network error";
   render(<Page />);
-  expect(screen.getByRole("alert").textContent).toBe("Network error");
+  expect(toast.toastError).toHaveBeenCalledWith("Network error");
   expect(gate.api).not.toHaveBeenCalled();
 });

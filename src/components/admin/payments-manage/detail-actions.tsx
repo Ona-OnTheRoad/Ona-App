@@ -1,3 +1,4 @@
+import { toastError } from "@/lib/toast";
 import { styles } from "./styles";
 import type { Detail } from "./types";
 
@@ -12,7 +13,6 @@ type Props = {
   canRetry: boolean;
   note: string;
   setNote: (v: string) => void;
-  setError: (v: string | null) => void;
   loadDetail: (id: string) => Promise<void>;
   runAction: (body: Record<string, unknown>, okMsg: string) => Promise<void>;
 };
@@ -28,7 +28,6 @@ export function DetailActions({
   canRetry,
   note,
   setNote,
-  setError,
   loadDetail,
   runAction,
 }: Props) {
@@ -75,7 +74,7 @@ export function DetailActions({
             onClick={() => {
               const r = note.trim();
               if (r.length < 8) {
-                setError("Note min 8 chars");
+                toastError("Note min 8 chars");
                 return;
               }
               void runAction(
@@ -100,7 +99,7 @@ export function DetailActions({
             onClick={() => {
               const r = note.trim();
               if (r.length < 8) {
-                setError("Note min 8 chars");
+                toastError("Note min 8 chars");
                 return;
               }
               void runAction(
@@ -124,7 +123,7 @@ export function DetailActions({
             onClick={() => {
               const r = note.trim();
               if (r.length < 8) {
-                setError("Note min 8 chars");
+                toastError("Note min 8 chars");
                 return;
               }
               if (!window.confirm("Force payout? Same ref no double pay."))

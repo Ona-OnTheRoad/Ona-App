@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AdminToaster } from "@/components/admin/admin-toaster";
 import "./admin.css";
 
 export const metadata: Metadata = {
@@ -24,7 +25,10 @@ export default function AdminLayout({
           __html: `try{var t=localStorage.getItem("ona-admin-theme");if(!t&&window.matchMedia("(prefers-color-scheme: dark)").matches){t="dark"}if(t){document.documentElement.dataset.theme=t;document.documentElement.classList.toggle("dark",t==="dark");var r=document.currentScript&&document.currentScript.nextElementSibling;if(r)r.setAttribute("data-theme",t)}}catch(e){}`,
         }}
       />
-      <div className="om-admin-root">{children}</div>
+      <div className="om-admin-root">
+        {children}
+        <AdminToaster />
+      </div>
     </>
   );
 }

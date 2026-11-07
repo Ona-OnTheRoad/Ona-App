@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { toastError } from "@/lib/toast";
 
 /** Routes that require password popup *before* navigation */
 export const PASSWORD_GATED_PATHS = [
@@ -121,14 +122,12 @@ export function SensitivePasswordHost() {
   const [modal, setModal] = useState<ModalState>(null);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     openPrompt = (opts) =>
       new Promise<boolean>((resolve) => {
         setPassword("");
-        setErr(null);
         setBusy(false);
         setModal({
           title: opts.title,
@@ -156,18 +155,16 @@ export function SensitivePasswordHost() {
       return null;
     });
     setPassword("");
-    setErr(null);
     setBusy(false);
   }, []);
 
   const submit = useCallback(async () => {
     if (!modal || !password.trim()) return;
     setBusy(true);
-    setErr(null);
     const res = await postUnlock(password.trim());
     setBusy(false);
     if (!res.ok) {
-      setErr(res.message);
+      toastError(res.message);
       return;
     }
     close(true);
@@ -213,11 +210,6 @@ export function SensitivePasswordHost() {
           }}
           style={{ width: "100%", marginBottom: "0.75rem" }}
         />
-        {err ? (
-          <div className="om-admin-error" style={{ marginBottom: "0.75rem" }}>
-            {err}
-          </div>
-        ) : null}
         <div
           style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}
         >

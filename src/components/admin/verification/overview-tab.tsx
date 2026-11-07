@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { UserCheck, Wrench, ShieldCheck, ArrowRight, RefreshCw, Loader2, AlertCircle } from "lucide-react";
+import { UserCheck, Wrench, ShieldCheck, ArrowRight, RefreshCw, Loader2 } from "lucide-react";
+import { toastError } from "@/lib/toast";
 import { useAdminGate } from "@/components/admin/use-admin-gate";
 
 interface OverviewTabProps {
@@ -20,11 +21,9 @@ export function OverviewTab({ onSelectTab }: OverviewTabProps) {
     proT4: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       const [c, p] = await Promise.all([
         api<{ totals: { total: number; submitted: number } }>(
@@ -41,7 +40,7 @@ export function OverviewTab({ onSelectTab }: OverviewTabProps) {
       ]);
 
       if (!c.ok && !p.ok) {
-        setError(c.message || p.message || "Failed to load verification stats");
+        toastError(c.message || p.message || "Failed to load verification stats");
         return;
       }
 
@@ -54,7 +53,7 @@ export function OverviewTab({ onSelectTab }: OverviewTabProps) {
         proT4: p.ok ? p.data.totals.t4_pending : 0,
       });
     } catch {
-      setError("An unexpected error occurred while fetching verification data.");
+      toastError("An unexpected error occurred while fetching verification data.");
     } finally {
       setLoading(false);
     }
@@ -90,16 +89,6 @@ export function OverviewTab({ onSelectTab }: OverviewTabProps) {
           <span>Refresh</span>
         </button>
       </div>
-
-      {error ? (
-        <div
-          role="alert"
-          className="flex items-center gap-2 p-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg dark:bg-red-950/30 dark:border-red-900/50 dark:text-red-400"
-        >
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{error}</span>
-        </div>
-      ) : null}
 
       {/* Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { withSensitivePassword } from "@/components/admin/sensitive-unlock";
 import { useAdminGate } from "@/components/admin/use-admin-gate";
+import { toastError, toastSuccess } from "@/lib/toast";
 import type { Board, CareStatus, DashboardTotals, SearchHit } from "./types";
 
 export function useCareDesk() {
@@ -24,8 +25,7 @@ export function useCareDesk() {
     job: Record<string, unknown>;
     escrow: Record<string, unknown> | null;
   } | null>(null);
-  const [msg, setMsg] = useState<string | null>(null);
-  const [err, setErr] = useState<string | null>(null);
+  const [dashSettled, setDashSettled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [backupBusy, setBackupBusy] = useState(false);
   const [latestBackup, setLatestBackup] = useState<string | null>(null);
@@ -37,17 +37,20 @@ export function useCareDesk() {
   const refreshStatus = useCallback(async () => {
     const res = await api<CareStatus>("/api/admin/care/status");
     if (res.ok) setStatus(res.data);
-    else if (res.status !== 401) setErr(res.message);
+    else if (res.status !== 401) toastError(res.message);
   }, [api]);
 
   const refreshBoard = useCallback(async () => {
     const res = await api<Board>("/api/admin/care/board");
     if (res.ok) setBoard(res.data);
+    else if (res.status !== 401) toastError(res.message);
   }, [api]);
 
   const refreshDash = useCallback(async () => {
     const res = await api<{ totals: DashboardTotals }>("/api/admin/dashboard");
     if (res.ok) setDash(res.data.totals);
+    else if (res.status !== 401) toastError(res.message);
+    setDashSettled(true);
   }, [api]);
 
   const refreshLatestBackup = useCallback(async () => {
@@ -69,8 +72,6 @@ export function useCareDesk() {
   }, [api, backupSearch]);
 
   const runBackupNow = async () => {
-    setErr(null);
-    setMsg(null);
     setBackupBusy(true);
     try {
       const res = await api<{
@@ -83,7 +84,7 @@ export function useCareDesk() {
         headers: { "Content-Type": "application/json" },
       });
       if (!res.ok) {
-        setErr(res.message);
+        toastError(res.message);
         return;
       }
       const parts = [
@@ -93,11 +94,11 @@ export function useCareDesk() {
       if (res.data.payments != null) {
         parts.push(`${res.data.payments} payment rows`);
       }
-      setMsg(parts.join(" · "));
+      toastSuccess(parts.join(" · "));
       if (res.data.id) setLatestBackup(res.data.id);
       void refreshLatestBackup();
     } catch {
-      setErr("Backup network error");
+      toastError("Backup network error");
     } finally {
       setBackupBusy(false);
     }
@@ -141,14 +142,12 @@ export function useCareDesk() {
 
   const openJob = async (id: string) => {
     setSelectedJobId(id);
-    setMsg(null);
-    setErr(null);
     const res = await api<{
       job: Record<string, unknown>;
       escrow: Record<string, unknown> | null;
     }>(`/api/admin/care/job/${id}`);
     if (!res.ok) {
-      setErr(res.message);
+      toastError(res.message);
       setJobDetail(null);
       return;
     }
@@ -156,8 +155,6 @@ export function useCareDesk() {
   };
 
   const runAction = async (body: Record<string, unknown>, reason: string) => {
-    setErr(null);
-    setMsg(null);
     await withSensitivePassword(
       {
         title: "Password required",
@@ -173,15 +170,15 @@ export function useCareDesk() {
           });
           const json = await res.json();
           if (!json.ok) {
-            setErr(json.error?.message || "Action failed");
+            toastError(json.error?.message || "Action failed");
             return;
           }
-          setMsg(json.data?.message || "Done");
+          toastSuccess(json.data?.message || "Done");
           void refreshBoard();
           void refreshDash();
           if (selectedJobId) void openJob(selectedJobId);
         } catch {
-          setErr("Network error");
+          toastError("Network error");
         } finally {
           setBusy(false);
           if (typeof document !== "undefined") {
@@ -212,8 +209,7 @@ export function useCareDesk() {
     dash,
     selectedJobId,
     jobDetail,
-    msg,
-    err,
+    dashSettled,
     busy,
     backupBusy,
     latestBackup,

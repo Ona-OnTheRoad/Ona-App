@@ -6,6 +6,7 @@ import { AdminShell } from "@/components/admin/admin-shell";
 import { JobsTable, type AdminJobItem } from "@/components/admin/jobs/jobs-table";
 import { JobsPagination } from "@/components/admin/jobs/jobs-pagination";
 import { Loader2 } from "lucide-react";
+import { toastError, toastSuccess } from "@/lib/toast";
 
 const DEMO_JOBS: AdminJobItem[] = [
   {
@@ -107,8 +108,6 @@ export default function AdminJobsPage() {
   const [adminName, setAdminName] = useState("Admin");
   const [jobs, setJobs] = useState<AdminJobItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [msg, setMsg] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -152,8 +151,6 @@ export default function AdminJobsPage() {
   }, [load, router]);
 
   async function handleUpdateStatus(id: string, status: string) {
-    setMsg(null);
-    setError(null);
     setUpdatingId(id);
 
     try {
@@ -171,14 +168,14 @@ export default function AdminJobsPage() {
         });
         const json = await res.json();
         if (!json.ok) {
-          setError(json.error?.message || "Failed to update job status");
+          toastError(json.error?.message || "Failed to update job status");
           await load();
           return;
         }
       }
-      setMsg(`Saved job status → ${status}`);
+      toastSuccess(`Saved job status → ${status}`);
     } catch {
-      setError("Network error while updating status");
+      toastError("Network error while updating status");
     } finally {
       setUpdatingId(null);
     }
@@ -198,18 +195,6 @@ export default function AdminJobsPage() {
       subtitle="Active service jobs, progress, and completions."
       guideKey="jobs"
     >
-      {/* Alert Banners */}
-      {error ? (
-        <div className="mb-5 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-medium leading-relaxed">
-          {error}
-        </div>
-      ) : null}
-      {msg ? (
-        <div className="mb-5 p-3.5 rounded-xl bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-xs font-medium leading-relaxed">
-          {msg}
-        </div>
-      ) : null}
-
       {/* Main Jobs Card Container */}
       <div className="w-full bg-white dark:bg-[#0b0b0e] border border-gray-200 dark:border-[#27272a] rounded-2xl shadow-xs overflow-hidden">
         {/* Card Header Title */}
