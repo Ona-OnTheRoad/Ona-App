@@ -21,7 +21,7 @@ export default function AdminLayout({
     <>
       <script
         dangerouslySetInnerHTML={{
-          __html: `try{var t=localStorage.getItem("ona-admin-theme")||localStorage.getItem("ona-theme");if(!t&&window.matchMedia("(prefers-color-scheme: dark)").matches){t="dark"}if(t){document.documentElement.dataset.theme=t;document.documentElement.classList.toggle("dark",t==="dark");var r=document.currentScript&&document.currentScript.nextElementSibling;if(r)r.setAttribute("data-theme",t)}}catch(e){}`,
+          __html: `try{var t=localStorage.getItem("ona-admin-theme");if(!t&&window.matchMedia("(prefers-color-scheme: dark)").matches){t="dark"}if(t){document.documentElement.dataset.theme=t;document.documentElement.classList.toggle("dark",t==="dark");var r=document.currentScript&&document.currentScript.nextElementSibling;if(r)r.setAttribute("data-theme",t)}}catch(e){}`,
         }}
       />
       <div className="om-admin-root">{children}</div>

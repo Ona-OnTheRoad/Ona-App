@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { SensitivePageGate } from "@/components/admin/sensitive-page-gate";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { useAdminGate } from "@/components/admin/use-admin-gate";
 import { withSensitivePassword } from "@/components/admin/sensitive-unlock";
@@ -24,9 +26,28 @@ import type {
 } from "@/components/admin/matching/types";
 import { Loader2 } from "lucide-react";
 
-export default function AdminSettingsPage() {
+function AdminSettingsContent() {
   const { adminName, adminRole, ready, api } = useAdminGate();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams?.get("tab") as SettingsTabKey | null;
   const [activeTab, setActiveTab] = useState<SettingsTabKey>("health");
+
+  useEffect(() => {
+    if (
+      tabParam &&
+      [
+        "health",
+        "staff",
+        "app",
+        "features",
+        "services",
+        "matching",
+        "content",
+      ].includes(tabParam)
+    ) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   // Config data (App, Features, Services, Matching, Verification, Content)
   const [config, setConfig] = useState<AppConfig | null>(null);
@@ -342,7 +363,8 @@ export default function AdminSettingsPage() {
       subtitle="Tier 1/2 KYC, NIN, and vetting queue."
       guideKey="settings"
     >
-      <div className="w-full pb-16">
+      <SensitivePageGate pageName="System settings">
+        <div className="w-full pb-16">
         {/* Global Notifications */}
         {error ? (
           <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-sm">
@@ -446,7 +468,22 @@ export default function AdminSettingsPage() {
             )}
           </div>
         )}
-      </div>
+        </div>
+      </SensitivePageGate>
     </AdminShell>
+  );
+}
+
+export default function AdminSettingsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[50vh] flex items-center justify-center text-gray-400">
+          <Loader2 className="w-6 h-6 animate-spin text-ona-brand" />
+        </div>
+      }
+    >
+      <AdminSettingsContent />
+    </Suspense>
   );
 }

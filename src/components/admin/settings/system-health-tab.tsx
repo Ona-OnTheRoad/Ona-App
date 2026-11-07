@@ -1,10 +1,9 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { useState, useMemo } from "react";
 import type { HealthSnapshot, HealthLevel } from "@/types/health";
 import { NoHistoryIllustration } from "@/components/requests/no-history-illustration";
-import { RefreshCw, Search, ChevronDown, Check, Info } from "lucide-react";
+import { RefreshCw, Search, Info } from "lucide-react";
 
 interface SystemHealthTabProps {
   snapshot: HealthSnapshot | null;

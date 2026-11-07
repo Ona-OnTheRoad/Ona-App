@@ -40,8 +40,6 @@
   --radius-ona-sheet: 20px;
 }
 
-:root,
-.om-admin-root,
 .ona2,
 [data-rfd-theme],
 .rfd-bar,
@@ -56,10 +54,10 @@
   /* Coral from the design file (#E2654F) for accents. White text on it is only
      ~3.3:1, so filled buttons use --o-brand-btn (>=4.5:1, same hue, a shade
      deeper) and coral TEXT on white uses --o-brand-ink. */
-  --o-brand: #f05638;
-  --o-brand-btn: #f05638;
-  --o-brand-press: #d9482b;
-  --o-brand-ink: #f05638;
+  --o-brand: #e2654f;
+  --o-brand-btn: #cb4a34;
+  --o-brand-press: #b63f2b;
+  --o-brand-ink: #b3402c;
   --o-brand-soft: #fdeeea;
   --o-brand-border: #fdeeea;
   --o-disabled-bg: #dadada;
@@ -73,6 +71,26 @@
   --o-on-dark-muted: rgba(255, 255, 255, 0.72);
   --o-map: #efefef;
   --o-overlay: rgba(17, 24, 39, 0.5);
+}
+
+/*
+ * Admin Portal Brand Tokens — Scoped strictly to .om-admin-root so the consumer
+ * app maintains AA contrast compliance on filled buttons and brand text.
+ */
+.om-admin-root {
+  --o-bg: #ffffff;
+  --o-surface: #ffffff;
+  --o-field: #f9fafb;
+  --o-field-strong: #f3f4f6;
+  --o-border: #e5e7eb;
+  --o-ink: #111827;
+  --o-muted: #5b6472;
+  --o-brand: #f05638;
+  --o-brand-btn: #f05638;
+  --o-brand-press: #d9482b;
+  --o-brand-ink: #f05638;
+  --o-brand-soft: #fdeeea;
+  --o-brand-border: #fdeeea;
 }
 
 /* In the base layer so utilities on the same element (bg-ona-dark, text-ona-on-dark) win. */
@@ -131,13 +149,42 @@ select:focus-within,
   --tw-ring-color: transparent !important;
 }
 
-:root[data-theme="dark"],
-.dark,
-.om-admin-root[data-theme="dark"],
 [data-theme="dark"] .ona2,
 [data-theme="dark"] [data-rfd-theme],
+[data-theme="dark"] [data-rfd-theme] *,
 [data-theme="dark"] .rfd-bar,
-[data-theme="dark"] [data-sonner-toaster] {
+[data-theme="dark"] [data-sonner-toaster],
+.dark .ona2,
+.dark [data-rfd-theme],
+.dark [data-rfd-theme] *,
+.dark .rfd-bar,
+.dark [data-sonner-toaster] {
+  --o-bg: #111114;
+  --o-surface: #18171c;
+  --o-field: #1e1e24;
+  --o-field-strong: #27272a;
+  --o-border: #27272a;
+  --o-ink: #ffffff;
+  --o-muted: #a1a1aa;
+  --o-brand-ink: #e2654f;
+  --o-brand-soft: rgba(226, 101, 79, 0.16);
+  --o-brand-border: rgba(226, 101, 79, 0.38);
+  --o-disabled-bg: #27272a;
+  --o-disabled-ink: #71717a;
+  --o-success: #4ade80;
+  --o-success-soft: rgba(74, 222, 128, 0.14);
+  --o-danger: #f87171;
+  --o-dark: #18171c;
+  --o-dark-2: #222128;
+  --o-on-dark: #ffffff;
+  --o-on-dark-muted: rgba(255, 255, 255, 0.7);
+  --o-map: #1e1e24;
+  --o-overlay: rgba(0, 0, 0, 0.75);
+}
+
+.om-admin-root[data-theme="dark"],
+.dark .om-admin-root,
+[data-theme="dark"] .om-admin-root {
   --o-bg: #000000;
   --o-surface: #101012;
   --o-field: #18181b;
@@ -149,14 +196,8 @@ select:focus-within,
   --o-brand-btn: #f05638;
   --o-brand-press: #d9482b;
   --o-brand-ink: #f05638;
-  --o-brand-soft: rgba(226, 101, 79, 0.16);
-  --o-brand-border: rgba(226, 101, 79, 0.38);
-  --o-disabled-bg: #27272a;
-  --o-disabled-ink: #71717a;
-  --o-success: #4cc38a;
-  --o-success-soft: rgba(76, 195, 138, 0.14);
-  --o-danger: #f87171;
-  --o-map: #101012;
+  --o-brand-soft: rgba(240, 86, 56, 0.16);
+  --o-brand-border: rgba(240, 86, 56, 0.38);
 }
 
 /*

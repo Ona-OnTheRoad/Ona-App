@@ -6,7 +6,6 @@ import { useAdminGate } from "@/components/admin/use-admin-gate";
 import { CustomersStatCards } from "@/components/admin/customers/customers-stat-cards";
 import { CustomersTable, type CustomerItem } from "@/components/admin/customers/customers-table";
 import type { AdminUsersResult } from "@/lib/server/identity/admin-users";
-import { Loader2 } from "lucide-react";
 
 type MotoristRow = Extract<AdminUsersResult, { ok: true }>["users"][number];
 
@@ -31,7 +30,7 @@ export default function AdminCustomersHubPage() {
         setCustomers(
           res.data.users.map((u) => ({
             id: u.id,
-            full_name: u.full_name || "Unnamed Customer",
+            full_name: u.full_name || "Unnamed motorist",
             email: u.email || "",
             phone: u.phone,
             location: [u.area, u.city].filter(Boolean).join(", ") || "—",
@@ -67,32 +66,19 @@ export default function AdminCustomersHubPage() {
     return customers.filter((c) => !c.is_active).length;
   }, [customers]);
 
-  // Loading State - Matches Dashboard & Dispatch Tabs
-  if (!ready || (loading && customers.length === 0)) {
-    return (
-      <AdminShell
-        adminName={adminName}
-        title="Customers"
-        subtitle="Consumer accounts: verification, vehicle profiles, and booking history."
-        guideKey="customers"
-      >
-        <div className="flex items-center justify-center min-h-[50vh] text-gray-400 dark:text-gray-500 text-sm">
-          <Loader2 className="w-5 h-5 animate-spin mr-2 text-ona-brand" />
-          Loading customers…
-        </div>
-      </AdminShell>
-    );
-  }
-
   return (
     <AdminShell
       adminName={adminName}
+      adminRole={adminRole}
       title="Customers"
       subtitle="Consumer accounts: verification, vehicle profiles, and booking history."
       guideKey="customers"
     >
       {failure ? (
-        <div className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-medium leading-relaxed">
+        <div
+          role="alert"
+          className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-medium leading-relaxed"
+        >
           {failure}
         </div>
       ) : null}
@@ -106,7 +92,8 @@ export default function AdminCustomersHubPage() {
       {/* Customers Table */}
       <CustomersTable
         customers={paginatedCustomers}
-        loading={loading}
+        loading={!ready || loading}
+        failure={Boolean(failure)}
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}

@@ -6,19 +6,8 @@ import { useAdminGate } from "@/components/admin/use-admin-gate";
 import { ProsStatCards } from "@/components/admin/pros/pros-stat-cards";
 import { ProsTable, type ProItem } from "@/components/admin/pros/pros-table";
 import type { AdminUsersResult } from "@/lib/server/identity/admin-users";
-import { Loader2 } from "lucide-react";
 
 type ProRow = Extract<AdminUsersResult, { ok: true }>["users"][number];
-
-interface PendingCountsResponse {
-  customers: { pending: number; noId: number; totalOpen: number };
-  pros: {
-    idPending: number;
-    docsPending: number;
-    accountPending: number;
-    totalOpen: number;
-  };
-}
 
 const ITEMS_PER_PAGE = 10;
 
@@ -44,19 +33,15 @@ export default function AdminProsHubPage() {
     setLoading(true);
     setError(null);
     try {
-      const [usersRes, countsRes] = await Promise.all([
-        api<{ users: ProRow[] }>("/api/admin/users?role=repair_pro", {
-          cache: "no-store",
-        }),
-        api<PendingCountsResponse>("/api/admin/pending-counts", {
-          cache: "no-store",
-        }),
-      ]);
+      const usersRes = await api<{ users: ProRow[] }>(
+        "/api/admin/users?role=repair_pro",
+        { cache: "no-store" },
+      );
 
       if (usersRes.ok && usersRes.data?.users) {
         const mappedPros: ProItem[] = usersRes.data.users.map((u) => ({
           id: u.id,
-          full_name: u.full_name || "Unnamed Pro",
+          full_name: u.full_name || "Unnamed pro",
           email: u.email || "",
           phone: u.phone,
           location: [u.area, u.city].filter(Boolean).join(", ") || "—",
@@ -68,17 +53,13 @@ export default function AdminProsHubPage() {
         }));
         setPros(mappedPros);
 
-        const pendingData = countsRes.ok ? countsRes.data : null;
         setCounts({
           totalPros: mappedPros.length,
-          needsAction:
-            pendingData?.pros?.totalOpen ??
-            mappedPros.filter((p) => p.status.toLowerCase() === "pending")
-              .length,
-          t2Pending:
-            pendingData?.pros?.idPending ??
-            mappedPros.filter((p) => !p.verified).length,
-          t4Pending: pendingData?.pros?.docsPending ?? 0,
+          needsAction: mappedPros.filter(
+            (p) => p.status.toLowerCase() === "pending",
+          ).length,
+          t2Pending: mappedPros.filter((p) => !p.verified).length,
+          t4Pending: 0,
         });
       } else {
         setPros([]);
@@ -105,32 +86,19 @@ export default function AdminProsHubPage() {
     return pros.slice(start, start + ITEMS_PER_PAGE);
   }, [pros, currentPage]);
 
-  // Loading State - Matches Dashboard, Dispatch, and Customers
-  if (!ready || (loading && pros.length === 0)) {
-    return (
-      <AdminShell
-        adminName={adminName}
-        title="Repair Pros"
-        subtitle="Artisans, mechanics, and trade specialties."
-        guideKey="pros"
-      >
-        <div className="flex items-center justify-center min-h-[50vh] text-gray-400 dark:text-gray-500 text-sm">
-          <Loader2 className="w-5 h-5 animate-spin mr-2 text-ona-brand" />
-          Loading repair pros…
-        </div>
-      </AdminShell>
-    );
-  }
-
   return (
     <AdminShell
       adminName={adminName}
+      adminRole={adminRole}
       title="Repair Pros"
       subtitle="Artisans, mechanics, and trade specialties."
       guideKey="pros"
     >
       {failure ? (
-        <div className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-medium leading-relaxed">
+        <div
+          role="alert"
+          className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-medium leading-relaxed"
+        >
           {failure}
         </div>
       ) : null}
@@ -147,7 +115,8 @@ export default function AdminProsHubPage() {
       <ProsTable
         pros={paginatedPros}
         totalCount={counts.totalPros}
-        loading={loading}
+        loading={!ready || loading}
+        failure={Boolean(failure)}
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}

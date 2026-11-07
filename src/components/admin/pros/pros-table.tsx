@@ -20,6 +20,7 @@ interface ProsTableProps {
   pros: ProItem[];
   totalCount: number;
   loading: boolean;
+  failure?: boolean;
   onRefresh: () => void;
   currentPage: number;
   totalPages: number;
@@ -30,6 +31,7 @@ export function ProsTable({
   pros,
   totalCount,
   loading,
+  failure,
   onRefresh,
   currentPage,
   totalPages,
@@ -59,22 +61,25 @@ export function ProsTable({
       </div>
 
       {/* Table / Empty State / Loading State */}
-      {loading && pros.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-center py-20 px-4 text-gray-400 dark:text-gray-500 text-sm">
+      {loading && !failure && pros.length === 0 ? (
+        <div
+          role="status"
+          className="flex-1 flex flex-col items-center justify-center text-center py-20 px-4 text-gray-400 dark:text-gray-500 text-sm"
+        >
           <Loader2 className="w-5 h-5 animate-spin text-ona-brand mb-3" />
-          <span>Loading repair pros…</span>
+          <span>Loading pros…</span>
         </div>
-      ) : pros.length === 0 ? (
+      ) : !failure && pros.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center py-16 px-4">
           <NoHistoryIllustration className="w-52 h-40 max-w-full" />
           <h3 className="text-sm font-bold text-gray-900 dark:text-white mt-4">
-            No repair pros found.
+            No pros found.
           </h3>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-xs leading-relaxed">
             Registered repair professional accounts will appear here.
           </p>
         </div>
-      ) : (
+      ) : !failure && pros.length > 0 ? (
         <div className="flex-1 overflow-x-auto">
           <table className="w-full text-left text-xs min-w-[760px] border-collapse">
             <thead className="bg-[#f3f4f6] dark:bg-[#18171c] border-y border-gray-200 dark:border-[#27272a]">
@@ -99,7 +104,7 @@ export function ProsTable({
                 >
                   <td className="py-3.5 pl-6 pr-4">
                     <div className="font-semibold text-gray-900 dark:text-white text-xs">
-                      {p.full_name || "Unnamed Pro"}
+                      {p.full_name || "Unnamed pro"}
                     </div>
                     <div className="font-mono text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
                       {p.email || "—"}
@@ -125,7 +130,7 @@ export function ProsTable({
             </tbody>
           </table>
         </div>
-      )}
+      ) : null}
 
       {/* Pagination Footer */}
       {totalPages > 1 && (
@@ -138,4 +143,3 @@ export function ProsTable({
     </div>
   );
 }
-

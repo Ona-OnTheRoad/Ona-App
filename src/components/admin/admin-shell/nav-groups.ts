@@ -36,6 +36,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/motorists", label: "Customers", icon: "User" },
       { href: "/admin/pros", label: "Repair Pros", icon: "Wrench" },
+      { href: "/admin/verification", label: "Verification board", icon: "ShieldCheck" },
       { href: "/admin/accounts", label: "Accounts & sync", icon: "RefreshCw" },
       { href: "/admin/users", label: "All users", icon: "Users" },
     ],
@@ -52,7 +53,12 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "System",
     items: [
-      { href: "/admin/settings", label: "System settings", icon: "Settings" },
+      {
+        href: "/admin/settings",
+        label: "System settings 🔒",
+        icon: "Settings",
+        password: true,
+      },
     ],
   },
 ];

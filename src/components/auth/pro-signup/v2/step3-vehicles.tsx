@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Car, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { Car, Plus, Trash2 } from "lucide-react";
 import type { MotoristVehicle } from "@/lib/types";
 import { EnterVehicleSheet } from "./enter-vehicle-sheet";
 

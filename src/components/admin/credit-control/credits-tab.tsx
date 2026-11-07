@@ -2,14 +2,12 @@
 
 import { NoHistoryIllustration } from "@/components/requests/no-history-illustration";
 import { cn } from "@/lib/utils";
-import type { AdminRow, OnAction } from "./types";
+import type { AdminRow } from "./types";
 
 export function CreditsTab({
   txs,
-  onAction,
 }: {
   txs: AdminRow[];
-  onAction: OnAction;
 }) {
   return (
     <div className="w-full bg-white dark:bg-[#0b0b0e] border border-gray-200 dark:border-[#27272a] rounded-2xl shadow-xs overflow-hidden min-h-[480px] flex flex-col">

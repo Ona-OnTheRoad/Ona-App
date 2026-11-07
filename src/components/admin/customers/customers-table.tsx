@@ -18,6 +18,7 @@ export type CustomerItem = {
 interface CustomersTableProps {
   customers: CustomerItem[];
   loading: boolean;
+  failure?: boolean;
   onRefresh: () => void;
   currentPage: number;
   totalPages: number;
@@ -27,6 +28,7 @@ interface CustomersTableProps {
 export function CustomersTable({
   customers,
   loading,
+  failure,
   onRefresh,
   currentPage,
   totalPages,
@@ -51,22 +53,25 @@ export function CustomersTable({
       </div>
 
       {/* Table / Empty State / Loading State */}
-      {loading && customers.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-center py-20 px-4 text-gray-400 dark:text-gray-500 text-sm">
+      {loading && !failure && customers.length === 0 ? (
+        <div
+          role="status"
+          className="flex-1 flex flex-col items-center justify-center text-center py-20 px-4 text-gray-400 dark:text-gray-500 text-sm"
+        >
           <Loader2 className="w-5 h-5 animate-spin text-ona-brand mb-3" />
-          <span>Loading customers…</span>
+          <span>Loading motorists…</span>
         </div>
-      ) : customers.length === 0 ? (
+      ) : !failure && customers.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center py-16 px-4">
           <NoHistoryIllustration className="w-52 h-40 max-w-full" />
           <h3 className="text-sm font-bold text-gray-900 dark:text-white mt-4">
-            No customers found.
+            No motorists found.
           </h3>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-xs leading-relaxed">
             Registered customer accounts will appear here.
           </p>
         </div>
-      ) : (
+      ) : !failure && customers.length > 0 ? (
         <div className="flex-1 overflow-x-auto">
           <table className="w-full text-left text-xs min-w-190 border-collapse">
             <thead className="bg-[#f3f4f6] dark:bg-[#18171c] border-y border-gray-200 dark:border-[#27272a]">
@@ -86,7 +91,7 @@ export function CustomersTable({
                 >
                   <td className="py-3.5 pl-6 pr-4">
                     <div className="font-semibold text-gray-900 dark:text-white text-xs">
-                      {c.full_name || "Unnamed Customer"}
+                      {c.full_name || "Unnamed motorist"}
                     </div>
                     <div className="text-gray-400 dark:text-gray-500 text-[11px] mt-0.5">
                       {c.email || "—"}
@@ -123,7 +128,7 @@ export function CustomersTable({
             </tbody>
           </table>
         </div>
-      )}
+      ) : null}
 
       {/* Pagination Controls */}
       {customers.length > 0 && (
@@ -138,4 +143,3 @@ export function CustomersTable({
     </div>
   );
 }
-

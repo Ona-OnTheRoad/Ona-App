@@ -82,9 +82,6 @@ export function useAdminShell({
     const next = saved === "dark" || saved === "light" ? saved : "light";
     setTheme(next);
     document.querySelector(".om-admin-root")?.setAttribute("data-theme", next);
-    try {
-      localStorage.setItem("ona-theme", next);
-    } catch {}
     document.documentElement.dataset.theme = next;
     document.documentElement.classList.toggle("dark", next === "dark");
   }, []);
@@ -169,9 +166,6 @@ export function useAdminShell({
     setTheme(next);
     localStorage.setItem(THEME_KEY, next);
     document.querySelector(".om-admin-root")?.setAttribute("data-theme", next);
-    try {
-      localStorage.setItem("ona-theme", next);
-    } catch {}
     document.documentElement.dataset.theme = next;
     document.documentElement.classList.toggle("dark", next === "dark");
   }
@@ -229,3 +223,4 @@ export function useAdminShell({
     badgeFor,
   };
 }
+

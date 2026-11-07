@@ -8,8 +8,8 @@ export const dynamic = "force-dynamic";
 
 /**
  * Counts for nav badges and care review queues:
- * - Customers: total count for nav badge, plus pending care items
- * - Pros: total count for nav badge, plus pending care items
+ * - Customers: pending care review items for nav badge, plus total directory count for stat cards
+ * - Pros: pending care review items for nav badge, plus total directory count for stat cards
  */
 export async function GET() {
   if (!isSupabaseAdminConfigured()) {
@@ -22,7 +22,7 @@ export async function GET() {
     const [
       totalCustomers,
       totalPros,
-      custSubmitted,
+      _custSubmitted,
       custNoneWithAccount,
       proIdSubmitted,
       proDocs,
@@ -57,8 +57,6 @@ export async function GET() {
         .eq("status", "pending"),
     ]);
 
-    // Unattended = open care work (B3)
-    const customersPending = custSubmitted.count ?? 0;
     // Pros: union is hard with head counts use max of queues as badge signal
     // Better: count distinct users needing action
     const { data: proRows } = await sb
@@ -162,10 +160,10 @@ export async function GET() {
         totalOpen: proNeeds.length,
         sequence: proSequence,
       },
-      // Nav total badges matching total directory count
+      // Nav badges: only unattended/pending items needing care attention
       nav: {
-        customers: totalCustomers.count ?? unattendedCount,
-        pros: totalPros.count ?? proNeeds.length,
+        customers: unattendedCount,
+        pros: proNeeds.length,
       },
     });
   } catch (e) {

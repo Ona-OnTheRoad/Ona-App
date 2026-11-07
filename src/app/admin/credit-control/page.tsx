@@ -116,7 +116,7 @@ export default function AdminCreditControlPage() {
       {tab === "referrals" && (
         <ReferralsTab refEvents={refEvents} onAction={onAction} />
       )}
-      {tab === "credits" && <CreditsTab txs={txs} onAction={onAction} />}
+      {tab === "credits" && <CreditsTab txs={txs} />}
       {tab === "cashouts" && (
         <CashoutsTab cashoutList={cashoutList} onAction={onAction} />
       )}
