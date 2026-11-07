@@ -3,234 +3,147 @@
 import { useEffect, useState } from "react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { useAdminGate } from "@/components/admin/use-admin-gate";
-import { AdminGuideBanner } from "@/components/admin/admin-guide-banner";
-
-type Conversation = {
-  id: string;
-  motorist_id: string;
-  repair_pro_id: string;
-  request_id: string | null;
-  last_message_at: string | null;
-  created_at: string;
-};
-
-type Message = {
-  id: string;
-  conversation_id: string;
-  sender_id: string;
-  body: string;
-  created_at: string;
-};
-
-type MessageReport = {
-  id: string;
-  message_id: string;
-  reporter_id: string;
-  reason: string;
-  details?: string;
-  status: string;
-  created_at: string;
-};
+import {
+  MessagesTabs,
+  type MessagesTabKey,
+} from "@/components/admin/messages/messages-tabs";
+import {
+  ConversationsTab,
+  type ConversationRow,
+} from "@/components/admin/messages/conversations-tab";
+import {
+  RecentMessagesTab,
+  type MessageRow,
+} from "@/components/admin/messages/recent-messages-tab";
+import {
+  ReportsTab,
+  type MessageReportRow,
+} from "@/components/admin/messages/reports-tab";
+import { Loader2 } from "lucide-react";
 
 export default function AdminMessagesPage() {
   const { adminName, ready, api } = useAdminGate();
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [reports, setReports] = useState<MessageReport[]>([]);
+  const [activeTab, setActiveTab] = useState<MessagesTabKey>("conversations");
+  const [conversations, setConversations] = useState<ConversationRow[]>([]);
+  const [messages, setMessages] = useState<MessageRow[]>([]);
+  const [reports, setReports] = useState<MessageReportRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [moderatingId, setModeratingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!ready) return;
-    (async () => {
+    let cancelled = false;
+
+    async function loadData() {
+      setLoading(true);
       const res = await api<{
-        conversations: Conversation[];
-        messages: Message[];
-        reports?: MessageReport[];
+        conversations: ConversationRow[];
+        messages: MessageRow[];
+        reports?: MessageReportRow[];
       }>("/api/admin/messages");
+
+      if (cancelled) return;
       if (!res.ok) {
         setError(res.message);
+        setLoading(false);
         return;
       }
-      setConversations(res.data.conversations);
-      setMessages(res.data.messages);
+
+      setConversations(res.data.conversations || []);
+      setMessages(res.data.messages || []);
       setReports(res.data.reports || []);
-    })();
+      setLoading(false);
+    }
+
+    void loadData();
+
+    return () => {
+      cancelled = true;
+    };
   }, [ready, api]);
 
-  async function moderate(action: string, id: string) {
+  async function handleModerate(action: string, id: string) {
+    setModeratingId(id);
     const res = await api<{ id: string; status?: string }>(
       "/api/admin/messages",
       { method: "POST", body: JSON.stringify({ action, id }) },
     );
+
     if (!res.ok) {
       setError(res.message);
+      setModeratingId(null);
       return;
     }
+
     setError(null);
-    // refresh reports
-    const fresh = await api<{ reports?: MessageReport[] }>(
-      "/api/admin/messages",
-    );
-    if (fresh.ok) setReports(fresh.data.reports || []);
+    // Refresh data
+    const fresh = await api<{
+      conversations: ConversationRow[];
+      messages: MessageRow[];
+      reports?: MessageReportRow[];
+    }>("/api/admin/messages");
+
+    if (fresh.ok) {
+      setConversations(fresh.data.conversations || []);
+      setMessages(fresh.data.messages || []);
+      setReports(fresh.data.reports || []);
+    }
+    setModeratingId(null);
   }
 
   return (
-    <AdminShell adminName={adminName}>
-      <h1 className="om-admin-h1">Messages</h1>
-      <p className="om-admin-sub">
-        Job chats between customers and repair pros. Support Care when
-        investigating disputes.
-      </p>
-
-      <AdminGuideBanner pageId="messages" />
-
-      {error ? <div className="om-admin-error">{error}</div> : null}
-
-      <div className="om-admin-grid-2">
-        <div className="om-admin-panel">
-          <div className="om-admin-toolbar">
-            <strong>Conversations ({conversations.length})</strong>
+    <AdminShell
+      adminName={adminName}
+      title="Messages"
+      subtitle="Customer-pro chats and dispute logs"
+      guideKey="messages"
+    >
+      <div className="w-full pb-16">
+        {error ? (
+          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-sm">
+            {error}
           </div>
-          <table className="om-admin-table">
-            <thead>
-              <tr>
-                <th>Created</th>
-                <th>Customer</th>
-                <th>Pro</th>
-              </tr>
-            </thead>
-            <tbody>
-              {conversations.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="om-admin-muted">
-                    No conversations yet.
-                  </td>
-                </tr>
-              ) : (
-                conversations.map((c) => (
-                  <tr key={c.id}>
-                    <td>{new Date(c.created_at).toLocaleString()}</td>
-                    <td className="om-admin-muted">
-                      {c.motorist_id.slice(0, 8)}…
-                    </td>
-                    <td className="om-admin-muted">
-                      {c.repair_pro_id.slice(0, 8)}…
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+        ) : null}
+
+        {/* Tab Navigation */}
+        <div className="mb-6">
+          <MessagesTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            counts={{
+              conversations: conversations.length,
+              messages: messages.length,
+              reports: reports.length,
+            }}
+          />
         </div>
 
-        <div className="om-admin-panel">
-          <div className="om-admin-toolbar">
-            <strong>Recent messages ({messages.length})</strong>
+        {/* Loading state to eliminate empty-state flash */}
+        {!ready || loading ? (
+          <div className="rounded-2xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#141318] p-16 flex flex-col items-center justify-center text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-ona-brand mb-3" />
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              Loading messages...
+            </p>
           </div>
-          <table className="om-admin-table">
-            <thead>
-              <tr>
-                <th>When</th>
-                <th>Body</th>
-              </tr>
-            </thead>
-            <tbody>
-              {messages.length === 0 ? (
-                <tr>
-                  <td colSpan={2} className="om-admin-muted">
-                    No messages yet.
-                  </td>
-                </tr>
-              ) : (
-                messages.slice(0, 50).map((m) => (
-                  <tr key={m.id}>
-                    <td className="om-admin-muted">
-                      {new Date(m.created_at).toLocaleString()}
-                    </td>
-                    <td>{m.body.slice(0, 120)}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="om-admin-panel">
-          <div className="om-admin-toolbar">
-            <strong>Reports & moderation ({reports.length})</strong>
+        ) : (
+          <div>
+            {activeTab === "conversations" && (
+              <ConversationsTab conversations={conversations} />
+            )}
+            {activeTab === "recent" && (
+              <RecentMessagesTab messages={messages} />
+            )}
+            {activeTab === "reports" && (
+              <ReportsTab
+                reports={reports}
+                onModerate={handleModerate}
+                moderatingId={moderatingId}
+              />
+            )}
           </div>
-          <p className="om-admin-muted" style={{ fontSize: 12, margin: "0 0 8px" }}>
-            💡 Tips: users report abusive chats from the message screen.
-            <b> Review</b> marks it seen, <b>Delete message</b> removes the
-            abusive message and auto-closes its reports, <b>Dismiss</b> closes
-            it with no action. All actions are permanent.
-          </p>
-          <table className="om-admin-table">
-            <thead>
-              <tr>
-                <th>When</th>
-                <th>Reason</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {reports.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="om-admin-muted">
-                    No reports, all clear.
-                  </td>
-                </tr>
-              ) : (
-                reports.map((r) => (
-                  <tr key={r.id}>
-                    <td className="om-admin-muted">
-                      {new Date(r.created_at).toLocaleString()}
-                    </td>
-                    <td>
-                      {r.reason}
-                      {r.details ? (
-                        <div className="om-admin-muted">{r.details}</div>
-                      ) : null}
-                    </td>
-                    <td>
-                      <span className="om-admin-badge">{r.status}</span>
-                    </td>
-                    <td>
-                      {r.status === "open" || r.status === "reviewed" ? (
-                        <div style={{ display: "flex", gap: 6 }}>
-                          {r.status === "open" ? (
-                            <button
-                              type="button"
-                              className="om-admin-btn"
-                              onClick={() => void moderate("review-report", r.id)}
-                            >
-                              Review
-                            </button>
-                          ) : null}
-                          <button
-                            type="button"
-                            className="om-admin-btn"
-                            onClick={() => void moderate("delete-message", r.message_id)}
-                          >
-                            Delete message
-                          </button>
-                          <button
-                            type="button"
-                            className="om-admin-btn"
-                            onClick={() => void moderate("dismiss-report", r.id)}
-                          >
-                            Dismiss
-                          </button>
-                        </div>
-                      ) : null}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        )}
       </div>
     </AdminShell>
   );

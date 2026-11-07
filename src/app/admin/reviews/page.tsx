@@ -3,86 +3,66 @@
 import { useEffect, useState } from "react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { useAdminGate } from "@/components/admin/use-admin-gate";
-import { AdminGuideBanner } from "@/components/admin/admin-guide-banner";
-
-type Review = {
-  id: string;
-  request_id: string;
-  motorist_id: string;
-  repair_pro_id: string;
-  rating: number;
-  comment: string | null;
-  created_at: string;
-};
+import {
+  ReviewsTable,
+  type ReviewRow,
+} from "@/components/admin/reviews/reviews-table";
+import { Loader2 } from "lucide-react";
 
 export default function AdminReviewsPage() {
   const { adminName, ready, api } = useAdminGate();
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviews, setReviews] = useState<ReviewRow[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!ready) return;
-    (async () => {
-      const res = await api<{ reviews: Review[] }>("/api/admin/reviews");
+    let cancelled = false;
+
+    async function loadReviews() {
+      setLoading(true);
+      const res = await api<{ reviews: ReviewRow[] }>("/api/admin/reviews");
+      if (cancelled) return;
       if (!res.ok) {
         setError(res.message);
+        setLoading(false);
         return;
       }
-      setReviews(res.data.reviews);
-    })();
+      setReviews(res.data.reviews || []);
+      setLoading(false);
+    }
+
+    void loadReviews();
+    return () => {
+      cancelled = true;
+    };
   }, [ready, api]);
 
   return (
-    <AdminShell adminName={adminName}>
-      <h1 className="om-admin-h1">Reviews</h1>
-      <p className="om-admin-sub">
-        Ratings and reviews after completed jobs. Spot spam or abuse and support
-        quality on the marketplace.
-      </p>
+    <AdminShell
+      adminName={adminName}
+      title="Reviews"
+      subtitle="Rating moderation and pro scorecards"
+      guideKey="reviews"
+    >
+      <div className="w-full pb-16">
+        {error ? (
+          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-sm">
+            {error}
+          </div>
+        ) : null}
 
-      <AdminGuideBanner pageId="reviews" />
-
-      {error ? <div className="om-admin-error">{error}</div> : null}
-      <div className="om-admin-panel">
-        <div className="om-admin-toolbar">
-          <strong>{reviews.length} review(s)</strong>
-        </div>
-        <table className="om-admin-table">
-          <thead>
-            <tr>
-              <th>When</th>
-              <th>Rating</th>
-              <th>Comment</th>
-              <th>Pro</th>
-              <th>Customer</th>
-            </tr>
-          </thead>
-          <tbody>
-            {reviews.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="om-admin-muted">
-                  No reviews yet.
-                </td>
-              </tr>
-            ) : (
-              reviews.map((r) => (
-                <tr key={r.id}>
-                  <td>{new Date(r.created_at).toLocaleString()}</td>
-                  <td>
-                    <span className="om-admin-badge approved">{r.rating}★</span>
-                  </td>
-                  <td>{r.comment || ""}</td>
-                  <td className="om-admin-muted">
-                    {r.repair_pro_id.slice(0, 8)}…
-                  </td>
-                  <td className="om-admin-muted">
-                    {r.motorist_id.slice(0, 8)}…
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+        {/* Loading state to eliminate empty-state flash */}
+        {!ready || loading ? (
+          <div className="rounded-2xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#141318] p-16 flex flex-col items-center justify-center text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-ona-brand mb-3" />
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              Loading reviews...
+            </p>
+          </div>
+        ) : (
+          <ReviewsTable reviews={reviews} />
+        )}
       </div>
     </AdminShell>
   );

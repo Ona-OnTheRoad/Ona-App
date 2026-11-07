@@ -1,80 +1,84 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AdminShell } from "@/components/admin/admin-shell";
-import { AdminGuideBanner } from "@/components/admin/admin-guide-banner";
+import { useAdminGate } from "@/components/admin/use-admin-gate";
+import { AccountsStatCards } from "@/components/admin/accounts/accounts-stat-cards";
 import {
-  type Board,
-  type MergeCandidate,
-} from "@/components/admin/accounts/types";
-import { MergePanel } from "@/components/admin/accounts/merge-table";
-import { SyncLogPanel } from "@/components/admin/accounts/sync-log-panel";
+  AccountsTabs,
+  type AccountsTab,
+} from "@/components/admin/accounts/accounts-tabs";
+import { DuplicateIdentitiesTab } from "@/components/admin/accounts/duplicate-identities-tab";
+import { SyncEventsTab } from "@/components/admin/accounts/sync-events-tab";
+import type { Board, MergeCandidate } from "@/components/admin/accounts/types";
+import { Loader2 } from "lucide-react";
 
 export default function AdminAccountsPage() {
-  const router = useRouter();
-  const [adminName, setAdminName] = useState("Admin");
+  const { adminName, adminRole, ready, api, error: gateError } = useAdminGate();
   const [data, setData] = useState<Board | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [scanning, setScanning] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busyMerge, setBusyMerge] = useState<string | null>(null);
   const [primaryOverride, setPrimaryOverride] = useState<
     Record<string, "primary" | "duplicate">
   >({});
-  const [lastRefresh, setLastRefresh] = useState<string | null>(null);
+  const [currentTab, setCurrentTab] = useState<AccountsTab>("duplicates");
   const timerRef = useRef<number | null>(null);
 
   const load = useCallback(async () => {
-    const res = await fetch("/api/admin/identity");
-    const json = await res.json();
-    if (!json.ok) {
-      if (res.status === 401 || res.status === 403) {
-        router.replace("/admin/login");
-        return;
-      }
-      setError(json.error?.message || "Failed to load identity board");
-      return;
-    }
-    setData(json.data);
+    setLoading(true);
     setError(null);
-    setLastRefresh(new Date().toLocaleTimeString([], { hour12: false }));
-  }, [router]);
-
-  useEffect(() => {
-    (async () => {
-      const me = await fetch("/api/admin/auth/me");
-      const meJson = await me.json();
-      if (!meJson.ok) {
-        router.replace("/admin/login");
+    try {
+      const res = await api<Board>("/api/admin/identity");
+      if (!res.ok) {
+        setError(res.message || "Failed to load identity board");
         return;
       }
-      setAdminName(meJson.data.fullName || meJson.data.email);
-      await load();
-    })();
-  }, [load, router]);
+      setData(res.data);
+      setError(null);
+    } catch {
+      setError("Failed to load identity board from network");
+    } finally {
+      setLoading(false);
+    }
+  }, [api]);
 
   useEffect(() => {
+    if (ready) void load();
+  }, [ready, load]);
+
+  // Periodic polling for sync events
+  useEffect(() => {
+    if (!ready) return;
     timerRef.current = window.setInterval(() => void load(), 30_000);
     return () => {
       if (timerRef.current) window.clearInterval(timerRef.current);
     };
-  }, [load]);
+  }, [ready, load]);
 
   async function scan() {
     setMsg(null);
     setError(null);
-    const res = await fetch("/api/admin/identity", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "scan" }),
-    });
-    const json = await res.json();
-    if (!json.ok) {
-      setError(json.error?.message || "Scan failed");
-      return;
+    setScanning(true);
+    try {
+      const res = await api<{ message: string }>("/api/admin/identity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "scan" }),
+      });
+      if (!res.ok) {
+        setError(res.message || "Scan failed");
+        return;
+      }
+      setMsg(res.data.message || "Scan completed");
+      await load();
+    } catch {
+      setError("Network error while scanning for duplicates");
+    } finally {
+      setScanning(false);
     }
-    setMsg(json.data.message);
-    await load();
   }
 
   async function decide(candidate: MergeCandidate, action: "merge" | "reject") {
@@ -89,101 +93,98 @@ export default function AdminAccountsPage() {
           ? candidate.primary_user_id
           : candidate.duplicate_user_id;
     }
-    const res = await fetch(`/api/admin/identity/merges/${candidate.id}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const json = await res.json();
-    setBusyMerge(null);
-    if (!json.ok) {
-      setError(json.error?.message || "Action failed");
-      return;
+    try {
+      const res = await api<{ message?: string }>(
+        `/api/admin/identity/merges/${candidate.id}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        },
+      );
+      if (!res.ok) {
+        setError(res.message || "Action failed");
+        return;
+      }
+      setMsg(
+        action === "merge"
+          ? "Accounts merged into one identity history, roles and payout preserved."
+          : "Merge candidate rejected.",
+      );
+      await load();
+    } catch {
+      setError("Network error performing merge action");
+    } finally {
+      setBusyMerge(null);
     }
-    setMsg(
-      action === "merge"
-        ? "Accounts merged into one identity history, roles and payout preserved."
-        : "Merge candidate rejected.",
-    );
-    await load();
   }
 
-  const statCards = useMemo(() => {
-    const s = data?.summary;
-    return [
-      {
-        label: "Customer only",
-        value: s?.motoristOnly ?? "",
-        sub: "motorist side only",
-        tone: "available",
-      },
-      {
-        label: "Repair Pro only",
-        value: s?.proOnly ?? "",
-        sub: "pro side only",
-        tone: "pending",
-      },
-      {
-        label: "Both roles",
-        value: s?.dual ?? "",
-        sub: "one identity, two roles",
-        tone: "ledger",
-      },
-      {
-        label: "Needs sync",
-        value: s?.needsSync ?? "",
-        sub: "role registry mismatch",
-        tone: "held",
-      },
-      {
-        label: "Pending merges",
-        value: s?.pendingMerges ?? "",
-        sub: "duplicate identities",
-        tone: "failed",
-      },
-    ];
-  }, [data]);
+  const failure = gateError || error;
+
+  // Initial Loading State - Avoids Empty State Flash
+  if (!ready || (loading && !data)) {
+    return (
+      <AdminShell
+        adminName={adminName}
+        title="Accounts & sync"
+        subtitle="Auth reconciliation and profile sync."
+        guideKey="accounts"
+      >
+        <div className="flex items-center justify-center min-h-[50vh] text-gray-400 dark:text-gray-500 text-sm">
+          <Loader2 className="w-5 h-5 animate-spin mr-2 text-ona-brand" />
+          Loading accounts & sync…
+        </div>
+      </AdminShell>
+    );
+  }
 
   return (
-    <AdminShell adminName={adminName}>
-      <h1 className="om-admin-h1">Accounts & identity sync</h1>
-      <p className="om-admin-sub">
-        One person = one identity with optional Customer + Repair Pro roles.
-        Role registry, canonical payout record, merge queue and sync audit live
-        here. Refresh {lastRefresh || "…"} (auto 30s).
-      </p>
-
-      <AdminGuideBanner pageId="users" />
-
-      {error ? <div className="om-admin-error">{error}</div> : null}
+    <AdminShell
+      adminName={adminName}
+      title="Accounts & sync"
+      subtitle="Auth reconciliation and profile sync."
+      guideKey="accounts"
+    >
+      {/* Alert Messages */}
+      {failure ? (
+        <div className="mb-5 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-medium leading-relaxed">
+          {failure}
+        </div>
+      ) : null}
       {msg ? (
-        <div
-          className="om-admin-error"
-          style={{ background: "#14532d", color: "#bbf7d0", marginBottom: 12 }}
-        >
+        <div className="mb-5 p-3.5 rounded-xl bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-xs font-medium leading-relaxed">
           {msg}
         </div>
       ) : null}
 
-      <div className="om-admin-stat-grid">
-        {statCards.map((c) => (
-          <div className="om-admin-stat-card" data-tone={c.tone} key={c.label}>
-            <div className="om-admin-stat-label">{c.label}</div>
-            <div className="om-admin-stat-value">{c.value}</div>
-            <div className="om-admin-stat-sub">{c.sub}</div>
-          </div>
-        ))}
-      </div>
-      <MergePanel
-        data={data}
-        primaryOverride={primaryOverride}
-        setPrimaryOverride={setPrimaryOverride}
-        busyMerge={busyMerge}
-        onScan={() => void scan()}
-        onDecide={(candidate, action) => void decide(candidate, action)}
+      {/* 5 Metric Summary Cards */}
+      <AccountsStatCards
+        motoristOnly={data?.summary.motoristOnly ?? 0}
+        proOnly={data?.summary.proOnly ?? 0}
+        dual={data?.summary.dual ?? 0}
+        needsSync={data?.summary.needsSync ?? 0}
+        pendingMerges={data?.summary.pendingMerges ?? 0}
       />
 
-      <SyncLogPanel data={data} />
+      {/* Segmented Tab Navigation */}
+      <AccountsTabs currentTab={currentTab} onTabChange={setCurrentTab} />
+
+      {/* Tab Panels */}
+      {currentTab === "duplicates" && (
+        <DuplicateIdentitiesTab
+          data={data}
+          primaryOverride={primaryOverride}
+          setPrimaryOverride={setPrimaryOverride}
+          busyMerge={busyMerge}
+          scanning={scanning}
+          onScan={() => void scan()}
+          onDecide={(cand, act) => void decide(cand, act)}
+        />
+      )}
+
+      {currentTab === "sync_events" && (
+        <SyncEventsTab events={data?.syncLog ?? []} />
+      )}
     </AdminShell>
   );
 }

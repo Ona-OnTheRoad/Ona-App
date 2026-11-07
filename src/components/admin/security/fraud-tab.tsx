@@ -1,4 +1,7 @@
-import { badge } from "./types";
+"use client";
+
+import { NoHistoryIllustration } from "@/components/requests/no-history-illustration";
+import { cn } from "@/lib/utils";
 import type { AdminRow, OnAction } from "./types";
 
 export function FraudTab({
@@ -9,79 +12,91 @@ export function FraudTab({
   onAction: OnAction;
 }) {
   return (
-    <div className="space-y-3">
-      <table className="w-full text-left text-[12px]">
-        <thead>
-          <tr className="border-b border-[var(--om-border)] text-[11px] font-semibold text-[var(--om-text-muted)]">
-            <th className="p-2">User</th>
-            <th className="p-2">Type</th>
-            <th className="p-2">Risk</th>
-            <th className="p-2">Description</th>
-            <th className="p-2">Status</th>
-            <th className="p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {flags.map((f) => (
-            <tr
-              key={String(f.id)}
-              className="border-b border-[var(--om-border-soft)]"
-            >
-              <td className="p-2 font-medium">
-                {String(f.userId ?? "").slice(0, 8)}
-              </td>
-              <td className="p-2 capitalize">
-                {String(f.flagType ?? "").replace("_", " ")}
-              </td>
-              <td className="p-2">
-                <span
-                  className={badge(
-                    f.riskLevel === "critical"
-                      ? "bg-red-50 text-red-700"
-                      : f.riskLevel === "high"
-                        ? "bg-orange-50 text-orange-700"
-                        : "bg-yellow-50 text-yellow-700",
-                  )}
+    <div className="w-full bg-white dark:bg-[#0b0b0e] border border-gray-200 dark:border-[#27272a] rounded-2xl shadow-xs overflow-hidden min-h-[480px] flex flex-col">
+      {/* Card Header */}
+      <div className="px-6 pt-5 pb-3">
+        <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white select-none">
+          Fraud Review
+        </h2>
+      </div>
+
+      {/* Table / Empty State */}
+      {flags.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center text-center py-16 px-4">
+          <NoHistoryIllustration className="w-52 h-40 max-w-full" />
+          <h3 className="text-sm font-bold text-gray-900 dark:text-white mt-4">
+            No open fraud flags
+          </h3>
+        </div>
+      ) : (
+        <div className="flex-1 overflow-x-auto">
+          <table className="w-full text-left text-xs min-w-[760px] border-collapse">
+            <thead className="bg-[#f3f4f6] dark:bg-[#18171c] border-y border-gray-200 dark:border-[#27272a]">
+              <tr className="text-gray-900 dark:text-gray-200 text-xs font-semibold select-none">
+                <th className="py-3 pl-6 pr-4 font-semibold">User</th>
+                <th className="py-3 px-4 font-semibold">Type</th>
+                <th className="py-3 px-4 font-semibold">Risk Level</th>
+                <th className="py-3 px-4 font-semibold">Description</th>
+                <th className="py-3 px-4 font-semibold">Status</th>
+                <th className="py-3 pl-4 pr-6 font-semibold text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-[#27272a] bg-white dark:bg-[#0b0b0e]">
+              {flags.map((f) => (
+                <tr
+                  key={String(f.id)}
+                  className="hover:bg-gray-50/70 dark:hover:bg-[#16151a] transition-colors"
                 >
-                  {f.riskLevel}
-                </span>
-              </td>
-              <td className="p-2 text-[var(--om-text-muted)]">
-                {f.description}
-              </td>
-              <td className="p-2">{f.status}</td>
-              <td className="p-2">
-                <div className="flex gap-1">
-                  <button
-                    type="button"
-                    onClick={() => onAction("resolve-fraud", { id: f.id })}
-                    className="rounded bg-green-500 px-2 py-1 text-[10px] font-bold text-white"
-                  >
-                    Resolve
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onAction("block-fraud", { id: f.id })}
-                    className="rounded bg-red-500 px-2 py-1 text-[10px] font-bold text-white"
-                  >
-                    Block
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-          {flags.length === 0 && (
-            <tr>
-              <td
-                colSpan={6}
-                className="p-4 text-center text-[var(--om-text-muted)]"
-              >
-                No fraud flags
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+                  <td className="py-3.5 pl-6 pr-4 font-medium text-gray-900 dark:text-white">
+                    {String(f.userId ?? "").slice(0, 8)}
+                  </td>
+                  <td className="py-3.5 px-4 text-gray-700 dark:text-gray-300 capitalize">
+                    {String(f.flagType ?? "").replace("_", " ")}
+                  </td>
+                  <td className="py-3.5 px-4">
+                    <span
+                      className={cn(
+                        "inline-flex items-center px-2 py-0.5 text-[11px] font-semibold rounded-full capitalize",
+                        f.riskLevel === "critical"
+                          ? "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800"
+                          : f.riskLevel === "high"
+                          ? "bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800"
+                          : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800",
+                      )}
+                    >
+                      {f.riskLevel}
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-4 text-gray-500 dark:text-gray-400 max-w-sm truncate">
+                    {f.description}
+                  </td>
+                  <td className="py-3.5 px-4 text-gray-600 dark:text-gray-300">
+                    {f.status}
+                  </td>
+                  <td className="py-3.5 pl-4 pr-6 text-right">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => onAction("resolve-fraud", { id: f.id })}
+                        className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold cursor-pointer transition-colors"
+                      >
+                        Resolve
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onAction("block-fraud", { id: f.id })}
+                        className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white text-[11px] font-semibold cursor-pointer transition-colors"
+                      >
+                        Block
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

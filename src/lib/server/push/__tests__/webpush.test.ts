@@ -7,7 +7,7 @@ vi.mock("@/lib/push/env", () => ({
   getVapidPrivateKey: vi.fn(() => "priv-key"),
 }));
 
-const sendNotificationMock = vi.fn(async () => {});
+const sendNotificationMock = vi.fn(async (..._args: unknown[]) => {});
 
 vi.mock("web-push", () => ({
   default: {
@@ -20,7 +20,7 @@ vi.mock("@/lib/supabase/server", () => ({
   createServiceSupabase: vi.fn(),
 }));
 
-const enqueueNotificationDelivery = vi.fn(async () => ({ ok: true }));
+const enqueueNotificationDelivery = vi.fn(async (..._args: unknown[]) => ({ ok: true }));
 
 vi.mock("@/lib/server/notifications-retry", () => ({
   enqueueNotificationDelivery: (...args: unknown[]) =>

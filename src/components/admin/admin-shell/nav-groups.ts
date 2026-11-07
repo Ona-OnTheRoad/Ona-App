@@ -3,6 +3,7 @@ export type NavItem = {
   label: string;
   exact?: boolean;
   password?: boolean;
+  icon?: string;
 };
 export type NavGroup = { label: string; items: NavItem[] };
 
@@ -15,58 +16,49 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Operations",
     items: [
-      { href: "/admin", label: "Dashboard", exact: true },
-      { href: "/admin/dispatch", label: "Dispatch board" },
-      { href: "/admin/jobs", label: "Live jobs" },
-      { href: "/admin/disputes", label: "Disputes & appeals" },
+      { href: "/admin", label: "Dashboard", exact: true, icon: "LayoutGrid" },
+      { href: "/admin/dispatch", label: "Dispatch board", icon: "Truck" },
+      { href: "/admin/jobs", label: "Live jobs", icon: "Briefcase" },
+      { href: "/admin/disputes", label: "Disputes & appeals", icon: "Scale" },
       {
         href: "/admin/payments/control-center",
         label: "Payment Control Center",
+        icon: "CreditCard",
       },
-      { href: "/admin/shop", label: "Shop orders & delivery" },
-      { href: "/admin/security", label: "Security" },
-      { href: "/admin/deletion-requests", label: "Deletion Requests" },
-      { href: "/admin/credit-control", label: "Credit Control" },
+      { href: "/admin/shop", label: "Shop orders & delivery", icon: "Package" },
+      { href: "/admin/security", label: "Security", icon: "ShieldCheck" },
+      { href: "/admin/deletion-requests", label: "Deletion requests", icon: "UserX" },
+      { href: "/admin/credit-control", label: "Credit Control", icon: "Coins" },
     ],
   },
   {
     label: "People",
     items: [
-      { href: "/admin/motorists", label: "Customers" },
-      { href: "/admin/pros", label: "Repair Pros" },
-      { href: "/admin/accounts", label: "Accounts & sync" },
-      { href: "/admin/users", label: "All users" },
-      { href: "/admin/verification", label: "Verification overview" },
-    ],
-  },
-  {
-    label: "Care tools",
-    items: [
-      { href: "/admin/customer-review", label: "Customer ID review" },
-      { href: "/admin/pro-review", label: "Pro ID review" },
-      { href: "/admin/verification", label: "Verification board" },
-      { href: "/admin/health", label: "Service health" },
+      { href: "/admin/motorists", label: "Customers", icon: "User" },
+      { href: "/admin/pros", label: "Repair Pros", icon: "Wrench" },
+      { href: "/admin/verification", label: "Verification board", icon: "ShieldCheck" },
+      { href: "/admin/accounts", label: "Accounts & sync", icon: "RefreshCw" },
+      { href: "/admin/users", label: "All users", icon: "Users" },
     ],
   },
   {
     label: "Engagement",
     items: [
-      { href: "/admin/messages", label: "Messages" },
-      { href: "/admin/reviews", label: "Reviews" },
-      { href: "/admin/signups", label: "Signups" },
-      { href: "/admin/audit", label: "Audit trail" },
+      { href: "/admin/messages", label: "Messages", icon: "MessageSquare" },
+      { href: "/admin/reviews", label: "Reviews", icon: "Star" },
+      { href: "/admin/signups", label: "Signups", icon: "UserPlus" },
+      { href: "/admin/audit", label: "Audit trail", icon: "Clock" },
     ],
   },
   {
     label: "System",
     items: [
-      { href: "/admin/health", label: "Health" },
-      { href: "/admin/staff", label: "Staff levels 🔒", password: true },
-      { href: "/admin/settings", label: "Settings 🔒", password: true },
-      { href: "/admin/features", label: "Features 🔒", password: true },
-      { href: "/admin/services", label: "Services" },
-      { href: "/admin/matching", label: "Matching" },
-      { href: "/admin/content", label: "Content & menus" },
+      {
+        href: "/admin/settings",
+        label: "System settings 🔒",
+        icon: "Settings",
+        password: true,
+      },
     ],
   },
 ];

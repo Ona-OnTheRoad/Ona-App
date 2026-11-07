@@ -89,7 +89,7 @@ export function SignInForm() {
                 clearSignupDraft();
                 go("/signup");
               }}
-              className="flex min-h-[44px] items-center border-0 bg-transparent p-0 font-semibold text-ona-brand-ink underline underline-offset-2"
+              className="flex min-h-11 items-center border-0 bg-transparent p-0 font-semibold text-ona-brand-ink underline underline-offset-2"
             >
               {t("auth.createAnAccount")}
             </button>

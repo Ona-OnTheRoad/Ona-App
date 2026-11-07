@@ -1,26 +1,26 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { useAdminGate } from "@/components/admin/use-admin-gate";
-import { AdminGuideBanner } from "@/components/admin/admin-guide-banner";
-import { cn } from "@/lib/utils";
+import { SecurityStatCards } from "@/components/admin/security/security-stat-cards";
+import { SecuritySectionTabs } from "@/components/admin/security/security-section-tabs";
+import { ContactChangesTab } from "@/components/admin/security/contact-changes-tab";
+import { NameChangesTab } from "@/components/admin/security/name-changes-tab";
+import { FraudTab } from "@/components/admin/security/fraud-tab";
+import { AuditTab } from "@/components/admin/security/audit-tab";
 import {
-  TABS,
   rowsOf,
   sectionData,
   statsOf,
   type Tab,
 } from "@/components/admin/security/types";
-import { OverviewTab } from "@/components/admin/security/overview-tab";
-import { ContactChangesTab } from "@/components/admin/security/contact-changes-tab";
-import { NameChangesTab } from "@/components/admin/security/name-changes-tab";
-import { FraudTab } from "@/components/admin/security/fraud-tab";
-import { AuditTab } from "@/components/admin/security/audit-tab";
 
 export default function AdminSecurityPage() {
   const gate = useAdminGate();
-  const [tab, setTab] = useState<Tab>("overview");
+  // Default to contact-changes tab as shown in the Figma screenshot
+  const [tab, setTab] = useState<Tab>("contact-changes");
   const [data, setData] = useState<Record<string, unknown>>({});
   const [loading, setLoading] = useState(false);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
@@ -33,14 +33,17 @@ export default function AdminSecurityPage() {
       const json = await res.json();
       if (json.ok) setData((prev) => ({ ...prev, [section]: json.data }));
     } catch {
-      /* */
+      /* ignore */
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
     if (!gate.ready) return;
+    // Load overview stats for the top cards, and contact-changes for default tab
     void fetchSection("overview");
+    void fetchSection("contact-changes", "status=pending");
   }, [gate.ready, fetchSection]);
 
   const onAction = useCallback(
@@ -56,6 +59,7 @@ export default function AdminSecurityPage() {
         if (json.ok) {
           setActionMsg(`${action} succeeded`);
           void fetchSection(tab);
+          void fetchSection("overview");
         } else {
           setActionMsg(json.error || "Action failed");
         }
@@ -67,18 +71,10 @@ export default function AdminSecurityPage() {
     [tab, fetchSection],
   );
 
-  if (!gate.ready)
-    return (
-      <AdminShell>
-        <div className="p-6 text-[var(--om-text-muted)]">Loading...</div>
-      </AdminShell>
-    );
-  if (gate.error)
-    return (
-      <AdminShell>
-        <div className="p-6 text-red-500">{gate.error}</div>
-      </AdminShell>
-    );
+  const handleTabChange = (newTab: Tab) => {
+    setTab(newTab);
+    void fetchSection(newTab);
+  };
 
   const overview = sectionData(data, "overview");
   const stats = statsOf(overview);
@@ -88,74 +84,57 @@ export default function AdminSecurityPage() {
   const actions = rowsOf(sectionData(data, "audit"), "actions");
 
   return (
-    <AdminShell>
-      <div className="p-6">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-[18px] font-bold text-[var(--om-text)]">
-            Security Control
-          </h1>
-          {actionMsg && (
-            <span
-              className={cn(
-                "rounded-lg px-3 py-1 text-[11px] font-semibold",
-                actionMsg.includes("succeeded")
-                  ? "bg-green-50 text-green-700"
-                  : "bg-red-50 text-red-700",
-              )}
-            >
-              {actionMsg}
-            </span>
-          )}
+    <AdminShell
+      adminName={gate.adminName}
+      title="Security"
+      subtitle="Staff sessions, IP logs, and access security."
+      guideKey="security"
+    >
+      {/* Alert / Notification Feedback */}
+      {gate.error ? (
+        <div className="mb-5 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-xs font-medium leading-relaxed">
+          {gate.error}
         </div>
-
-        <AdminGuideBanner pageId="security" />
-
-        {/* Tabs */}
-        <div className="mb-6 flex flex-wrap gap-1">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => {
-                setTab(t.key);
-                void fetchSection(t.key);
-              }}
-              className={cn(
-                "rounded-lg px-4 py-2 text-[12px] font-semibold transition-colors",
-                tab === t.key
-                  ? "bg-[var(--om-accent)] text-white"
-                  : "bg-[var(--om-nav)] text-[var(--om-text)] hover:bg-[var(--om-nav-hover)]",
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
+      ) : null}
+      {actionMsg ? (
+        <div
+          className={`mb-5 p-3.5 rounded-xl border text-xs font-medium leading-relaxed ${
+            actionMsg.includes("succeeded")
+              ? "bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300"
+              : "bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800 text-red-600 dark:text-red-300"
+          }`}
+        >
+          {actionMsg}
         </div>
+      ) : null}
 
-        {loading && (
-          <p className="text-[13px] text-[var(--om-text-muted)]">Loading...</p>
-        )}
+      {/* Top 5 Metric Cards */}
+      <SecurityStatCards stats={stats} />
 
-        {tab === "overview" && <OverviewTab stats={stats} />}
-        {tab === "contact-changes" && (
-          <ContactChangesTab
-            requests={requests}
-            fetchSection={fetchSection}
-            onAction={onAction}
-          />
-        )}
-        {tab === "name-changes" && (
-          <NameChangesTab
-            nameRequests={nameRequests}
-            fetchSection={fetchSection}
-            onAction={onAction}
-          />
-        )}
-        {tab === "fraud" && <FraudTab flags={flags} onAction={onAction} />}
-        {tab === "audit" && (
-          <AuditTab actions={actions} fetchSection={fetchSection} />
-        )}
-      </div>
+      {/* Section Tabs Selector */}
+      <SecuritySectionTabs currentTab={tab} onTabChange={handleTabChange} />
+
+      {/* Main Tab Content */}
+      {tab === "contact-changes" && (
+        <ContactChangesTab
+          requests={requests}
+          fetchSection={fetchSection}
+          onAction={onAction}
+        />
+      )}
+      {tab === "name-changes" && (
+        <NameChangesTab
+          nameRequests={nameRequests}
+          fetchSection={fetchSection}
+          onAction={onAction}
+        />
+      )}
+      {tab === "fraud" && (
+        <FraudTab flags={flags} onAction={onAction} />
+      )}
+      {tab === "audit" && (
+        <AuditTab actions={actions} fetchSection={fetchSection} />
+      )}
     </AdminShell>
   );
 }

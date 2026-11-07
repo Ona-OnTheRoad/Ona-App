@@ -82,6 +82,8 @@ export function useAdminShell({
     const next = saved === "dark" || saved === "light" ? saved : "light";
     setTheme(next);
     document.querySelector(".om-admin-root")?.setAttribute("data-theme", next);
+    document.documentElement.dataset.theme = next;
+    document.documentElement.classList.toggle("dark", next === "dark");
   }, []);
 
   // Resolve role from session if parent didn't pass it
@@ -164,6 +166,8 @@ export function useAdminShell({
     setTheme(next);
     localStorage.setItem(THEME_KEY, next);
     document.querySelector(".om-admin-root")?.setAttribute("data-theme", next);
+    document.documentElement.dataset.theme = next;
+    document.documentElement.classList.toggle("dark", next === "dark");
   }
 
   async function logout() {
@@ -219,3 +223,4 @@ export function useAdminShell({
     badgeFor,
   };
 }
+
