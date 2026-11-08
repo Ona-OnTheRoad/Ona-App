@@ -16,10 +16,27 @@ import { PATCH } from "@/app/api/admin/pro-review/route";
 
 const USER = "11111111-1111-4111-8111-111111111111";
 
-function db(before: Record<string, unknown> | null) {
+/** Columns that exist on motorist_profiles only; asking repair_pro_profiles for them makes Postgres error. */
+const CUSTOMER_ONLY_COLUMNS = ["bank_id_number", "identity_review_status", "first_service_at"];
+const selects: string[] = [];
+
+function db(before: Record<string, unknown> | null, error: { message: string } | null = null) {
   const updates: Record<string, unknown>[] = [];
+  selects.length = 0;
   const from = vi.fn(() => ({
-    select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: before, error: null }) }) }),
+    select: (cols: string) => {
+      selects.push(cols);
+      // Like Postgres: an unknown column fails the whole query and returns no row.
+      const bad = CUSTOMER_ONLY_COLUMNS.some((c) => cols.includes(c));
+      return {
+        eq: () => ({
+          maybeSingle: async () =>
+            bad
+              ? { data: null, error: { message: `column ${cols} does not exist` } }
+              : { data: before, error },
+        }),
+      };
+    },
     update: (patch: Record<string, unknown>) => {
       updates.push(patch);
       return { eq: async () => ({ error: null }) };
@@ -69,6 +86,22 @@ describe("pro_t2_approve", () => {
     const updates = db({ ...idOnly, bvn_verified: true });
     await approve();
     expect(updates[0].bvn_verified).toBe(true);
+  });
+
+  it("only asks the pro table for columns it has", async () => {
+    db({ ...idOnly });
+    const res = await approve();
+    expect(res.status).toBe(200);
+    for (const cols of selects) {
+      for (const c of CUSTOMER_ONLY_COLUMNS) expect(cols).not.toContain(c);
+    }
+  });
+
+  it("reports a database error instead of claiming the pro was not found", async () => {
+    db(null, { message: "connection reset" });
+    const res = await approve();
+    expect(res.status).toBe(500);
+    expect((await res.json()).error.message).toBe("connection reset");
   });
 
   it("still refuses when the government ID itself is missing", async () => {
