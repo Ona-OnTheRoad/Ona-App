@@ -407,7 +407,7 @@ export async function POST(req: Request) {
     }
   }
 
-  // Phone uniqueness across different accounts (same user dual-role reuses their phone)
+  // Phone uniqueness across different accounts (signed-in attach may reuse own phone)
   const phoneDigits = input.phone.replace(/\D/g, "");
   if (phoneDigits.length >= 10) {
     const tail = phoneDigits.length > 10 ? phoneDigits.slice(-10) : phoneDigits;
@@ -421,12 +421,9 @@ export async function POST(req: Request) {
       if (d.length < 10) return false;
       const rowTail = d.length > 10 ? d.slice(-10) : d;
       if (rowTail !== tail) return false;
-      // Same identity attaching dual role not a conflict
+      // Only the access_token attach path may reuse this user's own phone
       if (attachUserId && row.id === attachUserId) return false;
-      const rowEmail = String(row.email || "")
-        .trim()
-        .toLowerCase();
-      return rowEmail !== email;
+      return true;
     });
     if (phoneTaken) {
       await logSignupEvent(supabase, {
@@ -442,12 +439,13 @@ export async function POST(req: Request) {
     }
   }
 
-  // 1) Create (or recover) auth user OR attach to existing session identity
+  // 1) Create auth user OR attach the other role on the signed-in identity.
+  // Unsigned signup never recovers/logs in an existing email (no profile overwrite).
   let userId: string | null = null;
   let createdNew = false;
 
   if (attachUserId) {
-    // Dual-role path: reuse this user id; verify password owns the account
+    // Sole dual-role route: reuse this user id; verify password owns the account
     const signed = await (await passwordClient()).auth.signInWithPassword({
       email:
         (
@@ -467,6 +465,28 @@ export async function POST(req: Request) {
         "Password belongs to a different account. Stay signed in and try again.",
         403,
         "identity_mismatch",
+      );
+    }
+    const sideTable =
+      role === "motorist" ? "motorist_profiles" : "repair_pro_profiles";
+    const { data: existingSide } = await supabase
+      .from(sideTable)
+      .select("user_id")
+      .eq("user_id", attachUserId)
+      .maybeSingle();
+    if (existingSide) {
+      await logSignupEvent(supabase, {
+        ...eventBase,
+        success: false,
+        error_message: "role_exists",
+        user_id: attachUserId,
+      });
+      return apiFail(
+        role === "motorist"
+          ? "This account already has a Customer role. Log in instead."
+          : "This account already has a Repair Pro role. Log in instead.",
+        409,
+        "role_exists",
       );
     }
     userId = attachUserId;
@@ -507,26 +527,17 @@ export async function POST(req: Request) {
         return apiFail(f.message, f.status, f.code);
       }
 
-      // Account already exists try password sign-in and finish profile (dual-role)
-      const signed = await (await passwordClient()).auth.signInWithPassword({
-        email,
-        password: input.password,
+      const m =
+        "An account with this email already exists. Log in with your password, or reset it if you forgot.";
+      await logSignupEvent(supabase, {
+        ...eventBase,
+        success: false,
+        error_message: m,
       });
-      if (signed.error || !signed.data.user) {
-        const m =
-          "An account with this email already exists. Log in with your password, or reset it if you forgot.";
-        await logSignupEvent(supabase, {
-          ...eventBase,
-          success: false,
-          error_message: m,
-        });
-        return apiFail(m, 409, "email_exists");
-      }
-      userId = signed.data.user.id;
-    } else {
-      userId = created.data.user.id;
-      createdNew = true;
+      return apiFail(m, 409, "email_exists");
     }
+    userId = created.data.user.id;
+    createdNew = true;
   }
 
   if (!userId) {

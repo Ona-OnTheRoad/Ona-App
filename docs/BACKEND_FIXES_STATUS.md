@@ -194,6 +194,12 @@ Approved scope: [review guide](review-guides/chat-message-notification-dedupe.md
 
 Code: `src/app/api/messages/__tests__/send.test.ts` — 8 passed. Independent human review and commit recording pending. External: two-party live smoke (subsequent toasts/center rows) pending.
 
+## Signup: no email recovery / single attach route (2026-11-08)
+
+Approved scope: [review guide](review-guides/signup-no-email-recovery.md). Unsigned `POST /api/auth/signup` no longer password-recovers an existing email into dual-role or profile overwrite; Auth “already registered” always returns `409 email_exists`. Dual-role remains only via signed-in `access_token` attach. Same-role attach returns `409 role_exists`. Phone uniqueness exempts only the attach user id (same-email bypass removed). FakeQuery `.not(col,'is',null)` aligned with PostgREST for unit phone checks.
+
+Code: `src/app/api/auth/signup/__tests__/route.test.ts` — 6 passed. External: R10 live QA pending. Commit/review recording pending.
+
 ## Signup dual-role attach — service client signed in as user (2026-10-24)
 
 Approved scope and criteria: [review guide](review-guides/signup-dual-role-service-client.md) on branch `fix/signup-dual-role-service-client` starting at dev `7517674`. `POST /api/auth/signup` called `signInWithPassword` on its `createServiceSupabase()` client; supabase-js then sent the user's JWT on later queries, so after migration 077 a signed-in motorist adding Repair Pro (and the signed-out existing-email recovery path) failed with `permission denied for table profiles`. Password checks and the browser session now use a throwaway anon client (`passwordClient()`), so every write stays `service_role`. Migration 077 grants, policies and triggers are unchanged. Side effect: `runIdentitySync`, `detectMergeCandidatesForUser` and the success `signup_events` row on these paths now run as service role instead of as the user.
