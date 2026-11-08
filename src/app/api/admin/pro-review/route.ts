@@ -481,13 +481,14 @@ export async function PATCH(req: Request) {
 
     if (action === "pro_t2_approve") {
       // T2 package = Government ID + BVN (both required)
-      const { data: before } = await supabase
+      const { data: before, error: beforeErr } = await supabase
         .from("repair_pro_profiles")
         .select(
-          "face_liveness_verified, liveness_passed_at, docs_status, bvn_verified, gov_id_number, gov_id_front_url, nin_encrypted, nin_last4, bvn_encrypted, bvn_last4, bank_id_number, gov_id_meta",
+          "face_liveness_verified, liveness_passed_at, docs_status, bvn_verified, gov_id_number, gov_id_front_url, nin_encrypted, nin_last4, bvn_encrypted, bvn_last4, gov_id_meta",
         )
         .eq("user_id", userId)
         .maybeSingle();
+      if (beforeErr) return apiFail(beforeErr.message, 500);
       if (!before) return apiFail("Pro not found", 404);
       const meta =
         before.gov_id_meta &&

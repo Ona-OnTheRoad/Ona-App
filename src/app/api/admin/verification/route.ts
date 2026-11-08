@@ -386,7 +386,7 @@ export async function PATCH(req: Request) {
       const now = new Date().toISOString();
       const { data: current } = await supabase
         .from("repair_pro_profiles")
-        .select("bvn_verified, bvn_encrypted, bvn_last4, bank_id_number, gov_id_meta")
+        .select("bvn_verified, bvn_encrypted, bvn_last4, gov_id_meta")
         .eq("user_id", userId)
         .maybeSingle();
       const { error } = await supabase
