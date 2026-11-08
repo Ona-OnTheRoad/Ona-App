@@ -78,6 +78,20 @@ export function dockVisibleOn(pathname: string): boolean {
   );
 }
 
+/** Routes that host the trade-selection flow (Home for each role). */
+const TRADE_FLOW_PATHS = ["/", "/dashboard"];
+
+/**
+ * Whether the dock should render. An open trade flow owns the whole screen
+ * (its CTA is pinned at the bottom), but only on Home: the selected trade is
+ * restored from session storage on every boot, so a stale value must never
+ * hide the dock on other tabs such as History.
+ */
+export function dockShownFor(pathname: string, category: string): boolean {
+  if (!dockVisibleOn(pathname)) return false;
+  return category === "none" || !TRADE_FLOW_PATHS.includes(pathname);
+}
+
 /** Active rule per destination (mirrors the old drawer so Home/Settings/Shop highlight correctly). */
 export function isDockActive(
   href: string,

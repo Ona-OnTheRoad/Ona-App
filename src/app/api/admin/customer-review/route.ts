@@ -6,6 +6,7 @@ import {
 } from "@/lib/server/admin-auth";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { buildDualRoleMeta } from "@/lib/dual-role";
+import { bvnOnFile as hasBvnOnFile } from "@/lib/server/identity/bvn-on-file";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 
@@ -722,7 +723,8 @@ export async function PATCH(req: Request) {
     const reject = action === "reject" || action === "reject_t2";
     if (!approve && !reject) return apiFail("Unknown action", 400);
 
-    // T2 package = Government ID + BVN (both required to approve)
+    // T2 = government ID only; BVN belongs to Tier 3 and is optional here
+    let bvnOnFile = false;
     if (approve) {
       const { data: row } = await supabase
         .from("motorist_profiles")
@@ -740,18 +742,10 @@ export async function PATCH(req: Request) {
         meta.primaryId ||
         row.gov_id_front_url,
       );
-      const hasBvn = Boolean(
-        row.bank_id_number || row.bvn_encrypted || row.bvn_last4 || meta.bankId,
-      );
+      bvnOnFile = hasBvnOnFile(row);
       if (!hasId) {
         return apiFail(
           "Cannot approve T2 government ID number/photo is missing.",
-          400,
-        );
-      }
-      if (!hasBvn) {
-        return apiFail(
-          "Cannot approve T2 BVN / bank ID must be filled with government ID. Ask customer to re-submit with BVN.",
           400,
         );
       }
@@ -772,7 +766,8 @@ export async function PATCH(req: Request) {
 
     const base: Record<string, unknown> = {
       nin_verified: approve,
-      bvn_verified: approve,
+      // Only claim BVN verified when a BVN was actually submitted
+      bvn_verified: approve && bvnOnFile,
       identity_verified_at: approve ? now : null,
       identity_review_status: approve ? "approved" : "rejected",
       identity_reviewed_at: now,
@@ -794,7 +789,7 @@ export async function PATCH(req: Request) {
         .from("motorist_profiles")
         .update({
           nin_verified: approve,
-          bvn_verified: approve,
+          bvn_verified: approve && bvnOnFile,
           identity_verified_at: approve ? now : null,
         })
         .eq("user_id", userId));
@@ -835,7 +830,7 @@ export async function PATCH(req: Request) {
       action: approve ? "approve" : "reject",
       message: approve
         ? "Tier 2 approved on Customer dual Repair Pro T2 auto-approved when both accounts exist."
-        : "Tier 2 rejected customer must re-submit ID and BVN.",
+        : "Tier 2 rejected customer must re-submit their government ID.",
     });
   } catch (e) {
     if (e instanceof AdminAuthError)

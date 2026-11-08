@@ -104,7 +104,9 @@ export function useVerifyIdentity() {
     let cancelled = false;
     const tick = async () => {
       try {
-        const p = await backendLoadUserProfile(backendUserId);
+        const p = await backendLoadUserProfile(backendUserId, {
+          force: true,
+        });
         if (cancelled || !p) return;
         if (
           p.identityReviewStatus === "approved" ||
@@ -132,14 +134,39 @@ export function useVerifyIdentity() {
         /* offline */
       }
     };
-    void tick();
-    const id = window.setInterval(() => {
-      if (typeof document !== "undefined" && document.hidden) return;
+    // Review takes minutes to hours: check quickly at first, then back off so a
+    // waiting user does not burn mobile data. Hidden tabs skip; returning to the
+    // tab checks at once.
+    const DELAYS_MS = [4000, 4000, 8000, 15000, 30000];
+    let step = 0;
+    let timer = 0;
+    const schedule = () => {
+      timer = window.setTimeout(
+        async () => {
+          if (typeof document === "undefined" || !document.hidden) {
+            await tick();
+          }
+          if (cancelled) return;
+          step = Math.min(step + 1, DELAYS_MS.length - 1);
+          schedule();
+        },
+        DELAYS_MS[Math.min(step, DELAYS_MS.length - 1)],
+      );
+    };
+    const onVisible = () => {
+      if (document.hidden) return;
+      window.clearTimeout(timer);
+      step = 0;
       void tick();
-    }, 4000);
+      schedule();
+    };
+    void tick();
+    schedule();
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       cancelled = true;
-      window.clearInterval(id);
+      window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [
     pending,

@@ -32,14 +32,26 @@ import { useFixIt } from "./incoming-job-popup/use-fix-it";
 import { useIncomingCountdown } from "./incoming-job-popup/use-incoming-countdown";
 import { useIncomingPanel } from "./incoming-job-popup/use-incoming-panel";
 import { useIncomingPoll } from "./incoming-job-popup/use-incoming-poll";
+import {
+  useProApprovalWatch,
+  useProJobsEligible,
+} from "@/components/pro/use-pro-jobs-enabled";
 import { useIncomingQueue } from "./incoming-job-popup/use-incoming-queue";
 import { useIncomingState } from "./incoming-job-popup/use-incoming-state";
 
 export { INCOMING_POPUP_STATUS_POLL_MS } from "./incoming-job-popup/constants";
 
 export function IncomingJobPopup() {
-  const { accountType, backendUserId, theme, isAuthenticated, authReady } =
-    useApp();
+  const {
+    accountType,
+    backendUserId,
+    theme,
+    isAuthenticated,
+    authReady,
+    proLive,
+  } = useApp();
+  const proEligible = useProJobsEligible();
+  useProApprovalWatch();
   const isLight = theme === "light";
   const router = useRouter();
   const pathname = usePathname() || "";
@@ -62,7 +74,13 @@ export function IncomingJobPopup() {
     useIncomingQueue({ backendUserId, router, state });
   const handleFixIt = useFixIt({ backendUserId, router, state, removeRef });
   useIncomingCountdown({ state, removeRef });
+  // Only a verified pro who is online polls for offers. A card already on
+  // screen keeps polling so a customer cancel still closes it after Away.
+  const pollEnabled =
+    proEligible &&
+    (proLive || state.visibleJobs.length > 0 || state.queue.length > 0);
   useIncomingPoll({
+    enabled: pollEnabled,
     accountType,
     backendUserId,
     isAuthenticated,

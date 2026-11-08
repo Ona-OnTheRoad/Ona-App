@@ -17,7 +17,7 @@ import { useApp } from "@/lib/store";
 import { DockExtra, closeDockSheet } from "./app-dock/dock-extra";
 import {
   buildDockItems,
-  dockVisibleOn,
+  dockShownFor,
   isDockActive,
   isHomeHref,
   type DockNavRow,
@@ -30,13 +30,7 @@ import { CLIENT_NAV, PRO_NAV, type MenuIconName } from "./app-menu/menu-nav";
 export function useDockVisible(): boolean {
   const pathname = usePathname() || "/";
   const { isAuthenticated, switchingRole, category } = useApp();
-  // An open trade flow owns the whole screen (its CTA is pinned at the bottom).
-  return (
-    isAuthenticated &&
-    !switchingRole &&
-    category === "none" &&
-    dockVisibleOn(pathname)
-  );
+  return isAuthenticated && !switchingRole && dockShownFor(pathname, category);
 }
 
 /**

@@ -79,8 +79,13 @@ export function ProReviewTab({
     try {
       const reason = action === "reject" ? "Submitted documents do not meet vetting criteria" : undefined;
       const res = await api<{ ok: boolean; message?: string }>("/api/admin/pro-review", {
-        method: "POST",
-        body: JSON.stringify({ action, userId, reason }),
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: action === "approve" ? "pro_t2_approve" : "pro_t2_reject",
+          userId,
+          reason,
+        }),
       });
       if (res.ok) {
         toastSuccess(`Repair pro ${action === "approve" ? "approved" : "rejected"} successfully.`);

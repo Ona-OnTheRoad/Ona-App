@@ -1,4 +1,5 @@
 import { compressImageFile } from "@/lib/image-compress";
+import { invalidateProfileCache } from "@/lib/supabase/profile-cache";
 
 /** Compress and upload an avatar; reports the stored URL or an error message. */
 export async function uploadProfileAvatar(
@@ -22,6 +23,7 @@ export async function uploadProfileAvatar(
       error?: { message?: string };
     };
     if (json?.ok && json.data?.url) {
+      invalidateProfileCache();
       onUrl(json.data.url);
     } else {
       onError(json?.error?.message || "Could not upload image.");

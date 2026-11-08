@@ -8,6 +8,7 @@ import "server-only";
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { bvnOnFile } from "./bvn-on-file";
 
 type MotRow = {
   user_id: string;
@@ -142,6 +143,10 @@ export async function mirrorDualRoleT2Approved(
 
   let mirroredTo: "motorist" | "pro" | "both" | "none" = "none";
 
+  // T2 approval never invents a BVN check: keep what is verified, and only
+  // vouch for the BVN when one was actually submitted on either side.
+  const bvnSubmitted = Boolean(bvnEnc || bvnLast4) || bvnOnFile(m) || bvnOnFile(p);
+
   // Always re-assert approve flags on both (idempotent)
   const motPatch: Record<string, unknown> = {
     identity_review_status: "approved",
@@ -149,7 +154,7 @@ export async function mirrorDualRoleT2Approved(
     identity_reviewed_at: now,
     identity_rejection_reason: null,
     nin_verified: true,
-    bvn_verified: true,
+    bvn_verified: Boolean(m.bvn_verified) || bvnSubmitted,
     updated_at: now,
   };
   if (reviewedBy) motPatch.identity_reviewed_by = reviewedBy;
@@ -168,7 +173,7 @@ export async function mirrorDualRoleT2Approved(
     gov_id_review_status: "approved",
     gov_id_reviewed_at: p.gov_id_reviewed_at || now,
     nin_verified: true,
-    bvn_verified: true,
+    bvn_verified: Boolean(p.bvn_verified) || bvnSubmitted,
     verified: true,
     tier2_approved_at: p.tier2_approved_at || now,
     rejection_reason: null,

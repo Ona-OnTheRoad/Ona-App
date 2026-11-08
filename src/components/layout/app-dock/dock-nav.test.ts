@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildDockItems, type DockNavRow } from "./dock-nav";
+import { buildDockItems, dockShownFor, type DockNavRow } from "./dock-nav";
 
 const t = (k: string) => k;
 const row = (href: string, icon: DockNavRow["icon"]): DockNavRow => ({
@@ -60,5 +60,22 @@ describe("buildDockItems", () => {
     const rows = [row("/", "dashboard")];
     const { primary } = buildDockItems(rows, t, "/shop", "/");
     expect(primary.map((p) => p.key)).toEqual(["/"]);
+  });
+});
+
+describe("dockShownFor", () => {
+  it("shows on History even when a stale trade is selected", () => {
+    expect(dockShownFor("/history", "mechanic")).toBe(true);
+    expect(dockShownFor("/requests", "mechanic")).toBe(true);
+    expect(dockShownFor("/profile", "solar")).toBe(true);
+  });
+  it("hides on Home while a trade flow is open, shows on a blank selector", () => {
+    expect(dockShownFor("/", "mechanic")).toBe(false);
+    expect(dockShownFor("/dashboard", "mechanic")).toBe(false);
+    expect(dockShownFor("/", "none")).toBe(true);
+  });
+  it("stays hidden on sub-pages that are not dock destinations", () => {
+    expect(dockShownFor("/history/abc", "none")).toBe(false);
+    expect(dockShownFor("/jobs/123", "none")).toBe(false);
   });
 });

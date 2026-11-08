@@ -6,6 +6,7 @@ import {
 } from "@/lib/server/admin-auth";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { buildDualRoleMeta } from "@/lib/dual-role";
+import { bvnOnFile } from "@/lib/server/identity/bvn-on-file";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 
@@ -483,7 +484,7 @@ export async function PATCH(req: Request) {
       const { data: before } = await supabase
         .from("repair_pro_profiles")
         .select(
-          "face_liveness_verified, liveness_passed_at, docs_status, bvn_verified, gov_id_number, gov_id_front_url, nin_encrypted, nin_last4, bvn_encrypted, bvn_last4, gov_id_meta",
+          "face_liveness_verified, liveness_passed_at, docs_status, bvn_verified, gov_id_number, gov_id_front_url, nin_encrypted, nin_last4, bvn_encrypted, bvn_last4, bank_id_number, gov_id_meta",
         )
         .eq("user_id", userId)
         .maybeSingle();
@@ -501,44 +502,32 @@ export async function PATCH(req: Request) {
         meta.primaryId ||
         before.gov_id_front_url,
       );
-      const hasBvn = Boolean(
-        before.bvn_encrypted ||
-        before.bvn_last4 ||
-        meta.bankId ||
-        meta.bvn ||
-        // Pro app stores BVN in nin field when kind=nin
-        (before.nin_encrypted && before.gov_id_number) ||
-        before.nin_last4,
-      );
-      // nin_last4 alone can be ID last4 prefer explicit bvn fields, else require nin submit as BVN
-      const hasBvnStrict = Boolean(
-        before.bvn_encrypted || before.bvn_last4 || meta.bankId || meta.bvn,
-      );
-      // Accept nin number as BVN package when pro submitted BVN step (nin field)
-      const hasBvnOrNinPackage =
-        hasBvnStrict || Boolean(before.nin_encrypted || before.nin_last4);
       if (!hasId) {
         return apiFail(
           "Cannot approve T2 government ID number/photo is missing.",
           400,
         );
       }
-      if (!hasBvnOrNinPackage) {
-        return apiFail(
-          "Cannot approve T2 BVN must be filled with government ID. Ask pro to submit BVN.",
-          400,
-        );
-      }
-      void hasBvn; // reserved for stricter future check
       const alreadyLive = Boolean(
         before?.face_liveness_verified || before?.liveness_passed_at,
       );
-      // Care T2 package includes ID + BVN approved together
+      // T2 approves the government ID. bvn_verified (needed for T3) is only set
+      // when a BVN was actually submitted, and is never taken away here.
+      const bvnVerified =
+        Boolean(before.bvn_verified) || bvnOnFile(before);
+      const { resolveAutoVisibilityTier } =
+        await import("@/lib/artisan/visibility-tiers");
+      const nextVis = resolveAutoVisibilityTier({
+        govIdApproved: true,
+        bvnVerified,
+        faceLiveness: alreadyLive,
+        skillDocsApproved: before.docs_status === "approved",
+      });
       const goLiveEnds = new Date(now);
       goLiveEnds.setUTCDate(goLiveEnds.getUTCDate() + 30);
       const t2Patch: Record<string, unknown> = {
         nin_verified: true,
-        bvn_verified: true,
+        bvn_verified: bvnVerified,
         verified: true,
         gov_id_review_status: "approved",
         gov_id_reviewed_at: now,
@@ -546,10 +535,10 @@ export async function PATCH(req: Request) {
         approved_at: now,
         rejection_reason: null,
         rejected_at: null,
-        visibility_tier: alreadyLive ? 3 : 2,
-        is_new_artisan: !alreadyLive,
+        visibility_tier: nextVis,
+        is_new_artisan: nextVis <= 2,
         tier2_approved_at: now,
-        ...(alreadyLive
+        ...(nextVis >= 3
           ? {
               tier3_approved_at: now,
               go_live_window_ends_at: null,
@@ -557,16 +546,10 @@ export async function PATCH(req: Request) {
           : {
               go_live_window_ends_at: goLiveEnds.toISOString(),
             }),
-        pipeline_status: "pending_document_review",
+        ...(nextVis >= 4 ? { tier4_approved_at: now } : {}),
+        pipeline_status: nextVis >= 4 ? "live_ready" : "pending_document_review",
         updated_at: now,
       };
-      // If skill docs already approved and T3 met → T4
-      if (alreadyLive && before?.docs_status === "approved") {
-        t2Patch.visibility_tier = 4;
-        t2Patch.tier4_approved_at = now;
-        t2Patch.is_new_artisan = false;
-        t2Patch.pipeline_status = "live_ready";
-      }
       const { error } = await supabase
         .from("repair_pro_profiles")
         .update(t2Patch)
@@ -577,7 +560,7 @@ export async function PATCH(req: Request) {
           .from("repair_pro_profiles")
           .update({
             nin_verified: true,
-            bvn_verified: true,
+            bvn_verified: bvnVerified,
             verified: true,
             gov_id_review_status: "approved",
             gov_id_reviewed_at: now,

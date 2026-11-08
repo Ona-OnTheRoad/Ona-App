@@ -5,6 +5,10 @@
  * Falls back gracefully when keys/session missing.
  */
 
+import {
+  invalidateProfileCache,
+  loadProfileCached,
+} from "@/lib/supabase/profile-cache";
 import { getAppSupabase, isAppBackendOnline } from "@/lib/supabase/app-client";
 import { profileToUserProfile, type MessageRow } from "@/lib/supabase/mappers";
 import type { ProfileRow } from "@/lib/supabase/types";
@@ -327,6 +331,7 @@ export async function backendUpdateProfile(
 ): Promise<string | null> {
   const { ensureAppSession, SESSION_RELOGIN_MESSAGE } =
     await import("@/lib/supabase/session");
+  invalidateProfileCache();
   try {
     // Prefer a freshly refreshed token over a possibly stale caller token
     const session = await ensureAppSession();
@@ -666,7 +671,8 @@ export async function backendSignIn(
   const userId = data.user?.id;
   if (!userId) return { error: "Login failed." };
 
-  const loaded = await backendLoadUserProfile(userId);
+  invalidateProfileCache();
+  const loaded = await backendLoadUserProfile(userId, { force: true });
   if (!loaded) {
     return {
       error: "Profile not found after login. Try again or contact support.",
@@ -701,6 +707,7 @@ export async function backendSwitchRole(target: AccountType): Promise<{
   const token = session?.accessToken;
   if (!token) return { error: SESSION_RELOGIN_MESSAGE };
 
+  invalidateProfileCache();
   try {
     const res = await fetch("/api/auth/switch-role", {
       method: "POST",
@@ -796,6 +803,7 @@ export async function backendDualRoleFlags(
 
 /** Server logout: force is_online=false then clear browser session */
 export async function backendLogout(): Promise<void> {
+  invalidateProfileCache();
   try {
     const sb = getAppSupabase();
     let access_token: string | undefined;
@@ -817,6 +825,7 @@ export async function backendLogout(): Promise<void> {
 }
 
 export async function backendSignOut(): Promise<void> {
+  invalidateProfileCache();
   const sb = getAppSupabase();
   if (!sb) return;
   await sb.auth.signOut();
@@ -830,11 +839,16 @@ export async function backendGetSessionUserId(): Promise<string | null> {
 }
 
 export async function backendLoadUserProfile(
-  // userId is kept for callers; the route derives the caller from the
-  // session only -- not even as a cross-check -- since this returns bank
-  // details, NIN/BVN, gov-ID and guarantor info.
-  _userId: string,
+  // The route derives the caller from the session only -- not even as a
+  // cross-check -- since this returns bank details, NIN/BVN, gov-ID and
+  // guarantor info. userId only keys the in-memory cache.
+  userId: string,
+  opts?: { force?: boolean },
 ): Promise<UserProfile | null> {
+  return loadProfileCached(userId, fetchOwnProfile, opts);
+}
+
+async function fetchOwnProfile(): Promise<UserProfile | null> {
   try {
     const { authFetch } = await import("@/lib/api-auth-headers");
     const res = await authFetch("/api/profile", {

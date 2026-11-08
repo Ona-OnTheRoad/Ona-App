@@ -19,6 +19,10 @@ const client = vi.hoisted(() => ({
   apiGetCallout: vi.fn(() => Promise.resolve({ ok: true, data: { quote: null } })),
 }));
 const diag = vi.hoisted(() => ({ record: vi.fn() }));
+const app = vi.hoisted(() => ({
+  proLive: true,
+  userProfile: { proJobsEligible: true } as { proJobsEligible?: boolean } | null,
+}));
 
 type StatusFn = (
   state: string,
@@ -43,6 +47,9 @@ vi.mock("@/lib/store", () => ({
     theme: "light",
     isAuthenticated: true,
     authReady: true,
+    proLive: app.proLive,
+    userProfile: app.userProfile,
+    updateUserProfile: () => null,
   }),
 }));
 vi.mock("@/lib/supabase/app-api", () => ({
@@ -128,6 +135,8 @@ const missedPushCount = () =>
   diag.record.mock.calls.filter((c) => c[3] === "missed-push").length;
 
 beforeEach(() => {
+  app.proLive = true;
+  app.userProfile = { proJobsEligible: true };
   sessionStorage.clear();
   vi.useFakeTimers();
   vi.setSystemTime(NOW);
@@ -141,6 +150,41 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+});
+
+describe("incoming popup only polls for a verified, online pro", () => {
+  it("makes no job calls for a pro who is not verified", async () => {
+    app.userProfile = { proJobsEligible: false };
+    render(<IncomingJobPopup />);
+    await flush();
+    await advance(30_000);
+    expect(listCalls()).toBe(0);
+    expect(client.apiProIncomingStatus).not.toHaveBeenCalled();
+    expect(realtime.onChange).toBeNull();
+  });
+
+  it("makes no job calls before the profile has loaded", async () => {
+    app.userProfile = null;
+    render(<IncomingJobPopup />);
+    await flush();
+    await advance(30_000);
+    expect(listCalls()).toBe(0);
+  });
+
+  it("makes no job calls for a verified pro who is offline", async () => {
+    app.proLive = false;
+    render(<IncomingJobPopup />);
+    await flush();
+    await advance(30_000);
+    expect(listCalls()).toBe(0);
+    expect(realtime.onChange).toBeNull();
+  });
+
+  it("polls once the pro is verified and online", async () => {
+    render(<IncomingJobPopup />);
+    await flush();
+    expect(listCalls()).toBeGreaterThan(0);
+  });
 });
 
 describe("incoming popup idle poll cadence", () => {

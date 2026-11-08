@@ -46,7 +46,7 @@ export function CustomerReviewTab({
     setLoading(true);
     try {
       const res = await api<{
-        users: CustomerQueueRow[];
+        customers: CustomerQueueRow[];
         totals: {
           total: number;
           submitted: number;
@@ -59,7 +59,7 @@ export function CustomerReviewTab({
         toastError(res.message);
         return;
       }
-      setItems(res.data.users || []);
+      setItems(res.data.customers || []);
       if (res.data.totals) setTotals(res.data.totals);
     } catch {
       toastError("Network error loading customer review queue");
@@ -77,7 +77,8 @@ export function CustomerReviewTab({
     try {
       const reason = action === "reject" ? "Document unreadable or invalid" : undefined;
       const res = await api<{ ok: boolean; message?: string }>("/api/admin/customer-review", {
-        method: "POST",
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, userId, reason }),
       });
       if (res.ok) {

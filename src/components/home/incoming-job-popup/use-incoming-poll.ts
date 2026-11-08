@@ -13,6 +13,8 @@ import type { IncomingState } from "./use-incoming-state";
 import type { NotifyRequestClosed, PanelLevel, RemoveJob } from "./types";
 
 interface UseIncomingPollParams {
+  /** Verified, in good standing, and online (or a card still on screen). */
+  enabled: boolean;
   accountType: string | null | undefined;
   backendUserId: string | null | undefined;
   isAuthenticated: boolean;
@@ -28,6 +30,7 @@ interface UseIncomingPollParams {
 /** Poll (1s status / list every few cycles) + Supabase realtime close, plus the
  * per-user reset of the "primed" bookkeeping. */
 export function useIncomingPoll({
+  enabled,
   accountType,
   backendUserId,
   isAuthenticated,
@@ -65,12 +68,7 @@ export function useIncomingPoll({
 
   // Poll + realtime
   useEffect(() => {
-    if (
-      !authReady ||
-      !isAuthenticated ||
-      accountType !== "professional" ||
-      !backendUserId
-    ) {
+    if (!enabled || !authReady || !isAuthenticated || !backendUserId) {
       return;
     }
 
@@ -274,7 +272,7 @@ export function useIncomingPoll({
       unsub?.();
     };
   }, [
-    accountType,
+    enabled,
     backendUserId,
     isAuthenticated,
     authReady,
