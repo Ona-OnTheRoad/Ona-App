@@ -152,7 +152,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe("incoming popup only polls for a verified, online pro", () => {
+describe("incoming popup only polls for a verified pro", () => {
   it("makes no job calls for a pro who is not verified", async () => {
     app.userProfile = { proJobsEligible: false };
     render(<IncomingJobPopup />);
@@ -171,16 +171,16 @@ describe("incoming popup only polls for a verified, online pro", () => {
     expect(listCalls()).toBe(0);
   });
 
-  it("makes no job calls for a verified pro who is offline", async () => {
+  it("still polls for a verified pro whose local Live flag reads Away", async () => {
+    // The Live flag is read from the server on load; if that read fails the pro
+    // looks Away locally while customers still see them. They must get offers.
     app.proLive = false;
     render(<IncomingJobPopup />);
     await flush();
-    await advance(30_000);
-    expect(listCalls()).toBe(0);
-    expect(realtime.onChange).toBeNull();
+    expect(listCalls()).toBeGreaterThan(0);
   });
 
-  it("polls once the pro is verified and online", async () => {
+  it("polls once the pro is verified", async () => {
     render(<IncomingJobPopup />);
     await flush();
     expect(listCalls()).toBeGreaterThan(0);

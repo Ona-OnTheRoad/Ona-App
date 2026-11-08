@@ -1,11 +1,14 @@
 "use client";
 
 /**
- * Client-side Web Push enrollment. One call per session grants the OS
- * permission prompt the first time it is needed (an incoming request card),
- * registers the service worker, subscribes, and saves the subscription to the
- * server. Everything is best-effort: a failed/paused push setup never blocks
- * the incoming-request flow.
+ * Client-side Web Push enrollment. Registers the service worker, subscribes,
+ * and saves the subscription to the server, once per session for any signed-in
+ * user (customers and pros). Everything is best-effort: a failed/paused push
+ * setup never blocks the app.
+ *
+ * Asking for the OS permission is only done when `interactive` is true, and it
+ * must come from a user tap (iOS ignores prompts that are not). Silent calls
+ * just re-sync a subscription that was already allowed.
  */
 
 const SETTINGS_STORAGE_KEY = "ona-notification-settings";
@@ -28,7 +31,9 @@ export function isPushDeliveryAllowed(userId?: string | null): boolean {
 
 export async function enablePushNotifications(
   userId?: string | null,
+  opts?: { interactive?: boolean },
 ): Promise<boolean> {
+  const interactive = opts?.interactive ?? false;
   if (!isPushDeliveryAllowed(userId)) return false;
   if (typeof window === "undefined" || typeof navigator === "undefined") {
     return false;
@@ -41,13 +46,15 @@ export async function enablePushNotifications(
     return false;
   }
   if (Notification.permission === "denied") return false;
+  // Never prompt unless this call comes from a tap.
+  if (Notification.permission === "default" && !interactive) return false;
 
   // Only one enrollment in flight (and never repeated after success).
   if (enrolling) return enrolledPromise ?? false;
   if (enrolledPromise) return enrolledPromise;
 
   enrolling = true;
-  enrolledPromise = (async () => {
+  const attempt = (async () => {
     try {
       const reg = await navigator.serviceWorker.register("/sw.js");
       if (Notification.permission === "default") {
@@ -81,5 +88,46 @@ export async function enablePushNotifications(
       enrolling = false;
     }
   })();
-  return enrolledPromise;
+  enrolledPromise = attempt;
+  // A failed or dismissed attempt must not block a later retry.
+  void attempt.then((ok) => {
+    if (!ok && enrolledPromise === attempt) enrolledPromise = null;
+  });
+  return attempt;
+}
+
+/**
+ * Sign-out on this device: stop the server pushing the previous user's alerts
+ * here (shared phones). The browser subscription itself is kept so signing back
+ * in is instant. Best-effort and never throws.
+ */
+export async function unregisterPushOnThisDevice(): Promise<void> {
+  try {
+    if (
+      typeof navigator === "undefined" ||
+      !("serviceWorker" in navigator) ||
+      !("PushManager" in window)
+    ) {
+      return;
+    }
+    const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+    const sub = await reg?.pushManager.getSubscription();
+    if (sub?.endpoint) {
+      await fetch("/api/push/register", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endpoint: sub.endpoint }),
+      }).catch(() => null);
+    }
+  } catch {
+    /* best-effort */
+  } finally {
+    resetPushEnrollment();
+  }
+}
+
+/** Forget the cached enrollment (call on sign-out so the next user re-syncs). */
+export function resetPushEnrollment(): void {
+  enrolledPromise = null;
+  enrolling = false;
 }

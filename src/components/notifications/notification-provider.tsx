@@ -32,6 +32,7 @@ import { redirectToReleasePayIfNeeded } from "./provider/release-pay-redirect";
 import { persistSeenNotifIds, readSeenNotifIds } from "./provider/seen-ids";
 import type { Ctx, ToastItem } from "./provider/types";
 import { useNotificationToasts } from "./provider/use-notification-toasts";
+import { syncAppBadge } from "@/lib/push/badge";
 
 export type { ToastItem };
 
@@ -255,6 +256,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       return true;
     }).length;
   }, [notifications, settings]);
+
+  // Keep the installed app's icon badge in step with the unread count.
+  useEffect(() => {
+    syncAppBadge(unreadCount);
+  }, [unreadCount]);
 
   const filtered = useMemo(() => {
     let list = notifications;

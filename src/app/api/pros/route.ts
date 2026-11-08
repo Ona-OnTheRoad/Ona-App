@@ -5,6 +5,7 @@ import { DOCS_PENDING_MAX_RADIUS_KM } from "@/lib/skill-questions";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { getMeritScoresForPros } from "@/lib/server/merit/merit-engine";
+import { isProMarketplaceReady } from "@/lib/server/pro-readiness";
 import { isSyntheticAccount } from "@/lib/server/synthetic-accounts";
 import { mapProToTechnician } from "@/lib/supabase/mappers";
 import { resolveMarketViewer } from "@/lib/server/market-scope";
@@ -163,13 +164,7 @@ export async function GET(req: Request) {
       // Approved/verified pros are marketplace-ready (T2+) even when a stale
       // write left visibility_tier=1 never hide them from the customer feed
       // (same class as the "approved for Tier 2 but shown Tier 1" bug).
-      const rawTier = Number(p.visibility_tier);
-      const marketplaceReady =
-        (Number.isFinite(rawTier) && rawTier >= 2) ||
-        p.gov_id_review_status === "approved" ||
-        Boolean(p.verified) ||
-        p.status === "approved";
-      if (!marketplaceReady) return false;
+      if (!isProMarketplaceReady(p)) return false;
       return true;
     });
     if (!list.length) {

@@ -240,6 +240,7 @@ async function notifyUnpaidBookExpired(job: JobRecord) {
         jobId: job.id,
         jobStatus: "expired",
         groupKey: `unpaid-book-expire-${isPro ? "pro" : "cust"}-${job.id}`,
+        push: false, // pushed below
       });
       try {
         await sendPushToUser(userId, {

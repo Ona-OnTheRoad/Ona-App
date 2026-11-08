@@ -13,6 +13,7 @@ import { InboundBanner } from "@/components/layout/inbound-banner";
 import { PhoneShell } from "@/components/layout/phone-shell";
 import { Toaster } from "@/components/ui/sonner";
 import { InstallNudge } from "@/components/pwa/install-nudge";
+import { PushEnrollment } from "@/components/pwa/push-enrollment";
 import { NotificationCenter } from "@/components/notifications/notification-center";
 import { NotificationProvider } from "@/components/notifications/notification-provider";
 import { NotificationToasts } from "@/components/notifications/notification-toasts";
@@ -114,6 +115,7 @@ export function AppFrame({ children }: { children: ReactNode }) {
                 </div>
               ) : null}
               <Toaster />
+              <PushEnrollment />
               <InstallNudge enabled={dockVisible} />
               <DockBlurBackdrop />
               <AppDock />

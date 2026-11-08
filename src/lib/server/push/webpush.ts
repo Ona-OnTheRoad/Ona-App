@@ -29,7 +29,31 @@ export type PushPayload = {
   icon?: string;
   category?: NotificationCategory;
   priority?: NotificationPriority;
+  /** Seconds the push service may hold the message for an offline device. */
+  ttl?: number;
+  /** Delivery urgency hint for the push service (high wakes a dozing phone). */
+  urgency?: "very-low" | "low" | "normal" | "high";
+  /** Keep the OS notification on screen until the user acts (time-critical offers). */
+  requireInteraction?: boolean;
 };
+
+/** Unread count for the PWA icon badge; best-effort, never blocks delivery. */
+async function unreadBadgeCount(
+  sb: ReturnType<typeof createServiceSupabase>,
+  userId: string,
+): Promise<number | undefined> {
+  try {
+    const { count, error } = await sb
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .is("read_at", null);
+    if (error || typeof count !== "number") return undefined;
+    return count;
+  } catch {
+    return undefined;
+  }
+}
 
 const NON_RETRYABLE_FAILURES = new Set([
   "vapid_unconfigured",
@@ -186,12 +210,15 @@ export async function sendPushToUser(
     const failures: string[] = [];
     let sent = 0;
 
+    const unread = await unreadBadgeCount(sb, userId);
     const message = JSON.stringify({
       title: payload.title,
       body: payload.body,
       url: payload.url || "",
       tag: payload.tag || "",
       icon: payload.icon || "",
+      requireInteraction: Boolean(payload.requireInteraction),
+      unread,
     });
 
     for (const row of data) {
@@ -206,7 +233,12 @@ export async function sendPushToUser(
             },
           },
           message,
-          { TTL: 600 },
+          {
+            TTL: payload.ttl ?? 600,
+            urgency: payload.urgency ?? "normal",
+            // A hung push service must not stall the job transition awaiting us.
+            timeout: 8000,
+          },
         );
         sent += 1;
       } catch (e) {
