@@ -83,6 +83,13 @@ function proBody(extra: Record<string, unknown> = {}) {
     guarantor: { fullName: "Bola Guarantor", phone: "+2348098765432", relationship: "Brother" }, ...extra,
   };
 }
+function motoristBody(extra: Record<string, unknown> = {}) {
+  return {
+    email: EMAIL, password: PASSWORD, fullName: "Ada User", phone: PHONE, accountType: "motorist",
+    gender: "female", dateOfBirth: "1990-05-05", city: "Lagos", area: "Yaba",
+    vehicleMake: "Toyota", vehicleModel: "Corolla", ...extra,
+  };
+}
 function post(body: Record<string, unknown>) {
   return POST(new Request("https://ona.test/api/auth/signup", { method: "POST", body: JSON.stringify(body) }));
 }
@@ -92,6 +99,8 @@ function setup(tables: Record<string, Row[]>, users: Row[] = [user]) {
   return sb;
 }
 const successEvents = (sb: ServiceFake) => (sb.rows.signup_events ?? []).filter((e) => e.success === true);
+const accountWrites = (sb: ServiceFake) =>
+  sb.upserts.filter((u) => u.table !== "signup_events");
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -122,17 +131,29 @@ describe("POST /api/auth/signup service-client session isolation", () => {
     expect(successEvents(sb)).toHaveLength(1);
   });
 
-  it("finishes the existing-email recovery path with service-role writes", async () => {
+  it("rejects unsigned signup when the email already exists and does not mutate the account", async () => {
     const sb = setup(existingMotorist());
-    mocks.createUser.mockResolvedValue({ data: { user: null }, error: { message: "User already registered", status: 422 } });
-    const res = await post(proBody());
+    mocks.createUser.mockResolvedValue({
+      data: { user: null },
+      error: { message: "User already registered", status: 422 },
+    });
+    const res = await post(
+      proBody({ fullName: "Hijack Name", phone: "+2348099999999" }),
+    );
+    const body = await res.json();
 
-    expect(res.status).toBe(200);
-    expect(sb.rows.profiles[0]).toMatchObject({ id: "user-1", role: "repair_pro" });
-    expect(sb.rows.repair_pro_profiles).toHaveLength(1);
-    expect(sb.rows.motorist_profiles).toHaveLength(1);
-    expect(mocks.serviceSignIn).not.toHaveBeenCalled();
-    expect(successEvents(sb)).toHaveLength(1);
+    expect(res.status).toBe(409);
+    expect(body.error.code).toBe("email_exists");
+    expect(sb.rows.profiles[0]).toMatchObject({
+      id: "user-1",
+      role: "motorist",
+      full_name: "Ada User",
+      phone: PHONE,
+    });
+    expect(sb.rows.repair_pro_profiles).toBeUndefined();
+    expect(accountWrites(sb)).toEqual([]);
+    expect(mocks.anonSignIn).not.toHaveBeenCalled();
+    expect(successEvents(sb)).toHaveLength(0);
   });
 
   it("keeps brand-new signup unchanged and returns a browser session", async () => {
@@ -161,4 +182,32 @@ describe("POST /api/auth/signup service-client session isolation", () => {
     expect(sb.rows.profiles[0]).toMatchObject({ role: "motorist" });
     expect(sb.rows.repair_pro_profiles).toBeUndefined();
   });
+
+  it("rejects signed-in attach when the account already has that role", async () => {
+    const sb = setup(existingMotorist());
+    const res = await post(motoristBody({ access_token: "valid-access-token" }));
+    const body = await res.json();
+
+    expect(res.status).toBe(409);
+    expect(body.error.code).toBe("role_exists");
+    expect(accountWrites(sb)).toEqual([]);
+    expect(sb.rows.profiles[0]).toMatchObject({ role: "motorist", full_name: "Ada User" });
+    expect(sb.rows.repair_pro_profiles).toBeUndefined();
+    expect(mocks.createUser).not.toHaveBeenCalled();
+  });
+
+  it("rejects unsigned signup when the phone belongs to another account", async () => {
+    const sb = setup(existingMotorist());
+    const res = await post(
+      proBody({ email: "newcomer@ona.test", phone: PHONE }),
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(409);
+    expect(body.error.code).toBe("phone_exists");
+    expect(mocks.createUser).not.toHaveBeenCalled();
+    expect(accountWrites(sb)).toEqual([]);
+    expect(sb.rows.profiles).toHaveLength(1);
+  });
 });
+

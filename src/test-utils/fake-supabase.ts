@@ -177,8 +177,9 @@ export class FakeQuery {
       }
     }
     for (const nf of this.notFilters) {
+      // PostgREST `.not(col, 'is', null)` ⇒ column IS NOT NULL
       if (nf.op === "is" && nf.val === null) {
-        if (row[nf.col] != null) return false;
+        if (row[nf.col] == null) return false;
       } else if (row[nf.col] === nf.val) {
         return false;
       }

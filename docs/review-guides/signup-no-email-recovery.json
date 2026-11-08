@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "id": "signup-no-email-recovery",
+  "title": "Signup: reject existing email; dual-role only via access_token attach",
+  "plan": "docs/review-guides/signup-no-email-recovery.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "R1",
+      "stage": "code",
+      "expectation": "Unsigned signup with an email that already exists returns 409 email_exists whether or not the password matches; no profile or side-table writes.",
+      "verification": "Route tests: createUser reports already registered; correct and wrong password both 409; upserts empty / existing rows unchanged.",
+      "status": "pass",
+      "evidence": [
+        "code: 'src/app/api/auth/signup/__tests__/route.test.ts' rejects unsigned signup when email exists; profiles unchanged; accountWrites empty; anonSignIn not called."
+      ]
+    },
+    {
+      "id": "R2",
+      "stage": "code",
+      "expectation": "The existing-email password sign-in recovery path is removed from the unsigned createUser failure branch.",
+      "verification": "Grep/route review: no signInWithPassword after createUser exists-failure except attach and final session issue.",
+      "status": "pass",
+      "evidence": [
+        "code: createUser exists-failure returns apiFail email_exists immediately; no signInWithPassword in that branch."
+      ]
+    },
+    {
+      "id": "R3",
+      "stage": "code",
+      "expectation": "Signed-in attach (access_token) still adds the other role and keeps the original side table.",
+      "verification": "Existing attach route test remains green.",
+      "status": "pass",
+      "evidence": [
+        "code: attach test still 200 with repair_pro_profiles + preserved motorist_profiles."
+      ]
+    },
+    {
+      "id": "R4",
+      "stage": "code",
+      "expectation": "Signed-in attach for a role the user already has returns 409 role_exists and writes nothing.",
+      "verification": "Route test: motorist with access_token posting accountType motorist.",
+      "status": "pass",
+      "evidence": [
+        "code: 'rejects signed-in attach when the account already has that role' → 409 role_exists, accountWrites empty."
+      ]
+    },
+    {
+      "id": "R5",
+      "stage": "code",
+      "expectation": "Wrong password on attach still returns 401 password_required with no writes.",
+      "verification": "Existing wrong-password attach test.",
+      "status": "pass",
+      "evidence": [
+        "code: wrong-password attach test still 401 password_required."
+      ]
+    },
+    {
+      "id": "R6",
+      "stage": "code",
+      "expectation": "Brand-new signup unchanged (200, createdNew, session).",
+      "verification": "Existing new-account route test.",
+      "status": "pass",
+      "evidence": [
+        "code: brand-new signup test still 200 with createdNew and session."
+      ]
+    },
+    {
+      "id": "R7",
+      "stage": "code",
+      "expectation": "Phone uniqueness blocks a number already on a different account; attach of the same user with their phone is still allowed.",
+      "verification": "Route test and/or code review of phoneTaken using attachUserId only (no same-email bypass).",
+      "status": "pass",
+      "evidence": [
+        "code: phoneTaken only exempts attachUserId; phone_exists route test passes; attach with same phone still passes.",
+        "code: FakeQuery `.not(col,'is',null)` corrected to PostgREST semantics so phone select works in unit tests."
+      ]
+    },
+    {
+      "id": "R8",
+      "stage": "code",
+      "expectation": "No migrations, grant, or protected-file changes.",
+      "verification": "Diff review.",
+      "status": "pass",
+      "evidence": [
+        "code: changed files are signup route, signup route tests, fake-supabase, and this review guide only."
+      ]
+    },
+    {
+      "id": "R9",
+      "stage": "code",
+      "expectation": "Focused signup route tests and typecheck pass for touched files.",
+      "verification": "vitest on signup route tests; tsc as used by the repo.",
+      "status": "pass",
+      "evidence": [
+        "code: vitest src/app/api/auth/signup/__tests__/route.test.ts — 6 passed."
+      ]
+    },
+    {
+      "id": "R10",
+      "stage": "live",
+      "expectation": "On hosted/local against a real project: re-signup with an existing email fails; signed-in dual-role attach still works.",
+      "verification": "Manual QA on test accounts; record environment without credentials.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      { "item": "none", "verified": "Implementation and focused route tests complete; commit/PR and independent human review still open." }
+    ],
+    "external": [
+      "Live QA for R10 (unsigned existing-email reject; signed-in dual-role attach) on local or hosted Supabase.",
+      "Record reviewedCommit after commit; independent human review."
+    ]
+  }
+}
