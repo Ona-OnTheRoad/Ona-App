@@ -94,6 +94,9 @@ export function LivenessTier({
                         faceLivenessVerified: true,
                       }),
                     }).catch(() => null);
+                    const { invalidateProfileCache } =
+                      await import("@/lib/supabase/profile-cache");
+                    invalidateProfileCache();
                   }
                 } catch {
                   /* local still saved */

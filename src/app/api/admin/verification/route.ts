@@ -5,6 +5,7 @@ import {
   requireAdmin,
 } from "@/lib/server/admin-auth";
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { bvnOnFile } from "@/lib/server/identity/bvn-on-file";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 
@@ -301,9 +302,16 @@ export async function PATCH(req: Request) {
 
     if (subject === "customer") {
       if (action === "customer_t2_approve") {
+        const { data: current } = await supabase
+          .from("motorist_profiles")
+          .select("bvn_verified, bvn_encrypted, bvn_last4, bank_id_number, gov_id_meta")
+          .eq("user_id", userId)
+          .maybeSingle();
+        const bvnVerified =
+          Boolean(current?.bvn_verified) || bvnOnFile(current);
         const payload: Record<string, unknown> = {
           nin_verified: true,
-          bvn_verified: true,
+          bvn_verified: bvnVerified,
           identity_verified_at: now,
           identity_review_status: "approved",
           identity_reviewed_at: now,
@@ -319,7 +327,7 @@ export async function PATCH(req: Request) {
             .from("motorist_profiles")
             .update({
               nin_verified: true,
-              bvn_verified: true,
+              bvn_verified: bvnVerified,
               identity_verified_at: now,
             })
             .eq("user_id", userId));
@@ -376,11 +384,16 @@ export async function PATCH(req: Request) {
 
     if (action === "pro_t2_approve") {
       const now = new Date().toISOString();
+      const { data: current } = await supabase
+        .from("repair_pro_profiles")
+        .select("bvn_verified, bvn_encrypted, bvn_last4, bank_id_number, gov_id_meta")
+        .eq("user_id", userId)
+        .maybeSingle();
       const { error } = await supabase
         .from("repair_pro_profiles")
         .update({
           nin_verified: true,
-          bvn_verified: true,
+          bvn_verified: Boolean(current?.bvn_verified) || bvnOnFile(current),
           verified: true,
           gov_id_review_status: "approved",
           gov_id_reviewed_at: now,

@@ -154,7 +154,7 @@ export function protectProClientPatch(
     out.gov_id_review_status = "approved";
     out.verified = true;
     if (existing?.nin_verified !== false) out.nin_verified = true;
-    if (existing?.bvn_verified !== false) out.bvn_verified = true;
+    if (existing?.bvn_verified === true) out.bvn_verified = true;
     if (existing?.tier2_approved_at) {
       out.tier2_approved_at = existing.tier2_approved_at;
     }

@@ -335,6 +335,7 @@ export function profileToUserProfile(
     bvn?: string;
     ninVerified?: boolean;
     bvnVerified?: boolean;
+    proJobsEligible?: boolean;
     govIdVerified?: boolean;
     identityVerifiedAt?: string;
     identityReviewStatus?: UserProfile["identityReviewStatus"];
@@ -417,6 +418,7 @@ export function profileToUserProfile(
     bvn: extra?.bvn,
     ninVerified: extra?.ninVerified,
     bvnVerified: extra?.bvnVerified,
+    proJobsEligible: extra?.proJobsEligible,
     govIdVerified: extra?.govIdVerified,
     identityVerifiedAt: extra?.identityVerifiedAt,
     identityReviewStatus: extra?.identityReviewStatus,

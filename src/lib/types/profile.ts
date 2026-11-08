@@ -121,6 +121,11 @@ export interface UserProfile {
    */
   ninVerified?: boolean;
   bvnVerified?: boolean;
+  /**
+   * Repair pro only, computed by the server: Tier 2 is care-approved and the
+   * account is not suspended or rejected. Gates all job fetching and polling.
+   */
+  proJobsEligible?: boolean;
   /** True when admin/care approved Tier 2 government ID */
   govIdVerified?: boolean;
   identityVerifiedAt?: string;

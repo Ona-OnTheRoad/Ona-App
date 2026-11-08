@@ -26,6 +26,7 @@ import { ProOnlineAction } from "@/components/dashboard/pro-online-action";
 import { ProEmptyState } from "@/components/dashboard/pro-empty-state";
 import { useDashboardArtisan } from "@/components/dashboard/use-dashboard-artisan";
 import { useDashboardJobs } from "@/components/dashboard/use-dashboard-jobs";
+import { useProJobsEligible } from "@/components/pro/use-pro-jobs-enabled";
 import { subscribeIncomingPanelOpen } from "@/lib/jobs/incoming-popup-timing";
 import {
   isCustomerToProDualPath,
@@ -57,6 +58,8 @@ export default function TechnicianDashboardPage() {
     accountType,
     primaryAccountType,
   });
+  // No /api/jobs fetching or polling until the pro is verified and in good standing.
+  const proJobsEligible = useProJobsEligible();
   const [liveBusy, setLiveBusy] = useState(false);
   const [liveErr, setLiveErr] = useState<string | null>(null);
   const {
@@ -66,7 +69,7 @@ export default function TechnicianDashboardPage() {
     payoutProcessing,
     jobsLoading,
     setJobsCompletedCount,
-  } = useDashboardJobs(backendUserId);
+  } = useDashboardJobs(proJobsEligible ? backendUserId : null);
   const [incomingPanelOpen, setIncomingPanelOpen] = useState(false);
   const artisan = useDashboardArtisan({
     backendUserId,

@@ -7,6 +7,7 @@ import {
   userAgent,
 } from "@/lib/server/admin-auth";
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { bvnOnFile } from "@/lib/server/identity/bvn-on-file";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 
@@ -44,9 +45,19 @@ export async function POST(
     const now = new Date().toISOString();
     const approve = parsed.data.action === "approve";
 
+    const { data: current } = await supabase
+      .from("motorist_profiles")
+      .select("bvn_verified, bvn_encrypted, bvn_last4, bank_id_number, gov_id_meta")
+      .eq("user_id", id)
+      .maybeSingle();
+    // Tier 2 is the government ID; only vouch for the BVN if one was submitted
+    const bvnVerified = approve
+      ? Boolean(current?.bvn_verified) || bvnOnFile(current)
+      : false;
+
     const payload: Record<string, unknown> = {
       nin_verified: approve,
-      bvn_verified: approve,
+      bvn_verified: bvnVerified,
       identity_verified_at: approve ? now : null,
       identity_review_status: approve ? "approved" : "rejected",
       identity_reviewed_at: now,
@@ -65,7 +76,7 @@ export async function POST(
         .from("motorist_profiles")
         .update({
           nin_verified: approve,
-          bvn_verified: approve,
+          bvn_verified: bvnVerified,
           identity_verified_at: approve ? now : null,
         })
         .eq("user_id", id));

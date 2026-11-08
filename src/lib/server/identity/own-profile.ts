@@ -119,6 +119,7 @@ export async function loadOwnIdentityProfile(userId: string): Promise<{ profile:
       serviceRadiusKm: pr?.service_radius_km,
       ninVerified: pr?.nin_verified,
       bvnVerified: pr?.bvn_verified,
+      proJobsEligible: isProJobsEligibleRow(pr),
       docsStatus:
         (pr?.docs_status as UserProfile["docsStatus"]) || "approved",
       docsRatingBoostApplied: Boolean(pr?.docs_rating_boost_applied),
@@ -208,4 +209,20 @@ export async function loadOwnIdentityProfile(userId: string): Promise<{ profile:
     bankCode: mot?.bank_code || pr?.bank_code || undefined,
   });
   return { profile: profileOut };
+}
+
+/**
+ * A pro may fetch and poll jobs once care has approved Tier 2 and the account
+ * is still in good standing. Mirrors the checks used by Go Live.
+ */
+function isProJobsEligibleRow(pr: unknown): boolean {
+  if (!pr || typeof pr !== "object") return false;
+  const r = pr as Record<string, unknown>;
+  const status = String(r.status ?? "");
+  if (status === "suspended" || status === "rejected") return false;
+  return (
+    r.gov_id_review_status === "approved" ||
+    Boolean(r.verified) ||
+    Boolean(r.nin_verified)
+  );
 }

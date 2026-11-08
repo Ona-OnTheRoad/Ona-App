@@ -55,6 +55,9 @@ vi.mock("@/lib/store", () => ({
     theme: "light",
     isAuthenticated: true,
     authReady: true,
+    proLive: true,
+    userProfile: { proJobsEligible: true },
+    updateUserProfile: () => null,
   }),
 }));
 
