@@ -14,7 +14,7 @@
  * Kill switch: open the app with ?no-sw or set localStorage "ona-sw-disabled" to "1"; the registrar
  * unregisters this worker and clears its caches. Bump SW_VERSION to invalidate every cache.
  *
- * Push payloads are { title, body, url, tag, icon }. The worker is registered at app start for
+ * Push payloads are { title, body, url, tag, icon, requireInteraction, unread }. The worker is registered at app start for
  * caching; the push client (src/lib/push/client.ts) registers the same /sw.js when push is enabled.
  */
 const SW_VERSION = "2026-10-05-1";
@@ -190,12 +190,32 @@ self.addEventListener("push", (event) => {
     /* keep defaults */
   }
   const title = data.title || "Ona";
+  const urgent = Boolean(data.requireInteraction);
   const options = {
     body: data.body || "",
-    tag: data.tag || "",
+    icon: data.icon || "/icons/icon-192.png",
+    // A repeated tag replaces the earlier notification; renotify makes it ring again.
+    // (renotify without a tag throws, so both are set together.)
+    ...(data.tag ? { tag: data.tag, renotify: true } : {}),
+    // Time-critical offers stay on screen and vibrate longer until the user acts.
+    requireInteraction: urgent,
+    vibrate: urgent ? [300, 150, 300, 150, 300] : [150, 80, 150],
     data: { url: data.url || "" },
   };
-  event.waitUntil(self.registration.showNotification(title, options));
+  const work = [self.registration.showNotification(title, options)];
+  // Unread count on the installed app's icon (Chromium + iOS 16.4+ home-screen PWAs).
+  if (typeof data.unread === "number" && self.navigator) {
+    try {
+      if (data.unread > 0 && self.navigator.setAppBadge) {
+        work.push(self.navigator.setAppBadge(data.unread).catch(() => {}));
+      } else if (data.unread === 0 && self.navigator.clearAppBadge) {
+        work.push(self.navigator.clearAppBadge().catch(() => {}));
+      }
+    } catch {
+      /* badging is optional */
+    }
+  }
+  event.waitUntil(Promise.all(work));
 });
 
 self.addEventListener("notificationclick", (event) => {

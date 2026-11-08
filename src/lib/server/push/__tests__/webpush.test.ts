@@ -252,3 +252,39 @@ describe("sendPushToUser preference gating", () => {
     expect(enqueueNotificationDelivery).not.toHaveBeenCalled();
   });
 });
+
+describe("sendPushToUser delivery options", () => {
+  const sub = [{ endpoint: "https://push.example/abc", p256dh: "k", auth: "a" }];
+  beforeEach(() => {
+    vi.clearAllMocks();
+    isVapidConfiguredMock.mockReturnValue(true);
+    sendNotificationMock.mockResolvedValue(undefined);
+  });
+
+  it("defaults to a 10 minute TTL at normal urgency", async () => {
+    mockSb({ subscriptions: sub });
+    await sendPushToUser("u1", { title: "t", body: "b" });
+    const [, , options] = sendNotificationMock.mock.calls[0] as [unknown, string, Record<string, unknown>];
+    expect(options).toMatchObject({ TTL: 600, urgency: "normal" });
+  });
+
+  it("passes a short TTL, high urgency and require-interaction for a time-critical offer", async () => {
+    mockSb({ subscriptions: sub });
+    await sendPushToUser("u1", {
+      title: "Service Request",
+      body: "New request",
+      url: "/jobs/j1",
+      tag: "service-request-j1",
+      ttl: 120,
+      urgency: "high",
+      requireInteraction: true,
+    });
+    const [, message, options] = sendNotificationMock.mock.calls[0] as [unknown, string, Record<string, unknown>];
+    expect(options).toMatchObject({ TTL: 120, urgency: "high" });
+    expect(JSON.parse(message)).toMatchObject({
+      url: "/jobs/j1",
+      tag: "service-request-j1",
+      requireInteraction: true,
+    });
+  });
+});

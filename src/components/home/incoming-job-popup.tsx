@@ -48,7 +48,6 @@ export function IncomingJobPopup() {
     theme,
     isAuthenticated,
     authReady,
-    proLive,
   } = useApp();
   const proEligible = useProJobsEligible();
   useProApprovalWatch();
@@ -74,13 +73,11 @@ export function IncomingJobPopup() {
     useIncomingQueue({ backendUserId, router, state });
   const handleFixIt = useFixIt({ backendUserId, router, state, removeRef });
   useIncomingCountdown({ state, removeRef });
-  // Only a verified pro who is online polls for offers. A card already on
-  // screen keeps polling so a customer cancel still closes it after Away.
-  const pollEnabled =
-    proEligible &&
-    (proLive || state.visibleJobs.length > 0 || state.queue.length > 0);
+  // Any pro the server can dispatch to polls for offers. Deliberately NOT tied
+  // to the local Live flag: if that read fails the pro would look "Away" here
+  // while customers still see them online, and every offer would be missed.
   useIncomingPoll({
-    enabled: pollEnabled,
+    enabled: proEligible,
     accountType,
     backendUserId,
     isAuthenticated,

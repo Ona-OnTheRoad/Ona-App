@@ -254,6 +254,7 @@ async function expireUnpaidBook(job: JobRecord): Promise<JobRecord> {
         jobId: next.id,
         jobStatus: "expired",
         groupKey: `unpaid-book-expire-${isPro ? "pro" : "cust"}-${next.id}`,
+        push: false, // pushed below
       });
       try {
         await sendPushToUser(userId, {

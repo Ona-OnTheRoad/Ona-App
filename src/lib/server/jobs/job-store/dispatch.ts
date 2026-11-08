@@ -370,6 +370,7 @@ async function assignNextPro(
       jobId: job.id,
       jobStatus: "negotiating",
       groupKey: `service-request-${job.id}`,
+      pushUrgent: true,
     });
   } catch {
     /* notifications optional */
@@ -916,6 +917,7 @@ export async function adminReassignJob(
       actionPayload: { jobId: job.id },
       jobId: job.id,
       groupKey: `service-request-${job.id}`,
+      pushUrgent: true,
     });
   } catch {
     /* notifications optional */

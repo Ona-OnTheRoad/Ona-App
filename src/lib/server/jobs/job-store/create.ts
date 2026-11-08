@@ -316,6 +316,7 @@ export async function createJob(input: CreateJobInput): Promise<JobRecord> {
               jobId: job.id,
               jobStatus: "waiting_for_selected",
               groupKey: `service-request-${job.id}`,
+              pushUrgent: true,
             });
           } catch {
             /* optional */

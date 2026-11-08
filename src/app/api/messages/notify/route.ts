@@ -78,6 +78,7 @@ export async function POST(req: Request) {
       groupKey: `msg-${conversationId}-${messageId ?? crypto.randomUUID()}`,
       jobId: conv.request_id ? String(conv.request_id) : null,
       messageText: preview.slice(0, 200),
+      push: false, // sent below with a per-conversation tag
     });
     if ("error" in res) return apiFail(res.error, 500);
     try {

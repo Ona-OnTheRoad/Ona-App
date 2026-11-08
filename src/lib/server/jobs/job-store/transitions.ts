@@ -125,6 +125,7 @@ export async function applyEvent(
           jobId: job.id,
           jobStatus: "cancelled",
           groupKey: `request-cancelled-${job.id}`,
+          push: false, // pushed below
         });
         // OS push (web-push, VAPID) even when the app is closed or the tab is
         // hidden the in-app card + banner close from realtime/poll, but the

@@ -804,6 +804,13 @@ export async function backendDualRoleFlags(
 /** Server logout: force is_online=false then clear browser session */
 export async function backendLogout(): Promise<void> {
   invalidateProfileCache();
+  // While the session is still valid, detach this device from the user's push.
+  try {
+    const { unregisterPushOnThisDevice } = await import("@/lib/push/client");
+    await unregisterPushOnThisDevice();
+  } catch {
+    /* ignore */
+  }
   try {
     const sb = getAppSupabase();
     let access_token: string | undefined;

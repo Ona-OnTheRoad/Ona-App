@@ -23,7 +23,54 @@ export type CreateNotificationInput = {
   jobId?: string | null;
   jobStatus?: string | null;
   messageText?: string | null;
+  /**
+   * Also deliver as an OS push (reaches the phone with the app closed).
+   * Default: on for "high" and "critical" priority. Pass false when the caller
+   * sends its own push.
+   */
+  push?: boolean;
+  /**
+   * Time-critical offer (a new request a pro must answer within seconds):
+   * short TTL, high urgency, stays on screen until acted on.
+   */
+  pushUrgent?: boolean;
 };
+
+const PUSH_PRIORITIES = new Set(["high", "critical"]);
+
+/** Never throws and never waits long: a notification must not stall the caller. */
+async function pushForNotification(input: CreateNotificationInput) {
+  if (input.push === false) return;
+  if (!PUSH_PRIORITIES.has(input.priority || "normal")) return;
+  try {
+    const { sendPushToUser } = await import("@/lib/server/push/webpush");
+    const critical = input.priority === "critical";
+    const send = sendPushToUser(input.userId, {
+      title: input.title,
+      body: input.body,
+      url: input.href || "/",
+      tag: input.groupKey || `${input.category}-${input.jobId ?? input.title}`,
+      category: input.category,
+      priority: input.priority,
+      ttl: input.pushUrgent ? 120 : critical ? 6 * 60 * 60 : 15 * 60,
+      urgency: input.pushUrgent || critical ? "high" : "normal",
+      requireInteraction: Boolean(input.pushUrgent),
+    });
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      await Promise.race([
+        send,
+        new Promise((resolve) => {
+          timer = setTimeout(resolve, 6000);
+        }),
+      ]);
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch {
+    /* push is best-effort */
+  }
+}
 
 export async function insertNotification(
   input: CreateNotificationInput,
@@ -64,6 +111,8 @@ export async function insertNotification(
       .select("id")
       .single();
     if (error) return { error: error.message };
+    // Only a freshly inserted row pushes: a deduped repeat returned above.
+    await pushForNotification(input);
     return { id: data.id as string };
   } catch (e) {
     return {

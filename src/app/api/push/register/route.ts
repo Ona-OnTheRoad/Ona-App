@@ -46,3 +46,31 @@ export async function POST(req: Request) {
   if (error) return apiFail(error.message, 500);
   return apiOk({ ok: true });
 }
+
+const removeSchema = z.object({ endpoint: z.string().url() });
+
+/**
+ * Forget this device's subscription for the signed-in user (called on logout so
+ * the next person on a shared phone never receives the previous user's alerts).
+ * Only the caller's own row is removed.
+ */
+export async function DELETE(req: Request) {
+  const auth = await requireUser(req);
+  if (!auth.ok) return auth.response;
+
+  let parsed;
+  try {
+    parsed = removeSchema.parse(await req.json());
+  } catch {
+    return apiFail("Invalid subscription", 400);
+  }
+
+  const sb = createServiceSupabase();
+  const { error } = await sb
+    .from("push_subscriptions")
+    .delete()
+    .eq("endpoint", parsed.endpoint)
+    .eq("user_id", auth.userId);
+  if (error) return apiFail(error.message, 500);
+  return apiOk({ ok: true });
+}

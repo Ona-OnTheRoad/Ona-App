@@ -146,7 +146,7 @@ export function useIncomingQueue({
       // Enroll this device for web-push (once per session) so the server can
       // reach the pro with a cancellation OS notification even when the app is
       // closed or the tab hidden. Best-effort; never blocks the card.
-      void enablePushNotifications(backendUserId);
+      void enablePushNotifications(backendUserId, { interactive: false });
       if (!panelAlreadyOpen) pushOsOnce(job);
     },
     [

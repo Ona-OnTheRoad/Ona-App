@@ -387,6 +387,7 @@ async function notifyPro(
       jobId,
       jobStatus,
       groupKey: `service-request-${jobId}`,
+      pushUrgent: true,
     });
   } catch {
     /* notifications optional */
@@ -1244,6 +1245,7 @@ export async function sweepScheduledDispatches(limit = 50): Promise<{
             jobId: secondId,
             jobStatus: "scheduled",
             groupKey: `scheduled-dispatch-${secondId}`,
+            push: false, // pushed below
           });
         } catch {
           /* optional */
