@@ -66,9 +66,9 @@ export function useProLiveSync(
         (pos) => pushCoords(pos.coords.latitude, pos.coords.longitude),
         () => pushCoords(userLat, userLng),
         {
-          enableHighAccuracy: false,
-          timeout: 6000,
-          maximumAge: LIVE_HEARTBEAT_MS,
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 30_000,
         },
       );
     } else {
@@ -85,9 +85,9 @@ export function useProLiveSync(
         (pos) => pushCoords(pos.coords.latitude, pos.coords.longitude),
         () => pushCoords(userLat, userLng),
         {
-          enableHighAccuracy: false,
-          timeout: 6000,
-          maximumAge: LIVE_HEARTBEAT_MS,
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 30_000,
         },
       );
     }, LIVE_HEARTBEAT_MS);

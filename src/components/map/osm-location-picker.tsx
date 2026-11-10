@@ -5,7 +5,7 @@ import { MapContainer, Marker, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { Building2, Crosshair, MapPin, Navigation } from "lucide-react";
 import { reverseGeocodeLatLng } from "@/lib/google-maps";
-import { DEFAULT_USER_LOCATION } from "@/lib/data/user-location";
+import { readInitialLocation } from "@/lib/store/storage";
 import {
   knownPlaceToPick,
   matchKnownPlaces,
@@ -36,9 +36,15 @@ export function OsmLocationPicker({
   const { theme } = useApp();
   const isLight = theme === "light";
   const mapTheme = mapThemeForApp(isLight);
-  const [center, setCenter] = useState({
-    lat: value?.lat ?? DEFAULT_USER_LOCATION.coordinates.lat,
-    lng: value?.lng ?? DEFAULT_USER_LOCATION.coordinates.lng,
+  const [center, setCenter] = useState(() => {
+    if (value?.lat && value?.lng) {
+      return { lat: value.lat, lng: value.lng };
+    }
+    const initial = readInitialLocation();
+    return {
+      lat: initial.coordinates.lat,
+      lng: initial.coordinates.lng,
+    };
   });
   const [pin, setPin] = useState(center);
   const [query, setQuery] = useState(value?.label ?? "");
@@ -140,7 +146,7 @@ export function OsmLocationPicker({
         setBusy(false);
         setStatus("Could not read GPS. Tap the map to drop a pin.");
       },
-      { enableHighAccuracy: true, timeout: 12000 },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 },
     );
   };
 
