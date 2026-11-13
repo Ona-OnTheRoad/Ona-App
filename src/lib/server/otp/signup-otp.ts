@@ -1,6 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
-import { phoneOrFilter, phonesMatch } from "@/lib/server/phone-match";
+import { findPhoneOwners } from "@/lib/server/otp/phone-owners";
 import type { createServiceSupabase } from "@/lib/supabase/server";
 
 type Db = ReturnType<typeof createServiceSupabase>;
@@ -30,19 +30,15 @@ export function hashSignupCode(phone: string, code: string): string {
 }
 
 /**
- * Does any account already use this number? Exact normalized match (the same
- * lookup the login routes use), never a "first 500 rows" scan.
+ * Does any account already use this number? Same rule and same lookup as
+ * account creation (last 10 digits, searched across all profiles), so a number
+ * that passes here can never be rejected as a duplicate a moment later.
  */
 export async function isPhoneInUse(
   sb: Db,
   phone: string,
 ): Promise<{ inUse: boolean } | { error: string }> {
-  const { data, error } = await sb
-    .from("profiles")
-    .select("id, phone")
-    .or(phoneOrFilter(phone))
-    .limit(25);
-  if (error) return { error: error.message };
-  const rows = (data || []) as Array<{ id: string; phone: string | null }>;
-  return { inUse: rows.some((r) => phonesMatch(r.phone, phone)) };
+  const found = await findPhoneOwners(sb, phone);
+  if ("error" in found) return { error: found.error };
+  return { inUse: found.owners.length > 0 };
 }

@@ -276,3 +276,69 @@ describe("POST /api/auth/signup phone proof (verified at the signup step)", () =
     expect(sb.rows.profiles[0].phone).toBe(PHONE);
   });
 });
+
+describe("POST /api/auth/signup duplicate phone check covers every account", () => {
+  const others = (n: number): Record<string, unknown>[] =>
+    Array.from({ length: n }, (_, i) => ({
+      id: `other-${i}`, email: `o${i}@ona.test`, phone: `+23470${String(10000000 + i).slice(-8)}`, role: "motorist",
+    }));
+
+  it("rejects a number owned by an account that is far beyond the first 500 profiles", async () => {
+    const owner = { id: "late-owner", email: "late@ona.test", phone: PHONE, role: "motorist" };
+    const sb = setup({ profiles: [...others(900), owner, ...others(200)] });
+    const res = await post(motoristBody());
+    expect(res.status).toBe(409);
+    expect((await res.json()).error.code).toBe("phone_exists");
+    expect(mocks.createUser).not.toHaveBeenCalled();
+    expect(accountWrites(sb)).toEqual([]);
+  });
+
+  it.each(["08012345678", "2348012345678", "0801 234 5678", "+234 801-234-5678"])(
+    "rejects a number stored by another account as %s",
+    async (stored) => {
+      setup({ profiles: [...others(700), { id: "late-owner", email: "late@ona.test", phone: stored, role: "motorist" }] });
+      const res = await post(motoristBody());
+      expect(res.status).toBe(409);
+      expect(mocks.createUser).not.toHaveBeenCalled();
+    },
+  );
+
+  it("still creates the account when nobody has the number, however many profiles exist", async () => {
+    setup({ profiles: others(1500) });
+    const res = await post(motoristBody());
+    expect(res.status).toBe(200);
+    expect(mocks.createUser).toHaveBeenCalled();
+  });
+
+  it("fails closed (no account) when the phone lookup itself errors", async () => {
+    const sb = setup({});
+    const originalFrom = sb.from.bind(sb);
+    sb.from = (table: string) => {
+      const q = originalFrom(table) as unknown as {
+        or: (raw: string) => unknown;
+        then: (resolve: (v: unknown) => void, reject: (e: unknown) => void) => void;
+        failLookup?: boolean;
+      };
+      const or = q.or.bind(q);
+      const then = q.then.bind(q);
+      q.or = (raw: string) => {
+        if (raw.includes("phone.ilike")) q.failLookup = true;
+        return or(raw);
+      };
+      q.then = (resolve, reject) =>
+        q.failLookup ? resolve({ data: null, error: { message: "db down" } }) : then(resolve, reject);
+      return q as never;
+    };
+    const res = await post(motoristBody());
+    expect(res.status).toBe(503);
+    expect((await res.json()).error.code).toBe("phone_check_failed");
+    expect(mocks.createUser).not.toHaveBeenCalled();
+  });
+
+  it("still lets a signed-in user attach a second role using their own phone", async () => {
+    // Regression guard: the owner of the number is the caller, so it is not a duplicate.
+    setup({ ...existingMotorist(), profiles: [...others(800), ...existingMotorist().profiles] });
+    const res = await post(proBody({ access_token: "valid-access-token" }));
+    expect(res.status).toBe(200);
+  });
+});

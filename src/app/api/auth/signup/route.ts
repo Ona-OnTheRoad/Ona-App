@@ -6,6 +6,7 @@ import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { sendSignupConfirmationEmail } from "@/lib/server/resend";
 import { canonicalPhone } from "@/lib/server/phone-match";
 import { markUserPhoneVerified } from "@/lib/server/otp/mark-phone-verified";
+import { findPhoneOwners } from "@/lib/server/otp/phone-owners";
 import { verifyPhoneProof } from "@/lib/server/otp/phone-proof";
 import {
   detectMergeCandidatesForUser,
@@ -415,24 +416,27 @@ export async function POST(req: Request) {
     }
   }
 
-  // Phone uniqueness across different accounts (signed-in attach may reuse own phone)
-  const phoneDigits = input.phone.replace(/\D/g, "");
-  if (phoneDigits.length >= 10) {
-    const tail = phoneDigits.length > 10 ? phoneDigits.slice(-10) : phoneDigits;
-    const { data: phoneRows } = await supabase
-      .from("profiles")
-      .select("id, email, phone")
-      .not("phone", "is", null)
-      .limit(500);
-    const phoneTaken = (phoneRows || []).find((row) => {
-      const d = String(row.phone || "").replace(/\D/g, "");
-      if (d.length < 10) return false;
-      const rowTail = d.length > 10 ? d.slice(-10) : d;
-      if (rowTail !== tail) return false;
-      // Only the access_token attach path may reuse this user's own phone
-      if (attachUserId && row.id === attachUserId) return false;
-      return true;
-    });
+  // Phone uniqueness across ALL accounts (signed-in attach may reuse its own phone).
+  // Searched in the database, not in a window of rows, so it holds at any scale.
+  {
+    const found = await findPhoneOwners(supabase, input.phone);
+    if ("error" in found) {
+      await logSignupEvent(supabase, {
+        ...eventBase,
+        success: false,
+        error_message: "phone_check_failed",
+      });
+      // Fail closed: a duplicate number must never slip through on a lookup error.
+      return apiFail(
+        "We couldn't check this phone number. Please try again.",
+        503,
+        "phone_check_failed",
+      );
+    }
+    // Only the access_token attach path may reuse this user's own phone
+    const phoneTaken = found.owners.find(
+      (row) => !(attachUserId && row.id === attachUserId),
+    );
     if (phoneTaken) {
       await logSignupEvent(supabase, {
         ...eventBase,

@@ -205,6 +205,8 @@ export class FakeQuery {
       const anyHit = parts.some((part) => {
         let m = /^(\w+)\.eq\.(.+)$/.exec(part);
         if (m) return String(row[m[1]]) === m[2];
+        m = /^(\w+)\.ilike\.(.+)$/.exec(part);
+        if (m) return likeToRegex(m[2]).test(String(row[m[1]] ?? ""));
         m = /^(\w+)\.not\.isnull$/.exec(part);
         if (m) return row[m[1]] != null;
         return false;
@@ -302,7 +304,9 @@ export class FakeQuery {
         single(matches);
         return;
       }
-      const list = this.sorted(matches);
+      // Like PostgREST, a limit caps the rows returned (after ordering).
+      const ordered = this.sorted(matches);
+      const list = this.limitN == null ? ordered : ordered.slice(0, this.limitN);
       if (this.isSingle) {
         if (list.length === 0) {
           resolve({ data: null, error: NO_ROWS_ERROR });

@@ -130,5 +130,8 @@ sibling, is now built: see above.)
 11. **Number squatting.** An account can still be created with someone else's number *unverified*, which
     then blocks them from signing up (`phone_exists`). Now that verified signups exist, a verified signup
     could be allowed to reclaim a number held by an unverified account.
-12. The existing duplicate-phone check in `/api/auth/signup` only scans the first 500 profiles; switch it
-    to the exact-match lookup in `src/lib/server/otp/signup-otp.ts` (`isPhoneInUse`).
+12. ~~The duplicate-phone check in `/api/auth/signup` only scanned the first 500 profiles.~~ Fixed: it now
+    searches every profile in the database (`findPhoneOwners` in `src/lib/server/otp/phone-owners.ts`,
+    same last-10-digits rule as before, so `0803…`, `234803…` and `0803 123 4567` all collide) and fails
+    closed with a retryable error if the lookup itself fails. Signup and the signup-OTP endpoints now use
+    the same lookup, so a number that passes verification is never rejected as a duplicate afterwards.
