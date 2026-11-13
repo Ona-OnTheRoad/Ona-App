@@ -215,6 +215,79 @@ describe("POST /api/auth/signup service-client session isolation", () => {
     expect(accountWrites(sb)).toEqual([]);
     expect(sb.rows.profiles).toHaveLength(1);
   });
+
+  it("rejects a duplicate phone stored in local 0-prefix form via variant lookup", async () => {
+    const sb = setup({
+      profiles: [
+        {
+          id: "user-1",
+          email: EMAIL,
+          phone: "08012345678",
+          role: "motorist",
+          full_name: "Ada User",
+          avatar_url: null,
+          is_active: true,
+        },
+      ],
+      motorist_profiles: [{ user_id: "user-1", vehicle_make: "Toyota" }],
+    });
+    const res = await post(
+      proBody({ email: "newcomer@ona.test", phone: PHONE }),
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(409);
+    expect(body.error.code).toBe("phone_exists");
+    expect(mocks.createUser).not.toHaveBeenCalled();
+    expect(accountWrites(sb)).toEqual([]);
+  });
+
+  it("rebinds a mismatched submit email to the session email on dual-role attach", async () => {
+    const sb = setup(existingMotorist());
+    const res = await post(
+      proBody({
+        access_token: "valid-access-token",
+        email: "other@ona.test",
+        keepOtherRole: true,
+      }),
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.data.profile.email).toBe(EMAIL);
+    expect(sb.rows.profiles[0]).toMatchObject({
+      id: "user-1",
+      email: EMAIL,
+      role: "repair_pro",
+    });
+    expect(mocks.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({ to: EMAIL }),
+    );
+    expect(mocks.anonSignIn).toHaveBeenCalledWith({
+      email: EMAIL,
+      password: PASSWORD,
+    });
+    expect(mocks.createUser).not.toHaveBeenCalled();
+  });
+
+  it("rejects dual-role attach when keepOtherRole is false and emails differ", async () => {
+    const sb = setup(existingMotorist());
+    const res = await post(
+      proBody({
+        access_token: "valid-access-token",
+        email: "other@ona.test",
+        keepOtherRole: false,
+      }),
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(403);
+    expect(body.error.code).toBe("identity_mismatch");
+    expect(accountWrites(sb)).toEqual([]);
+    expect(sb.rows.repair_pro_profiles).toBeUndefined();
+    expect(mocks.createUser).not.toHaveBeenCalled();
+    expect(mocks.sendMail).not.toHaveBeenCalled();
+  });
 });
 
 describe("POST /api/auth/signup server-side NIN/BVN check", () => {

@@ -229,3 +229,9 @@ Code: `src/lib/server/sms/__tests__/send.test.ts`, `src/lib/server/identity/__te
 Approved scope: [review guide](review-guides/signup-route-split.md) on branch `refactor/signup-route-split`, stacked on identity batch 2. `src/app/api/auth/signup/route.ts` went from 1,222 lines to 181; its sections moved unchanged, in the same order, into ten modules under `src/lib/server/signup/`, each under 300 lines. No behaviour change is intended.
 
 Code: the 11 existing signup route tests pass with no edit to the test file; a scripted line comparison of the old file against the new modules found only wrapper and export differences. Independent review pending. Code follow-up: add route tests for the untested signup paths; `admin/pro-review/route.ts`, `admin/customer-review/route.ts` and `identity-sync.ts` are still over the limit. External: live QA of customer signup, Repair Pro signup and dual-role attach is pending.
+
+## Signup preflight hardening (2026-11-13)
+
+Approved scope: [review guide](review-guides/signup-preflight-hardening.md) on branch `fix/signup-preflight-hardening`. Closes the three signup findings left during the route split. Phone uniqueness keeps the `findPhoneOwners` path already on `dev` (no 500-row scan). Dual-role attach rebinds a mismatched submitted email to the session email (or `403 identity_mismatch` when `keepOtherRole` is false). Success `profile` / `extras` (including `phoneVerified`) are built once with a consistent `primaryService` fallback.
+
+Code: signup route tests for variant phone collision, email rebind and identity mismatch. Independent review pending. Code follow-up: none for these three findings when local checks pass. External: live QA of phone collision and dual-role attach email paths.

@@ -1,7 +1,7 @@
 import "server-only";
 import { apiFail } from "@/lib/server/api-json";
-import type { SignupContext } from "@/lib/server/signup/context";
 import { findPhoneOwners } from "@/lib/server/otp/phone-owners";
+import type { SignupContext } from "@/lib/server/signup/context";
 import { logSignupEvent } from "@/lib/server/signup/helpers";
 import type { SignupInput } from "@/lib/server/signup/schema";
 
@@ -44,54 +44,59 @@ export function rejectInvalidAge(input: SignupInput): Response | null {
   return null;
 }
 
+export type AttachResolution = {
+  attachUserId: string | null;
+  /** Session email when dual-attach rebinds a mismatch; otherwise the submitted email. */
+  email: string;
+};
+
 /**
  * Returns the signed-in user's id when a valid access token was sent (the
  * dual-role attach path), null for a normal signup, or the rejection to send.
+ * On dual attach, a mismatched submitted email is rebound to the session email
+ * unless keepOtherRole is explicitly false (then 403).
  */
 export async function resolveAttachUser(
   input: SignupInput,
   email: string,
-): Promise<string | null | Response> {
+): Promise<AttachResolution | Response> {
   // ── Dual-role attach: same logged-in user adds the other role ─────────────
   // Prefer session token so we NEVER create a second auth user (anti-fraud).
-  let attachUserId: string | null = null;
-  if (input.access_token) {
-    try {
-      const { createClient } = await import("@supabase/supabase-js");
-      const { getSupabaseAnonKey, getSupabaseUrl } =
-        await import("@/lib/supabase/env");
-      const userClient = createClient(getSupabaseUrl(), getSupabaseAnonKey(), {
-        auth: { autoRefreshToken: false, persistSession: false },
-      });
-      const { data: tokUser, error: tokErr } = await userClient.auth.getUser(
-        input.access_token,
-      );
-      if (!tokErr && tokUser.user?.id) {
-        attachUserId = tokUser.user.id;
-        // Force email to the session identity (cannot attach under a different email)
-        const sessionEmail = String(tokUser.user.email || "")
-          .trim()
-          .toLowerCase();
-        if (sessionEmail && sessionEmail !== email) {
-          // Allow client to send the locked session email; if mismatch, prefer session
-          // only when keepOtherRole (dual attach). Reject pure hijack attempts.
-          if (input.keepOtherRole !== false) {
-            // rebind to session email for profile writes
-            // (input.email is const via local use session for create path skip)
-          } else {
-            return apiFail(
-              "Signed-in email does not match. Stay on this account to add a role.",
-              403,
-              "identity_mismatch",
-            );
-          }
-        }
-      }
-    } catch {
-      /* fall through to normal signup */
-    }
+  if (!input.access_token) {
+    return { attachUserId: null, email };
   }
-  return attachUserId;
+  try {
+    const { createClient } = await import("@supabase/supabase-js");
+    const { getSupabaseAnonKey, getSupabaseUrl } =
+      await import("@/lib/supabase/env");
+    const userClient = createClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const { data: tokUser, error: tokErr } = await userClient.auth.getUser(
+      input.access_token,
+    );
+    if (tokErr || !tokUser.user?.id) {
+      return { attachUserId: null, email };
+    }
+    const attachUserId = tokUser.user.id;
+    const sessionEmail = String(tokUser.user.email || "")
+      .trim()
+      .toLowerCase();
+    if (sessionEmail && sessionEmail !== email) {
+      // Reject pure hijack attempts; dual attach rebinds to the session identity.
+      if (input.keepOtherRole === false) {
+        return apiFail(
+          "Signed-in email does not match. Stay on this account to add a role.",
+          403,
+          "identity_mismatch",
+        );
+      }
+      return { attachUserId, email: sessionEmail };
+    }
+    return { attachUserId, email };
+  } catch {
+    return { attachUserId: null, email };
+  }
 }
 
 /** Returns the rejection to send when another account already uses the phone. */

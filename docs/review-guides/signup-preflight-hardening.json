@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "id": "signup-preflight-hardening",
+  "title": "Fix signup phone uniqueness, dual-role email rebind, and shared success payload",
+  "plan": "docs/review-guides/signup-preflight-hardening.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "R1",
+      "stage": "code",
+      "expectation": "Duplicate phone on another account is rejected even when more than 500 profiles have phones; no .limit(500) scan of all non-null phones.",
+      "verification": "Route test for phone_exists; code read of rejectTakenPhone using findPhoneOwners.",
+      "status": "pass",
+      "evidence": [
+        "code: rejectTakenPhone keeps findPhoneOwners from security hardening on dev; no .limit(500).",
+        "test: rejects unsigned signup when phone belongs to another account; rejects duplicate stored as 080… via variant lookup."
+      ]
+    },
+    {
+      "id": "R2",
+      "stage": "code",
+      "expectation": "Signed-in dual-role attach may still reuse the same user's own phone.",
+      "verification": "Existing or new attach route test.",
+      "status": "pass",
+      "evidence": [
+        "test: lets a signed-in motorist attach the Repair Pro role (same PHONE) and keeps the motorist side."
+      ]
+    },
+    {
+      "id": "R3",
+      "stage": "code",
+      "expectation": "Attach with session/submitted email mismatch and keepOtherRole true rebinds to the session email for profile writes, confirmation email and success payload.",
+      "verification": "Route test.",
+      "status": "pass",
+      "evidence": [
+        "test: rebinds a mismatched submit email to the session email on dual-role attach (profile, sendMail, sign-in)."
+      ]
+    },
+    {
+      "id": "R4",
+      "stage": "code",
+      "expectation": "Attach with email mismatch and keepOtherRole false returns 403 identity_mismatch and writes nothing.",
+      "verification": "Route test.",
+      "status": "pass",
+      "evidence": [
+        "test: rejects dual-role attach when keepOtherRole is false and emails differ."
+      ]
+    },
+    {
+      "id": "R5",
+      "stage": "code",
+      "expectation": "Session-ok and session-missing success responses share one builder; primaryService uses input.primaryService || input.services?.[0]; phoneVerified is included.",
+      "verification": "Code read of session.ts; route coverage where practical.",
+      "status": "pass",
+      "evidence": [
+        "code: buildSignupSuccessData used for both session outcomes; primaryService fallback aligned; phoneVerified preserved from phone-proof path."
+      ]
+    },
+    {
+      "id": "R6",
+      "stage": "code",
+      "expectation": "nin_verified / bvn_verified remain Care-only; this change does not set them from lookup or digit length.",
+      "verification": "Diff review.",
+      "status": "pass",
+      "evidence": [
+        "diff: changes limited to preflight, session payload builder, route email wiring and tests; no verified-flag writes."
+      ]
+    },
+    {
+      "id": "R7",
+      "stage": "code",
+      "expectation": "npm test, npm run lint (0 errors), npm run typecheck, npm run check:server-boundaries, npm run check:openapi-drift pass.",
+      "verification": "Automated commands.",
+      "status": "pass",
+      "evidence": [
+        "npm test: 2051 passed / 227 files.",
+        "typecheck, check:server-boundaries, check:openapi-drift passed.",
+        "lint: 0 errors, 143 pre-existing warnings."
+      ]
+    },
+    {
+      "id": "R8",
+      "stage": "live",
+      "expectation": "Live QA of phone collision and dual-role attach email paths on a deployed build.",
+      "verification": "Hosted signup flows.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      {
+        "id": "none-verified",
+        "detail": "Checked after implementation: no further code work remains for these three findings."
+      }
+    ],
+    "external": [
+      "Live QA for R8 (phone collision and dual-role attach email rebind / reject).",
+      "Independent human review against the implementation commit."
+    ]
+  }
+}

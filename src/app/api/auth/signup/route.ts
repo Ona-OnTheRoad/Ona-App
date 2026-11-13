@@ -80,8 +80,8 @@ export async function POST(req: Request) {
   }
 
   const input = parsed.data;
-  const email = input.email.trim().toLowerCase();
-  if (!email || !email.includes("@")) {
+  const submittedEmail = input.email.trim().toLowerCase();
+  if (!submittedEmail || !submittedEmail.includes("@")) {
     return apiFail(
       "Email is required for Customer and Repair Pro signup.",
       400,
@@ -109,6 +109,10 @@ export async function POST(req: Request) {
   const ageRejection = rejectInvalidAge(input);
   if (ageRejection) return ageRejection;
 
+  const attach = await resolveAttachUser(input, submittedEmail);
+  if (attach instanceof Response) return attach;
+  const { attachUserId, email } = attach;
+
   const supabase = createServiceSupabase();
   const eventBase = {
     email,
@@ -121,10 +125,6 @@ export async function POST(req: Request) {
   const ctx: SignupContext = {
     supabase, input, email, role, nin, bvn, hasNin, hasBvn, eventBase,
   };
-
-  const attach = await resolveAttachUser(input, email);
-  if (attach instanceof Response) return attach;
-  const attachUserId = attach;
 
   const phoneRejection = await rejectTakenPhone(ctx, attachUserId);
   if (phoneRejection) return phoneRejection;
