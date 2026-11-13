@@ -1,9 +1,10 @@
 import "server-only";
 import { compareNames, type NameMatch } from "@/lib/server/identity/name-match";
+import { verifyNinWithFallback } from "@/lib/server/identity/nin-lookup";
 import {
   ID_LOOKUP_NOT_CONFIGURED,
+  isProviderOutage,
   verifyBvnWithPrembly,
-  verifyNinWithPrembly,
   type PremblyVerifyResult,
 } from "@/lib/server/prembly";
 
@@ -26,6 +27,8 @@ export type IdLookupRecord = {
   reference: string | null;
   matchedName: string | null;
   code: string | null;
+  /** The provider was down and a cached earlier confirmation was used. */
+  cached: boolean;
   checkedAt: string;
   nameMatch: { profile: NameMatch; bankAccount: NameMatch };
 };
@@ -35,15 +38,14 @@ export type IdLookupNames = {
   bankAccountName?: string | null;
 };
 
-const UNAVAILABLE_HTTP = new Set(["401", "402", "403", "408", "429"]);
+/** Auth and billing errors: the provider was never really asked. */
+const UNAVAILABLE_HTTP = new Set(["401", "402", "403"]);
 
 function statusOf(result: PremblyVerifyResult): IdLookupStatus {
   if (result.ok) return result.mode === "live" ? "verified" : "format_only";
   const code = String(result.code ?? "");
-  if (code === ID_LOOKUP_NOT_CONFIGURED || code === "NETWORK") return "unavailable";
-  // Auth, quota and server errors say nothing about the number itself.
-  if (UNAVAILABLE_HTTP.has(code) || /^5\d\d$/.test(code)) return "unavailable";
-  return "rejected";
+  if (code === ID_LOOKUP_NOT_CONFIGURED || isProviderOutage(result)) return "unavailable";
+  return UNAVAILABLE_HTTP.has(code) ? "unavailable" : "rejected";
 }
 
 export function buildIdLookupRecord(
@@ -65,6 +67,7 @@ export function buildIdLookupRecord(
     reference: result.ok ? result.reference || null : null,
     matchedName: result.ok ? result.fullName || null : null,
     code: result.ok ? null : result.code || null,
+    cached: result.ok && Boolean(result.cached),
     checkedAt: now.toISOString(),
     nameMatch: {
       profile: compared ? compareNames(holder, names.profileName) : "unknown",
@@ -83,7 +86,7 @@ export async function lookupId(
   try {
     result =
       kind === "nin"
-        ? await verifyNinWithPrembly(number)
+        ? await verifyNinWithFallback(number)
         : await verifyBvnWithPrembly(number);
   } catch {
     result = {

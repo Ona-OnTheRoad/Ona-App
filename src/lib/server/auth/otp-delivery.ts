@@ -1,10 +1,7 @@
 import "server-only";
 import { isDemoOtpAllowed } from "@/lib/auth/demo-otp";
-import {
-  isAfricaTalkingConfigured,
-  sendLoginOtpSms,
-} from "@/lib/server/africastalking";
 import { isResendConfigured, sendResendEmail } from "@/lib/server/resend";
+import { isSmsConfigured, sendSms } from "@/lib/server/sms/send";
 
 export type OtpChannel = "phone" | "email";
 
@@ -24,9 +21,13 @@ export type OtpDeliveryPlan =
 
 export function planOtpDelivery(channel: OtpChannel): OtpDeliveryPlan {
   const configured =
-    channel === "phone" ? isAfricaTalkingConfigured() : isResendConfigured();
+    channel === "phone" ? isSmsConfigured() : isResendConfigured();
   if (configured) return { kind: "real" };
   return isDemoOtpAllowed() ? { kind: "demo" } : { kind: "unavailable" };
+}
+
+export function loginOtpSmsText(code: string): string {
+  return `Ona login code: ${code}. Valid for 10 minutes. Do not share this code.`;
 }
 
 async function sendLoginOtpEmail(input: {
@@ -59,7 +60,7 @@ export async function deliverOtp(input: {
   try {
     const sent =
       input.channel === "phone"
-        ? await sendLoginOtpSms({ to: input.to, code: input.code })
+        ? await sendSms({ to: input.to, message: loginOtpSmsText(input.code) })
         : await sendLoginOtpEmail({ to: input.to, code: input.code });
     return sent.ok ? { ok: true } : { ok: false, error: sent.error };
   } catch (e) {

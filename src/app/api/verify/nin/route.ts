@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { guardIdLookup, idLookupStatus } from "@/lib/server/identity/id-lookup-guard";
-import { verifyNinWithPrembly } from "@/lib/server/prembly";
+import { verifyNinWithFallback } from "@/lib/server/identity/nin-lookup";
 
 export const runtime = "nodejs";
 
@@ -9,7 +9,8 @@ export const runtime = "nodejs";
  * Body: { nin: string }
  * Verifies Nigeria NIN via Prembly when PREMBLY_API_KEY is set. Without a key
  * it runs a local 11-digit format check outside production and fails closed
- * (503) in production. Rate limited per IP; no sign-in, because signup calls
+ * (503) in production. During a provider outage a cached earlier
+ * confirmation of the same NIN is returned. Rate limited per IP; no sign-in, because signup calls
  * it before a session exists.
  */
 export async function POST(req: Request) {
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
-    const result = await verifyNinWithPrembly(nin);
+    const result = await verifyNinWithFallback(nin);
     return NextResponse.json(result, { status: idLookupStatus(result) });
   } catch {
     return NextResponse.json(

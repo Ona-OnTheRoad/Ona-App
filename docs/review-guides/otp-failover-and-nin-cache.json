@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "id": "otp-failover-and-nin-cache",
+  "title": "SMS provider failover and NIN lookup outage cache (identity batch 3: ONA-ID-101, 203)",
+  "plan": "docs/review-guides/otp-failover-and-nin-cache.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "R1",
+      "stage": "code",
+      "expectation": "sendSms tries configured providers in SMS_PROVIDER_ORDER, returns the first success with the provider name, and reports every failed attempt. Unconfigured, unknown and repeated names are skipped; an invalid number fails without calling a provider; nothing sensitive is logged on failover.",
+      "verification": "Unit test with fake providers.",
+      "status": "pass",
+      "evidence": [
+        "code: src/lib/server/sms/__tests__/send.test.ts covers first-success, failover on a failed send, a provider that throws, all-fail reporting, number normalisation, invalid number, no provider, ordering rules, and that the failover log holds neither the number nor the code."
+      ]
+    },
+    {
+      "id": "R2",
+      "stage": "code",
+      "expectation": "The Termii adapter is configured only when key, sender ID and base URL are all set, posts the documented body to {base}/api/sms/send, and treats a non-2xx reply, a reply without a message id, or a network error as failure.",
+      "verification": "Unit test with a stubbed fetch.",
+      "status": "pass",
+      "evidence": [
+        "code: send.test.ts 'real adapters' asserts the adapter stays off with only two of three variables, the exact request URL and JSON body, and the three failure cases."
+      ]
+    },
+    {
+      "id": "R3",
+      "stage": "code",
+      "expectation": "Phone OTP is deliverable when any SMS provider is configured and a failed first provider still delivers through the second. Queued SMS notifications use the same path.",
+      "verification": "Unit test through the real adapters with a stubbed fetch; OTP route test; diff inspection of notifications-retry.ts.",
+      "status": "pass",
+      "evidence": [
+        "code: send.test.ts asserts that with the first adapter's API returning 503 the message is delivered by termii and the attempt list names africastalking.",
+        "code: src/app/api/auth/otp/send/__tests__/route.test.ts now drives the route through isSmsConfigured/sendSms (8 cases pass).",
+        "code: src/lib/server/notifications-retry.ts calls sendSms; it has no test of its own."
+      ]
+    },
+    {
+      "id": "R4",
+      "stage": "code",
+      "expectation": "A live NIN confirmation is cached. During a provider outage (network error, 408, 429, 5xx) an unexpired entry is returned with cached:true; a miss or an expired entry returns the outage. A rejection, a missing key and auth or billing errors never use the cache. The stored lookup record carries the cached marker.",
+      "verification": "Unit test.",
+      "status": "pass",
+      "evidence": [
+        "code: src/lib/server/identity/__tests__/nin-cache.test.ts covers write on live confirmation, cached fallback, miss, expiry, the five outage codes, the four non-outage codes, and format-only or already-cached results not being stored.",
+        "code: src/lib/server/identity/__tests__/id-lookup.test.ts asserts the record's cached flag."
+      ]
+    },
+    {
+      "id": "R5",
+      "stage": "code",
+      "expectation": "The cache key is an HMAC of the number; neither the key nor the stored value contains the number (or the phone the provider returns); entries carry expires_at; with no secret the cache is off; a broken cache store never breaks a lookup.",
+      "verification": "Unit test.",
+      "status": "pass",
+      "evidence": [
+        "code: nin-cache.test.ts asserts the key shape, that it changes with the secret, the exact stored row (no number, no phone, 30-day expiry), cache off without a secret, and normal answers when the store throws or the database is not configured."
+      ]
+    },
+    {
+      "id": "R6",
+      "stage": "code",
+      "expectation": "supabase/migrations/20261113_084_id_lookup_cache.sql creates id_lookup_cache with key_hash primary key, expires_at index, RLS enabled and forced, and all access revoked from anon and authenticated.",
+      "verification": "File inspection. The migration has not been executed anywhere.",
+      "status": "pass",
+      "evidence": [
+        "code: file follows the 064 idempotent_ops pattern (enable + force RLS, revoke from anon/authenticated, grant to service_role/postgres) and the next free number, 084.",
+        "code: not run against a database; SQL validity is unverified beyond reading it."
+      ]
+    },
+    {
+      "id": "R7",
+      "stage": "code",
+      "expectation": "The full local check suite passes.",
+      "verification": "npm test, npm run lint, npm run typecheck, npm run check:server-boundaries, npm run check:openapi-drift.",
+      "status": "pass",
+      "evidence": [
+        "code: 227 Vitest files (2,048 tests) pass; eslint 0 errors (143 warnings, none introduced); tsc --noEmit exits 0; check:server-boundaries verified; check:openapi-drift ok."
+      ]
+    },
+    {
+      "id": "R8",
+      "stage": "live",
+      "expectation": "With both SMS providers set, an OTP arrives through the second when the first is disabled. With migration 084 applied, a NIN checked once is served from the cache during a simulated provider outage.",
+      "verification": "Live QA on the hosted environment.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "No circuit breaker: during an outage every send still tries the first provider first.",
+      "Delivery receipts are not read, so a provider that accepts but never delivers counts as a success.",
+      "BVN lookups are not cached.",
+      "src/app/api/security/action/route.ts and the contact-change flow do not use the failover.",
+      "notifications-retry.ts has no test covering its SMS branch."
+    ],
+    "external": [
+      "Apply migration 084 on the target Supabase; until then the cache is silently off.",
+      "Create the Termii account, get a sender ID approved, and set TERMII_API_KEY, TERMII_SENDER_ID and TERMII_BASE_URL on the host.",
+      "Verify the Termii adapter against the live API; it was written from the public documentation only.",
+      "Optionally set ID_LOOKUP_CACHE_SECRET so the cache key does not depend on the service-role key (rotating that key empties the cache).",
+      "Merge batch 1 and batch 2 first; this branch is stacked on them.",
+      "Live QA for R8.",
+      "Independent human review against the implementation commit."
+    ]
+  }
+}
