@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils";
 import { profileTheme } from "@/lib/profile-system";
 import { SecurityField } from "./security-field";
 import {
-  backendSendOtp,
-  backendProfileVerifyOtp,
-} from "@/lib/supabase/app-api";
+  CODE_STEP_ERRORS,
+  sendChangeContactCode,
+} from "@/lib/security/change-contact-client";
 import { ChangeFlowHeader } from "./shared/change-flow-header";
 import { DiscardChangesSheet } from "./shared/discard-sheet";
 import { changeFlowFieldClass } from "./shared/field-class";
@@ -93,41 +93,40 @@ export function EmailChangeFlow({
     }
     setBusy(true);
     setErr(null);
-    const res = await backendSendOtp({ channel: "email", target: email });
+    const res = await sendChangeContactCode({
+      channel: "email",
+      target: email,
+      identityProof: identity.identityProof,
+    });
     setBusy(false);
-    if (res.error) {
+    if (!res.ok) {
+      if (res.code === "identity_required") {
+        // The identity proof expired (or was never issued): start that step again.
+        identity.resetIdentity();
+        setStep("verify_identity");
+      }
       setErr(res.error);
       return;
     }
+    setNewCode("");
     setStep("verify_new");
     setMsg("Code sent to your new email.");
   };
 
+  // The code is checked by the server together with the change itself, so there
+  // is no separate "verify" call that the browser could skip or fake.
   const verifyNew = async () => {
     if (newCode.length < 4) {
       setErr("Enter the code");
       return;
     }
-    const email = newEmail.trim().toLowerCase();
-    setBusy(true);
-    setErr(null);
-    const res = await backendProfileVerifyOtp({
-      channel: "email",
-      target: email,
-      code: newCode,
-    });
-    setBusy(false);
-    if (res.error) {
-      setErr(res.error);
-      return;
-    }
-    setStep("confirming");
-    await doChange(email);
+    await doChange(newEmail.trim().toLowerCase(), newCode);
   };
 
-  const doChange = async (email: string) => {
+  const doChange = async (email: string, code: string) => {
     setBusy(true);
     setErr(null);
+    setStep("confirming");
     try {
       const res = await (
         await import("@/lib/api-auth-headers")
@@ -138,15 +137,26 @@ export function EmailChangeFlow({
           action: "change_email",
           accessToken,
           newValue: email,
+          code,
+          identityProof: identity.identityProof,
         }),
       });
       const json = (await res.json()) as {
         ok?: boolean;
-        error?: { message?: string };
+        error?: { message?: string; code?: string };
       };
       if (!json?.ok) {
+        const errCode = json?.error?.code || "";
         setErr(json?.error?.message || "Email update failed.");
-        setStep("error");
+        if (errCode === "identity_required") {
+          identity.resetIdentity();
+          setStep("verify_identity");
+        } else if (CODE_STEP_ERRORS.has(errCode)) {
+          setNewCode("");
+          setStep("verify_new");
+        } else {
+          setStep("error");
+        }
         return;
       }
       setStep("done");
@@ -154,7 +164,7 @@ export function EmailChangeFlow({
       onEmailChanged(email);
     } catch {
       setErr("Network error. Try again.");
-      setStep("error");
+      setStep("verify_new");
     } finally {
       setBusy(false);
     }
@@ -232,6 +242,17 @@ export function EmailChangeFlow({
           busy={busy}
           onVerify={verifyNew}
         />
+      )}
+
+      {step === "verify_new" && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={sendNewOtp}
+          className={cn("text-[12px] font-medium underline disabled:opacity-50", t.muted)}
+        >
+          Resend code
+        </button>
       )}
 
       {step === "confirming" && (

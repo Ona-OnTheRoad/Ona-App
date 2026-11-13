@@ -13,6 +13,8 @@ import {
 import { useBankDetailsFields } from "@/components/auth/bank-details-fields/use-bank-details-fields";
 import type { BankDetailsValue } from "@/components/auth/bank-details-fields/types";
 import { ConfirmCancelSheet } from "@/components/ui/confirm-cancel-sheet";
+import { BankVerifyPanel } from "@/components/profile/security/shared/bank-verify-panel";
+import { changeBankAccount } from "@/lib/security/change-bank-client";
 import { PaymentsScreenHeader } from "../payments-screen-header";
 import { BankSelectDropdown } from "./bank-select-dropdown";
 import { BankAccountFields } from "./bank-account-fields";
@@ -25,11 +27,13 @@ export function BankAccountScreen() {
   const isLight = theme === "light";
   const isPro = accountType === "professional";
 
+  // Start from the saved bank so a saved account shows its card (Edit -> verify -> change)
+  // instead of dropping every returning user straight into the edit form.
   const [details, setDetails] = useState<BankDetailsValue>({
-    bankCode: "",
-    bankName: "",
-    bankAccountName: "",
-    bankAccountNumber: "",
+    bankCode: userProfile?.bankCode || "",
+    bankName: userProfile?.bankName || "",
+    bankAccountName: userProfile?.bankAccountName || "",
+    bankAccountNumber: userProfile?.bankAccountNumber || "",
   });
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -38,6 +42,8 @@ export function BankAccountScreen() {
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  /** Server-issued proof that the code sent to the account's phone was entered (needed to CHANGE a saved bank). */
+  const [bankProof, setBankProof] = useState("");
 
   useEffect(() => {
     if (!userProfile) return;
@@ -82,6 +88,21 @@ export function BankAccountScreen() {
     countryIso: userProfile?.identityCountryIso || "NG",
   });
 
+  // A bank account already saved on this account can only be changed after verification.
+  const onFile = hasCompleteBankDetails(userProfile);
+
+  const resetToSaved = () => {
+    setBankProof("");
+    if (userProfile) {
+      setDetails({
+        bankCode: userProfile.bankCode || "",
+        bankName: userProfile.bankName || "",
+        bankAccountName: userProfile.bankAccountName || "",
+        bankAccountNumber: userProfile.bankAccountNumber || "",
+      });
+    }
+  };
+
   const handleBack = () => {
     navigateBack(router, "/settings/payments", accountType);
   };
@@ -115,12 +136,38 @@ export function BankAccountScreen() {
       setErr(uniq.error);
       return;
     }
-    const e = updateUserProfile({
+    const next = {
       bankCode: code,
       bankName: details.bankName.trim(),
       bankAccountName: bankAccountName.trim(),
       bankAccountNumber: num,
-    });
+    };
+
+    // Changing a saved account goes through the verified path; the server rejects
+    // the generic profile save for a different account.
+    if (onFile) {
+      const { ensureAppSession } = await import("@/lib/supabase/session");
+      const session = await ensureAppSession().catch(() => null);
+      if (!session?.accessToken) {
+        setBusy(false);
+        setErr("Your session expired. Please sign in again.");
+        return;
+      }
+      const res = await changeBankAccount({
+        accessToken: session.accessToken,
+        bank: next,
+        bankProof,
+      });
+      if (!res.ok) {
+        setBusy(false);
+        if (res.code === "verification_required") setBankProof("");
+        setErr(res.error);
+        return;
+      }
+      setBankProof("");
+    }
+
+    const e = updateUserProfile(next);
     setBusy(false);
     if (e) {
       setErr(e);
@@ -162,6 +209,17 @@ export function BankAccountScreen() {
               setEditing(true);
               setMsg(null);
               setErr(null);
+            }}
+          />
+        ) : onFile && !bankProof ? (
+          <BankVerifyPanel
+            isLight={isLight}
+            onVerified={setBankProof}
+            onCancel={() => {
+              setEditing(false);
+              setErr(null);
+              setMsg(null);
+              resetToSaved();
             }}
           />
         ) : (
@@ -206,14 +264,7 @@ export function BankAccountScreen() {
           setEditing(false);
           setErr(null);
           setMsg(null);
-          if (userProfile) {
-            setDetails({
-              bankCode: userProfile.bankCode || "",
-              bankName: userProfile.bankName || "",
-              bankAccountName: userProfile.bankAccountName || "",
-              bankAccountNumber: userProfile.bankAccountNumber || "",
-            });
-          }
+          resetToSaved();
         }}
       />
     </div>
