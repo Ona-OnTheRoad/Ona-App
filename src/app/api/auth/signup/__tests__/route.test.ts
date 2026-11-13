@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FakeQuery, FakeSupabase, type AuthResult, type Row } from "@/test-utils/fake-supabase";
 
 const mocks = vi.hoisted(() => ({
@@ -20,6 +20,7 @@ vi.mock("@/lib/server/identity/identity-sync", () => ({
   runIdentitySync: mocks.identitySync, detectMergeCandidatesForUser: mocks.mergeDetect,
 }));
 import { POST } from "@/app/api/auth/signup/route";
+import { issuePhoneProof, PHONE_PROOF_TTL_MS } from "@/lib/server/otp/phone-proof";
 
 /**
  * Mirrors supabase-js: once signInWithPassword succeeds on a client, later
@@ -211,3 +212,67 @@ describe("POST /api/auth/signup service-client session isolation", () => {
   });
 });
 
+describe("POST /api/auth/signup phone proof (verified at the signup step)", () => {
+  const OLD_SECRET = process.env.OTP_PROOF_SECRET;
+  beforeEach(() => {
+    process.env.OTP_PROOF_SECRET = "signup-test-secret";
+  });
+  afterEach(() => {
+    if (OLD_SECRET === undefined) delete process.env.OTP_PROOF_SECRET;
+    else process.env.OTP_PROOF_SECRET = OLD_SECRET;
+  });
+
+  it("marks the phone verified on every role table when the proof matches the number", async () => {
+    const sb = setup({});
+    const { proof } = issuePhoneProof(PHONE);
+    const res = await post(proBody({ phoneProof: proof }));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.data.extras.phoneVerified).toBe(true);
+    expect(sb.rows.profiles[0]).toMatchObject({ id: "user-1", phone_verified: true });
+    expect(sb.rows.profiles[0].phone_verified_at).toBeTruthy();
+    expect(sb.rows.repair_pro_profiles[0]).toMatchObject({ phone_verified: true });
+  });
+
+  it("verifies a customer signup the same way", async () => {
+    const sb = setup({});
+    const { proof } = issuePhoneProof(PHONE);
+    const res = await post(motoristBody({ phoneProof: proof }));
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.extras.phoneVerified).toBe(true);
+    expect(sb.rows.profiles[0]).toMatchObject({ phone_verified: true });
+    expect(sb.rows.motorist_profiles[0]).toMatchObject({ phone_verified: true });
+  });
+
+  it("creates the account unverified when no proof is sent (skipped step)", async () => {
+    const sb = setup({});
+    const res = await post(motoristBody());
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.extras.phoneVerified).toBe(false);
+    expect(sb.rows.profiles[0].phone_verified).toBeUndefined();
+  });
+
+  it.each([
+    ["a proof issued for a different number", () => issuePhoneProof("+2348099999999").proof],
+    ["an expired proof", () => issuePhoneProof(PHONE, Date.now() - PHONE_PROOF_TTL_MS - 1000).proof],
+    ["a tampered proof", () => issuePhoneProof(PHONE).proof.slice(0, -3) + "AAA"],
+    ["garbage", () => "not-a-proof"],
+  ])("still creates the account, unverified, for %s", async (_name, make) => {
+    const sb = setup({});
+    const res = await post(motoristBody({ phoneProof: make() }));
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.extras.phoneVerified).toBe(false);
+    expect(sb.rows.profiles[0].phone_verified).toBeUndefined();
+  });
+
+  it("uses the number the account is created with, not one the client claims", async () => {
+    const sb = setup({});
+    // Proof is for PHONE but the submitted number is formatted differently: same canonical number.
+    const { proof } = issuePhoneProof(PHONE);
+    const res = await post(motoristBody({ phone: "0801 234 5678", phoneProof: proof }));
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.extras.phoneVerified).toBe(true);
+    expect(sb.rows.profiles[0].phone).toBe(PHONE);
+  });
+});

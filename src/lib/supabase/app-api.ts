@@ -91,6 +91,8 @@ export async function backendSignUp(input: {
   certificationFileName?: string;
   certificationFileDataUrl?: string;
   refCode?: string;
+  /** Signed proof that this phone received an SMS code at the signup step (optional). */
+  phoneProof?: string;
   /** Dual-role: bind new role to this session identity */
   access_token?: string;
 }): Promise<{
@@ -178,6 +180,7 @@ export async function backendSignUp(input: {
         docsStatus: input.docsStatus,
         certificationFileName: input.certificationFileName,
         certificationFileDataUrl: input.certificationFileDataUrl,
+        phoneProof: input.phoneProof,
         access_token: accessToken,
       }),
     });
@@ -212,6 +215,8 @@ export async function backendSignUp(input: {
         bvn?: string;
         ninVerified?: boolean;
         bvnVerified?: boolean;
+        /** True when the signup proof matched and the server stamped the phone verified. */
+        phoneVerified?: boolean;
       };
       warning?: string;
     };
@@ -311,6 +316,8 @@ export async function backendSignUp(input: {
       bvn: ex.bvn || (hasBvn ? input.bvn : undefined),
       ninVerified: hasNin,
       bvnVerified: hasBvn,
+      // Only ever true when the server confirmed the proof (never client-asserted).
+      phoneVerified: ex.phoneVerified === true ? true : undefined,
       identityVerifiedAt:
         hasNin && hasBvn ? new Date().toISOString() : undefined,
       docsStatus: input.docsStatus,

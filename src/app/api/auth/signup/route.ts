@@ -5,6 +5,8 @@ import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { sendSignupConfirmationEmail } from "@/lib/server/resend";
 import { canonicalPhone } from "@/lib/server/phone-match";
+import { markUserPhoneVerified } from "@/lib/server/otp/mark-phone-verified";
+import { verifyPhoneProof } from "@/lib/server/otp/phone-proof";
 import {
   detectMergeCandidatesForUser,
   runIdentitySync,
@@ -111,6 +113,12 @@ const bodySchema = z.object({
   certificationFileDataUrl: z.string().optional(),
   /** Referral code from ?ref= param in signup link */
   refCode: z.string().max(30).optional(),
+  /**
+   * Proof from /api/auth/otp/signup/verify that this phone received an SMS code.
+   * Optional and best-effort: an invalid/expired/other-number proof is ignored
+   * (the account is simply created unverified), never an error.
+   */
+  phoneProof: z.string().max(600).optional(),
   /**
    * When the user is already logged in (dual-role attach from menu),
    * pass their access_token so we extend THIS identity never create a
@@ -1075,13 +1083,25 @@ export async function POST(req: Request) {
     emailError = e instanceof Error ? e.message : "email failed";
   }
 
+  // Phone proven by SMS at the signup step: stamp it verified. Only a valid,
+  // unexpired proof for exactly this number counts; anything else is ignored.
+  let phoneVerified = false;
+  if (input.phoneProof && verifyPhoneProof(input.phoneProof, input.phone)) {
+    try {
+      await markUserPhoneVerified(supabase, userId);
+      phoneVerified = true;
+    } catch {
+      /* stays unverified; the user can verify later */
+    }
+  }
+
   // Still return success with profile if session missing client can auto-login
   if (signedIn.error || !signedIn.data.session || !signedIn.data.user) {
     await logSignupEvent(supabase, {
       ...eventBase,
       success: true,
       user_id: userId,
-      meta: { createdNew, session: false, emailSent, emailError },
+      meta: { createdNew, session: false, emailSent, emailError, phoneVerified },
     });
     return apiOk({
       userId,
@@ -1120,6 +1140,7 @@ export async function POST(req: Request) {
         bvn: hasBvn ? bvn : undefined,
         ninVerified: hasNin,
         bvnVerified: hasBvn,
+        phoneVerified,
       },
       warning:
         "Account created. Opening session failed try logging in once with the same email and password.",
@@ -1130,7 +1151,7 @@ export async function POST(req: Request) {
     ...eventBase,
     success: true,
     user_id: userId,
-    meta: { createdNew, session: true, emailSent, emailError },
+    meta: { createdNew, session: true, emailSent, emailError, phoneVerified },
   });
 
   return apiOk({
@@ -1173,6 +1194,7 @@ export async function POST(req: Request) {
       bvn: hasBvn ? bvn : undefined,
       ninVerified: hasNin,
       bvnVerified: hasBvn,
+      phoneVerified,
     },
   });
 }

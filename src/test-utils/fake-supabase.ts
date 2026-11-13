@@ -116,6 +116,7 @@ export class FakeQuery {
   filters: Array<{ col: string; val: unknown }> = [];
   notFilters: Array<{ col: string; op: string; val: unknown }> = [];
   likeFilters: Array<{ col: string; pattern: string }> = [];
+  isFilters: Array<{ col: string; val: unknown }> = [];
   orRaw: string[] = [];
   wantSelect = false;
   isSingle = false;
@@ -151,6 +152,11 @@ export class FakeQuery {
     this.filters.push({ col, val: vals });
     return this;
   }
+  /** PostgREST `.is(col, null)` => IS NULL (also matches a missing column). */
+  is(col: string, val: unknown) {
+    this.isFilters.push({ col, val });
+    return this;
+  }
   ilike(col: string, pattern: string) {
     this.likeFilters.push({ col, pattern });
     return this;
@@ -181,6 +187,13 @@ export class FakeQuery {
       if (nf.op === "is" && nf.val === null) {
         if (row[nf.col] == null) return false;
       } else if (row[nf.col] === nf.val) {
+        return false;
+      }
+    }
+    for (const { col, val } of this.isFilters) {
+      if (val === null) {
+        if (row[col] != null) return false;
+      } else if (row[col] !== val) {
         return false;
       }
     }
