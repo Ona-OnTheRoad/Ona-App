@@ -1,10 +1,8 @@
 import { randomInt } from "node:crypto";
 import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
-import {
-  isAfricaTalkingConfigured,
-  sendLoginOtpSms,
-} from "@/lib/server/africastalking";
+import { deliverOtp } from "@/lib/server/auth/otp-delivery";
+import { isSmsConfigured } from "@/lib/server/sms/send";
 import {
   rateLimitAsync,
   rateLimitUnavailableResponse,
@@ -78,7 +76,8 @@ export async function POST(req: Request) {
   // must come from a real SMS, otherwise "verified" would mean nothing.
   const demoAllowed =
     process.env.NODE_ENV !== "production" && isDemoOtpAllowed("phone");
-  const smsReady = isAfricaTalkingConfigured();
+  // Any configured SMS provider counts (the delivery layer fails over between them).
+  const smsReady = isSmsConfigured();
   if ((!smsReady && !demoAllowed) || !isPhoneProofConfigured()) {
     console.error("otp.signup.unavailable: SMS provider or proof secret not configured");
     return apiFail(
@@ -196,14 +195,18 @@ export async function POST(req: Request) {
 
     let delivery: "sms" | "demo" = "demo";
     if (smsReady) {
-      const sms = await sendLoginOtpSms({ to: phone, code, origin: appOrigin(req) });
+      const sms = await deliverOtp({
+        channel: "phone",
+        to: phone,
+        code,
+        origin: appOrigin(req),
+      });
       if (sms.ok) {
         delivery = "sms";
       } else {
         // Never claim "sent" when the gateway refused: log the cause (no code, masked number).
         console.error("otp.signup.sms_failed", {
           to: maskDest(phone),
-          statusCode: sms.statusCode,
           error: sms.error,
         });
         if (!demoAllowed) {

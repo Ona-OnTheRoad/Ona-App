@@ -12,9 +12,9 @@ vi.mock("@/lib/server/modules/rate-limit", () => ({
 }));
 vi.mock("@/lib/supabase/env", () => ({ isSupabaseAdminConfigured: () => true }));
 vi.mock("@/lib/supabase/server", () => ({ createServiceSupabase: () => sb.current }));
-vi.mock("@/lib/server/africastalking", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/server/africastalking")>()),
-  sendLoginOtpSms: (...args: unknown[]) => sms.send(...args),
+vi.mock("@/lib/server/auth/otp-delivery", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/server/auth/otp-delivery")>()),
+  deliverOtp: (...args: unknown[]) => sms.send(...args),
 }));
 
 import { POST as send } from "../send/route";
@@ -46,7 +46,7 @@ const otpRow = (code: string, over: Row = {}): Row => ({
   ...over,
 });
 
-const ENV = ["AT_USERNAME", "AT_API_KEY", "OTP_PHONE_DEMO_MODE", "NEXT_PUBLIC_APP_URL", "OTP_PROOF_SECRET", "SUPABASE_SERVICE_ROLE_KEY"];
+const ENV = ["AT_USERNAME", "AT_API_KEY", "OTP_DEMO_MODE", "NEXT_PUBLIC_OTP_DEMO_MODE", "NEXT_PUBLIC_APP_URL", "OTP_PROOF_SECRET", "SUPABASE_SERVICE_ROLE_KEY"];
 const saved: Record<string, string | undefined> = {};
 const goLive = () => {
   process.env.AT_USERNAME = "ona";
@@ -178,7 +178,8 @@ describe("POST /api/auth/otp/signup/send", () => {
   });
 
   it("the demo override can NOT make signup codes work in production", async () => {
-    process.env.OTP_PHONE_DEMO_MODE = "true";
+    process.env.OTP_DEMO_MODE = "true";
+    process.env.NEXT_PUBLIC_OTP_DEMO_MODE = "true";
     const res = await call(send, { phone: PHONE });
     expect(res.status).toBe(503);
     expect(otpRows()).toHaveLength(0);
@@ -293,9 +294,11 @@ describe("POST /api/auth/otp/signup/verify", () => {
     expect(before.status).toBe(400);
     expect((await before.json()).error.code).toBe("otp_missing");
     // Even with the emergency override on.
-    process.env.OTP_PHONE_DEMO_MODE = "true";
+    process.env.OTP_DEMO_MODE = "true";
+    process.env.NEXT_PUBLIC_OTP_DEMO_MODE = "true";
     expect((await call(verify, { phone: PHONE, code: "336699" })).status).toBe(400);
-    delete process.env.OTP_PHONE_DEMO_MODE;
+    delete process.env.OTP_DEMO_MODE;
+    delete process.env.NEXT_PUBLIC_OTP_DEMO_MODE;
     // Live, with a real code issued.
     goLive();
     seed({ profiles: [], phone_otps: [otpRow("482913")] });

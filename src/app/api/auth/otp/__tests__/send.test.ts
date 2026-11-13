@@ -35,9 +35,9 @@ vi.mock("@/lib/server/idempotency", () => ({
   },
 }));
 vi.mock("@/lib/supabase/env", () => ({ isSupabaseAdminConfigured: () => true }));
-vi.mock("@/lib/server/africastalking", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/server/africastalking")>()),
-  sendLoginOtpSms: (...args: unknown[]) => sms.send(...args),
+vi.mock("@/lib/server/auth/otp-delivery", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/server/auth/otp-delivery")>()),
+  deliverOtp: (...args: unknown[]) => sms.send(...args),
 }));
 vi.mock("@/lib/supabase/server", () => ({
   createServiceSupabase: () => ({
@@ -85,7 +85,7 @@ const call = (body: Record<string, unknown>) =>
 const phoneBody = { channel: "phone", target: "08031234567" };
 const storedHash = () => String(dbCfg.inserts.find((i) => i.table === "phone_otps")?.row.code_hash ?? "");
 
-const ENV = ["AT_USERNAME", "AT_API_KEY", "OTP_PHONE_DEMO_MODE", "NEXT_PUBLIC_APP_URL", "OTP_DEMO_MODE"];
+const ENV = ["AT_USERNAME", "AT_API_KEY", "NEXT_PUBLIC_APP_URL", "OTP_DEMO_MODE", "NEXT_PUBLIC_OTP_DEMO_MODE", "RESEND_API_KEY"];
 const saved: Record<string, string | undefined> = {};
 
 beforeEach(() => {
@@ -125,7 +125,8 @@ describe("POST /api/auth/otp/send, live SMS", () => {
     const body = (await res.json()).data;
     expect(body).toMatchObject({ sent: true, delivery: "sms", resendInSec: 30, expiresInSec: 600 });
     expect(sms.send).toHaveBeenCalledTimes(1);
-    const arg = sms.send.mock.calls[0][0] as { to: string; code: string; origin: string };
+    const arg = sms.send.mock.calls[0][0] as { channel: string; to: string; code: string; origin: string };
+    expect(arg.channel).toBe("phone");
     expect(arg.to).toBe("+2348031234567");
     expect(arg.code).toMatch(/^\d{6}$/);
     expect(arg.code).not.toBe("336699");
@@ -135,13 +136,15 @@ describe("POST /api/auth/otp/send, live SMS", () => {
     expect(storedHash()).toHaveLength(64);
   });
 
-  it("never reports success when the SMS gateway refuses, and voids the unusable code", async () => {
+  it("never reports success when the SMS gateway refuses, and stores no unusable code", async () => {
     goLive();
-    sms.send.mockResolvedValue({ ok: false, error: "InsufficientBalance", statusCode: 405 });
+    sms.send.mockResolvedValue({ ok: false, error: "InsufficientBalance" });
     const res = await call(phoneBody);
-    expect(res.status).toBe(400);
-    expect((await res.json()).error.message).toMatch(/couldn't send the SMS/i);
-    expect(dbCfg.updates.some((u) => u.table === "phone_otps" && u.patch.consumed_at)).toBe(true);
+    expect(res.status).toBe(502);
+    const body = await res.json();
+    expect(body.error.code).toBe("otp_delivery_failed");
+    // Delivery happens before storing: nothing is rotated or left behind.
+    expect(dbCfg.inserts).toHaveLength(0);
     // The ops log has the cause but never the code or the full number.
     const logged = JSON.stringify(vi.mocked(console.error).mock.calls);
     expect(logged).toContain("InsufficientBalance");
@@ -184,7 +187,8 @@ describe("POST /api/auth/otp/send, live SMS", () => {
 });
 
 describe("POST /api/auth/otp/send, demo / rollout behaviour", () => {
-  it("before go-live (no Africa's Talking config) still issues the demo code, nothing is sent", async () => {
+  it("with demo explicitly switched on and no SMS provider, issues the demo code and sends nothing", async () => {
+    process.env.OTP_DEMO_MODE = "true";
     const res = await call(phoneBody);
     expect(res.status).toBe(200);
     expect((await res.json()).data.delivery).toBe("demo");
@@ -192,16 +196,16 @@ describe("POST /api/auth/otp/send, demo / rollout behaviour", () => {
     expect(storedHash()).toHaveLength(64);
   });
 
-  it("fails clearly (not silently) when live SMS is required but not configured", async () => {
-    process.env.OTP_PHONE_DEMO_MODE = "false";
+  it("fails clearly (not silently) in production when no provider is configured and demo is off", async () => {
     const res = await call(phoneBody);
-    expect(res.status).toBe(400);
-    expect((await res.json()).error.message).toMatch(/temporarily unavailable/i);
+    expect(res.status).toBe(503);
+    expect((await res.json()).error.code).toBe("otp_delivery_unavailable");
     expect(dbCfg.inserts).toHaveLength(0);
+    expect(sms.send).not.toHaveBeenCalled();
   });
 
-  it("leaves the email channel on the demo code even when SMS is live", async () => {
-    goLive();
+  it("keeps the email channel on the demo code only while demo is switched on and no email provider exists", async () => {
+    process.env.OTP_DEMO_MODE = "true";
     dbCfg.profiles = [{ id: "u1", email: "ada@example.com", is_active: true }];
     const res = await call({ channel: "email", target: "ada@example.com" });
     expect(res.status).toBe(200);

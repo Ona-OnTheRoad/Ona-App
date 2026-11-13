@@ -46,7 +46,9 @@ export function verifyBvnApi(bvn: string): Promise<NgIdVerifyResponse> {
 }
 
 /**
- * Run optional NIN + BVN API checks before completing signup.
+ * Format pre-check before signup is submitted. The real NIN/BVN lookup now
+ * runs once, on the server, inside POST /api/auth/signup, which rejects the
+ * signup with a clear message when the provider refuses a number.
  * Empty fields are skipped (motorist optional).
  */
 export async function verifySignupIds(input: {
@@ -57,50 +59,17 @@ export async function verifySignupIds(input: {
   const nin = input.nin?.replace(/\D/g, "") ?? "";
   const bvn = input.bvn?.replace(/\D/g, "") ?? "";
 
-  if (input.requireBoth) {
-    if (nin.length !== 11) {
-      return {
-        ok: false,
-        message: "NIN must be exactly 11 digits and verified.",
-      };
-    }
-    if (bvn.length !== 11) {
-      return {
-        ok: false,
-        message: "BVN must be exactly 11 digits and verified.",
-      };
-    }
+  if (input.requireBoth && nin.length !== 11) {
+    return { ok: false, message: "NIN must be exactly 11 digits." };
   }
-
-  if (nin) {
-    if (nin.length !== 11) {
-      return { ok: false, message: "NIN must be exactly 11 digits." };
-    }
-    const r = await verifyNinApi(nin);
-    if (!r.ok) {
-      return {
-        ok: false,
-        message:
-          r.message ||
-          "NIN verification failed. Check the number and try again.",
-      };
-    }
+  if (input.requireBoth && bvn.length !== 11) {
+    return { ok: false, message: "BVN must be exactly 11 digits." };
   }
-
-  if (bvn) {
-    if (bvn.length !== 11) {
-      return { ok: false, message: "BVN must be exactly 11 digits." };
-    }
-    const r = await verifyBvnApi(bvn);
-    if (!r.ok) {
-      return {
-        ok: false,
-        message:
-          r.message ||
-          "BVN verification failed. Check the number and try again.",
-      };
-    }
+  if (nin && nin.length !== 11) {
+    return { ok: false, message: "NIN must be exactly 11 digits." };
   }
-
+  if (bvn && bvn.length !== 11) {
+    return { ok: false, message: "BVN must be exactly 11 digits." };
+  }
   return { ok: true };
 }

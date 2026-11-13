@@ -41,7 +41,7 @@ Then **hard-refresh** the browser (or clear site data) so old local vault/sessio
 2. Choose **Customer** or **Repair Pro**
 3. Enter the **exact phone number used at signup**
 4. **Send code** → enter the SMS code  
-   - Until real SMS is live, the demo OTP code still works (not shown in UI; see `src/lib/auth/demo-otp.ts`, turn off with `OTP_DEMO_MODE=false` and `NEXT_PUBLIC_OTP_DEMO_MODE=false`)
+   - Until real SMS is live, the demo OTP code still works (not shown in UI; see `src/lib/auth/demo-otp.ts`, on a hosted build it works only while `OTP_DEMO_MODE=true` or `NEXT_PUBLIC_OTP_DEMO_MODE=true` is set)
 
 Wrong phone → *“This phone is not registered. Use the exact number from signup.”*
 

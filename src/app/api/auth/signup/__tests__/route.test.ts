@@ -4,6 +4,11 @@ import { FakeQuery, FakeSupabase, type AuthResult, type Row } from "@/test-utils
 const mocks = vi.hoisted(() => ({
   service: vi.fn(), getUser: vi.fn(), anonSignIn: vi.fn(), serviceSignIn: vi.fn(),
   createUser: vi.fn(), identitySync: vi.fn(), mergeDetect: vi.fn(), sendMail: vi.fn(),
+  verifyNin: vi.fn(), verifyBvn: vi.fn(),
+}));
+vi.mock("@/lib/server/prembly", async (original) => ({
+  ...(await original<typeof import("@/lib/server/prembly")>()),
+  verifyNinWithPrembly: mocks.verifyNin, verifyBvnWithPrembly: mocks.verifyBvn,
 }));
 vi.mock("@supabase/supabase-js", () => ({
   createClient: () => ({ auth: { getUser: mocks.getUser, signInWithPassword: mocks.anonSignIn } }),
@@ -209,6 +214,88 @@ describe("POST /api/auth/signup service-client session isolation", () => {
     expect(mocks.createUser).not.toHaveBeenCalled();
     expect(accountWrites(sb)).toEqual([]);
     expect(sb.rows.profiles).toHaveLength(1);
+  });
+});
+
+describe("POST /api/auth/signup server-side NIN/BVN check", () => {
+  const NIN = "12345678901";
+  const BVN = "22345678901";
+  const live = (fullName: string) => ({
+    ok: true, provider: "prembly", mode: "live", reference: "ref-1",
+    fullName, firstName: fullName.split(" ")[0], lastName: fullName.split(" ").at(-1),
+  });
+  const rejected = { ok: false, provider: "prembly", mode: "live", message: "no record", code: "01" };
+
+  it("stores the lookup as evidence and does not mark a new motorist verified", async () => {
+    const sb = setup({});
+    mocks.verifyNin.mockResolvedValue(live("Ada User"));
+    mocks.verifyBvn.mockResolvedValue(live("Chidi Bello"));
+    const res = await post(motoristBody({ nin: NIN, bvn: BVN }));
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(mocks.verifyNin).toHaveBeenCalledWith(NIN);
+    expect(mocks.verifyBvn).toHaveBeenCalledWith(BVN);
+    expect(body.data.extras).toMatchObject({ ninVerified: false, bvnVerified: false });
+    const row = sb.rows.motorist_profiles[0];
+    expect(row).toMatchObject({ nin_verified: false, bvn_verified: false, identity_verified_at: null });
+    const lookup = (row.gov_id_meta as { idLookup: Record<string, Record<string, unknown>> }).idLookup;
+    expect(lookup.nin).toMatchObject({ status: "verified", reference: "ref-1", matchedName: "Ada User", nameMatch: { profile: "match" } });
+    expect(lookup.bvn).toMatchObject({ status: "verified", nameMatch: { profile: "mismatch" } });
+    expect(JSON.stringify(lookup)).not.toContain(NIN);
+    expect(JSON.stringify(lookup)).not.toContain(BVN);
+  });
+
+  it("does not mark a new Repair Pro verified from the digits", async () => {
+    const sb = setup({});
+    mocks.verifyNin.mockResolvedValue(live("Ada User"));
+    const res = await post(proBody({ nin: NIN }));
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.data.extras).toMatchObject({ ninVerified: false, bvnVerified: false });
+    expect(sb.rows.repair_pro_profiles[0]).toMatchObject({ nin_verified: false, bvn_verified: false, verified: false });
+    expect(sb.rows.repair_pro_profiles[0].gov_id_meta).toMatchObject({ idLookup: { nin: { status: "verified" } } });
+  });
+
+  it("rejects the signup before any account exists when the provider refuses the number", async () => {
+    const sb = setup({});
+    mocks.verifyNin.mockResolvedValue(rejected);
+    const res = await post(motoristBody({ nin: NIN }));
+    const body = await res.json();
+    expect(res.status).toBe(422);
+    expect(body.error.code).toBe("id_verification_failed");
+    expect(body.error.message).not.toContain(NIN);
+    expect(mocks.createUser).not.toHaveBeenCalled();
+    expect(accountWrites(sb)).toEqual([]);
+    expect(successEvents(sb)).toHaveLength(0);
+  });
+
+  it("returns 503 and creates nothing when the provider cannot be asked", async () => {
+    const sb = setup({});
+    mocks.verifyBvn.mockResolvedValue({ ...rejected, code: "NOT_CONFIGURED" });
+    const res = await post(motoristBody({ bvn: BVN }));
+    expect(res.status).toBe(503);
+    expect((await res.json()).error.code).toBe("id_verification_unavailable");
+    expect(mocks.createUser).not.toHaveBeenCalled();
+    expect(accountWrites(sb)).toEqual([]);
+    expect(mocks.verifyNin).not.toHaveBeenCalled();
+  });
+
+  it("refuses to re-attach an existing motorist role, leaving a Care approval untouched", async () => {
+    const approvedAt = "2026-10-01T00:00:00.000Z";
+    const approved = {
+      user_id: "user-1", identity_review_status: "approved", identity_verified_at: approvedAt,
+      nin_verified: true, bvn_verified: true,
+    };
+    const sb = setup({
+      profiles: [{ id: "user-1", email: EMAIL, phone: PHONE, role: "repair_pro", full_name: "Ada User", avatar_url: null, is_active: true }],
+      repair_pro_profiles: [{ user_id: "user-1", primary_service: "mechanic" }],
+      motorist_profiles: [{ ...approved }],
+    });
+
+    const res = await post(motoristBody({ access_token: "valid-access-token" }));
+    expect(res.status).toBe(409);
+    expect((await res.json()).error.code).toBe("role_exists");
+    expect(sb.rows.motorist_profiles).toEqual([approved]);
   });
 });
 

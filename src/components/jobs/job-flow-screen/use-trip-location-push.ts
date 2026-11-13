@@ -73,9 +73,9 @@ export function useTripLocationPush(
     const sample = () => {
       if (document.hidden) return;
       void getCurrentPosition({
-        enableHighAccuracy: false,
-        maximumAge: 25_000,
-        timeout: 6000,
+        enableHighAccuracy: true,
+        maximumAge: 15_000,
+        timeout: 10000,
       })
         .then((p) => push(p.coords.latitude, p.coords.longitude))
         .catch(() => undefined);

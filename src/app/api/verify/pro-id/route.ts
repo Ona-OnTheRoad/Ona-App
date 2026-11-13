@@ -1,7 +1,12 @@
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { mergeIdLookup } from "@/lib/server/identity/id-lookup";
 import { protectProClientPatch } from "@/lib/server/identity/protect-approval";
+import {
+  idKindForGovId,
+  lookupForSubmission,
+} from "@/lib/server/identity/submission-lookup";
 import {
   getSupabaseAnonKey,
   getSupabaseUrl,
@@ -77,7 +82,7 @@ export async function POST(req: Request) {
     const { data: existing } = await admin
       .from("repair_pro_profiles")
       .select(
-        "user_id, primary_service, status, gov_id_review_status, verified, nin_verified, bvn_verified, tier2_approved_at, pipeline_status, rejection_reason, pipeline_notes, docs_status, gov_id_meta",
+        "user_id, primary_service, status, gov_id_review_status, verified, nin_verified, bvn_verified, tier2_approved_at, pipeline_status, rejection_reason, pipeline_notes, docs_status, gov_id_meta, bank_account_name",
       )
       .eq("user_id", userId)
       .maybeSingle();
@@ -116,15 +121,24 @@ export async function POST(req: Request) {
       patch.nin_verified = false;
       patch.bvn_verified = false;
       patch.verified = false;
-      patch.gov_id_meta = {
-        govIdKind: parsed.data.govIdKind || null,
-        primaryId: num,
-        primaryLast4: last4(num),
-        hasPhoto: Boolean(parsed.data.govIdFrontUrl),
-        photoStored: Boolean(front),
-        submittedAt: now,
-        source: "pro_onboarding",
-      };
+      const lookups = await lookupForSubmission(
+        admin,
+        userId,
+        [{ kind: idKindForGovId(parsed.data.govIdKind, num), number: num }],
+        existing?.bank_account_name as string | null | undefined,
+      );
+      patch.gov_id_meta = mergeIdLookup(
+        {
+          govIdKind: parsed.data.govIdKind || null,
+          primaryId: num,
+          primaryLast4: last4(num),
+          hasPhoto: Boolean(parsed.data.govIdFrontUrl),
+          photoStored: Boolean(front),
+          submittedAt: now,
+          source: "pro_onboarding",
+        },
+        lookups,
+      );
       patch.pipeline_status = "pending_verification";
       patch.submitted_at = now;
       patch.rejection_reason = null;
@@ -132,31 +146,37 @@ export async function POST(req: Request) {
     }
 
     if (kind === "nin") {
-      const nin = (parsed.data.nin || "").replace(/\D/g, "");
-      if (nin.length !== 11) return apiFail("NIN/BVN must be 11 digits", 400);
-      patch.nin_encrypted = nin;
-      patch.bvn_encrypted = nin;
-      patch.nin_last4 = last4(nin);
-      patch.bvn_last4 = last4(nin);
-      patch.bank_id_number = nin;
+      // Sent only by the onboarding "BVN · Tier 3" step: the number is a BVN,
+      // so it must not overwrite the NIN / primary ID fields.
+      const bvn = (parsed.data.nin || "").replace(/\D/g, "");
+      if (bvn.length !== 11) return apiFail("BVN must be 11 digits", 400);
+      patch.bvn_encrypted = bvn;
+      patch.bvn_last4 = last4(bvn);
+      patch.bank_id_number = bvn;
       if (!patch.gov_id_review_status) {
         patch.gov_id_review_status = "submitted";
         patch.gov_id_submitted_at = now;
       }
-      patch.nin_verified = false;
       patch.bvn_verified = false;
       patch.pipeline_status = "pending_verification";
       patch.submitted_at = now;
-      const metaExtra = {
-        nin: nin,
-        ninLast4: last4(nin),
-        ninSubmittedAt: now,
-      };
-      const prev =
-        existing?.gov_id_meta && typeof existing.gov_id_meta === "object"
-          ? (existing.gov_id_meta as Record<string, unknown>)
-          : {};
-      patch.gov_id_meta = { ...prev, ...metaExtra };
+      const lookups = await lookupForSubmission(
+        admin,
+        userId,
+        [{ kind: "bvn", number: bvn }],
+        existing?.bank_account_name as string | null | undefined,
+      );
+      patch.gov_id_meta = mergeIdLookup(
+        {
+          ...(existing?.gov_id_meta && typeof existing.gov_id_meta === "object"
+            ? (existing.gov_id_meta as Record<string, unknown>)
+            : {}),
+          bankId: bvn,
+          bankLast4: last4(bvn),
+          bvnSubmittedAt: now,
+        },
+        lookups,
+      );
     }
 
     if (kind === "skill_docs") {

@@ -2,17 +2,19 @@
 
 ## How the switch works
 
-Going live is **configuration only**. Deploy the code first; nothing changes until the
-Africa's Talking variables are set on the server.
+Real delivery is **configuration only**, and the demo code is **opt-in** (see `src/lib/auth/demo-otp.ts`
+and `src/lib/server/auth/otp-delivery.ts`). The same rule applies to phone and email.
 
-| State | Phone code behaviour |
+| State | Code behaviour |
 |---|---|
-| `AT_USERNAME` / `AT_API_KEY` **not** set | Unchanged: demo code `336699` is still accepted (so a deploy is safe). |
-| Both **set** (production) | A random 6-digit code is sent by SMS. The demo code is **rejected**. |
-| Local / `next dev` | Demo code always works. No SMS needed to develop. |
+| Provider configured (`AT_*` / `TERMII_*` for SMS, `RESEND_API_KEY` for email) | A random 6-digit code is sent. |
+| No provider, `OTP_DEMO_MODE` / `NEXT_PUBLIC_OTP_DEMO_MODE` exactly `true` | Demo code `336699` is stored and accepted (staging only). |
+| No provider, demo flags unset | The send fails with 503 `otp_delivery_unavailable`. No code is issued. |
+| Provider configured but a send fails, demo off | 502 `otp_delivery_failed`. Nothing is stored, so the user's current code is not rotated. |
+| Local / `next dev` | Demo code always works. |
 
-Email OTP is **not** affected: it has no delivery provider yet and keeps the demo code
-(see "Not covered yet").
+**Production must not set the demo flags** once real delivery is on: while either is `true` the demo
+code is accepted for any account. Remove both (or set them to `false`) at go-live.
 
 ### Environment variables (server)
 
@@ -22,7 +24,7 @@ Email OTP is **not** affected: it has no delivery provider yet and keeps the dem
 | `AT_API_KEY` | yes | From the Africa's Talking dashboard. Server only, never `NEXT_PUBLIC_*` |
 | `AT_SENDER_ID` | recommended | Approved alphanumeric sender (e.g. `ONA`). See below |
 | `NEXT_PUBLIC_APP_URL` | recommended | `https://<your-domain>`. Used for Chrome auto-fill (see below) |
-| `OTP_PHONE_DEMO_MODE` | optional | `true` / `false` forces the phone demo code on/off, overriding the rule above (emergency rollback: `true`) |
+| `OTP_DEMO_MODE` / `NEXT_PUBLIC_OTP_DEMO_MODE` | avoid in production | Exactly `true` turns the demo code on. Leave unset in production |
 | `OTP_PROOF_SECRET` | optional | Signs the signup phone proof. Falls back to `SUPABASE_SERVICE_ROLE_KEY`; set a dedicated value to rotate it independently |
 | `OTP_SIGNUP_DAILY_BUDGET` | optional | Max signup SMS per day across the whole app (default 3000). Circuit breaker against SMS pumping |
 
@@ -41,17 +43,15 @@ Email OTP is **not** affected: it has no delivery provider yet and keeps the dem
 
 ## Rollout
 
-1. Deploy this change. Behaviour is unchanged (no AT variables yet).
+1. Deploy this change. With no provider and no demo flag, code requests fail with 503 until a provider is set.
 2. On a preview/staging deployment set the **sandbox** variables, sign in with a registered number,
    confirm the message appears in the simulator and the code verifies.
-3. Production: set `AT_USERNAME`, `AT_API_KEY`, `AT_SENDER_ID`, `NEXT_PUBLIC_APP_URL`; redeploy.
+3. Production: set `AT_USERNAME`, `AT_API_KEY`, `AT_SENDER_ID`, `NEXT_PUBLIC_APP_URL`, and **remove `OTP_DEMO_MODE` / `NEXT_PUBLIC_OTP_DEMO_MODE`**; redeploy.
 4. Smoke test with a real number on each network: login, Tier 1 phone verification, the
    dual-role switch code. Confirm `336699` is now **rejected**.
-5. Watch server logs for `otp.sms_failed` (carries the Africa's Talking status, never the code;
-   the number is masked) and `otp.sms_unavailable`.
+5. Watch server logs for `[otp/send] phone delivery failed` and `otp.signup.sms_failed` (the cause, never the code).
 
-**Rollback:** set `OTP_PHONE_DEMO_MODE=true` (demo code back on) or remove the AT variables. No
-redeploy of code is needed beyond picking up the environment.
+**Rollback:** fix or restore the provider variables. Turning the demo flags back on re-opens the demo code for every account, so only do that on a non-production environment.
 
 ## What users get
 
@@ -77,7 +77,7 @@ skippable ("Skip for now"); a skipped phone is verified later from the profile a
   the phone verified **only** if it is valid and matches the submitted number. A missing, expired,
   tampered or other-number proof is ignored: the account is simply created unverified. It can never
   block signup.
-- **Production never uses the demo code here**, even with `OTP_PHONE_DEMO_MODE=true`: a "verified" phone
+- **Production never uses the demo code here**, even with the demo flags on: a "verified" phone
   must come from a real SMS. Until Africa's Talking is configured the screen honestly says
   "Phone verification isn't available right now" and the user skips, exactly as before go-live. The demo
   code works only in local development.
@@ -101,9 +101,9 @@ These were found while auditing and are **separate pieces of work**; none is mad
 change, but they matter before you call OTP "done". (Signup phone verification, previously item 2's
 sibling, is now built: see above.)
 
-1. **Email OTP is demo-only.** `channel: "email"` never sends anything and always uses `336699`.
-   Wire Resend (`src/lib/server/resend.ts`) the same way, then switch email off the legacy rule.
-   Affected: email login, forgot password, bank-change identity check (`/api/security/verify-identity`).
+1. ~~**Email OTP is demo-only.**~~ Login/verify email codes are now delivered by Resend when
+   `RESEND_API_KEY` is set. Still demo-only: the bank-change identity check
+   (`/api/security/verify-identity`) and `contact_change_requests` (item 4), which never deliver a code.
 2. **Changing to a NEW phone number cannot send a code.** `otp/send` only accepts numbers that already
    have an account, so the step "send code to your new phone" returns *not registered*. Needs a
    `purpose: "change_phone"` mode (authenticated, number must be unused, rate-limited per user). The
@@ -116,10 +116,9 @@ sibling, is now built: see above.)
    session. Use `/api/auth/otp/profile-verify` there.
 6. **2FA** in Settings is stored in the browser only and is not enforced at login. The SMS step now
    sends/checks a real code, but the feature is not a real second factor yet.
-7. **Admin unlock.** `src/lib/server/modules/sensitive-unlock.ts` signs unlock tokens with a built-in
-   fallback secret and the unlock password defaults to `336699` unless the environment overrides them.
-   Set `ADMIN_UNLOCK_SIGNING_SECRET` and `ADMIN_SENSITIVE_PASSWORD` in production, then remove the
-   fallback.
+7. ~~**Admin unlock** used a built-in fallback signing secret.~~ Removed: in production the unlock token
+   now requires `ADMIN_UNLOCK_SIGNING_SECRET`, `ADMIN_FIELD_ENCRYPTION_KEY` or `ADMIN_SENSITIVE_PASSWORD`
+   and throws otherwise. Make sure at least one is set on the host.
 8. The code hash falls back to the constant `"om"` when `SUPABASE_SERVICE_ROLE_KEY` is missing; use a
    dedicated `OTP_HASH_SECRET`.
 9. Add Africa's Talking **delivery reports** (callback URL) if you want to see delivered/failed

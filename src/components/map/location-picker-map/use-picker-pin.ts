@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type RefObject } from "react";
 import { reverseGeocodeLatLng } from "@/lib/google-maps";
-import { DEFAULT_USER_LOCATION } from "@/lib/data/user-location";
+import { readInitialLocation } from "@/lib/store/storage";
 import { knownPlaceToPick, type KnownPlace } from "@/lib/known-places";
 import { parseGeocodeResult } from "./parse-geocode-result";
 import type { PickedLocation } from "./types";
@@ -15,9 +15,15 @@ export function usePickerPin({
   onChange: (loc: PickedLocation) => void;
   mapRef: RefObject<google.maps.Map | null>;
 }) {
-  const [center, setCenter] = useState({
-    lat: value?.lat ?? DEFAULT_USER_LOCATION.coordinates.lat,
-    lng: value?.lng ?? DEFAULT_USER_LOCATION.coordinates.lng,
+  const [center, setCenter] = useState(() => {
+    if (value?.lat && value?.lng) {
+      return { lat: value.lat, lng: value.lng };
+    }
+    const initial = readInitialLocation();
+    return {
+      lat: initial.coordinates.lat,
+      lng: initial.coordinates.lng,
+    };
   });
   const [pin, setPin] = useState(center);
   const [query, setQuery] = useState(value?.label ?? "");
@@ -126,7 +132,7 @@ export function usePickerPin({
         setStatus("We could not get live location. Move the pin or search.");
         setBusy(false);
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 5_000 },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
     );
   }, [placePin]);
 

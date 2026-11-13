@@ -5,6 +5,7 @@ import {
   requireAdmin,
 } from "@/lib/server/admin-auth";
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { idLookupSummary } from "@/lib/server/identity/id-lookup";
 import { buildDualRoleMeta } from "@/lib/dual-role";
 import { bvnOnFile as hasBvnOnFile } from "@/lib/server/identity/bvn-on-file";
 import { createServiceSupabase } from "@/lib/supabase/server";
@@ -291,6 +292,8 @@ export async function GET(req: Request) {
             rejection_reason: m.identity_rejection_reason,
             nin_verified: Boolean(m.nin_verified),
             bvn_verified: Boolean(m.bvn_verified),
+            // Provider lookup evidence; name_mismatch flags a holder-name mismatch.
+            id_lookup: idLookupSummary(meta),
             identity_verified_at: m.identity_verified_at,
             checklist: asMeta(m.review_checklist),
             meta,

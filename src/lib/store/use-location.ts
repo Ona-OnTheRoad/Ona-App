@@ -46,6 +46,8 @@ export function useLocationAndRadius(
   const lastGeocodeAt = useRef(0);
   /** Last full address string from geocode (for throttle) */
   const lastFullAddressRef = useRef("");
+  /** Best accuracy (meters) recorded for the current GPS fix */
+  const lastAccuracyRef = useRef<number>(Infinity);
 
   const applyGpsFix = useCallback(
     (pos: GeolocationPosition, silent = false) => {
@@ -54,6 +56,22 @@ export function useLocationAndRadius(
         if (!silent) setIsLocating(false);
         return;
       }
+      const accuracy = pos.coords.accuracy;
+      // Precision guard: if we already have an accurate fix (<= 250m) and an incoming
+      // reading is a coarse cellular/IP estimate (> 2000m), don't downgrade our location.
+      if (
+        Number.isFinite(accuracy) &&
+        lastAccuracyRef.current <= 250 &&
+        accuracy > 2000
+      ) {
+        if (!silent) setIsLocating(false);
+        return;
+      }
+
+      if (Number.isFinite(accuracy)) {
+        lastAccuracyRef.current = Math.min(lastAccuracyRef.current, accuracy);
+      }
+
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
       // Keep coords immediately; keep previous full address until reverse-geocode returns
@@ -126,6 +144,7 @@ export function useLocationAndRadius(
 
   const retryLocation = useCallback(() => {
     manualPinRef.current = false;
+    lastAccuracyRef.current = Infinity; // Reset accuracy guard on explicit user action
     setIsLocating(true);
     setLocationError(null);
     if (typeof navigator === "undefined" || !navigator.geolocation) {
@@ -157,31 +176,6 @@ export function useLocationAndRadius(
     let cancelled = false;
     setIsLocating(true);
 
-    // Boot/refresh pull low-accuracy, patient, and SILENT when the user
-    // already has a usable (cached) location. A 5s timeout + error-on-reload
-    // was the "Location timed out / Retry" that appeared even though GPS was
-    // fine and a cached fix already existed.
-    const pull = (surface: boolean) => {
-      if (cancelled || manualPinRef.current) return;
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          if (cancelled) return;
-          applyGpsFix(pos, true);
-          setIsLocating(false);
-        },
-        (err) => {
-          if (cancelled) return;
-          setIsLocating(false);
-          if (surface) setLocationError(friendlyGeolocationError(err));
-        },
-        {
-          enableHighAccuracy: false,
-          timeout: GPS_BOOT_TIMEOUT_MS,
-          maximumAge: 180_000,
-        },
-      );
-    };
-
     let hasUsableLocation = false;
     try {
       hasUsableLocation = Boolean(localStorage.getItem(LAST_GPS_KEY));
@@ -189,21 +183,104 @@ export function useLocationAndRadius(
       /* */
     }
 
-    // First pull surfaces an error ONLY when nothing usable is cached yet
-    // (explicit "Retry" always surfaces regardless, via retryLocation).
-    pull(
-      shouldSurfaceLocationError({
-        silentRequest: true,
-        hasUsableLocation,
-      }),
-    );
+    const surfaceError = shouldSurfaceLocationError({
+      silentRequest: true,
+      hasUsableLocation,
+    });
+
+    // Progressive GPS acquisition on boot:
+    // Uses watchPosition with enableHighAccuracy: true so the device GPS sensor warms up.
+    // As soon as a fix with good accuracy (<= 60m) arrives, we stop watching to conserve battery.
+    let watchId: number | null = null;
+    let fallbackTimer: number | null = null;
+
+    const stopWatch = () => {
+      if (watchId != null && typeof navigator !== "undefined" && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+      if (fallbackTimer != null) {
+        window.clearTimeout(fallbackTimer);
+        fallbackTimer = null;
+      }
+    };
+
+    try {
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          if (cancelled || manualPinRef.current) {
+            stopWatch();
+            return;
+          }
+          applyGpsFix(pos, true);
+          setIsLocating(false);
+          // If we achieved strong GPS accuracy (<= 60m), stop the continuous watch
+          if (pos.coords.accuracy && pos.coords.accuracy <= 60) {
+            stopWatch();
+          }
+        },
+        (err) => {
+          if (cancelled) return;
+          setIsLocating(false);
+          if (surfaceError) setLocationError(friendlyGeolocationError(err));
+          stopWatch();
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: GPS_BOOT_TIMEOUT_MS,
+          maximumAge: 10_000,
+        },
+      );
+
+      // Failsafe cap: clear active watch after boot timeout
+      fallbackTimer = window.setTimeout(() => {
+        stopWatch();
+        if (!cancelled) setIsLocating(false);
+      }, GPS_BOOT_TIMEOUT_MS);
+    } catch {
+      // Fallback if watchPosition is unsupported or throws in sandbox
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (cancelled || manualPinRef.current) return;
+          applyGpsFix(pos, true);
+          setIsLocating(false);
+        },
+        (err) => {
+          if (cancelled) return;
+          setIsLocating(false);
+          if (surfaceError) setLocationError(friendlyGeolocationError(err));
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: GPS_BOOT_TIMEOUT_MS,
+          maximumAge: 10_000,
+        },
+      );
+    }
+
+    // Periodic silent refresh using high accuracy with longer maximumAge to preserve battery
     const intervalId = window.setInterval(() => {
       if (document.hidden || manualPinRef.current) return;
-      // Background refresh never surfaces errors (we already have a fix)
-      pull(false);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (cancelled || manualPinRef.current) return;
+          applyGpsFix(pos, true);
+          setIsLocating(false);
+        },
+        () => {
+          if (!cancelled) setIsLocating(false);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: GPS_BOOT_TIMEOUT_MS,
+          maximumAge: 30_000,
+        },
+      );
     }, LOCATION_REFRESH_MS);
+
     return () => {
       cancelled = true;
+      stopWatch();
       window.clearInterval(intervalId);
     };
   }, [
