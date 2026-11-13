@@ -104,14 +104,21 @@ sibling, is now built: see above.)
 1. ~~**Email OTP is demo-only.**~~ Login/verify email codes are now delivered by Resend when
    `RESEND_API_KEY` is set. Still demo-only: the bank-change identity check
    (`/api/security/verify-identity`) and `contact_change_requests` (item 4), which never deliver a code.
-2. **Changing to a NEW phone number cannot send a code.** `otp/send` only accepts numbers that already
-   have an account, so the step "send code to your new phone" returns *not registered*. Needs a
-   `purpose: "change_phone"` mode (authenticated, number must be unused, rate-limited per user). The
-   signup proof mechanism (`src/lib/server/otp/`) is the model to reuse.
-3. **`/api/profile/update` accepts a new `phone` without any OTP proof.** Require a recently consumed
-   OTP for that exact number before applying the change.
-4. **`contact_change_requests`** (`security-store.ts`) stores codes in plain text, never delivers
-   them and never expires them. Either retire it or route it through `phone_otps`.
+2. ~~**Changing to a NEW phone number or email cannot send a code.**~~ Fixed. Settings now uses
+   `POST /api/security/change-contact/send-code` (authenticated, needs a fresh identity proof, target must not
+   belong to another account, delivered through the same SMS/email layer, stored hashed, 10 min, 5 attempts,
+   30 s resend, 5 codes/user/day). The demo code never authorises a contact change in production.
+3. ~~**`/api/profile/update` and `/api/security/action` accepted a new phone/email without any proof.**~~ Fixed.
+   `change_phone` / `change_email` now require an identity proof (issued by `/api/security/verify-identity`,
+   10 min, bound to the user) **and** the code sent to that exact new contact. Duplicates use the same
+   last-10-digits rule as signup and fail closed. A changed phone is marked verified. `/api/profile/update`
+   no longer writes a phone that differs from the stored one (it only fills in a missing phone).
+   Also fixed: `verify-identity` demanded a guarantor from users who have none (every customer), had no
+   attempt limit, and is now rate limited per user.
+4. ~~**`contact_change_requests`** stored codes in plain text and `/api/security/contact-change` was
+   unauthenticated.~~ Locked down: sign-in required, own requests only, codes redacted from every response
+   (including the admin API). Nothing in the app creates these requests (Settings uses the flow above),
+   so the table and its admin tab are effectively legacy: consider retiring them.
 5. **Customer Tier 1 verification calls `/api/auth/otp/verify`** (the login route), which mints a new
    session. Use `/api/auth/otp/profile-verify` there.
 6. **2FA** in Settings is stored in the browser only and is not enforced at login. The SMS step now
@@ -134,3 +141,20 @@ sibling, is now built: see above.)
     same last-10-digits rule as before, so `0803…`, `234803…` and `0803 123 4567` all collide) and fails
     closed with a retryable error if the lookup itself fails. Signup and the signup-OTP endpoints now use
     the same lookup, so a number that passes verification is never rejected as a duplicate afterwards.
+
+### Bank account change (payout / refund destination)
+
+Changing a SAVED bank account now needs a code sent to the phone on the account:
+
+1. `POST /api/security/change-bank/send-code`: the server reads the phone from the account (the browser
+   cannot choose it), delivers through the same SMS layer, stores the code hashed in the `bank:` namespace
+   (10 min, 5 attempts, 30 s resend, 5 codes/user/day). The demo code never works here in production.
+2. `POST /api/security/change-bank/verify-code`: checks the code, returns a 10-minute `bankProof`.
+3. `POST /api/security/action` (`change_bank`) requires the proof, validates 10 digits, rejects an account
+   another user has, and reports a failed write as an error.
+4. `POST /api/profile/update` no longer lets the generic save point payouts at a DIFFERENT account
+   (403 `bank_change_requires_verification`, before any write). First-time setup and the unchanged bank the
+   app resends on every save still pass; either role row counts as "on file".
+
+Operational: SMS must be configured for bank changes to work. With no provider the screens say
+"Verification is not available right now" and the bank is left unchanged.
