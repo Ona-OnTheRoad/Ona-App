@@ -11,8 +11,8 @@ vi.mock("@/lib/supabase/server", () => ({ createServiceSupabase: mocks.service }
 vi.mock("@/lib/supabase/env", () => ({
   isSupabaseAdminConfigured: () => true, getSupabaseUrl: () => "https://example.test", getSupabaseAnonKey: () => "anon",
 }));
-vi.mock("@/lib/server/prembly", () => ({
-  ID_LOOKUP_NOT_CONFIGURED: "NOT_CONFIGURED",
+vi.mock("@/lib/server/prembly", async (original) => ({
+  ...(await original<typeof import("@/lib/server/prembly")>()),
   verifyNinWithPrembly: mocks.verifyNin, verifyBvnWithPrembly: mocks.verifyBvn,
 }));
 vi.mock("@/lib/server/identity/identity-sync", () => ({

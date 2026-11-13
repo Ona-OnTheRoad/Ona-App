@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/auth/otp/send/route";
 import { DEMO_OTP_CODE } from "@/lib/auth/demo-otp";
-import { isAfricaTalkingConfigured, sendLoginOtpSms } from "@/lib/server/africastalking";
+import { isSmsConfigured, sendSms } from "@/lib/server/sms/send";
 import { isResendConfigured, sendResendEmail } from "@/lib/server/resend";
 import { createServiceSupabase } from "@/lib/supabase/server";
 
@@ -11,10 +11,9 @@ vi.mock("@/lib/server/modules/rate-limit", () => ({
   rateLimitAsync: vi.fn(async () => ({ ok: true })),
   rateLimitUnavailableResponse: vi.fn(() => null),
 }));
-vi.mock("@/lib/server/africastalking", async (original) => ({
-  ...(await original<typeof import("@/lib/server/africastalking")>()),
-  isAfricaTalkingConfigured: vi.fn(() => false),
-  sendLoginOtpSms: vi.fn(),
+vi.mock("@/lib/server/sms/send", () => ({
+  isSmsConfigured: vi.fn(() => false),
+  sendSms: vi.fn(),
 }));
 vi.mock("@/lib/server/resend", () => ({
   isResendConfigured: vi.fn(() => false),
@@ -74,7 +73,7 @@ function codeIn(text: string): string {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(isAfricaTalkingConfigured).mockReturnValue(false);
+  vi.mocked(isSmsConfigured).mockReturnValue(false);
   vi.mocked(isResendConfigured).mockReturnValue(false);
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
@@ -84,8 +83,8 @@ describe("POST /api/auth/otp/send delivery", () => {
   it("reports a failed SMS instead of 'Code sent' and stores nothing", async () => {
     productionDemoOff();
     const writes = fakeDb();
-    vi.mocked(isAfricaTalkingConfigured).mockReturnValue(true);
-    vi.mocked(sendLoginOtpSms).mockResolvedValue({ ok: false, error: "provider down" });
+    vi.mocked(isSmsConfigured).mockReturnValue(true);
+    vi.mocked(sendSms).mockResolvedValue({ ok: false, error: "provider down", attempts: [] });
 
     const res = await send("phone");
     const body = await res.json();
@@ -99,16 +98,17 @@ describe("POST /api/auth/otp/send delivery", () => {
   it("stores the code only after the SMS went out", async () => {
     productionDemoOff();
     const writes = fakeDb();
-    vi.mocked(isAfricaTalkingConfigured).mockReturnValue(true);
-    vi.mocked(sendLoginOtpSms).mockResolvedValue({ ok: true });
+    vi.mocked(isSmsConfigured).mockReturnValue(true);
+    vi.mocked(sendSms).mockResolvedValue({ ok: true, provider: "africastalking", attempts: [] });
 
     const res = await send("phone");
     const body = await res.json();
 
     expect(res.status).toBe(200);
     expect(body.data.delivery).toBe("sms");
-    const sentCode = vi.mocked(sendLoginOtpSms).mock.calls[0][0].code;
-    expect(sentCode).toMatch(/^\d{6}$/);
+    const sms = vi.mocked(sendSms).mock.calls[0][0];
+    expect(sms.to).toBe(PHONE);
+    expect(codeIn(sms.message)).toMatch(/^\d{6}$/);
     expect(writes.map((w) => `${w.table}.${w.op}`)).toEqual([
       "phone_otps.update",
       "phone_otps.insert",
@@ -127,7 +127,7 @@ describe("POST /api/auth/otp/send delivery", () => {
       expect(res.status).toBe(503);
       expect(body.error.code).toBe("otp_delivery_unavailable");
       expect(writes).toEqual([]);
-      expect(sendLoginOtpSms).not.toHaveBeenCalled();
+      expect(sendSms).not.toHaveBeenCalled();
       expect(sendResendEmail).not.toHaveBeenCalled();
     },
   );
@@ -173,14 +173,14 @@ describe("POST /api/auth/otp/send delivery", () => {
 
     expect(res.status).toBe(200);
     expect(body.data.delivery).toBe("demo");
-    expect(sendLoginOtpSms).not.toHaveBeenCalled();
+    expect(sendSms).not.toHaveBeenCalled();
     expect(writes.at(-1)).toMatchObject({ table: "phone_otps", op: "insert" });
   });
 
   it("falls back to the demo code when demo mode is on and the SMS fails", async () => {
     const writes = fakeDb();
-    vi.mocked(isAfricaTalkingConfigured).mockReturnValue(true);
-    vi.mocked(sendLoginOtpSms).mockResolvedValue({ ok: false, error: "provider down" });
+    vi.mocked(isSmsConfigured).mockReturnValue(true);
+    vi.mocked(sendSms).mockResolvedValue({ ok: false, error: "provider down", attempts: [] });
 
     const res = await send("phone");
     const body = await res.json();

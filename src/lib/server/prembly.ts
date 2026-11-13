@@ -15,6 +15,7 @@ import {
 
 export {
   ID_LOOKUP_NOT_CONFIGURED,
+  isProviderOutage,
   type PremblyVerifyFail,
   type PremblyVerifyOk,
   type PremblyVerifyResult,

@@ -40,7 +40,7 @@ describe("buildIdLookupRecord", () => {
 
     expect(record).toEqual({
       kind: "bvn", status: "verified", provider: "prembly", mode: "live",
-      reference: "ref-9", matchedName: "Adaeze Ngozi Okafor", code: null,
+      reference: "ref-9", matchedName: "Adaeze Ngozi Okafor", code: null, cached: false,
       checkedAt: "2026-11-13T10:00:00.000Z",
       nameMatch: { profile: "match", bankAccount: "mismatch" },
     });
@@ -57,7 +57,7 @@ describe("buildIdLookupRecord", () => {
 
   it.each([
     ["NOT_CONFIGURED", "unavailable"], ["NETWORK", "unavailable"], ["503", "unavailable"],
-    ["401", "unavailable"], ["429", "unavailable"], ["01", "rejected"], ["FORMAT", "rejected"],
+    ["401", "unavailable"], ["429", "unavailable"], ["408", "unavailable"], ["01", "rejected"], ["FORMAT", "rejected"],
     ["404", "rejected"],
   ])("classifies failure code %s as %s", (code, status) => {
     expect(buildIdLookupRecord("nin", fail(code), {}, NOW).status).toBe(status);
@@ -65,6 +65,10 @@ describe("buildIdLookupRecord", () => {
 });
 
 describe("lookupId", () => {
+  it("marks a result that came from the outage cache", () => {
+    expect(buildIdLookupRecord("nin", { ...live, cached: true }, {}, NOW).cached).toBe(true);
+  });
+
   it("treats a thrown provider call as unavailable", async () => {
     vi.mocked(verifyNinWithPrembly).mockRejectedValue(new Error("boom"));
     expect((await lookupId("nin", NIN)).status).toBe("unavailable");

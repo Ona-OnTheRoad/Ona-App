@@ -23,6 +23,8 @@ export type PremblyVerifyOk = {
   lastName?: string;
   phone?: string;
   rawStatus?: string;
+  /** True when served from the outage cache instead of a fresh provider call. */
+  cached?: boolean;
 };
 
 export type PremblyVerifyFail = {
@@ -115,6 +117,16 @@ export function isSuccessBody(json: Record<string, unknown>): boolean {
 }
 
 export const ID_LOOKUP_NOT_CONFIGURED = "NOT_CONFIGURED";
+
+/**
+ * The provider could not answer (network error, timeout, throttling, server
+ * error), as opposed to answering "no". Says nothing about the number.
+ */
+export function isProviderOutage(result: PremblyVerifyResult): boolean {
+  if (result.ok) return false;
+  const code = String(result.code ?? "");
+  return code === "NETWORK" || code === "408" || code === "429" || /^5\d\d$/.test(code);
+}
 
 /**
  * Local format-only check used when Prembly keys are not configured.
