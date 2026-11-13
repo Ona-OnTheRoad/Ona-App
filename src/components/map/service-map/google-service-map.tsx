@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { GoogleMap, Marker } from "@react-google-maps/api";
 import { LiveProPin } from "@/components/map/live-pro-pin";
 import { MAP_NEAR_ZOOM } from "@/lib/matching";
+import { DEFAULT_USER_LOCATION } from "@/lib/data/user-location";
 import {
   USER_MAP_PIN_ANCHOR,
   USER_MAP_PIN_SIZE,
@@ -105,6 +106,10 @@ export function GoogleServiceMap({
   // Deep view: fit you + each pro’s live coordinates
   useEffect(() => {
     if (!map || typeof google === "undefined") return;
+    const isPlaceholderCenter =
+      Math.abs(center.lat - DEFAULT_USER_LOCATION.coordinates.lat) < 0.0001 &&
+      Math.abs(center.lng - DEFAULT_USER_LOCATION.coordinates.lng) < 0.0001;
+
     if (livePros.length === 0) {
       map.panTo(center);
       // Street names need ~16+ zoom (Uber/inDrive density)
@@ -112,11 +117,18 @@ export function GoogleServiceMap({
       return;
     }
     const bounds = new google.maps.LatLngBounds();
-    bounds.extend(center);
+    // Do not stretch bounds to placeholder Marina coordinates if user GPS hasn't resolved yet
+    if (!isPlaceholderCenter) {
+      bounds.extend(center);
+    }
     livePros.forEach((t) =>
       bounds.extend({ lat: t.location.lat, lng: t.location.lng }),
     );
-    map.fitBounds(bounds, { top: 56, right: 40, bottom: 40, left: 40 });
+    if (!bounds.isEmpty()) {
+      map.fitBounds(bounds, { top: 56, right: 40, bottom: 40, left: 40 });
+    } else {
+      map.panTo(center);
+    }
     // Street-level: don't zoom out so far that names disappear
     const z = map.getZoom();
     if (z != null && z > 18) map.setZoom(18);

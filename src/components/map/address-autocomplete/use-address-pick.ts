@@ -106,7 +106,7 @@ export function useAddressPick({
         );
         setBusy(false);
       },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 5_000 },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 },
     );
   }, [reverseGeocode]);
 
