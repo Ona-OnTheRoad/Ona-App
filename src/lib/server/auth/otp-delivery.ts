@@ -27,24 +27,33 @@ export function planOtpDelivery(channel: OtpChannel): OtpDeliveryPlan {
   return isDemoOtpAllowed() ? { kind: "demo" } : { kind: "unavailable" };
 }
 
+/** What the code is for; only changes the wording a user reads. */
+export type OtpPurpose = "login" | "verify";
+
 export function loginOtpSmsText(code: string): string {
   return `Ona login code: ${code}. Valid for 10 minutes. Do not share this code.`;
+}
+
+export function verifyOtpSmsText(code: string): string {
+  return `Ona verification code: ${code}. Valid for 10 minutes. Do not share this code.`;
 }
 
 async function sendLoginOtpEmail(input: {
   to: string;
   code: string;
+  purpose?: OtpPurpose;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
-  const text = `Your Ona login code is ${input.code}. It is valid for 10 minutes. Do not share this code.`;
+  const what = input.purpose === "verify" ? "verification" : "login";
+  const text = `Your Ona ${what} code is ${input.code}. It is valid for 10 minutes. Do not share this code.`;
   const html = `
  <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#0f172a">
- <p style="font-size:14px;line-height:1.5;margin:0 0 12px">Your Ona login code is</p>
+ <p style="font-size:14px;line-height:1.5;margin:0 0 12px">Your Ona ${what} code is</p>
  <p style="font-size:28px;font-weight:800;letter-spacing:4px;margin:0 0 12px">${input.code}</p>
  <p style="font-size:12px;color:#64748b;line-height:1.4;margin:0">Valid for 10 minutes. Do not share this code. If you did not ask for it, ignore this email.</p>
  </div>`;
   const sent = await sendResendEmail({
     to: input.to,
-    subject: "Your Ona login code",
+    subject: `Your Ona ${what} code`,
     html,
     text,
   });
@@ -62,6 +71,8 @@ export async function deliverOtp(input: {
    * so Chrome's WebOTP can auto-fill the code. Omit it for the plain message.
    */
   origin?: string | null;
+  /** Wording only. Defaults to "login". */
+  purpose?: OtpPurpose;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const sent =
@@ -70,9 +81,11 @@ export async function deliverOtp(input: {
             to: input.to,
             message: input.origin
               ? buildOtpMessage(input.code, input.origin)
-              : loginOtpSmsText(input.code),
+              : input.purpose === "verify"
+                ? verifyOtpSmsText(input.code)
+                : loginOtpSmsText(input.code),
           })
-        : await sendLoginOtpEmail({ to: input.to, code: input.code });
+        : await sendLoginOtpEmail({ to: input.to, code: input.code, purpose: input.purpose });
     return sent.ok ? { ok: true } : { ok: false, error: sent.error };
   } catch (e) {
     return {
