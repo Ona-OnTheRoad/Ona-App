@@ -24,7 +24,7 @@ const bodySchema = z.object({
   password: z.string().min(1),
 });
 
-/** POST unlock sensitive actions with temporary password 336699 */
+/** POST unlock sensitive actions with the ADMIN_SENSITIVE_PASSWORD */
 export async function POST(req: Request) {
   if (!isSupabaseAdminConfigured()) {
     return apiFail(

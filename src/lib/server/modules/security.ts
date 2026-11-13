@@ -5,7 +5,7 @@ import "server-only";
  * Layers:
  * 1. Admin session cookie (Supabase auth + staff profile)
  * 2. Role-based permissions (L1 Care → L5 Super Admin)
- * 3. Temporary sensitive-action access code (default 336699)
+ * 3. Temporary sensitive-action access code (ADMIN_SENSITIVE_PASSWORD, required)
  * 4. Session idle timeout (30 min)
  * 5. Rate limiting + IP logging on sensitive routes
  * 6. Full audit trail for every sensitive action

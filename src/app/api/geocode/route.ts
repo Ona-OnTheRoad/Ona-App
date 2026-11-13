@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGoogleMapsApiKey } from "@/lib/google-maps";
 import { matchKnownPlaces } from "@/lib/known-places";
+import { checkIpRateLimit } from "@/lib/server/modules/ip-rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -45,6 +46,23 @@ export async function GET(req: NextRequest) {
 
   if (!q || q.length < 2) {
     return NextResponse.json({ results: [] });
+  }
+
+  // Protects the Google/Nominatim quota. Generous (debounced typeahead, shared
+  // mobile-carrier IPs) and fail-open so a limiter outage never breaks search.
+  const budget = await checkIpRateLimit(req, {
+    name: "geocode",
+    limit: 120,
+    windowMs: 60_000,
+    failOpen: true,
+  });
+  if (!budget.ok && budget.reason === "limited") {
+    const res = NextResponse.json(
+      { results: [], error: "Too many searches. Slow down a moment." },
+      { status: 429 },
+    );
+    res.headers.set("Retry-After", String(budget.retryAfterSec));
+    return res;
   }
 
   const cacheKey = `${q.toLowerCase()}|${limit}`;

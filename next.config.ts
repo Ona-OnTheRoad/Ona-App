@@ -14,6 +14,36 @@ const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 const apiProxyTarget = process.env.API_PROXY_TARGET;
 const useApiProxy =
   process.env.USE_API_PROXY === "true" && Boolean(apiProxyTarget);
+const isDev = process.env.NODE_ENV === "development";
+
+/**
+ * Content-Security-Policy, shipped REPORT-ONLY first: violations are logged in
+ * the browser console (DevTools > Console) but nothing is blocked, so it cannot
+ * break maps, payments, realtime or the face-liveness wasm. Review the console
+ * on the key flows, tighten the lists, then rename the header key below to
+ * "Content-Security-Policy" to enforce it.
+ *
+ * 'unsafe-inline' stays for scripts because the root layout ships an inline
+ * theme bootstrap and Next injects inline hydration scripts; moving to nonces
+ * needs per-request rendering (proxy) and is a separate piece of work.
+ */
+const cspReportOnly = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${isDev ? " 'unsafe-eval'" : ""} https://maps.googleapis.com https://maps.gstatic.com https://cdn.jsdelivr.net`,
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.googleapis.com https://maps.gstatic.com https://nominatim.openstreetmap.org https://*.openstreetmap.org https://cdn.jsdelivr.net https://storage.googleapis.com https://*.flutterwave.com",
+  "media-src 'self' blob: data: https://*.supabase.co",
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
+  "frame-src 'self' blob: data: https://*.flutterwave.com https://*.supabase.co https://www.google.com",
+  "form-action 'self' https://*.flutterwave.com",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "frame-ancestors 'self'",
+].join("; ");
+
 const nextConfig: NextConfig = {
   async rewrites() {
     if (useApiProxy && apiProxyTarget) {
@@ -84,6 +114,16 @@ const nextConfig: NextConfig = {
             key: "Permissions-Policy",
             value:
               "camera=(self), microphone=(self), geolocation=(self), payment=(self)",
+          },
+          // Browsers ignore HSTS over plain http, so local dev is unaffected.
+          // No includeSubDomains/preload on purpose: that is hard to undo.
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=31536000",
+          },
+          {
+            key: "Content-Security-Policy-Report-Only",
+            value: cspReportOnly,
           },
         ],
       },
