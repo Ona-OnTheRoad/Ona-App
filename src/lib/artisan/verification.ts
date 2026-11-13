@@ -114,7 +114,7 @@ export function sendArtisanOtp(phone: string):
     }
   }
   // When demo OTP is allowed, store 336699 so Send → Verify works without SMS.
-  const code = isDemoOtpAllowed() ? DEMO_OTP_CODE : createOtpCode();
+  const code = isDemoOtpAllowed("phone") ? DEMO_OTP_CODE : createOtpCode();
   const now = Date.now();
   writeOtpSession({
     phone: normalizePhoneKey(p),
@@ -141,7 +141,7 @@ export function verifyArtisanOtp(
    * even if Send stored a random code, session missing, or phone key mismatch.
    * Send OTP still required only for non-demo codes.
    */
-  if (isDemoOtp(entered) && isDemoOtpAllowed()) {
+  if (isDemoOtp(entered) && isDemoOtpAllowed("phone")) {
     writeOtpSession(null);
     return { ok: true };
   }
@@ -149,7 +149,7 @@ export function verifyArtisanOtp(
   if (!session) {
     return {
       ok: false,
-      error: isDemoOtpAllowed()
+      error: isDemoOtpAllowed("phone")
         ? `No code sent. Tap Send OTP, then enter ${DEMO_OTP_CODE} (demo).`
         : "No code sent. Tap Send OTP first.",
     };
@@ -171,7 +171,7 @@ export function verifyArtisanOtp(
   // Also accept session code === demo when allowed (belt + suspenders)
   if (
     entered === session.code ||
-    (isDemoOtpAllowed() && session.code === DEMO_OTP_CODE && isDemoOtp(entered))
+    (isDemoOtpAllowed("phone") && session.code === DEMO_OTP_CODE && isDemoOtp(entered))
   ) {
     writeOtpSession(null);
     return { ok: true };
@@ -183,7 +183,7 @@ export function verifyArtisanOtp(
     ok: false,
     error:
       left > 0
-        ? isDemoOtpAllowed()
+        ? isDemoOtpAllowed("phone")
           ? `Wrong code. Use demo ${DEMO_OTP_CODE}, or ${left} attempt${left === 1 ? "" : "s"} left.`
           : `Wrong code. ${left} attempt${left === 1 ? "" : "s"} left.`
         : "Too many attempts. Send a new OTP.",

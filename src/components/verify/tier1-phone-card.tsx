@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, Phone } from "lucide-react";
-import { CUSTOMER_PHONE_OTP } from "@/lib/verification-gate";
+import { OnaOtpInput } from "@/components/ui/ona-otp-input";
 
 interface Tier1PhoneCardProps {
   isLight?: boolean;
@@ -11,7 +11,10 @@ interface Tier1PhoneCardProps {
   setOtp: (v: string) => void;
   otpBusy: boolean;
   otpMsg: string | null;
-  sendDemoOtp: () => void;
+  sendCode: () => Promise<void>;
+  /** Seconds before a new code may be requested. */
+  resendIn: number;
+  otpSent: boolean;
   confirmPhone: () => Promise<void>;
   isPro?: boolean;
 }
@@ -23,7 +26,9 @@ export function Tier1PhoneCard({
   setOtp,
   otpBusy,
   otpMsg,
-  sendDemoOtp,
+  sendCode,
+  resendIn,
+  otpSent,
   confirmPhone,
   isPro = false,
 }: Tier1PhoneCardProps) {
@@ -75,10 +80,15 @@ export function Tier1PhoneCard({
             </span>
             <button
               type="button"
-              onClick={sendDemoOtp}
-              className="font-bold text-brand hover:underline"
+              disabled={otpBusy || resendIn > 0 || !phone}
+              onClick={() => void sendCode()}
+              className="font-bold text-brand hover:underline disabled:text-ona-muted disabled:no-underline"
             >
-              Send code
+              {resendIn > 0
+                ? `Resend in ${resendIn}s`
+                : otpSent
+                  ? "Resend code"
+                  : "Send code"}
             </button>
           </div>
 
@@ -88,27 +98,21 @@ export function Tier1PhoneCard({
             </p>
           ) : null}
 
-          <div className="flex items-center gap-2">
-            <input
-              id="tier1-otp-input"
-              value={otp}
-              onChange={(e) =>
-                setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
-              }
-              placeholder={CUSTOMER_PHONE_OTP}
-              inputMode="numeric"
-              maxLength={6}
-              className="h-10 flex-1 rounded-ona-ctl border border-ona-border bg-ona-field px-3 text-[14px] font-medium text-ona-ink placeholder:text-ona-muted transition-colors focus:outline-none focus:border-ona-ink"
-            />
-            <button
-              type="button"
-              disabled={otpBusy || otp.length < 4}
-              onClick={() => void confirmPhone()}
-              className="h-10 px-4 rounded-ona-ctl bg-brand hover:opacity-90 text-white text-[13px] font-bold transition-all disabled:opacity-50 cursor-pointer"
-            >
-              {otpBusy ? "Checking…" : "Verify"}
-            </button>
-          </div>
+          <OnaOtpInput
+            value={otp}
+            onChange={setOtp}
+            disabled={otpBusy}
+            label="SMS code"
+            onComplete={() => void confirmPhone()}
+          />
+          <button
+            type="button"
+            disabled={otpBusy || otp.length < 6}
+            onClick={() => void confirmPhone()}
+            className="h-10 w-full rounded-ona-ctl bg-brand hover:opacity-90 text-white text-[13px] font-bold transition-all disabled:opacity-50 cursor-pointer"
+          >
+            {otpBusy ? "Checking…" : "Verify"}
+          </button>
         </div>
       )}
     </div>

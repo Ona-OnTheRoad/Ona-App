@@ -23,7 +23,7 @@ export function PasswordScreen() {
   const email = userProfile?.email || "guest";
 
   const pw = useChangePassword();
-  const fa = useTwoFa(email);
+  const fa = useTwoFa(email, userProfile?.phone || "");
 
   const handleBack = () => {
     navigateBack(router, "/settings/sections/security", accountType);
@@ -109,6 +109,8 @@ export function PasswordScreen() {
               setSetupStep={fa.setSetupStep}
               smsSent={fa.smsSent}
               setSmsSent={fa.setSmsSent}
+              smsBusy={fa.smsBusy}
+              sendSms={fa.sendSms}
               smsCode={fa.smsCode}
               setSmsCode={fa.setSmsCode}
               verifySms={fa.verifySms}

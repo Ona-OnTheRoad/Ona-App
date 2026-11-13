@@ -20,6 +20,29 @@ import { authOtpSendBodySchema as bodySchema } from "@/lib/server/openapi/schema
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/** Minimum gap between two codes to the same destination (also drives the app's resend timer). */
+const RESEND_COOLDOWN_SEC = 30;
+/** Hard ceiling of codes per destination per day: SMS costs money and can be abused. */
+const DAILY_CAP_PER_DEST = 10;
+/** Codes per client IP per hour across all numbers (pumping guard). */
+const HOURLY_CAP_PER_IP = 30;
+
+/** Mask a destination for logs: +2348031234567 -> +234803***4567. */
+function maskDest(dest: string): string {
+  return dest.length > 8 ? `${dest.slice(0, 7)}***${dest.slice(-4)}` : "***";
+}
+
+/** Public origin of the app: lets Chrome auto-fill the code from the SMS (WebOTP). */
+function appOrigin(req: Request): string | null {
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (configured) return configured;
+  try {
+    return new URL(req.url).origin;
+  } catch {
+    return null;
+  }
+}
+
 function hashCode(dest: string, code: string): string {
   return createHash("sha256")
     .update(`${dest}:${code}:${process.env.SUPABASE_SERVICE_ROLE_KEY || "om"}`)
@@ -124,6 +147,23 @@ export async function POST(req: Request) {
           throw Object.assign(new Error(`Too many code requests. Retry in ${budget.retryAfterSec}s.`),
             { status: 429, code: "rate_limited" });
         }
+        // Real SMS costs money: cap per number per day and per IP per hour.
+        const day = await rateLimitAsync({
+          key: `otp-send-day:${channel}:${dest}`, limit: DAILY_CAP_PER_DEST, windowMs: 24 * 60 * 60_000,
+        });
+        if (!day.ok) {
+          throw Object.assign(new Error("Too many codes requested today. Try again tomorrow or use password login."),
+            { status: 429, code: "rate_limited" });
+        }
+        if (ip !== "unknown") {
+          const perIp = await rateLimitAsync({
+            key: `otp-send-ip:${ip}`, limit: HOURLY_CAP_PER_IP, windowMs: 60 * 60_000,
+          });
+          if (!perIp.ok) {
+            throw Object.assign(new Error(`Too many code requests. Retry in ${perIp.retryAfterSec}s.`),
+              { status: 429, code: "rate_limited" });
+          }
+        }
       },
       run: async () => {
         /**
@@ -145,6 +185,18 @@ export async function POST(req: Request) {
               consumed_at?: string | null;
             }
           | undefined;
+        // Resend cooldown: a second code inside the window would just burn SMS credit
+        // (the first one is probably still on its way).
+        if (last?.created_at && !last.consumed_at) {
+          const age = Date.now() - new Date(last.created_at).getTime();
+          if (age < RESEND_COOLDOWN_SEC * 1000) {
+            const wait = Math.ceil((RESEND_COOLDOWN_SEC * 1000 - age) / 1000);
+            return {
+              ok: false as const,
+              error: `Please wait ${wait}s before requesting another code.`,
+            };
+          }
+        }
         const failedAttempts = Number(last?.attempts ?? 0);
         if (failedAttempts >= 4 && last?.created_at && !last.consumed_at) {
           const COOLDOWN_MS = 45_000;
@@ -160,9 +212,19 @@ export async function POST(req: Request) {
 
         // When demo mode is on (or no SMS provider for phone), store 336699
         // so hash path and demo path both succeed. Verify also accepts demo.
+        const demoAllowed = isDemoOtpAllowed(channel);
+        const smsReady = isAfricaTalkingConfigured();
+        // Live phone OTP is switched on by config alone: once Africa's Talking is
+        // configured the phone demo code stops being accepted (see demo-otp.ts).
+        if (channel === "phone" && !smsReady && !demoAllowed) {
+          console.error("otp.sms_unavailable: SMS provider not configured and demo code disabled");
+          return {
+            ok: false as const,
+            error: "SMS is temporarily unavailable. Please try again later or use password login.",
+          };
+        }
         const useDemoCode =
-          isDemoOtpAllowed() &&
-          (channel === "email" || !isAfricaTalkingConfigured());
+          demoAllowed && (channel === "email" || !smsReady);
         const code = useDemoCode
           ? DEMO_OTP_CODE
           : String(randomInt(100000, 999999));
@@ -185,12 +247,34 @@ export async function POST(req: Request) {
         // Never expose "SMS not configured" / demo codes in the client message
         let deliveryNote = "Code sent. Enter it below.";
 
-        if (channel === "phone" && isAfricaTalkingConfigured()) {
-          const sms = await sendLoginOtpSms({ to: dest, code });
+        if (channel === "phone" && smsReady) {
+          const sms = await sendLoginOtpSms({
+            to: dest,
+            code,
+            origin: appOrigin(req),
+          });
           if (sms.ok) {
             delivery = "sms";
             deliveryNote = "Code sent by SMS. Enter it below.";
           } else {
+            // Never claim "sent" when the gateway refused it: the user would wait
+            // for a text that is not coming. Log the cause for ops (no code in it).
+            console.error("otp.sms_failed", {
+              to: maskDest(dest),
+              statusCode: sms.statusCode,
+              error: sms.error,
+            });
+            if (!demoAllowed) {
+              await supabase
+                .from("phone_otps")
+                .update({ consumed_at: new Date().toISOString() })
+                .eq("phone", dest)
+                .is("consumed_at", null);
+              return {
+                ok: false as const,
+                error: "We couldn't send the SMS right now. Please try again in a moment.",
+              };
+            }
             deliveryNote = "Code sent. Enter it below.";
           }
         } else if (channel === "email") {
@@ -206,6 +290,7 @@ export async function POST(req: Request) {
             channel,
             target: displayTarget,
             expiresInSec: 600,
+            resendInSec: RESEND_COOLDOWN_SEC,
             delivery,
             message: deliveryNote,
           },

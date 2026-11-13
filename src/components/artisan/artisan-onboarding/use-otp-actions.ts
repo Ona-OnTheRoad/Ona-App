@@ -13,7 +13,12 @@ type Params = {
   updateUserProfile: (partial: { phoneVerified: boolean }) => void;
 };
 
-/** Phone OTP send / verify (server first, local demo fallback) */
+/**
+ * Phone OTP send / verify. The server (Africa's Talking SMS) is the authority.
+ * A local, offline demo path exists for development only: it is used when the
+ * network is down or when the server gave no answer, and only where
+ * isDemoOtpAllowed("phone") says so, never in production once live SMS is on.
+ */
 export function useOtpActions({
   profile,
   otp,
@@ -30,7 +35,8 @@ export function useOtpActions({
       return;
     }
     const phone = profile.phone.trim();
-    // Server OTP (login path) so 336699 + phone_verified land on profiles
+    const { isDemoOtpAllowed } = await import("@/lib/auth/demo-otp");
+    const demoOk = isDemoOtpAllowed("phone");
     try {
       const r = await fetch("/api/auth/otp/send", {
         method: "POST",
@@ -39,23 +45,29 @@ export function useOtpActions({
       });
       const json = (await r.json().catch(() => null)) as {
         ok?: boolean;
+        data?: { message?: string };
         error?: { message?: string };
       } | null;
       if (json?.ok) {
-        // Keep local demo session in sync for offline/demo
-        sendArtisanOtp(phone);
+        if (demoOk) sendArtisanOtp(phone); // keep the offline dev session in sync
         setOtpSent(true);
         setOtp("");
-        setMsg("OTP sent. Enter the code (demo 336699 when enabled).");
+        setMsg(json.data?.message || "Code sent. Enter it below.");
         setErr(null);
         return;
       }
-      // Fall through to local if server rejects unregistered mid-signup
+      // The server answered with a reason (resend wait, daily limit, SMS could
+      // not be delivered, number not registered): show it, never fake a send.
       if (json?.error?.message) {
-        /* try local */
+        setErr(json.error.message);
+        return;
       }
     } catch {
-      /* offline → local */
+      /* network error, handled below */
+    }
+    if (!demoOk) {
+      setErr("Could not send the code. Check your connection and try again.");
+      return;
     }
     const res = sendArtisanOtp(phone);
     if (!res.ok) {
@@ -65,7 +77,7 @@ export function useOtpActions({
     setOtpSent(true);
     setOtp("");
     setMsg(
-      `OTP sent. Code expires in ${Math.floor(res.expiresInSec / 60)} minutes.`,
+      `Code sent. It expires in ${Math.floor(res.expiresInSec / 60)} minutes.`,
     );
     setErr(null);
   };
@@ -73,7 +85,9 @@ export function useOtpActions({
   const verifyOtp = async () => {
     if (!profile) return;
     const phone = profile.phone.trim();
-    // Prefer server profile-verify so phone_verified is unified with Customer
+    const { isDemoOtpAllowed } = await import("@/lib/auth/demo-otp");
+    const demoOk = isDemoOtpAllowed("phone");
+    // Server profile-verify keeps phone_verified unified with the Customer side
     try {
       const r = await fetch("/api/auth/otp/profile-verify", {
         method: "POST",
@@ -89,7 +103,7 @@ export function useOtpActions({
         error?: { message?: string };
       } | null;
       if (json?.ok) {
-        verifyArtisanOtp(phone, otp); // clear local session if any
+        verifyArtisanOtp(phone, otp); // clear any local dev session
         patch({
           tiers: { ...profile.tiers, tier1_phone: true },
         });
@@ -98,13 +112,20 @@ export function useOtpActions({
         setErr(null);
         return;
       }
-      // If server says wrong code, still try local demo path
+      if (!demoOk) {
+        setErr(json?.error?.message || "Incorrect code. Try again.");
+        return;
+      }
       const local = verifyArtisanOtp(phone, otp);
       if (!local.ok) {
         setErr(json?.error?.message || local.error);
         return;
       }
     } catch {
+      if (!demoOk) {
+        setErr("Could not verify the code. Check your connection and try again.");
+        return;
+      }
       const res = verifyArtisanOtp(phone, otp);
       if (!res.ok) {
         setErr(res.error);

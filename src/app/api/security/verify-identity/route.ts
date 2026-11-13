@@ -97,7 +97,7 @@ export async function POST(req: Request) {
       return apiFail("Code expired. Request a new one.", 400);
     }
 
-    const demoOk = isDemoOtp(emailCode) && isDemoOtpAllowed();
+    const demoOk = isDemoOtp(emailCode) && isDemoOtpAllowed("email");
     if (demoOk) {
       results.push({ factor: "email_otp", passed: true });
       await admin

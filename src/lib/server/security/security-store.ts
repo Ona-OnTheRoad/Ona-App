@@ -174,10 +174,11 @@ export async function createContactChangeRequest(
   } catch {
     /* */
   }
-  const oldCode = isDemoOtpAllowed()
+  const otpChannel = input.changeType === "phone" ? "phone" : "email";
+  const oldCode = isDemoOtpAllowed(otpChannel)
     ? "336699"
     : String(randomInt(100000, 999999));
-  const newCode = isDemoOtpAllowed()
+  const newCode = isDemoOtpAllowed(otpChannel)
     ? "336699"
     : String(randomInt(100000, 999999));
   try {
@@ -338,7 +339,9 @@ export async function verifyContactChangeCode(
   const mem = contactRequests.get(id);
   if (mem) {
     const validCode = target === "old" ? mem.oldCode : mem.newCode;
-    const demoOk = isDemoOtp(code) && isDemoOtpAllowed();
+    const demoOk =
+      isDemoOtp(code) &&
+      isDemoOtpAllowed(mem.changeType === "phone" ? "phone" : "email");
     if (code !== validCode && !demoOk) {
       mem.codeAttempts += 1;
       return { ok: false, error: "Invalid verification code" };
@@ -366,7 +369,9 @@ export async function verifyContactChangeCode(
     const sb = createServiceSupabase();
     const req = await getContactChangeRequest(id);
     if (!req) return { error: "not_found" };
-    const demoOk = isDemoOtp(code) && isDemoOtpAllowed();
+    const demoOk =
+      isDemoOtp(code) &&
+      isDemoOtpAllowed(req.changeType === "phone" ? "phone" : "email");
     if (!demoOk) {
       const { data: check } = await sb
         .from("contact_change_requests")

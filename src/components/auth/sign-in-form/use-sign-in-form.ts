@@ -16,6 +16,7 @@ import {
   type LoginMethod,
 } from "./helpers";
 import { useCodeCooldown } from "./use-code-cooldown";
+import { useResendCountdown } from "@/lib/auth/use-resend-countdown";
 
 /** State, countdown and handlers for the login form: email + password (default), or phone + SMS code. */
 export function useSignInForm() {
@@ -36,6 +37,7 @@ export function useSignInForm() {
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
   const cooldown = useCodeCooldown();
+  const resend = useResendCountdown();
   const ambiguousSendRef = useRef(false);
 
   const showPhone = Boolean(preferType);
@@ -56,6 +58,7 @@ export function useSignInForm() {
     setOtpSent(false);
     setOtp("");
     cooldown.resetCooldown();
+    resend.reset();
     clearFeedback();
   }
 
@@ -99,6 +102,7 @@ export function useSignInForm() {
       }
       ambiguousSendRef.current = false;
       setOtpSent(true);
+      resend.start();
       const msg = res.message || "Code sent. Enter it below.";
       setInfo(publicMessage(msg, "Code sent. Enter it below."));
     } finally {
@@ -113,6 +117,7 @@ export function useSignInForm() {
     setOtpSent(false);
     setOtp("");
     cooldown.resetCooldown();
+    resend.reset();
     clearFeedback();
   }
 
@@ -205,6 +210,7 @@ export function useSignInForm() {
     setOtpSent(false);
     setOtp("");
     cooldown.resetCooldown();
+    resend.reset();
     clearFeedback();
   }
 
@@ -225,6 +231,7 @@ export function useSignInForm() {
     failedAttempts: cooldown.failedAttempts,
     inCooldown: cooldown.inCooldown,
     cooldownLeft: cooldown.cooldownLeft,
+    resendIn: resend.left,
     showPhone,
     displayError,
     pickRole,

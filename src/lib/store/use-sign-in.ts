@@ -148,14 +148,13 @@ export function useSignIn(
       if (dig.length < 4) return "Enter the 6-digit code.";
       const phone = (userProfile?.phone || "").trim();
       if (!phone) return "No phone on this account.";
-      // Demo code 336699 always works for dual-role switch (client fast-path)
-      // even if server is unreachable or env is masked. Server fix in demo-otp.ts
-      // ensures prod also accepts it, but keep client fallback for resilience.
+      // Offline fast-path for local development only: the demo code is accepted
+      // by the client just where isDemoOtpAllowed("phone") says so (never in
+      // production once live SMS is on).
       const { isDemoOtp, isDemoOtpAllowed } =
         await import("@/lib/auth/demo-otp");
-      const isDemo = isDemoOtp(dig);
       if (!isAppBackendOnline()) {
-        if (isDemo && isDemoOtpAllowed()) {
+        if (isDemoOtp(dig) && isDemoOtpAllowed("phone")) {
           if (userProfile) {
             const next = { ...userProfile, phoneVerified: true };
             saveProfileToVault(next);
@@ -166,8 +165,8 @@ export function useSignIn(
         }
         return "Server is unavailable.";
       }
-      // Try server verification first; if it rejects demo code due to transient
-      // config, still succeed locally so 336699 never blocks dual-role users.
+      // The server is the only authority. A rejected or unreachable check never
+      // falls back to a local "success": that would let anyone skip the SMS step.
       try {
         const r = await fetch("/api/auth/otp/profile-verify", {
           method: "POST",
@@ -182,19 +181,11 @@ export function useSignIn(
           ok?: boolean;
           error?: { message?: string };
         } | null;
-        if (json?.ok) {
-          // server verified (demo or real)
-        } else if (isDemo && isDemoOtpAllowed()) {
-          // server rejected demo (e.g. masked env) fall through to local success
-        } else {
+        if (!json?.ok) {
           return json?.error?.message || "Incorrect code. Try again.";
         }
       } catch {
-        if (isDemo && isDemoOtpAllowed()) {
-          // network failure fall through to local success for demo code
-        } else {
-          return "Could not verify code. Check network and try again.";
-        }
+        return "Could not verify code. Check network and try again.";
       }
       if (userProfile) {
         const next = { ...userProfile, phoneVerified: true };

@@ -43,7 +43,9 @@ export async function POST(req: Request) {
 
   const channel = parsed.data.channel;
   const code = parsed.data.code.replace(/\D/g, "");
-  const demoHint = isDemoOtpAllowed() ? ` or use demo ${DEMO_OTP_CODE}` : "";
+  const demoHint = isDemoOtpAllowed(channel)
+    ? ` or use demo ${DEMO_OTP_CODE}`
+    : "";
   if (code.length < 4) {
     return apiFail(`Enter the 6-digit code${demoHint}`, 400);
   }
@@ -91,7 +93,7 @@ export async function POST(req: Request) {
   }
 
   // Demo code only works outside production (until real SMS/email delivery is production-ready)
-  const demoOk = isDemoOtp(code) && isDemoOtpAllowed();
+  const demoOk = isDemoOtp(code) && isDemoOtpAllowed(channel);
 
   if (!demoOk) {
     const { data: rows, error } = await supabase

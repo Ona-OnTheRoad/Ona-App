@@ -63,7 +63,9 @@ export function VerificationScreen({ isLight: propIsLight }: VerificationScreenP
             setOtp={v.setOtp}
             otpBusy={v.otpBusy}
             otpMsg={v.otpMsg}
-            sendDemoOtp={v.sendDemoOtp}
+            sendCode={v.sendCode}
+            resendIn={v.resendIn}
+            otpSent={v.otpSent}
             confirmPhone={v.confirmPhone}
             isPro={isPro}
           />

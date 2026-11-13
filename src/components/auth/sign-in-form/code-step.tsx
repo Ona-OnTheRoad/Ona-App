@@ -17,6 +17,7 @@ export function CodeStep({
   invalid,
   cooldownActive,
   cooldownLeft,
+  resendIn = 0,
   onResend,
 }: {
   phone: string;
@@ -28,6 +29,8 @@ export function CodeStep({
   /** True only during the failed-attempt cooldown (resend blocked). */
   cooldownActive: boolean;
   cooldownLeft: number;
+  /** Seconds until a new code may be requested (starts after each send). */
+  resendIn?: number;
   onResend: () => void;
 }) {
   const t = useT();
@@ -59,6 +62,7 @@ export function CodeStep({
           invalid={invalid}
           label="SMS code"
           autoFocus
+          submitOnComplete
         />
         <div className="flex min-h-[44px] items-center justify-between">
           {cooldownActive ? (
@@ -75,11 +79,13 @@ export function CodeStep({
           )}
           <button
             type="button"
-            disabled={busy || cooldownActive}
+            disabled={busy || cooldownActive || resendIn > 0}
             onClick={onResend}
             className="flex min-h-[44px] items-center border-0 bg-transparent text-[13px] font-medium text-ona-brand-ink underline underline-offset-2 disabled:text-ona-muted disabled:no-underline"
           >
-            {t("auth.resendCode")}
+            {resendIn > 0
+              ? `${t("auth.resendCode")} (${resendIn}s)`
+              : t("auth.resendCode")}
           </button>
         </div>
         <p className="sr-only" role="status">
