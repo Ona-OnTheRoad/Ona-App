@@ -52,6 +52,7 @@ export function VerifyIdentityStep({
         </p>
         <PasswordInput
           className={fieldClass}
+          ariaLabel="Current password"
           placeholder="Enter your password"
           value={password}
           onChange={onPassword}

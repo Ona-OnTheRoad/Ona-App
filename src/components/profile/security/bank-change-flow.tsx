@@ -6,9 +6,10 @@ import { cn } from "@/lib/utils";
 import { profileTheme } from "@/lib/profile-system";
 import { SecurityField } from "./security-field";
 import {
-  backendSendOtp,
-  backendProfileVerifyOtp,
-} from "@/lib/supabase/app-api";
+  changeBankAccount,
+  sendBankChangeCode,
+  verifyBankChangeCode,
+} from "@/lib/security/change-bank-client";
 import { ChangeFlowHeader } from "./shared/change-flow-header";
 import { DiscardChangesSheet } from "./shared/discard-sheet";
 import { changeFlowFieldClass } from "./shared/field-class";
@@ -18,13 +19,14 @@ import type { BankChangeFlowProps, Step } from "./bank-change-types";
 export function BankChangeFlow({
   isLight,
   currentBank,
-  userPhone,
   accessToken,
   onBankChanged,
 }: BankChangeFlowProps) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("idle");
   const [code, setCode] = useState("");
+  /** Server-issued proof that the code sent to the phone on the account was entered. */
+  const [bankProof, setBankProof] = useState("");
   const [bankName, setBankName] = useState(currentBank?.bankName || "");
   const [accName, setAccName] = useState(currentBank?.bankAccountName || "");
   const [accNumber, setAccNumber] = useState(
@@ -61,12 +63,14 @@ export function BankChangeFlow({
   const sendOtp = async () => {
     setBusy(true);
     setErr(null);
-    const res = await backendSendOtp({ channel: "phone", target: userPhone });
+    // The server reads the phone number from the account: the browser cannot choose where the code goes.
+    const res = await sendBankChangeCode();
     setBusy(false);
-    if (res.error) {
+    if (!res.ok) {
       setErr(res.error);
       return;
     }
+    setCode("");
     setStep("verify_otp");
     setMsg("Code sent to your phone for security verification.");
   };
@@ -78,16 +82,14 @@ export function BankChangeFlow({
     }
     setBusy(true);
     setErr(null);
-    const res = await backendProfileVerifyOtp({
-      channel: "phone",
-      target: userPhone,
-      code,
-    });
+    const res = await verifyBankChangeCode(code);
     setBusy(false);
-    if (res.error) {
+    if (!res.ok) {
+      setCode("");
       setErr(res.error);
       return;
     }
+    setBankProof(res.bankProof);
     setStep("form");
     setMsg("Identity verified. Enter new bank details.");
     setCode("");
@@ -115,52 +117,37 @@ export function BankChangeFlow({
     setBusy(true);
     setErr(null);
     setStep("confirming");
-    try {
-      const res = await (
-        await import("@/lib/api-auth-headers")
-      ).authFetch("/api/security/action", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "change_bank",
-          accessToken,
-          newValue: JSON.stringify({
-            bankName: bankName.trim(),
-            bankAccountName: accName.trim(),
-            bankAccountNumber: num,
-            bankCode: bankCode.trim(),
-          }),
-        }),
-      });
-      const json = (await res.json().catch(() => null)) as {
-        ok?: boolean;
-        error?: { message?: string };
-      } | null;
-      if (!json?.ok) {
-        setErr(json?.error?.message || "Bank update failed.");
-        setStep("error");
-        return;
+    const bank = {
+      bankName: bankName.trim(),
+      bankAccountName: accName.trim(),
+      bankAccountNumber: num,
+      bankCode: bankCode.trim(),
+    };
+    const res = await changeBankAccount({ accessToken, bank, bankProof });
+    setBusy(false);
+    if (!res.ok) {
+      setErr(res.error);
+      if (res.code === "verification_required") {
+        // The proof expired: verify again.
+        setBankProof("");
+        setStep("send_otp");
+      } else {
+        // Wrong details (e.g. already used elsewhere) or a network error: keep what was typed.
+        setStep("form");
       }
-      setStep("done");
-      setMsg("Bank account updated.");
-      onBankChanged({
-        bankName: bankName.trim(),
-        bankAccountName: accName.trim(),
-        bankAccountNumber: num,
-        bankCode: bankCode.trim(),
-      });
-    } catch {
-      setErr("Network error. Try again.");
-      setStep("error");
-    } finally {
-      setBusy(false);
+      return;
     }
+    setStep("done");
+    setMsg("Bank account updated.");
+    setBankProof("");
+    onBankChanged(bank);
   };
 
   const reset = () => {
     setOpen(false);
     setStep("idle");
     setCode("");
+    setBankProof("");
     setMsg(null);
     setErr(null);
   };
@@ -202,14 +189,24 @@ export function BankChangeFlow({
       )}
 
       {step === "verify_otp" && (
-        <OtpCodeStep
-          isLight={isLight}
-          prompt="Enter the 6-digit code sent to your phone."
-          value={code}
-          onChange={setCode}
-          busy={busy}
-          onVerify={verifyOtp}
-        />
+        <>
+          <OtpCodeStep
+            isLight={isLight}
+            prompt="Enter the 6-digit code sent to your phone."
+            value={code}
+            onChange={setCode}
+            busy={busy}
+            onVerify={verifyOtp}
+          />
+          <button
+            type="button"
+            disabled={busy}
+            onClick={sendOtp}
+            className={cn("text-[12px] font-medium underline disabled:opacity-50", t.muted)}
+          >
+            Resend code
+          </button>
+        </>
       )}
 
       {step === "form" && (

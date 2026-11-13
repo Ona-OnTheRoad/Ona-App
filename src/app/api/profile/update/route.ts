@@ -11,6 +11,9 @@ import { isProService } from "@/lib/services";
 import { clampProServiceRadiusKm } from "@/lib/profile-system";
 import { isBankAccountTaken } from "@/lib/server/payments/bank-lookup";
 import type { ProService } from "@/lib/types";
+import { findPhoneOwners } from "@/lib/server/otp/phone-owners";
+import { rejectBankDestinationChange } from "@/lib/server/security/bank-change-gate";
+import { canonicalPhone } from "@/lib/server/phone-match";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -143,12 +146,47 @@ export async function POST(req: Request) {
 
   const { data: profile } = await admin
     .from("profiles")
-    .select("role, full_name")
+    .select("role, full_name, phone")
     .eq("id", userId)
     .maybeSingle();
 
   const role = profile?.role as string | undefined;
+
+  // A phone number can only be CHANGED through POST /api/security/action
+  // (identity proof + a code sent to the new number). This generic save sends the
+  // current phone on every request, so a value that differs from the stored one is
+  // ignored, never written. The only thing allowed here is filling in a phone the
+  // account does not have yet, and that goes through the same duplicate check as signup.
+  let phoneToWrite: string | undefined;
+  if (b.phone != null && !String(profile?.phone ?? "").trim()) {
+    const canon = canonicalPhone(b.phone);
+    if (canon) {
+      const found = await findPhoneOwners(admin, canon);
+      if ("error" in found) {
+        return apiFail("Could not check this number. Try again.", 503, "phone_check_failed");
+      }
+      if (found.owners.some((o) => o.id !== userId)) {
+        return apiFail(
+          "This phone number is already used on another Ona account.",
+          409,
+          "phone_exists",
+        );
+      }
+      phoneToWrite = canon;
+    }
+  }
   const isRepairPro = role === "repair_pro";
+
+  // Pointing payouts/refunds at a DIFFERENT account needs the bank-change proof
+  // (POST /api/security/action, change_bank). First-time setup and unchanged values pass.
+  // Checked before ANY write, so a rejected request changes nothing.
+  if (b.bankAccountNumber !== undefined || b.bankCode !== undefined) {
+    const blocked = await rejectBankDestinationChange(admin, userId, {
+      bankAccountNumber: b.bankAccountNumber,
+      bankCode: b.bankCode,
+    });
+    if (blocked) return blocked;
+  }
 
   // DOB age gate (same rules as signup) when client sends a date
   if (b.dateOfBirth != null) {
@@ -186,7 +224,7 @@ export async function POST(req: Request) {
     .from("profiles")
     .update({
       // full_name is never updated locked at signup
-      ...(b.phone != null ? { phone: b.phone } : {}),
+      ...(phoneToWrite ? { phone: phoneToWrite } : {}),
       ...(b.gender != null ? { gender: b.gender } : {}),
       ...(b.dateOfBirth != null ? { date_of_birth: b.dateOfBirth } : {}),
       ...(b.city != null ? { city: b.city } : {}),
@@ -308,7 +346,7 @@ export async function POST(req: Request) {
                 ? { bank_account_name: b.bankAccountName || null }
                 : {}),
               ...(b.bankAccountNumber !== undefined
-                ? { bank_account_number: b.bankAccountNumber || null }
+                ? { bank_account_number: b.bankAccountNumber.replace(/\D/g, "") || null }
                 : {}),
               ...(b.bankCode !== undefined
                 ? { bank_code: b.bankCode || null }
@@ -421,7 +459,7 @@ export async function POST(req: Request) {
           ? { bank_account_name: b.bankAccountName || null }
           : {}),
         ...(b.bankAccountNumber !== undefined
-          ? { bank_account_number: b.bankAccountNumber || null }
+          ? { bank_account_number: b.bankAccountNumber.replace(/\D/g, "") || null }
           : {}),
         ...(b.bankCode !== undefined ? { bank_code: b.bankCode || null } : {}),
         ...(b.faceLivenessVerified != null

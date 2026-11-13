@@ -21,8 +21,15 @@ function flagOn(value: string | undefined): boolean {
   return v === "true" || v === "1";
 }
 
-/** Demo codes: local/dev always; production only when a flag is explicitly true. */
-export function isDemoOtpAllowed(): boolean {
+export type OtpChannel = "phone" | "email";
+
+/**
+ * Demo codes: local/dev always; production only when a flag is explicitly true.
+ * The channel argument is accepted for call-site clarity but does not change the
+ * rule: phone and email share one opt-in policy.
+ */
+export function isDemoOtpAllowed(_channel?: OtpChannel): boolean {
+  void _channel;
   if (process.env.NODE_ENV !== "production") return true;
   return (
     flagOn(process.env.OTP_DEMO_MODE) ||

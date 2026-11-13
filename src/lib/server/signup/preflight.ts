@@ -1,6 +1,7 @@
 import "server-only";
 import { apiFail } from "@/lib/server/api-json";
 import type { SignupContext } from "@/lib/server/signup/context";
+import { findPhoneOwners } from "@/lib/server/otp/phone-owners";
 import { logSignupEvent } from "@/lib/server/signup/helpers";
 import type { SignupInput } from "@/lib/server/signup/schema";
 
@@ -99,36 +100,37 @@ export async function rejectTakenPhone(
   attachUserId: string | null,
 ): Promise<Response | null> {
   const { supabase, input, eventBase } = ctx;
-  // Phone uniqueness across different accounts (signed-in attach may reuse own phone)
-  const phoneDigits = input.phone.replace(/\D/g, "");
-  if (phoneDigits.length >= 10) {
-    const tail = phoneDigits.length > 10 ? phoneDigits.slice(-10) : phoneDigits;
-    const { data: phoneRows } = await supabase
-      .from("profiles")
-      .select("id, email, phone")
-      .not("phone", "is", null)
-      .limit(500);
-    const phoneTaken = (phoneRows || []).find((row) => {
-      const d = String(row.phone || "").replace(/\D/g, "");
-      if (d.length < 10) return false;
-      const rowTail = d.length > 10 ? d.slice(-10) : d;
-      if (rowTail !== tail) return false;
-      // Only the access_token attach path may reuse this user's own phone
-      if (attachUserId && row.id === attachUserId) return false;
-      return true;
+  // Phone uniqueness across ALL accounts (signed-in attach may reuse its own phone).
+  // Searched in the database, not in a window of rows, so it holds at any scale.
+  const found = await findPhoneOwners(supabase, input.phone);
+  if ("error" in found) {
+    await logSignupEvent(supabase, {
+      ...eventBase,
+      success: false,
+      error_message: "phone_check_failed",
     });
-    if (phoneTaken) {
-      await logSignupEvent(supabase, {
-        ...eventBase,
-        success: false,
-        error_message: "phone_exists",
-      });
-      return apiFail(
-        "This phone number is already used on another Ona account. Use a different number or log in.",
-        409,
-        "phone_exists",
-      );
-    }
+    // Fail closed: a duplicate number must never slip through on a lookup error.
+    return apiFail(
+      "We couldn't check this phone number. Please try again.",
+      503,
+      "phone_check_failed",
+    );
+  }
+  // Only the access_token attach path may reuse this user's own phone
+  const phoneTaken = found.owners.find(
+    (row) => !(attachUserId && row.id === attachUserId),
+  );
+  if (phoneTaken) {
+    await logSignupEvent(supabase, {
+      ...eventBase,
+      success: false,
+      error_message: "phone_exists",
+    });
+    return apiFail(
+      "This phone number is already used on another Ona account. Use a different number or log in.",
+      409,
+      "phone_exists",
+    );
   }
   return null;
 }

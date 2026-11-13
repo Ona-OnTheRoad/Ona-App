@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { insertHealthLog } from "@/lib/server/health-service";
+import { checkIpRateLimit } from "@/lib/server/modules/ip-rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,6 +32,20 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: Request) {
+  // Anonymous by design (errors can happen before sign-in), so cap per IP to
+  // stop log flooding. Fail-open: telemetry must never break the app.
+  const limit = await checkIpRateLimit(req, {
+    name: "log-error",
+    limit: 60,
+    windowMs: 60_000,
+    failOpen: true,
+  });
+  if (!limit.ok && limit.reason === "limited") {
+    const res = apiFail("Too many error reports", 429, "rate_limited");
+    res.headers.set("Retry-After", String(limit.retryAfterSec));
+    return res;
+  }
+
   let json: unknown;
   try {
     json = await req.json();

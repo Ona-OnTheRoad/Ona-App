@@ -22,6 +22,24 @@ import { authOtpSendBodySchema as bodySchema } from "@/lib/server/openapi/schema
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/** Minimum gap between two codes to the same destination (also drives the app's resend timer). */
+const RESEND_COOLDOWN_SEC = 30;
+/** Hard ceiling of codes per destination per day: SMS costs money and can be abused. */
+const DAILY_CAP_PER_DEST = 10;
+/** Codes per client IP per hour across all numbers (pumping guard). */
+const HOURLY_CAP_PER_IP = 30;
+
+/** Public origin of the app: lets Chrome auto-fill the code from the SMS (WebOTP). */
+function appOrigin(req: Request): string | null {
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (configured) return configured;
+  try {
+    return new URL(req.url).origin;
+  } catch {
+    return null;
+  }
+}
+
 function hashCode(dest: string, code: string): string {
   return createHash("sha256")
     .update(`${dest}:${code}:${process.env.SUPABASE_SERVICE_ROLE_KEY || "om"}`)
@@ -131,6 +149,23 @@ export async function POST(req: Request) {
           throw Object.assign(new Error(`Too many code requests. Retry in ${budget.retryAfterSec}s.`),
             { status: 429, code: "rate_limited" });
         }
+        // Real SMS costs money: cap per number per day and per IP per hour.
+        const day = await rateLimitAsync({
+          key: `otp-send-day:${channel}:${dest}`, limit: DAILY_CAP_PER_DEST, windowMs: 24 * 60 * 60_000,
+        });
+        if (!day.ok) {
+          throw Object.assign(new Error("Too many codes requested today. Try again tomorrow or use password login."),
+            { status: 429, code: "rate_limited" });
+        }
+        if (ip !== "unknown") {
+          const perIp = await rateLimitAsync({
+            key: `otp-send-ip:${ip}`, limit: HOURLY_CAP_PER_IP, windowMs: 60 * 60_000,
+          });
+          if (!perIp.ok) {
+            throw Object.assign(new Error(`Too many code requests. Retry in ${perIp.retryAfterSec}s.`),
+              { status: 429, code: "rate_limited" });
+          }
+        }
       },
       run: async () => {
         /**
@@ -152,6 +187,18 @@ export async function POST(req: Request) {
               consumed_at?: string | null;
             }
           | undefined;
+        // Resend cooldown: a second code inside the window would just burn SMS credit
+        // (the first one is probably still on its way).
+        if (last?.created_at && !last.consumed_at) {
+          const age = Date.now() - new Date(last.created_at).getTime();
+          if (age < RESEND_COOLDOWN_SEC * 1000) {
+            const wait = Math.ceil((RESEND_COOLDOWN_SEC * 1000 - age) / 1000);
+            return {
+              ok: false as const,
+              error: `Please wait ${wait}s before requesting another code.`,
+            };
+          }
+        }
         const failedAttempts = Number(last?.attempts ?? 0);
         if (failedAttempts >= 4 && last?.created_at && !last.consumed_at) {
           const COOLDOWN_MS = 45_000;
@@ -180,7 +227,12 @@ export async function POST(req: Request) {
 
         if (plan.kind === "real") {
           const realCode = String(randomInt(100000, 999999));
-          const sent = await deliverOtp({ channel, to: sendTo, code: realCode });
+          const sent = await deliverOtp({
+            channel,
+            to: sendTo,
+            code: realCode,
+            origin: channel === "phone" ? appOrigin(req) : null,
+          });
           if (sent.ok) {
             code = realCode;
             delivery = channel === "phone" ? "sms" : "email";
@@ -217,6 +269,7 @@ export async function POST(req: Request) {
             channel,
             target: displayTarget,
             expiresInSec: 600,
+            resendInSec: RESEND_COOLDOWN_SEC,
             delivery,
             message: deliveryNote,
           },

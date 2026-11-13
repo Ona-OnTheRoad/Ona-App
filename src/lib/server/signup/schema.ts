@@ -96,6 +96,12 @@ export const bodySchema = z.object({
   /** Referral code from ?ref= param in signup link */
   refCode: z.string().max(30).optional(),
   /**
+   * Proof from /api/auth/otp/signup/verify that this phone received an SMS code.
+   * Optional and best-effort: an invalid/expired/other-number proof is ignored
+   * (the account is simply created unverified), never an error.
+   */
+  phoneProof: z.string().max(600).optional(),
+  /**
    * When the user is already logged in (dual-role attach from menu),
    * pass their access_token so we extend THIS identity never create a
    * second auth user (fraud / duplicate account prevention).

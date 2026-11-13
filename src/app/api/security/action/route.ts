@@ -7,11 +7,12 @@ import {
   getSupabaseUrl,
   isSupabaseAdminConfigured,
 } from "@/lib/supabase/env";
-import {
-  isAfricaTalkingConfigured,
-  normalizeNgPhone,
-  sendLoginOtpSms,
-} from "@/lib/server/africastalking";
+import { normalizeContactTarget } from "@/lib/server/otp/change-contact-otp";
+import { markUserPhoneVerified } from "@/lib/server/otp/mark-phone-verified";
+import { findPhoneOwners, phoneTail } from "@/lib/server/otp/phone-owners";
+import { requireContactChangeProof } from "@/lib/server/security/contact-change-guard";
+import { verifyBankChangeProof } from "@/lib/server/otp/bank-change-proof";
+import { isBankAccountTaken } from "@/lib/server/payments/bank-lookup";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,7 +32,18 @@ const actionSchema = z.object({
   reason: z.string().optional(),
   identityDocumentUrl: z.string().optional(),
   identityDocumentType: z.string().optional(),
+  /** change_phone / change_email: code sent to the NEW contact. */
+  code: z.string().min(4).max(8).optional(),
+  /** change_phone / change_email: proof from POST /api/security/verify-identity. */
+  identityProof: z.string().max(600).optional(),
+  /** change_bank: proof from POST /api/security/change-bank/verify-code. */
+  bankProof: z.string().max(600).optional(),
 });
+
+/** Escape LIKE wildcards so an email like "a_b@x.com" only matches itself. */
+function likeExact(v: string): string {
+  return v.replace(/[\\%_]/g, "\\$&");
+}
 
 function maskValue(
   val: string,
@@ -164,20 +176,8 @@ export async function POST(req: Request) {
     // ── CHANGE PHONE ──────────────────────────────────────────────────────────
     case "change_phone": {
       if (!newValue) return apiFail("New phone number is required", 400);
-      const phone = normalizeNgPhone(newValue);
+      const phone = normalizeContactTarget("phone", newValue);
       if (!phone) return apiFail("Invalid phone number", 400);
-
-      // Check phone not already in use
-      const { data: existing } = await supabase
-        .from("profiles")
-        .select("id, phone")
-        .eq("is_active", true)
-        .neq("id", userId)
-        .eq("phone", phone)
-        .limit(1);
-      const phoneTaken = (existing || []).length > 0;
-      if (phoneTaken)
-        return apiFail("This phone number is already in use.", 409);
 
       // Get current phone
       const { data: profile } = await supabase
@@ -187,6 +187,28 @@ export async function POST(req: Request) {
         .single();
 
       const oldPhone = (profile as { phone?: string } | null)?.phone || "";
+      if (phoneTail(oldPhone) !== null && phoneTail(oldPhone) === phoneTail(phone)) {
+        return apiFail("That is already your phone number.", 400, "same_as_current");
+      }
+
+      // Already used by another account: same last-10-digits rule as signup, fail closed.
+      const found = await findPhoneOwners(supabase, phone);
+      if ("error" in found) {
+        return apiFail("Could not check this number. Try again.", 503, "lookup_failed");
+      }
+      if (found.owners.some((o) => o.id !== userId)) {
+        return apiFail("This phone number is already in use.", 409, "in_use");
+      }
+
+      // Identity proof + the code sent to this exact new number.
+      const blocked = await requireContactChangeProof(supabase, {
+        userId,
+        channel: "phone",
+        target: phone,
+        code: parsed.data.code,
+        identityProof: parsed.data.identityProof,
+      });
+      if (blocked) return blocked;
 
       // Update profiles table
       await supabase
@@ -203,6 +225,13 @@ export async function POST(req: Request) {
         .from("repair_pro_profiles")
         .update({ phone, updated_at: now })
         .eq("user_id", userId);
+
+      // The new number just received and confirmed a code: it is verified.
+      try {
+        await markUserPhoneVerified(supabase, userId);
+      } catch {
+        /* optional columns; the change itself already succeeded */
+      }
 
       await writeAuditLog({
         userId,
@@ -229,18 +258,8 @@ export async function POST(req: Request) {
     // ── CHANGE EMAIL ──────────────────────────────────────────────────────────
     case "change_email": {
       if (!newValue) return apiFail("New email address is required", 400);
-      const email = newValue.trim().toLowerCase();
-      if (!email.includes("@")) return apiFail("Invalid email address", 400);
-
-      // Check not in use
-      const { data: existingEmail } = await supabase
-        .from("profiles")
-        .select("id")
-        .ilike("email", email)
-        .maybeSingle();
-      if (existingEmail && existingEmail.id !== userId) {
-        return apiFail("This email is already in use.", 409);
-      }
+      const email = normalizeContactTarget("email", newValue);
+      if (!email) return apiFail("Invalid email address", 400);
 
       const { data: profile } = await supabase
         .from("profiles")
@@ -248,6 +267,32 @@ export async function POST(req: Request) {
         .eq("id", userId)
         .single();
       const oldEmail = (profile as { email?: string } | null)?.email || "";
+      if (oldEmail.trim().toLowerCase() === email) {
+        return apiFail("That is already your email address.", 400, "same_as_current");
+      }
+
+      // Check not in use by another account
+      const { data: existingEmail, error: emailLookupErr } = await supabase
+        .from("profiles")
+        .select("id")
+        .ilike("email", likeExact(email))
+        .limit(5);
+      if (emailLookupErr) {
+        return apiFail("Could not check this email. Try again.", 503, "lookup_failed");
+      }
+      if ((existingEmail || []).some((r) => (r as { id: string }).id !== userId)) {
+        return apiFail("This email is already in use.", 409, "in_use");
+      }
+
+      // Identity proof + the code sent to this exact new email.
+      const blocked = await requireContactChangeProof(supabase, {
+        userId,
+        channel: "email",
+        target: email,
+        code: parsed.data.code,
+        identityProof: parsed.data.identityProof,
+      });
+      if (blocked) return blocked;
 
       // Update email in profiles table
       await supabase
@@ -348,6 +393,22 @@ export async function POST(req: Request) {
     case "change_bank": {
       if (!newValue) return apiFail("Bank details are required", 400);
 
+      // Redirecting payouts and refunds is the most sensitive change an account can
+      // make: it needs the code that was just sent to the phone on the account.
+      let proofOk = false;
+      try {
+        proofOk = verifyBankChangeProof(parsed.data.bankProof, userId);
+      } catch {
+        proofOk = false;
+      }
+      if (!proofOk) {
+        return apiFail(
+          "Please verify with the code sent to your phone.",
+          403,
+          "verification_required",
+        );
+      }
+
       let bankData: {
         bankName?: string;
         bankAccountName?: string;
@@ -361,6 +422,8 @@ export async function POST(req: Request) {
         return apiFail("Invalid bank data format", 400);
       }
       if (
+        !bankData ||
+        typeof bankData !== "object" ||
         !bankData.bankName ||
         !bankData.bankAccountName ||
         !bankData.bankAccountNumber ||
@@ -369,6 +432,33 @@ export async function POST(req: Request) {
         return apiFail(
           "All bank fields are required: bankName, bankAccountName, bankAccountNumber, bankCode",
           400,
+        );
+      }
+      bankData = {
+        bankName: String(bankData.bankName).trim().slice(0, 80),
+        bankAccountName: String(bankData.bankAccountName).trim().slice(0, 120),
+        bankAccountNumber: String(bankData.bankAccountNumber).replace(/\D/g, ""),
+        bankCode: String(bankData.bankCode).trim().slice(0, 20),
+      };
+      if (bankData.bankAccountNumber!.length !== 10) {
+        return apiFail("Account number must be 10 digits.", 400, "validation");
+      }
+      if (!bankData.bankName || !bankData.bankAccountName || !bankData.bankCode) {
+        return apiFail("All bank fields are required.", 400, "validation");
+      }
+
+      // One bank account (code + NUBAN) may only belong to one Ona user.
+      if (
+        await isBankAccountTaken({
+          accountNumber: bankData.bankAccountNumber!,
+          bankCode: bankData.bankCode!,
+          excludeUserId: userId,
+        })
+      ) {
+        return apiFail(
+          "This bank account is already used on another Ona account. Use a different one.",
+          409,
+          "bank_account_in_use",
         );
       }
 
@@ -387,14 +477,26 @@ export async function POST(req: Request) {
         updated_at: now,
       };
 
-      await supabase
+      // Do not report success if the write did not happen.
+      const proWrite = await supabase
         .from("repair_pro_profiles")
         .update(updateData)
         .eq("user_id", userId);
-      await supabase
+      const motWrite = await supabase
         .from("motorist_profiles")
         .update(updateData)
         .eq("user_id", userId);
+      if (proWrite.error || motWrite.error) {
+        await writeAuditLog({
+          userId,
+          actionType: "change_bank",
+          riskTier: "critical",
+          status: "failed",
+          errorMessage: (proWrite.error || motWrite.error)?.message,
+          verificationMethod: "otp_phone",
+        });
+        return apiFail("Could not update your bank account. Please try again.", 500, "update_failed");
+      }
 
       await writeAuditLog({
         userId,
@@ -407,7 +509,7 @@ export async function POST(req: Request) {
           (oldBank?.bank_account_number as string) || "",
           "bank",
         ),
-        maskedNewValue: maskValue(bankData.bankAccountNumber, "bank"),
+        maskedNewValue: maskValue(bankData.bankAccountNumber ?? "", "bank"),
         verificationMethod: "otp_phone",
       });
 

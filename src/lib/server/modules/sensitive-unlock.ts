@@ -1,12 +1,11 @@
 import "server-only";
 /**
  * Temporary unlock for sensitive Customer Care actions.
- * Password 336699 (or ADMIN_SENSITIVE_PASSWORD) grants a short-lived unlock cookie.
+ * ADMIN_SENSITIVE_PASSWORD grants a short-lived unlock cookie.
  */
 
 import { cookies } from "next/headers";
 import { createHmac, timingSafeEqual } from "crypto";
-import { isDemoOtpAllowed } from "@/lib/auth/demo-otp";
 import {
   SENSITIVE_UNLOCK_COOKIE,
   SENSITIVE_UNLOCK_TTL_MS,
@@ -25,7 +24,9 @@ function signingSecret(): string {
     process.env.ADMIN_FIELD_ENCRYPTION_KEY ||
     process.env.ADMIN_SENSITIVE_PASSWORD;
   if (secret) return secret;
-  if (isDemoOtpAllowed()) return "336699-ogamecho-unlock";
+  // Local development / tests only. Production must configure a real secret;
+  // a guessable literal would let anyone forge an unlock cookie.
+  if (process.env.NODE_ENV !== "production") return "dev-only-unlock-signing-secret";
   throw new Error(
     "ADMIN_UNLOCK_SIGNING_SECRET environment variable is required",
   );

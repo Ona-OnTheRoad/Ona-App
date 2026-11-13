@@ -7,6 +7,7 @@ export { listNameChangeRequests } from "@/lib/server/security/security-store";
 export { updateNameChangeStatus } from "@/lib/server/security/security-store";
 export { listContactChangeRequests } from "@/lib/server/security/contact-changes";
 export { updateContactChangeStatus } from "@/lib/server/security/contact-changes";
+export { redactContactRequest } from "@/lib/server/security/contact-changes";
 export { listReferralEvents } from "@/lib/server/security/referral-codes";
 export { updateReferralEvent } from "@/lib/server/security/security-store";
 export { listCreditTransactions } from "@/lib/server/security/credit-wallets";

@@ -42,10 +42,10 @@ export function PasswordInputField({
         />
         <button
           type="button"
-          tabIndex={-1}
           onClick={() => setShow((prev) => !prev)}
           className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center text-ona-muted hover:text-ona-ink transition-colors cursor-pointer"
-          aria-label={show ? "Hide password" : "Show password"}
+          aria-label="Show password"
+          aria-pressed={show}
         >
           {show ? (
             <EyeOff className="h-5 w-5" strokeWidth={2} />

@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils";
 import { profileTheme } from "@/lib/profile-system";
 import { SecurityField } from "./security-field";
 import {
-  backendSendOtp,
-  backendProfileVerifyOtp,
-} from "@/lib/supabase/app-api";
+  CODE_STEP_ERRORS,
+  sendChangeContactCode,
+} from "@/lib/security/change-contact-client";
 import { ChangeFlowHeader } from "./shared/change-flow-header";
 import { DiscardChangesSheet } from "./shared/discard-sheet";
 import { changeFlowFieldClass } from "./shared/field-class";
@@ -96,40 +96,40 @@ export function PhoneChangeFlow({
     }
     setBusy(true);
     setErr(null);
-    const res = await backendSendOtp({ channel: "phone", target: newPhone });
+    const res = await sendChangeContactCode({
+      channel: "phone",
+      target: newPhone,
+      identityProof: identity.identityProof,
+    });
     setBusy(false);
-    if (res.error) {
+    if (!res.ok) {
+      if (res.code === "identity_required") {
+        // The identity proof expired (or was never issued): start that step again.
+        identity.resetIdentity();
+        setStep("verify_identity");
+      }
       setErr(res.error);
       return;
     }
+    setNewCode("");
     setStep("verify_new");
     setMsg("Code sent to your new phone.");
   };
 
+  // The code is checked by the server together with the change itself, so there
+  // is no separate "verify" call that the browser could skip or fake.
   const verifyNew = async () => {
     if (newCode.length < 4) {
       setErr("Enter the code");
       return;
     }
-    setBusy(true);
-    setErr(null);
-    const res = await backendProfileVerifyOtp({
-      channel: "phone",
-      target: newPhone,
-      code: newCode,
-    });
-    setBusy(false);
-    if (res.error) {
-      setErr(res.error);
-      return;
-    }
-    setStep("confirming");
-    await doChange();
+    await doChange(newPhone, newCode);
   };
 
-  const doChange = async () => {
+  const doChange = async (phone: string, code: string) => {
     setBusy(true);
     setErr(null);
+    setStep("confirming");
     try {
       const res = await (
         await import("@/lib/api-auth-headers")
@@ -139,24 +139,35 @@ export function PhoneChangeFlow({
         body: JSON.stringify({
           action: "change_phone",
           accessToken,
-          newValue: newPhone,
+          newValue: phone,
+          code,
+          identityProof: identity.identityProof,
         }),
       });
       const json = (await res.json()) as {
         ok?: boolean;
-        error?: { message?: string };
+        error?: { message?: string; code?: string };
       };
       if (!json?.ok) {
+        const errCode = json?.error?.code || "";
         setErr(json?.error?.message || "Phone update failed.");
-        setStep("error");
+        if (errCode === "identity_required") {
+          identity.resetIdentity();
+          setStep("verify_identity");
+        } else if (CODE_STEP_ERRORS.has(errCode)) {
+          setNewCode("");
+          setStep("verify_new");
+        } else {
+          setStep("error");
+        }
         return;
       }
       setStep("done");
       setMsg("Phone number updated.");
-      onPhoneChanged(newPhone);
+      onPhoneChanged(phone);
     } catch {
       setErr("Network error. Try again.");
-      setStep("error");
+      setStep("verify_new");
     } finally {
       setBusy(false);
     }
@@ -234,6 +245,17 @@ export function PhoneChangeFlow({
           busy={busy}
           onVerify={verifyNew}
         />
+      )}
+
+      {step === "verify_new" && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={sendNewOtp}
+          className={cn("text-[12px] font-medium underline disabled:opacity-50", t.muted)}
+        >
+          Resend code
+        </button>
       )}
 
       {step === "confirming" && (

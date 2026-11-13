@@ -29,8 +29,11 @@ export function useIdentityVerification({
   const [emailCode, setEmailCode] = useState("");
   const [gName, setGName] = useState("");
   const [emailCodeSent, setEmailCodeSent] = useState(false);
+  /** Signed proof from the server that the identity check just passed. Required to change a contact. */
+  const [identityProof, setIdentityProof] = useState("");
 
   const resetIdentity = () => {
+    setIdentityProof("");
     setPassword("");
     setEmailCode("");
     setGName("");
@@ -85,11 +88,13 @@ export function useIdentityVerification({
       const json = (await res.json()) as {
         ok?: boolean;
         error?: { message?: string };
+        data?: { identityProof?: string };
       };
       if (!json?.ok) {
         setErr(json?.error?.message || "Identity verification failed.");
         return;
       }
+      setIdentityProof(json.data?.identityProof || "");
       onVerified();
       setMsg(verifiedMessage);
       setPassword("");
@@ -110,6 +115,7 @@ export function useIdentityVerification({
     gName,
     setGName,
     emailCodeSent,
+    identityProof,
     resetIdentity,
     sendEmailOtp,
     verifyIdentity,

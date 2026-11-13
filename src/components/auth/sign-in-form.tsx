@@ -110,6 +110,7 @@ export function SignInForm() {
               invalid={Boolean(error)}
               cooldownActive={failCooldown}
               cooldownLeft={form.cooldownLeft}
+              resendIn={form.resendIn}
               onResend={() => void form.onSendCode()}
             />
           ) : (

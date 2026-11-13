@@ -116,6 +116,7 @@ export class FakeQuery {
   filters: Array<{ col: string; val: unknown }> = [];
   notFilters: Array<{ col: string; op: string; val: unknown }> = [];
   likeFilters: Array<{ col: string; pattern: string }> = [];
+  isFilters: Array<{ col: string; val: unknown }> = [];
   orRaw: string[] = [];
   wantSelect = false;
   isSingle = false;
@@ -151,6 +152,11 @@ export class FakeQuery {
     this.filters.push({ col, val: vals });
     return this;
   }
+  /** PostgREST `.is(col, null)` => IS NULL (also matches a missing column). */
+  is(col: string, val: unknown) {
+    this.isFilters.push({ col, val });
+    return this;
+  }
   ilike(col: string, pattern: string) {
     this.likeFilters.push({ col, pattern });
     return this;
@@ -184,6 +190,13 @@ export class FakeQuery {
         return false;
       }
     }
+    for (const { col, val } of this.isFilters) {
+      if (val === null) {
+        if (row[col] != null) return false;
+      } else if (row[col] !== val) {
+        return false;
+      }
+    }
     for (const { col, pattern } of this.likeFilters) {
       if (!likeToRegex(pattern).test(String(row[col] ?? ""))) return false;
     }
@@ -192,6 +205,8 @@ export class FakeQuery {
       const anyHit = parts.some((part) => {
         let m = /^(\w+)\.eq\.(.+)$/.exec(part);
         if (m) return String(row[m[1]]) === m[2];
+        m = /^(\w+)\.ilike\.(.+)$/.exec(part);
+        if (m) return likeToRegex(m[2]).test(String(row[m[1]] ?? ""));
         m = /^(\w+)\.not\.isnull$/.exec(part);
         if (m) return row[m[1]] != null;
         return false;
@@ -289,7 +304,9 @@ export class FakeQuery {
         single(matches);
         return;
       }
-      const list = this.sorted(matches);
+      // Like PostgREST, a limit caps the rows returned (after ordering).
+      const ordered = this.sorted(matches);
+      const list = this.limitN == null ? ordered : ordered.slice(0, this.limitN);
       if (this.isSingle) {
         if (list.length === 0) {
           resolve({ data: null, error: NO_ROWS_ERROR });

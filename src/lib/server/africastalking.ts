@@ -30,10 +30,20 @@ export function normalizeNgPhone(raw: string): string | null {
   return d;
 }
 
+export type SmsResult =
+  | { ok: true; messageId?: string }
+  | { ok: false; error: string; statusCode?: number };
+
+/** Africa's Talking per-recipient statuses that mean the message was accepted. */
+const AT_ACCEPTED = new Set([100, 101, 102]); // Processed, Sent, Queued
+
+/** 10s: an OTP request must not hang the screen on a slow gateway. */
+const AT_TIMEOUT_MS = 10_000;
+
 export async function sendAfricaTalkingSms(input: {
   to: string;
   message: string;
-}): Promise<{ ok: true; messageId?: string } | { ok: false; error: string }> {
+}): Promise<SmsResult> {
   const apiKey = process.env.AT_API_KEY?.trim();
   const username = process.env.AT_USERNAME?.trim();
   if (!apiKey || !username) {
@@ -65,6 +75,7 @@ export async function sendAfricaTalkingSms(input: {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: body.toString(),
+      signal: AbortSignal.timeout(AT_TIMEOUT_MS),
     });
 
     const text = await res.text();
@@ -100,16 +111,19 @@ export async function sendAfricaTalkingSms(input: {
 
     const recipients = json.SMSMessageData?.Recipients || [];
     const first = recipients[0];
-    // AT statusCode 101 = Success
-    if (
-      first &&
-      first.statusCode != null &&
-      first.statusCode !== 101 &&
-      first.statusCode !== 100
-    ) {
+    // No recipient row at all means the gateway refused the request (bad number,
+    // zero balance, blocked sender): never report that as sent.
+    if (!first) {
+      return {
+        ok: false,
+        error: json.SMSMessageData?.Message || "No recipient accepted by gateway",
+      };
+    }
+    if (first.statusCode != null && !AT_ACCEPTED.has(first.statusCode)) {
       return {
         ok: false,
         error: first.status || `SMS status ${first.statusCode}`,
+        statusCode: first.statusCode,
       };
     }
 
@@ -122,10 +136,31 @@ export async function sendAfricaTalkingSms(input: {
   }
 }
 
+/**
+ * The SMS carries the code in a form phones can auto-read:
+ * - iOS / Android keyboards suggest "...code is 123456".
+ * - Chrome's WebOTP API auto-fills when the LAST line is "@<host> #<code>",
+ *   where <host> is the site that asked for the code (our PWA origin).
+ */
+export function buildOtpMessage(code: string, origin?: string | null): string {
+  const base = `Your Ona code is ${code}. It expires in 10 minutes. Never share it with anyone.`;
+  let host = "";
+  try {
+    host = origin ? new URL(origin).host : "";
+  } catch {
+    host = "";
+  }
+  return host ? `${base}\n\n@${host} #${code}` : base;
+}
+
 export async function sendLoginOtpSms(input: {
   to: string;
   code: string;
-}): Promise<{ ok: true; messageId?: string } | { ok: false; error: string }> {
-  const message = `Ona login code: ${input.code}. Valid for 10 minutes. Do not share this code.`;
-  return sendAfricaTalkingSms({ to: input.to, message });
+  /** App origin (https://ona.app) so Chrome can auto-fill the code (WebOTP). */
+  origin?: string | null;
+}): Promise<SmsResult> {
+  return sendAfricaTalkingSms({
+    to: input.to,
+    message: buildOtpMessage(input.code, input.origin),
+  });
 }

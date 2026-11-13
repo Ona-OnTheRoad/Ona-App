@@ -131,10 +131,11 @@ export function FlowFinalStep({
             {finalStep === "photos" ? (
               <div>
                 <div className="flex flex-wrap gap-1.5">
-                  {photos.map((p) => (
+                  {photos.map((p, i) => (
                     <button
                       key={p.id}
                       type="button"
+                      aria-label={`Remove photo ${i + 1} of ${photos.length}`}
                       onClick={() =>
                         setPhotos((prev) => prev.filter((x) => x.id !== p.id))
                       }

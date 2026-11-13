@@ -100,7 +100,7 @@ export async function POST(req: Request) {
 
   if (!dest) return apiFail("Invalid target", 400);
 
-  const demoOk = isDemoOtp(codeClean) && isDemoOtpAllowed();
+  const demoOk = isDemoOtp(codeClean) && isDemoOtpAllowed(channel);
   if (demoOk) {
     await supabase
       .from("phone_otps")

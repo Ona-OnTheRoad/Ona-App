@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { isProService } from "@/lib/pro-service-id";
 import { saveProfileToVault } from "@/lib/profiles-vault";
 import { backendSignUp, isAppBackendOnline } from "@/lib/supabase/app-api";
+import { loadSignupDraft } from "@/lib/signup-draft";
 import type { AccountType, ProService, UserProfile } from "@/lib/types";
 import { readStoredPrimaryAccount, writeStoredPrimaryAccount } from "./storage";
 import type { SessionStateResult } from "./use-session-state";
@@ -136,6 +137,9 @@ export function useSignup(
         docsStatus: normalized.docsStatus,
         certificationFileName: normalized.certificationFileName,
         certificationFileDataUrl: certData,
+        // From the optional "Verify your number" step. The server only honours it
+        // for exactly this phone and ignores anything stale or invalid.
+        phoneProof: loadSignupDraft()?.phoneProof || undefined,
         // Dual role: keep motorist when adding Repair Pro (and vice versa)
         keepOtherRole: true,
         refCode: normalized.refCode,

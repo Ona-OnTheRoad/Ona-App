@@ -2,17 +2,17 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { apiFailFromError } from "../api-json";
 import { serverLogger } from "../structured-logger";
-import { middleware } from "../../../middleware";
+import { proxy } from "../../../proxy";
 
-describe("request ID middleware", () => {
+describe("request ID proxy", () => {
   it("returns a safe caller ID and generates one for invalid input", () => {
-    const supplied = middleware(new NextRequest("https://ona.example/api/jobs", {
+    const supplied = proxy(new NextRequest("https://ona.example/api/jobs", {
       headers: { "x-request-id": "client_req-1" },
     }));
     expect(supplied.headers.get("x-request-id")).toBe("client_req-1");
     expect(supplied.headers.get("x-middleware-request-x-request-id")).toBe("client_req-1");
 
-    const generated = middleware(new NextRequest("https://ona.example/api/jobs", {
+    const generated = proxy(new NextRequest("https://ona.example/api/jobs", {
       headers: { "x-request-id": "bad id" },
     }));
     expect(generated.headers.get("x-request-id")).toMatch(/^[0-9a-f-]{36}$/i);

@@ -9,6 +9,14 @@ import {
   isSupabaseAdminConfigured,
 } from "@/lib/supabase/env";
 import { emailOtpKey, isDemoOtp, isDemoOtpAllowed } from "@/lib/auth/demo-otp";
+import {
+  rateLimitAsync,
+  rateLimitUnavailableResponse,
+} from "@/lib/server/modules/rate-limit";
+import { issueIdentityProof } from "@/lib/server/otp/identity-proof";
+
+/** Wrong email codes allowed per code before it is voided. */
+const MAX_CODE_ATTEMPTS = 5;
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -59,6 +67,28 @@ export async function POST(req: Request) {
   const userEmail = userData.user.email;
   if (!userEmail) return apiFail("No email on account", 400);
 
+  // Brute-force guard: every attempt needs the password, but a stolen session
+  // must still not be able to hammer the password and the code.
+  try {
+    const budget = await rateLimitAsync({
+      key: `verify-identity:${userId}`,
+      limit: 10,
+      windowMs: 10 * 60_000,
+    });
+    if (!budget.ok) {
+      return apiFail(
+        `Too many attempts. Retry in ${budget.retryAfterSec}s.`,
+        429,
+        "rate_limited",
+      );
+    }
+  } catch (error) {
+    return (
+      rateLimitUnavailableResponse(error, req) ||
+      apiFail("Security checks unavailable", 503)
+    );
+  }
+
   const admin = createServiceSupabase();
   const results: { factor: string; passed: boolean }[] = [];
 
@@ -97,7 +127,15 @@ export async function POST(req: Request) {
       return apiFail("Code expired. Request a new one.", 400);
     }
 
-    const demoOk = isDemoOtp(emailCode) && isDemoOtpAllowed();
+    if ((otp.attempts ?? 0) >= MAX_CODE_ATTEMPTS) {
+      await admin
+        .from("phone_otps")
+        .update({ consumed_at: new Date().toISOString() })
+        .eq("id", otp.id);
+      return apiFail("Too many attempts. Request a new code.", 429, "otp_locked");
+    }
+
+    const demoOk = isDemoOtp(emailCode) && isDemoOtpAllowed("email");
     if (demoOk) {
       results.push({ factor: "email_otp", passed: true });
       await admin
@@ -123,24 +161,34 @@ export async function POST(req: Request) {
     return apiFail("Email verification code is required.", 400);
   }
 
-  // 3. Guarantor name verification
-  if (guarantorName) {
-    const { data: guarantor } = await admin
-      .from("repair_pro_guarantors")
-      .select("full_name")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    const storedName =
-      (guarantor as { full_name?: string } | null)?.full_name || "";
+  // 3. Guarantor name verification: only when a guarantor is on file. Customers
+  // (and Repair Pros who have none) have nothing to match, so it must not block them.
+  const { data: guarantor } = await admin
+    .from("repair_pro_guarantors")
+    .select("full_name")
+    .eq("user_id", userId)
+    .maybeSingle();
+  const storedName =
+    (guarantor as { full_name?: string } | null)?.full_name?.trim() || "";
+  if (storedName) {
+    if (!guarantorName) {
+      return apiFail("Guarantor name is required for verification.", 400);
+    }
     const nameMatch =
-      storedName.toLowerCase().trim() === guarantorName.toLowerCase().trim();
+      storedName.toLowerCase() === guarantorName.toLowerCase().trim();
     results.push({ factor: "guarantor_name", passed: nameMatch });
     if (!nameMatch)
       return apiFail("Guarantor name does not match our records.", 403);
-  } else {
-    return apiFail("Guarantor name is required for verification.", 400);
   }
 
-  return apiOk({ verified: true, factors: results });
+  // Short-lived, user-bound proof that this identity check just passed. The
+  // contact-change endpoints require it, so the browser cannot skip this step.
+  let identityProof: string | undefined;
+  try {
+    identityProof = issueIdentityProof(userId).proof;
+  } catch {
+    return apiFail("Verification is not available right now.", 503, "proof_unavailable");
+  }
+
+  return apiOk({ verified: true, factors: results, identityProof });
 }

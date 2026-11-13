@@ -6,6 +6,7 @@ import {
 } from "@/lib/server/admin-auth";
 import {
   listContactChangeRequests,
+  redactContactRequest,
   updateContactChangeStatus,
   listReferralEvents,
   updateReferralEvent,
@@ -76,7 +77,7 @@ export async function GET(req: Request) {
       case "contact-changes": {
         const status = searchParams.get("status") || undefined;
         const requests = await listContactChangeRequests({ status });
-        return apiOk({ requests });
+        return apiOk({ requests: requests.map(redactContactRequest) });
       }
       case "referrals": {
         const status = searchParams.get("status") || undefined;
@@ -159,7 +160,7 @@ export async function POST(req: Request) {
           actionType: action,
           reason,
         });
-        return apiOk({ request: result.request });
+        return apiOk({ request: redactContactRequest(result.request) });
       }
 
       // Name change actions

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { reverseGeocodeLatLngServer } from "@/lib/google-maps";
+import { checkIpRateLimit } from "@/lib/server/modules/ip-rate-limit";
 
 /**
  * Server-side reverse geocode (Google → Nominatim).
@@ -19,6 +20,21 @@ export async function GET(req: NextRequest) {
       { error: "lat/lng out of range" },
       { status: 400 },
     );
+  }
+
+  const limit = await checkIpRateLimit(req, {
+    name: "reverse-geocode",
+    limit: 60,
+    windowMs: 60_000,
+    failOpen: true,
+  });
+  if (!limit.ok && limit.reason === "limited") {
+    const res = NextResponse.json(
+      { error: "Too many requests. Slow down a moment." },
+      { status: 429 },
+    );
+    res.headers.set("Retry-After", String(limit.retryAfterSec));
+    return res;
   }
 
   const result = await reverseGeocodeLatLngServer(lat, lng);

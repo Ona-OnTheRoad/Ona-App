@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(req: NextRequest) {
+/**
+ * Next 16 "proxy" (formerly middleware). Runs on the Node.js runtime.
+ * Only stamps a sanitized x-request-id on the request and response; keep it
+ * cheap and free of auth/data fetching.
+ */
+export function proxy(req: NextRequest) {
   const suppliedRequestId = req.headers.get("x-request-id")?.trim() || "";
   const requestId = /^[A-Za-z0-9._-]{1,64}$/.test(suppliedRequestId)
     ? suppliedRequestId

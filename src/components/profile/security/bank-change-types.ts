@@ -6,7 +6,8 @@ export interface BankChangeFlowProps {
     bankAccountNumber?: string | null;
     bankCode?: string | null;
   };
-  userPhone: string;
+  /** Unused: the server reads the phone number from the account. Kept so existing callers compile. */
+  userPhone?: string;
   accessToken: string;
   onBankChanged: (bank: {
     bankName: string;

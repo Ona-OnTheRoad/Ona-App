@@ -1,5 +1,7 @@
 import "server-only";
 import { apiOk } from "@/lib/server/api-json";
+import { markUserPhoneVerified } from "@/lib/server/otp/mark-phone-verified";
+import { verifyPhoneProof } from "@/lib/server/otp/phone-proof";
 import { sendSignupConfirmationEmail } from "@/lib/server/resend";
 import type { SignupContext, VerifiedFlags } from "@/lib/server/signup/context";
 import { logSignupEvent, passwordClient } from "@/lib/server/signup/helpers";
@@ -56,13 +58,25 @@ export async function finishSignup(
     emailError = e instanceof Error ? e.message : "email failed";
   }
 
+  // Phone proven by SMS at the signup step: stamp it verified. Only a valid,
+  // unexpired proof for exactly this number counts; anything else is ignored.
+  let phoneVerified = false;
+  if (input.phoneProof && verifyPhoneProof(input.phoneProof, input.phone)) {
+    try {
+      await markUserPhoneVerified(supabase, userId);
+      phoneVerified = true;
+    } catch {
+      /* stays unverified; the user can verify later */
+    }
+  }
+
   // Still return success with profile if session missing client can auto-login
   if (signedIn.error || !signedIn.data.session || !signedIn.data.user) {
     await logSignupEvent(supabase, {
       ...eventBase,
       success: true,
       user_id: userId,
-      meta: { createdNew, session: false, emailSent, emailError },
+      meta: { createdNew, session: false, emailSent, emailError, phoneVerified },
     });
     return apiOk({
       userId,
@@ -101,6 +115,7 @@ export async function finishSignup(
         bvn: hasBvn ? bvn : undefined,
         ninVerified: ninVerifiedOut,
         bvnVerified: bvnVerifiedOut,
+        phoneVerified,
       },
       warning:
         "Account created. Opening session failed try logging in once with the same email and password.",
@@ -111,7 +126,7 @@ export async function finishSignup(
     ...eventBase,
     success: true,
     user_id: userId,
-    meta: { createdNew, session: true, emailSent, emailError },
+    meta: { createdNew, session: true, emailSent, emailError, phoneVerified },
   });
 
   return apiOk({
@@ -154,6 +169,7 @@ export async function finishSignup(
       bvn: hasBvn ? bvn : undefined,
       ninVerified: ninVerifiedOut,
       bvnVerified: bvnVerifiedOut,
+      phoneVerified,
     },
   });
 }

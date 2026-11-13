@@ -1,6 +1,5 @@
 "use client";
 
-import { CUSTOMER_PHONE_OTP } from "@/lib/verification-gate";
 import { cn } from "@/lib/utils";
 import { authenticatorQrUrl, type SetupStep } from "./two-fa-utils";
 
@@ -76,16 +75,19 @@ export function SmsPanel({
   setSetupErr,
   setSetupStep,
   smsSent,
-  setSmsSent,
+  smsBusy,
+  sendSms,
   smsCode,
   setSmsCode,
   verifySms,
 }: Common & {
   smsSent: boolean;
   setSmsSent: (v: boolean) => void;
+  smsBusy: boolean;
+  sendSms: () => Promise<void>;
   smsCode: string;
   setSmsCode: (v: string) => void;
-  verifySms: () => void;
+  verifySms: () => Promise<void>;
 }) {
   return (
     <div className="space-y-3 pt-1">
@@ -99,19 +101,21 @@ export function SmsPanel({
       {!smsSent ? (
         <button
           type="button"
-          onClick={() => setSmsSent(true)}
-          className="h-11 w-full rounded-ona-ctl bg-brand text-white font-medium text-[13px] transition-opacity hover:opacity-95 active:opacity-85 cursor-pointer"
+          disabled={smsBusy}
+          onClick={() => void sendSms()}
+          className="h-11 w-full rounded-ona-ctl bg-brand text-white font-medium text-[13px] transition-opacity hover:opacity-95 active:opacity-85 cursor-pointer disabled:opacity-60"
         >
-          Send code
+          {smsBusy ? "Sending…" : "Send code"}
         </button>
       ) : (
         <div className="space-y-2.5">
           <p className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-            Code sent (demo: {CUSTOMER_PHONE_OTP})
+            Code sent. Check your messages.
           </p>
           <input
             className="h-11 w-full rounded-ona-ctl border border-ona-border bg-ona-field px-4 text-[13px] font-normal text-ona-ink outline-none transition-colors placeholder:text-ona-muted/60 focus:border-ona-ink"
             inputMode="numeric"
+            autoComplete="one-time-code"
             maxLength={6}
             value={smsCode}
             onChange={(e) =>
@@ -124,10 +128,11 @@ export function SmsPanel({
           ) : null}
           <button
             type="button"
-            onClick={verifySms}
-            className="h-11 w-full rounded-ona-ctl bg-brand text-white font-medium text-[13px] transition-opacity hover:opacity-95 active:opacity-85 cursor-pointer"
+            disabled={smsBusy}
+            onClick={() => void verifySms()}
+            className="h-11 w-full rounded-ona-ctl bg-brand text-white font-medium text-[13px] transition-opacity hover:opacity-95 active:opacity-85 cursor-pointer disabled:opacity-60"
           >
-            Enable SMS 2FA
+            {smsBusy ? "Checking…" : "Enable SMS 2FA"}
           </button>
         </div>
       )}

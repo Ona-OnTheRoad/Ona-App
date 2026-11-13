@@ -11,9 +11,12 @@ import {
 } from "@/lib/country-id-rules";
 import { splitStoredPhone } from "@/lib/phone-codes";
 import { useApp } from "@/lib/store";
-import { backendLoadUserProfile } from "@/lib/supabase/app-api";
 import {
-  CUSTOMER_PHONE_OTP,
+  backendLoadUserProfile,
+  backendSendPhoneOtp,
+} from "@/lib/supabase/app-api";
+import { useResendCountdown } from "@/lib/auth/use-resend-countdown";
+import {
   customerTierLabel,
   getFirstServiceAt,
   isIdentityPending,
@@ -177,9 +180,31 @@ export function useVerifyIdentity() {
     userProfile?.govIdKind,
   ]);
 
-  const sendDemoOtp = () => {
-    setOtpMsg(`Code sent. For now enter ${CUSTOMER_PHONE_OTP} (demo OTP).`);
+  const resend = useResendCountdown();
+  const [otpSent, setOtpSent] = useState(false);
+
+  /** Sends a real SMS code to the phone on the account (Africa's Talking). */
+  const sendCode = async () => {
+    if (otpBusy || resend.left > 0) return;
+    const phone = userProfile?.phone?.trim();
+    if (!phone) {
+      setError("No phone number on this account. Add one in Settings first.");
+      return;
+    }
+    setOtpBusy(true);
     setError("");
+    try {
+      const res = await backendSendPhoneOtp(phone);
+      if (res.error) {
+        setError(res.error);
+        return;
+      }
+      setOtpSent(true);
+      resend.start();
+      setOtpMsg(res.message || "Code sent. Enter it below.");
+    } finally {
+      setOtpBusy(false);
+    }
   };
 
   const confirmPhone = async () => {
@@ -299,7 +324,9 @@ export function useVerifyIdentity() {
     tier,
     trialStarted,
     selectedDoc,
-    sendDemoOtp,
+    sendCode,
+    resendIn: resend.left,
+    otpSent,
     confirmPhone,
     submitId,
     pickIdFront,

@@ -6,6 +6,16 @@ import { apiFail, apiOk } from "@/lib/server/api-json";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/** Forward the real client IP: the target route rate-limits per IP. */
+function forwardedHeaders(req: Request): Record<string, string> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const xff = req.headers.get("x-forwarded-for");
+  const real = req.headers.get("x-real-ip");
+  if (xff) headers["x-forwarded-for"] = xff;
+  if (real) headers["x-real-ip"] = real;
+  return headers;
+}
+
 export async function POST(req: Request) {
   let body: {
     phone?: string;
@@ -20,7 +30,7 @@ export async function POST(req: Request) {
   const origin = new URL(req.url).origin;
   const res = await fetch(`${origin}/api/auth/otp/verify`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: forwardedHeaders(req),
     body: JSON.stringify({
       channel: "phone",
       target: body.phone || "",

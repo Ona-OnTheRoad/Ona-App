@@ -8,7 +8,9 @@ import { OnaScreen, OnaTitle } from "@/components/ui/ona-screen";
 import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { formatInternationalPhone } from "@/lib/phone-codes";
 import {
+  carriedPhoneProof,
   clearSignupDraft,
+  loadSignupDraft,
   saveSignupDraft,
   signupHref,
 } from "@/lib/signup-draft";
@@ -56,7 +58,12 @@ export function SignupDetails() {
     setFormError("");
     const isDual = dualEntry || fields.dualSignup;
     const { first, last } = splitFullName(fields.fullName);
+    const phoneE164 = formatInternationalPhone(
+      fields.phoneDial,
+      fields.phoneNational,
+    );
     saveSignupDraft({
+      ...carriedPhoneProof(loadSignupDraft(), phoneE164),
       firstName: first,
       lastName: last,
       email: fields.email.trim(),

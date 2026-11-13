@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { CUSTOMER_PHONE_OTP } from "@/lib/verification-gate";
 import {
+  backendProfileVerifyOtp,
+  backendSendPhoneOtp,
+} from "@/lib/supabase/app-api";
+import {
   TWO_FA_KEY,
   TWO_FA_METHOD_KEY,
   TWO_FA_SECRET_KEY,
@@ -13,7 +17,7 @@ import {
   type TwoFaMethod,
 } from "./two-fa-utils";
 
-export function useTwoFa(email: string) {
+export function useTwoFa(email: string, phone = "") {
   const [twoFaOn, setTwoFaOn] = useState(false);
   const [method, setMethod] = useState<TwoFaMethod>(null);
   const [setupStep, setSetupStep] = useState<SetupStep>("idle");
@@ -22,6 +26,7 @@ export function useTwoFa(email: string) {
   const [authCode, setAuthCode] = useState("");
   const [setupErr, setSetupErr] = useState<string | null>(null);
   const [smsSent, setSmsSent] = useState(false);
+  const [smsBusy, setSmsBusy] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
 
   useEffect(() => {
@@ -116,15 +121,51 @@ export function useTwoFa(email: string) {
     persistEnabled(true, m);
   };
 
-  const verifySms = () => {
-    setSetupErr(null);
-    if (smsCode.trim() !== CUSTOMER_PHONE_OTP) {
-      setSetupErr(
-        `Enter the 6-digit code sent to your phone (demo ${CUSTOMER_PHONE_OTP})`,
-      );
+  /** Texts a real code to the account's phone (Africa's Talking via the server). */
+  const sendSms = async () => {
+    if (smsBusy) return;
+    if (!phone.trim()) {
+      setSetupErr("Add a phone number to your account first.");
       return;
     }
-    completeEnrollment("sms");
+    setSmsBusy(true);
+    setSetupErr(null);
+    try {
+      const res = await backendSendPhoneOtp(phone.trim());
+      if (res.error) {
+        setSetupErr(res.error);
+        return;
+      }
+      setSmsSent(true);
+    } finally {
+      setSmsBusy(false);
+    }
+  };
+
+  /** The server checks the code: nothing is trusted from the browser. */
+  const verifySms = async () => {
+    if (smsBusy) return;
+    setSetupErr(null);
+    const code = smsCode.replace(/\D/g, "");
+    if (code.length < 4) {
+      setSetupErr("Enter the 6-digit code sent to your phone.");
+      return;
+    }
+    setSmsBusy(true);
+    try {
+      const res = await backendProfileVerifyOtp({
+        channel: "phone",
+        target: phone.trim(),
+        code,
+      });
+      if (res.error) {
+        setSetupErr(res.error);
+        return;
+      }
+      completeEnrollment("sms");
+    } finally {
+      setSmsBusy(false);
+    }
   };
 
   const verifyAuth = () => {
@@ -157,6 +198,8 @@ export function useTwoFa(email: string) {
     setSetupErr,
     smsSent,
     setSmsSent,
+    smsBusy,
+    sendSms,
     confirmCancel,
     setConfirmCancel,
     persistEnabled,
