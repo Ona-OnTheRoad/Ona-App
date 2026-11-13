@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { getRuntimeAppConfig } from "@/lib/app-config";
 import { backendCreateJob, isAppBackendOnline } from "@/lib/supabase/app-api";
 import type { ServiceRequest, Technician } from "@/lib/types";
@@ -7,6 +7,20 @@ import type { ServiceActionResult } from "./types";
 import type { SessionStateResult } from "./use-session-state";
 import type { MarketStateResult } from "./use-market-state";
 import type { ProfilePersistenceResult } from "./use-profile-persistence";
+
+/** Shown when the server did not accept the request and gave no reason. */
+export const REQUEST_FAILED_MESSAGE =
+  "We couldn't send your request. Please try again.";
+
+export type CreateRequestOptions = {
+  /**
+   * Called once, with a message fit to show the user, if the server did not accept
+   * the request. By then the optimistic request has already been removed from the
+   * list, so the UI only has to tell the user. Not called when the account was
+   * switched while the request was in flight (the message would be for someone else).
+   */
+  onFailure?: (message: string) => void;
+};
 
 export function useRequests(
   session: SessionStateResult,
@@ -23,6 +37,15 @@ export function useRequests(
   const { location, radiusKm, setRequests } = market;
   const { persistProfile } = profileApi;
 
+  // Who is signed in NOW, read when a response arrives. A booking that finishes
+  // after an account switch must not touch the other account's list or profile.
+  const identityRef = useRef({ backendUserId, accountType });
+  const profileRef = useRef(userProfile);
+  useEffect(() => {
+    identityRef.current = { backendUserId, accountType };
+    profileRef.current = userProfile;
+  }, [backendUserId, accountType, userProfile]);
+
   const createRequest = useCallback(
     (
       tech: Technician,
@@ -34,6 +57,7 @@ export function useRequests(
         pricingCurrency: import("@/lib/pricing").AppCurrency;
         negotiationStatus?: ServiceRequest["negotiationStatus"];
       },
+      options?: CreateRequestOptions,
     ) => {
       const forSomeone = helpingSomeoneElse;
       // Always store full address for jobs + maps (street + area)
@@ -79,6 +103,18 @@ export function useRequests(
       };
 
       if (isAppBackendOnline() && backendUserId && accountType === "motorist") {
+        const bookedAs = { backendUserId, accountType };
+        const sameAccount = () =>
+          identityRef.current.backendUserId === bookedAs.backendUserId &&
+          identityRef.current.accountType === bookedAs.accountType;
+
+        // The request is shown immediately; if the server refuses it, take it back
+        // out and say so. Without this a failed booking stayed "pending" forever.
+        const fail = (message: string) => {
+          setRequests((prev) => prev.filter((r) => r.id !== localReq.id));
+          if (sameAccount()) options?.onFailure?.(message);
+        };
+
         // Full premium create: flow_status=negotiating + DB notify to pro
         void backendCreateJob({
           motoristId: backendUserId,
@@ -94,8 +130,14 @@ export function useRequests(
           repairProPhoto: tech.photo,
           proBaseMajor: pricing?.labourBaseMajor ?? null,
           currency: pricing?.pricingCurrency || "NGN",
-        }).then((res) => {
-          if (res.request) {
+        })
+          .then((res) => {
+            if (!res.request) {
+              fail(res.error || REQUEST_FAILED_MESSAGE);
+              return;
+            }
+            // Signed in as someone else by now: this booking is not theirs to see.
+            if (!sameAccount()) return;
             const cloud: ServiceRequest = {
               ...res.request,
               bookingForSomeoneElse: forSomeone || undefined,
@@ -114,8 +156,10 @@ export function useRequests(
               cloud,
               ...prev.filter((r) => r.id !== localReq.id),
             ]);
-          }
-        });
+          })
+          .catch((e: unknown) => {
+            fail(e instanceof Error && e.message ? e.message : REQUEST_FAILED_MESSAGE);
+          });
       }
 
       setRequests((prev) => [localReq, ...prev]);
@@ -145,6 +189,7 @@ export function useRequests(
         pricingCurrency: import("@/lib/pricing").AppCurrency;
         negotiationStatus?: ServiceRequest["negotiationStatus"];
       },
+      options?: CreateRequestOptions,
     ): ServiceActionResult => {
       const cfg = getRuntimeAppConfig();
       const gate = cfg.features.identityVerifyEnabled
@@ -182,7 +227,26 @@ export function useRequests(
           actionCount: count,
         };
       }
-      const req = createRequest(tech, problem, pricing);
+      const hadFirstServiceAt = Boolean(userProfile?.firstServiceAt);
+      const req = createRequest(tech, problem, pricing, {
+        onFailure: (message) => {
+          // The booking never happened, so it must not use up a free-trial request.
+          // Relative to the count recorded when this booking started, so it is right
+          // whether or not React has re-rendered with the increment yet, and it keeps
+          // the count of any other booking made in the meantime.
+          const latest = profileRef.current;
+          if (latest) {
+            const refunded = Math.max(count, (latest.serviceActionCount ?? count + 1) - 1);
+            persistProfile({
+              ...latest,
+              serviceActionCount: refunded,
+              firstServiceAt:
+                hadFirstServiceAt || refunded > count ? latest.firstServiceAt : undefined,
+            });
+          }
+          options?.onFailure?.(message);
+        },
+      });
       if (userProfile) {
         const nowIso = new Date().toISOString();
         persistProfile({
