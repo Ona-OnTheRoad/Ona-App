@@ -1,11 +1,13 @@
 import { rateLimitAsync, rateLimitUnavailableResponse } from "@/lib/server/modules/rate-limit";
 import { createHash, randomInt } from "crypto";
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { normalizeNgPhone } from "@/lib/server/africastalking";
 import {
-  isAfricaTalkingConfigured,
-  normalizeNgPhone,
-  sendLoginOtpSms,
-} from "@/lib/server/africastalking";
+  OTP_DELIVERY_FAILED_MESSAGE,
+  OTP_DELIVERY_UNAVAILABLE_MESSAGE,
+  deliverOtp,
+  planOtpDelivery,
+} from "@/lib/server/auth/otp-delivery";
 import { phoneOrFilter, phonesMatch } from "@/lib/server/phone-match";
 import {
   DEMO_OTP_CODE,
@@ -28,8 +30,9 @@ function hashCode(dest: string, code: string): string {
 
 /**
  * Send login/signup OTP to phone or email.
- * Always succeeds in demo mode when SMS/email provider is missing
- * user can enter DEMO_OTP_CODE (336699).
+ * A real provider (SMS / email) delivers a random code. With no provider the
+ * demo code is stored only while demo mode is allowed; otherwise the request
+ * fails, so the user is never told a code was sent when none could arrive.
  *
  * The code-issue + delivery step is ledger-idempotent (runIdempotent):
  * the result is recorded so a retry with the same opKey returns the same
@@ -57,6 +60,8 @@ export async function POST(req: Request) {
 
     let dest: string;
     let displayTarget: string;
+    /** Where the provider sends: E.164 phone or plain email address. */
+    let sendTo: string;
 
     if (channel === "phone") {
       const phone = normalizeNgPhone(parsed.data.target);
@@ -65,6 +70,7 @@ export async function POST(req: Request) {
       }
       dest = phone;
       displayTarget = phone;
+      sendTo = phone;
 
       // Login phone must match the number registered at signup (normalized).
       const orFilter = phoneOrFilter(phone);
@@ -92,6 +98,7 @@ export async function POST(req: Request) {
       }
       dest = emailOtpKey(email);
       displayTarget = email;
+      sendTo = email;
 
       const { data: profile, error: findErr } = await supabase
         .from("profiles")
@@ -158,14 +165,36 @@ export async function POST(req: Request) {
           }
         }
 
-        // When demo mode is on (or no SMS provider for phone), store 336699
-        // so hash path and demo path both succeed. Verify also accepts demo.
-        const useDemoCode =
-          isDemoOtpAllowed() &&
-          (channel === "email" || !isAfricaTalkingConfigured());
-        const code = useDemoCode
-          ? DEMO_OTP_CODE
-          : String(randomInt(100000, 999999));
+        const plan = planOtpDelivery(channel);
+        if (plan.kind === "unavailable") {
+          return { ok: false as const, error: OTP_DELIVERY_UNAVAILABLE_MESSAGE };
+        }
+
+        // Deliver before storing: a failed send must not rotate the code the
+        // user already holds, nor leave a stored code nobody received.
+        let code = DEMO_OTP_CODE;
+        let delivery: "sms" | "email" | "demo" | "email_demo" =
+          channel === "email" ? "email_demo" : "demo";
+        // Never expose "SMS not configured" / demo codes in the client message
+        let deliveryNote = "Code sent. Enter it below.";
+
+        if (plan.kind === "real") {
+          const realCode = String(randomInt(100000, 999999));
+          const sent = await deliverOtp({ channel, to: sendTo, code: realCode });
+          if (sent.ok) {
+            code = realCode;
+            delivery = channel === "phone" ? "sms" : "email";
+            deliveryNote =
+              channel === "phone"
+                ? "Code sent by SMS. Enter it below."
+                : "Code sent by email. Enter it below.";
+          } else if (!isDemoOtpAllowed()) {
+            console.error(`[otp/send] ${channel} delivery failed: ${sent.error}`);
+            return { ok: false as const, error: OTP_DELIVERY_FAILED_MESSAGE };
+          }
+          // Demo mode on: fall through and store the demo code instead.
+        }
+
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
         await supabase
@@ -180,24 +209,6 @@ export async function POST(req: Request) {
           expires_at: expiresAt,
         });
         if (insErr) return { ok: false as const, error: insErr.message };
-
-        let delivery: "sms" | "demo" | "email_demo" = "demo";
-        // Never expose "SMS not configured" / demo codes in the client message
-        let deliveryNote = "Code sent. Enter it below.";
-
-        if (channel === "phone" && isAfricaTalkingConfigured()) {
-          const sms = await sendLoginOtpSms({ to: dest, code });
-          if (sms.ok) {
-            delivery = "sms";
-            deliveryNote = "Code sent by SMS. Enter it below.";
-          } else {
-            deliveryNote = "Code sent. Enter it below.";
-          }
-        } else if (channel === "email") {
-          // Real email provider not wired yet demo path (UI stays neutral)
-          delivery = "email_demo";
-          deliveryNote = "Code sent. Enter it below.";
-        }
 
         return {
           ok: true as const,
@@ -223,6 +234,12 @@ export async function POST(req: Request) {
       });
     }
     if (result.status === "error") {
+      if (result.error === OTP_DELIVERY_FAILED_MESSAGE) {
+        return apiFail(result.error, 502, "otp_delivery_failed");
+      }
+      if (result.error === OTP_DELIVERY_UNAVAILABLE_MESSAGE) {
+        return apiFail(result.error, 503, "otp_delivery_unavailable");
+      }
       return apiFail(result.error, 400);
     }
     return apiOk(result.result);

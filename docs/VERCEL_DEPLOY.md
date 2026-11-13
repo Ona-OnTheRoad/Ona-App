@@ -14,7 +14,7 @@ Set variables in **Vercel → Project → Settings → Environment Variables** (
 
 Minimum for a working deploy: Supabase (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`), `DATABASE_URL`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`, the Flutterwave keys, `CRON_SECRET` and `ADMIN_SENSITIVE_PASSWORD`. Both projects need the service-role key.
 
-**Before going live with real users:** set `OTP_DEMO_MODE=false` **and** `NEXT_PUBLIC_OTP_DEMO_MODE=false` once real SMS is configured. The demo OTP is accepted in production unless both are exactly `false` (see `src/lib/auth/demo-otp.ts`).
+**Before going live with real users:** remove `OTP_DEMO_MODE` **and** `NEXT_PUBLIC_OTP_DEMO_MODE` (or set both to `false`) once real SMS and email delivery are configured. The demo OTP is accepted in production only while one of them is exactly `true` (see `src/lib/auth/demo-otp.ts`); while neither is `true`, OTP login needs a working SMS provider (phone) and `RESEND_API_KEY` (email).
 
 ## Cron jobs
 

@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "id": "otp-and-id-lookup-hardening",
+  "title": "OTP delivery and NIN/BVN lookup hardening (identity batch 1: ONA-ID-101, 203, 205)",
+  "plan": "docs/review-guides/otp-and-id-lookup-hardening.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "R1",
+      "stage": "code",
+      "expectation": "In production isDemoOtpAllowed() is true only when OTP_DEMO_MODE or NEXT_PUBLIC_OTP_DEMO_MODE is exactly true or 1; unset, empty, false and masked values are false. Outside production it stays true.",
+      "verification": "Unit test of src/lib/auth/demo-otp.ts.",
+      "status": "pass",
+      "evidence": [
+        "code: src/lib/auth/__tests__/demo-otp.test.ts covers unset, false, 0, yes, masked and blank values (off) and true/TRUE/1 on either flag (on); 14 cases pass."
+      ]
+    },
+    {
+      "id": "R2",
+      "stage": "code",
+      "expectation": "When OTP delivery fails and demo mode is not allowed, POST /api/auth/otp/send returns 502 otp_delivery_failed, does not leak the provider error, writes nothing to phone_otps and does not consume earlier codes.",
+      "verification": "Route test with a failing SMS provider and a failing email sender.",
+      "status": "pass",
+      "evidence": [
+        "code: src/app/api/auth/otp/send/__tests__/route.test.ts asserts 502, error code, no provider text in the message and zero phone_otps writes for both channels."
+      ]
+    },
+    {
+      "id": "R3",
+      "stage": "code",
+      "expectation": "With the email sender configured an email OTP is a random code (not the demo code), is emailed, and only then stored. With no provider and no demo mode both channels return 503 otp_delivery_unavailable and store nothing. The demo path is unchanged while demo mode is on.",
+      "verification": "Route test.",
+      "status": "pass",
+      "evidence": [
+        "code: src/app/api/auth/otp/send/__tests__/route.test.ts asserts the emailed code differs from the demo code and is stored under the email key; 503 for phone and email with no provider; demo delivery kept when demo mode is on."
+      ]
+    },
+    {
+      "id": "R4",
+      "stage": "code",
+      "expectation": "With no provider key in production the NIN and BVN lookups return ok:false with code NOT_CONFIGURED and the routes answer 503. Outside production the format-only pass is unchanged.",
+      "verification": "Unit test of src/lib/server/prembly.ts and route test.",
+      "status": "pass",
+      "evidence": [
+        "code: src/lib/server/__tests__/prembly.test.ts asserts NOT_CONFIGURED in production with no network call, and the format pass in development.",
+        "code: src/app/api/verify/__tests__/id-lookup-routes.test.ts asserts 503 for NOT_CONFIGURED and 422 for a provider rejection."
+      ]
+    },
+    {
+      "id": "R5",
+      "stage": "code",
+      "expectation": "Both lookup routes call the shared limiter per IP and per kind before the provider. An exhausted budget returns 429 with Retry-After; a limiter outage returns 503; the provider is not called in either case. The routes stay unauthenticated.",
+      "verification": "Route test against the deployed-mode limiter with a stubbed Redis reply.",
+      "status": "pass",
+      "evidence": [
+        "code: src/app/api/verify/__tests__/id-lookup-routes.test.ts asserts 429 + Retry-After, 503 on outage, provider untouched, and different limiter keys for different caller IPs."
+      ]
+    },
+    {
+      "id": "R6",
+      "stage": "code",
+      "expectation": "The full local check suite passes.",
+      "verification": "npm test, npm run lint, npm run typecheck, npm run check:server-boundaries, npm run check:openapi-drift.",
+      "status": "pass",
+      "evidence": [
+        "code: 222 Vitest files (1,970 tests) pass; eslint 0 errors (143 warnings, none in changed files); tsc --noEmit exits 0; check:server-boundaries verified; check:openapi-drift ok (187 route files, none missing)."
+      ]
+    },
+    {
+      "id": "R7",
+      "stage": "live",
+      "expectation": "On the deployed app the demo code is rejected when the flag is off, real SMS and email codes arrive, and NIN/BVN lookups work with the provider key.",
+      "verification": "Live QA on the hosted environment.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Contact-change codes (src/lib/server/security/security-store.ts, src/app/api/security/action/route.ts) still generate and deliver their own codes; give them the same deliver-or-fail behaviour.",
+      "Second SMS provider with failover and a NIN lookup cache (batch 3).",
+      "Server-side NIN/BVN lookup with a stored result; nin_verified/bvn_verified are still set as before (batch 2)."
+    ],
+    "external": [
+      "Before merge: set OTP_DEMO_MODE=true explicitly on the host unless live SMS and email delivery are confirmed, otherwise OTP login is locked out.",
+      "Set the SMS provider keys and RESEND_API_KEY / RESEND_FROM_EMAIL (verified sending domain) on the host for real code delivery.",
+      "Set the ID provider key on the host; without it production NIN/BVN checks at signup return 503.",
+      "Live QA for R7.",
+      "Independent human review against the implementation commit."
+    ]
+  }
+}
