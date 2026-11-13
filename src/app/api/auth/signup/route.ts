@@ -5,6 +5,8 @@ import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { sendSignupConfirmationEmail } from "@/lib/server/resend";
 import { canonicalPhone } from "@/lib/server/phone-match";
+import { isMotoristT2ApprovedLocked } from "@/lib/server/identity/protect-approval";
+import { checkSignupIds, storeIdLookup } from "@/lib/server/identity/signup-id-check";
 import {
   detectMergeCandidatesForUser,
   runIdentitySync,
@@ -439,6 +441,26 @@ export async function POST(req: Request) {
     }
   }
 
+  // Server-side NIN/BVN lookup, after the cheap rejections and before any
+  // account exists. The outcome is evidence for Care; it never sets a verified flag.
+  const idCheck = await checkSignupIds({
+    nin: hasNin ? nin : undefined,
+    bvn: hasBvn ? bvn : undefined,
+    profileName: input.fullName,
+    bankAccountName: input.bankAccountName,
+  });
+  if (!idCheck.ok) {
+    await logSignupEvent(supabase, {
+      ...eventBase,
+      success: false,
+      error_message: idCheck.code,
+    });
+    return apiFail(idCheck.message, idCheck.status, idCheck.code);
+  }
+  // Stored verified flags, echoed to the client (never derived from digits).
+  let ninVerifiedOut = false;
+  let bvnVerifiedOut = false;
+
   // 1) Create auth user OR attach the other role on the signed-in identity.
   // Unsigned signup never recovers/logs in an existing email (no profile overwrite).
   let userId: string | null = null;
@@ -657,6 +679,17 @@ export async function POST(req: Request) {
         }
       | undefined;
 
+    // Digits collected ≠ Care-approved. Only an existing Care approval keeps
+    // its flags (re-signup / dual-role attach must never downgrade it).
+    const { data: existingMot } = await supabase
+      .from("motorist_profiles")
+      .select("identity_review_status, identity_verified_at, nin_verified, bvn_verified")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const motApproved = isMotoristT2ApprovedLocked(existingMot);
+    ninVerifiedOut = motApproved && Boolean(existingMot?.nin_verified);
+    bvnVerifiedOut = motApproved && Boolean(existingMot?.bvn_verified);
+
     const { error: motErr } = await supabase.from("motorist_profiles").upsert(
       {
         user_id: userId,
@@ -679,10 +712,11 @@ export async function POST(req: Request) {
             : null,
         nin_last4: last4(nin),
         bvn_last4: last4(bvn),
-        nin_verified: hasNin,
-        bvn_verified: hasBvn,
-        identity_verified_at:
-          hasNin && hasBvn ? new Date().toISOString() : null,
+        nin_verified: ninVerifiedOut,
+        bvn_verified: bvnVerifiedOut,
+        identity_verified_at: motApproved
+          ? (existingMot?.identity_verified_at ?? null)
+          : null,
       },
       { onConflict: "user_id" },
     );
@@ -826,6 +860,9 @@ export async function POST(req: Request) {
         ? keepExistingVis
         : 2;
 
+    ninVerifiedOut = wasApproved && Boolean(existingPro?.nin_verified);
+    bvnVerifiedOut = wasApproved && Boolean(existingPro?.bvn_verified);
+
     // Care must review never auto-approve ID/account from raw NIN/BVN digits alone
     const { error: proErr } = await supabase.from("repair_pro_profiles").upsert(
       {
@@ -864,8 +901,8 @@ export async function POST(req: Request) {
         nin_encrypted: hasNin ? nin : (existingPro?.nin_encrypted ?? null),
         bvn_encrypted: hasBvn ? bvn : (existingPro?.bvn_encrypted ?? null),
         // Digits collected ≠ care-approved (unless already approved)
-        nin_verified: wasApproved ? Boolean(existingPro?.nin_verified) : false,
-        bvn_verified: wasApproved ? Boolean(existingPro?.bvn_verified) : false,
+        nin_verified: ninVerifiedOut,
+        bvn_verified: bvnVerifiedOut,
         gov_id_number: hasNin ? nin : (existingPro?.gov_id_number ?? null),
         gov_id_review_status: wasApproved
           ? "approved"
@@ -965,6 +1002,13 @@ export async function POST(req: Request) {
       }
     }
   }
+
+  await storeIdLookup(
+    supabase,
+    role === "motorist" ? "motorist_profiles" : "repair_pro_profiles",
+    userId,
+    idCheck.records,
+  );
 
   // Unified identity sync: register this role on the identity and carry over
   // any bank already saved on the user's other role (payout_methods + mirror).
@@ -1118,8 +1162,8 @@ export async function POST(req: Request) {
         serviceRadiusKm: input.serviceRadiusKm,
         nin: hasNin ? nin : undefined,
         bvn: hasBvn ? bvn : undefined,
-        ninVerified: hasNin,
-        bvnVerified: hasBvn,
+        ninVerified: ninVerifiedOut,
+        bvnVerified: bvnVerifiedOut,
       },
       warning:
         "Account created. Opening session failed try logging in once with the same email and password.",
@@ -1171,8 +1215,8 @@ export async function POST(req: Request) {
       serviceRadiusKm: input.serviceRadiusKm,
       nin: hasNin ? nin : undefined,
       bvn: hasBvn ? bvn : undefined,
-      ninVerified: hasNin,
-      bvnVerified: hasBvn,
+      ninVerified: ninVerifiedOut,
+      bvnVerified: bvnVerifiedOut,
     },
   });
 }

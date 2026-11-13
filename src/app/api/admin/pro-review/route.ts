@@ -7,6 +7,7 @@ import {
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { buildDualRoleMeta } from "@/lib/dual-role";
 import { bvnOnFile } from "@/lib/server/identity/bvn-on-file";
+import { idLookupSummary } from "@/lib/server/identity/id-lookup";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 
@@ -294,6 +295,8 @@ async function buildProList(
           back_url: pr.gov_id_back_url ?? null,
           nin_verified: Boolean(pr.nin_verified),
           bvn_verified: Boolean(pr.bvn_verified),
+          // Provider lookup evidence; name_mismatch flags a holder-name mismatch.
+          id_lookup: idLookupSummary(meta),
           review_status:
             pr.gov_id_review_status ??
             (t2Ok ? "approved" : t2Pending ? "submitted" : "none"),

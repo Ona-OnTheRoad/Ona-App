@@ -1,7 +1,12 @@
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { apiFail, apiOk } from "@/lib/server/api-json";
+import { mergeIdLookup } from "@/lib/server/identity/id-lookup";
 import { protectMotoristClientPatch } from "@/lib/server/identity/protect-approval";
+import {
+  idKindForGovId,
+  lookupForSubmission,
+} from "@/lib/server/identity/submission-lookup";
 import {
   getSupabaseAnonKey,
   getSupabaseUrl,
@@ -147,6 +152,13 @@ export async function POST(req: Request) {
       review_checklist: {},
       updated_at: now,
     };
+
+    // Provider lookup is evidence for Care; it never blocks or approves.
+    const lookups = await lookupForSubmission(admin, userId, [
+      { kind: idKindForGovId(parsed.data.govIdKind, primary, iso), number: primary },
+      { kind: idKindForGovId("bvn", bank, iso), number: bank },
+    ]);
+    payload.gov_id_meta = mergeIdLookup(payload.gov_id_meta, lookups);
 
     const protectedApply = protectMotoristClientPatch(existingMot, payload, {
       identityRejectionReason: existingMot?.identity_rejection_reason
