@@ -6,15 +6,81 @@ import { sendSignupConfirmationEmail } from "@/lib/server/resend";
 import type { SignupContext, VerifiedFlags } from "@/lib/server/signup/context";
 import { logSignupEvent, passwordClient } from "@/lib/server/signup/helpers";
 
+type SignupAccount = {
+  userId: string;
+  createdNew: boolean;
+  attachUserId: string | null;
+};
+
+type SessionPayload = {
+  access_token: string;
+  refresh_token: string;
+  expires_at: number | null;
+} | null;
+
+/** Shared success body for session-ok and session-missing responses. */
+export function buildSignupSuccessData(
+  ctx: SignupContext,
+  account: SignupAccount,
+  flags: VerifiedFlags,
+  session: SessionPayload,
+  emailSent: boolean | null,
+  phoneVerified: boolean,
+  warning?: string,
+) {
+  const { input, email, role, nin, bvn, hasNin, hasBvn } = ctx;
+  const now = new Date().toISOString();
+  return {
+    userId: account.userId,
+    createdNew: account.createdNew,
+    emailSent,
+    session,
+    accountType: input.accountType,
+    role,
+    profile: {
+      id: account.userId,
+      role,
+      full_name: input.fullName,
+      phone: input.phone,
+      email,
+      city: input.city || null,
+      area: input.area || null,
+      gender: input.gender,
+      date_of_birth: input.dateOfBirth,
+      is_active: true,
+      created_at: now,
+      updated_at: now,
+      avatar_url: null,
+    },
+    extras: {
+      vehicleMake: input.vehicleMake,
+      vehicleModel: input.vehicleModel,
+      vehicleYear: input.vehicleYear,
+      vehicles: input.vehicles,
+      businessName: input.businessName,
+      primaryService:
+        input.primaryService || input.services?.[0] || undefined,
+      bio: input.bio,
+      yearsExperience: input.yearsExperience,
+      serviceRadiusKm: input.serviceRadiusKm,
+      nin: hasNin ? nin : undefined,
+      bvn: hasBvn ? bvn : undefined,
+      ninVerified: flags.ninVerified,
+      bvnVerified: flags.bvnVerified,
+      phoneVerified,
+    },
+    ...(warning ? { warning } : {}),
+  };
+}
+
 /** Opens the browser session, sends the confirmation email and builds the success response. */
 export async function finishSignup(
   ctx: SignupContext,
-  account: { userId: string; createdNew: boolean; attachUserId: string | null },
+  account: SignupAccount,
   flags: VerifiedFlags,
 ): Promise<Response> {
-  const { supabase, input, email, role, nin, bvn, hasNin, hasBvn, eventBase } = ctx;
+  const { supabase, input, email, eventBase } = ctx;
   const { userId, createdNew, attachUserId } = account;
-  const { ninVerified: ninVerifiedOut, bvnVerified: bvnVerifiedOut } = flags;
   // 7) Issue a session for the browser (no email round-trip)
   // Dual-attach: always sign in as the existing identity email
   let signInEmail = email;
@@ -26,7 +92,7 @@ export async function finishSignup(
         .toLowerCase();
       if (em) signInEmail = em;
     } catch {
-      /* keep input email */
+      /* keep context email */
     }
   }
   const sessionClient = await passwordClient();
@@ -78,48 +144,17 @@ export async function finishSignup(
       user_id: userId,
       meta: { createdNew, session: false, emailSent, emailError, phoneVerified },
     });
-    return apiOk({
-      userId,
-      createdNew,
-      emailSent,
-      session: null,
-      accountType: input.accountType,
-      role,
-      profile: {
-        id: userId,
-        role,
-        full_name: input.fullName,
-        phone: input.phone,
-        email,
-        city: input.city || null,
-        area: input.area || null,
-        gender: input.gender,
-        date_of_birth: input.dateOfBirth,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        avatar_url: null,
-      },
-      extras: {
-        vehicleMake: input.vehicleMake,
-        vehicleModel: input.vehicleModel,
-        vehicleYear: input.vehicleYear,
-        vehicles: input.vehicles,
-        businessName: input.businessName,
-        primaryService:
-          input.primaryService || input.services?.[0] || undefined,
-        bio: input.bio,
-        yearsExperience: input.yearsExperience,
-        serviceRadiusKm: input.serviceRadiusKm,
-        nin: hasNin ? nin : undefined,
-        bvn: hasBvn ? bvn : undefined,
-        ninVerified: ninVerifiedOut,
-        bvnVerified: bvnVerifiedOut,
+    return apiOk(
+      buildSignupSuccessData(
+        ctx,
+        account,
+        flags,
+        null,
+        emailSent,
         phoneVerified,
-      },
-      warning:
         "Account created. Opening session failed try logging in once with the same email and password.",
-    });
+      ),
+    );
   }
 
   await logSignupEvent(supabase, {
@@ -129,47 +164,18 @@ export async function finishSignup(
     meta: { createdNew, session: true, emailSent, emailError, phoneVerified },
   });
 
-  return apiOk({
-    userId,
-    createdNew,
-    emailSent,
-    session: {
-      access_token: signedIn.data.session.access_token,
-      refresh_token: signedIn.data.session.refresh_token,
-      expires_at: signedIn.data.session.expires_at ?? null,
-    },
-    accountType: input.accountType,
-    role,
-    profile: {
-      id: userId,
-      role,
-      full_name: input.fullName,
-      phone: input.phone,
-      email,
-      city: input.city || null,
-      area: input.area || null,
-      gender: input.gender,
-      date_of_birth: input.dateOfBirth,
-      is_active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      avatar_url: null,
-    },
-    extras: {
-      vehicleMake: input.vehicleMake,
-      vehicleModel: input.vehicleModel,
-      vehicleYear: input.vehicleYear,
-      vehicles: input.vehicles,
-      businessName: input.businessName,
-      primaryService: input.primaryService,
-      bio: input.bio,
-      yearsExperience: input.yearsExperience,
-      serviceRadiusKm: input.serviceRadiusKm,
-      nin: hasNin ? nin : undefined,
-      bvn: hasBvn ? bvn : undefined,
-      ninVerified: ninVerifiedOut,
-      bvnVerified: bvnVerifiedOut,
+  return apiOk(
+    buildSignupSuccessData(
+      ctx,
+      account,
+      flags,
+      {
+        access_token: signedIn.data.session.access_token,
+        refresh_token: signedIn.data.session.refresh_token,
+        expires_at: signedIn.data.session.expires_at ?? null,
+      },
+      emailSent,
       phoneVerified,
-    },
-  });
+    ),
+  );
 }
