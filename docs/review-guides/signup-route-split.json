@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "id": "signup-route-split",
+  "title": "Split the signup route into modules of at most 300 lines, no behaviour change",
+  "plan": "docs/review-guides/signup-route-split.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "R1",
+      "stage": "code",
+      "expectation": "src/app/api/auth/signup/route.ts and every module under src/lib/server/signup/ are at or under 300 lines.",
+      "verification": "wc -l.",
+      "status": "pass",
+      "evidence": [
+        "code: route.ts 181 (was 1,222); account.ts 207, pro-profile.ts 200, session.ts 159, preflight.ts 134, helpers.ts 124, pro-fields.ts 116, schema.ts 106, motorist-profile.ts 103, aftercare.ts 79, context.ts 31."
+      ]
+    },
+    {
+      "id": "R2",
+      "stage": "code",
+      "expectation": "The handler runs the same steps in the same order: config check, JSON parse, schema, rate limit, email and phone normalisation, age gate, attach lookup, phone uniqueness, ID check, create or attach account, base profile, role table, lookup store, identity sync, merge detection, referral code, referral event, session, confirmation email, response.",
+      "verification": "Read route.ts against the previous version of the file.",
+      "status": "pass",
+      "evidence": [
+        "code: route.ts calls rejectInvalidAge, resolveAttachUser, rejectTakenPhone, checkSignupIds, createOrAttachUser, upsertBaseProfile, writeMotoristProfile or writeProProfile, storeIdLookup, runSignupAftercare, finishSignup in that order; the service client is still created after the age gate."
+      ]
+    },
+    {
+      "id": "R3",
+      "stage": "code",
+      "expectation": "Apart from indentation, function wrappers, exports and the return of shared values, the statements in the new modules are the statements of the previous file.",
+      "verification": "Scripted comparison of every trimmed non-blank line of the previous file against the new files combined.",
+      "status": "pass",
+      "evidence": [
+        "code: the only previous lines absent from the new files are the eight declarations that gained `export`, one combined import, the `if (role === \"motorist\") {` / `} else {` pair (now a conditional call in route.ts) and one comment. Every other line is present. The sections were moved by a script slicing the original text, not retyped."
+      ]
+    },
+    {
+      "id": "R4",
+      "stage": "code",
+      "expectation": "The existing signup route tests pass without any edit to the test file.",
+      "verification": "vitest on src/app/api/auth/signup; git diff of the test file.",
+      "status": "pass",
+      "evidence": [
+        "code: 11 of 11 signup route tests pass; src/app/api/auth/signup/__tests__/route.test.ts has no diff."
+      ]
+    },
+    {
+      "id": "R5",
+      "stage": "code",
+      "expectation": "The full local check suite passes with no new lint warnings.",
+      "verification": "npm test, npm run lint, npm run typecheck, npm run check:server-boundaries, npm run check:openapi-drift.",
+      "status": "pass",
+      "evidence": [
+        "code: 225 Vitest files (2,016 tests) pass; eslint 0 errors and 143 warnings, the same count as before the split, none in the signup route or the new modules; tsc --noEmit exits 0; check:server-boundaries verified; check:openapi-drift ok."
+      ]
+    },
+    {
+      "id": "R6",
+      "stage": "live",
+      "expectation": "Customer signup, Repair Pro signup and dual-role attach work on a deployed build.",
+      "verification": "Live QA on the hosted environment.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Untested paths are protected only by the line comparison: the profile retry without gender/date of birth, the missing-session response, referral handling, the guarantor write and most Repair Pro field derivation. Add route tests for them.",
+      "Other files still over 300 lines: src/app/api/admin/pro-review/route.ts, src/app/api/admin/customer-review/route.ts, src/lib/server/identity/identity-sync.ts.",
+      "Left as found, not fixed here: the phone uniqueness check reads at most 500 profile rows; the attach path's email-mismatch branch is empty when keepOtherRole is not false; the two success responses build the same profile and extras objects separately."
+    ],
+    "external": [
+      "Merge PR #81 first; this branch is stacked on it.",
+      "Live QA for R6.",
+      "Independent human review against the implementation commit."
+    ]
+  }
+}
