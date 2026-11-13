@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { cn } from "@/lib/utils";
 import { profileTheme } from "@/lib/profile-system";
 import { changeFlowFieldClass } from "./field-class";
@@ -20,12 +21,21 @@ export function OtpCodeStep({
 }) {
   const t = profileTheme(isLight);
   const fieldClass = changeFlowFieldClass(isLight);
+  const promptId = useId();
   return (
     <div className="space-y-2">
-      <p className={cn("text-[12px]", t.muted)}>{prompt}</p>
+      <p id={promptId} className={cn("text-[12px]", t.muted)}>
+        {prompt}
+      </p>
       <input
         className={fieldClass}
         placeholder="000000"
+        aria-label="6-digit security code"
+        aria-describedby={promptId}
+        // Lets iOS/Android suggest the SMS code and Chrome's WebOTP fill it.
+        autoComplete="one-time-code"
+        inputMode="numeric"
+        pattern="[0-9]*"
         value={value}
         onChange={(e) =>
           onChange(e.target.value.replace(/\D/g, "").slice(0, 6))

@@ -146,6 +146,7 @@ export function PasswordChangeFlow({
         <div className="space-y-2">
           <PasswordInput
             className={fieldClass}
+            ariaLabel="Current password"
             placeholder="Current password"
             value={currentPwd}
             onChange={setCurrentPwd}
@@ -153,6 +154,7 @@ export function PasswordChangeFlow({
           />
           <PasswordInput
             className={fieldClass}
+            ariaLabel="New password"
             placeholder="New password"
             value={newPwd}
             onChange={setNewPwd}
@@ -160,6 +162,7 @@ export function PasswordChangeFlow({
           />
           <PasswordInput
             className={fieldClass}
+            ariaLabel="Confirm new password"
             placeholder="Confirm new password"
             value={confirmPwd}
             onChange={setConfirmPwd}
