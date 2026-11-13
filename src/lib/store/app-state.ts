@@ -223,6 +223,7 @@ export interface AppState {
       pricingCurrency: import("@/lib/pricing").AppCurrency;
       negotiationStatus?: ServiceRequest["negotiationStatus"];
     },
+    options?: import("./use-requests").CreateRequestOptions,
   ) => ServiceActionResult;
   /** @deprecated use bookRequest still creates without gate for internal/demo */
   createRequest: (
@@ -235,6 +236,7 @@ export interface AppState {
       pricingCurrency: import("@/lib/pricing").AppCurrency;
       negotiationStatus?: ServiceRequest["negotiationStatus"];
     },
+    options?: import("./use-requests").CreateRequestOptions,
   ) => ServiceRequest;
   /**
    * Pro accept (or other status). Accept is gated by verification funnel.
