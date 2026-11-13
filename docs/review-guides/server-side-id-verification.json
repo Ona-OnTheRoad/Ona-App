@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "id": "server-side-id-verification",
+  "title": "Server-side NIN/BVN verification, BVN step fix and holder-name match (identity batch 2: ONA-ID-203, 205)",
+  "plan": "docs/review-guides/server-side-id-verification.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "R1",
+      "stage": "code",
+      "expectation": "Signup looks a supplied 11-digit NIN/BVN up on the server before the account is created. A provider rejection returns 422 id_verification_failed and an unavailable provider returns 503 id_verification_unavailable; nothing is created in either case.",
+      "verification": "Unit test of checkSignupIds and signup route test.",
+      "status": "pass",
+      "evidence": [
+        "code: src/lib/server/identity/__tests__/id-lookup.test.ts covers rejection (422), unavailable (503), incomplete numbers skipped and no call when nothing is supplied.",
+        "code: src/app/api/auth/signup/__tests__/route.test.ts asserts 422 and 503 with createUser not called and no account writes."
+      ]
+    },
+    {
+      "id": "R2",
+      "stage": "code",
+      "expectation": "gov_id_meta.idLookup.{nin,bvn} holds status, provider, mode, reference, matched name, name match and time, never the raw number. Storing is best-effort and cannot fail signup.",
+      "verification": "Unit test of buildIdLookupRecord, mergeIdLookup and storeIdLookup; signup route test.",
+      "status": "pass",
+      "evidence": [
+        "code: id-lookup.test.ts asserts the exact record shape, that the number is absent, that existing meta keys survive the merge, and that a failing write does not throw.",
+        "code: signup route test asserts the stored record for a new motorist and a new Repair Pro and that neither number appears in it."
+      ]
+    },
+    {
+      "id": "R3",
+      "stage": "code",
+      "expectation": "Motorist signup writes nin_verified and bvn_verified false and identity_verified_at null whatever digits are supplied; the signup response reports the stored flags. A Care-approved row is never downgraded.",
+      "verification": "Signup route test.",
+      "status": "pass",
+      "evidence": [
+        "code: signup route test asserts false flags, null identity_verified_at and false response extras for a motorist with NIN and BVN, and false flags for a new Repair Pro.",
+        "code: signup route test asserts re-attaching an existing motorist role returns 409 role_exists and leaves the approved row byte-for-byte unchanged. The upsert's defensive keep-approved branch is therefore not reachable through this route and has no direct test."
+      ]
+    },
+    {
+      "id": "R4",
+      "stage": "code",
+      "expectation": "pro-id (BVN step and NIN/BVN government ID) and customer-id (Nigerian NIN/BVN) store the lookup outcome. A rejected or unavailable lookup does not block the submission; other document types and other countries make no provider call.",
+      "verification": "Route tests.",
+      "status": "pass",
+      "evidence": [
+        "code: src/app/api/verify/__tests__/id-submission-lookup.test.ts covers BVN step, national ID, a rejected lookup (still 200, recorded as rejected), passport (no call), customer NIN+BVN and a non-Nigerian ID (no call)."
+      ]
+    },
+    {
+      "id": "R5",
+      "stage": "code",
+      "expectation": "The nin kind of pro-id, sent only by the onboarding BVN step, writes bvn_encrypted, bvn_last4, bank_id_number and the BVN meta keys, and no longer overwrites nin_encrypted, nin_last4, gov_id_number or NIN meta keys.",
+      "verification": "Route test; UI inspection of src/components/artisan/artisan-onboarding/bvn-tier.tsx and use-verify-actions.ts.",
+      "status": "pass",
+      "evidence": [
+        "code: id-submission-lookup.test.ts asserts the BVN lands in the BVN fields while the previously stored NIN fields and meta.primaryId are unchanged and meta.nin is not written.",
+        "code: bvn-tier.tsx titles the step 'BVN · Tier 3' with placeholder '11-digit BVN'; use-verify-actions.ts is the only caller of kind 'nin'."
+      ]
+    },
+    {
+      "id": "R6",
+      "stage": "code",
+      "expectation": "Names are compared ignoring case, spacing, punctuation, accents and order. A match needs the surname plus one other name (two shared names when the provider gives no surname). Results are match, mismatch or unknown.",
+      "verification": "Unit test of src/lib/server/identity/name-match.ts.",
+      "status": "pass",
+      "evidence": [
+        "code: src/lib/server/identity/__tests__/name-match.test.ts covers order, case, punctuation, accents, missing surname, missing second name, double surnames, the no-surname fallback and too-little-to-compare inputs."
+      ]
+    },
+    {
+      "id": "R7",
+      "stage": "code",
+      "expectation": "No lookup result sets a verified flag. Admin pro-review rows (t2_id.id_lookup) and customer-review rows (identity.id_lookup) carry the records and a name_mismatch flag. No payout code is changed.",
+      "verification": "Unit and route tests; diff inspection.",
+      "status": "pass",
+      "evidence": [
+        "code: id-lookup.test.ts asserts idLookupSummary sets name_mismatch for a profile or bank-account mismatch and false otherwise.",
+        "code: signup and submission route tests assert verified flags stay false after a live confirmation, including one with a name mismatch.",
+        "code: git diff touches no file under src/lib/server/payments or any file listed in docs/RULES.md section 10.",
+        "code: the two admin GET handlers have no route test; the added line calls the unit-tested idLookupSummary on the row's gov_id_meta."
+      ]
+    },
+    {
+      "id": "R8",
+      "stage": "code",
+      "expectation": "The full local check suite passes.",
+      "verification": "npm test, npm run lint, npm run typecheck, npm run check:server-boundaries, npm run check:openapi-drift.",
+      "status": "pass",
+      "evidence": [
+        "code: 225 Vitest files pass; eslint 0 errors (143 warnings, none introduced); tsc --noEmit exits 0; check:server-boundaries verified; check:openapi-drift ok (187 route files, none missing)."
+      ]
+    },
+    {
+      "id": "R9",
+      "stage": "live",
+      "expectation": "With the provider key set on the host, signup rejects a wrong NIN/BVN, stores the record for a right one, and the admin review data shows the mismatch flag.",
+      "verification": "Live QA on the hosted environment.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Render id_lookup and the name_mismatch flag in the admin verification screens; today it is only in the API rows.",
+      "Product decision: should a name mismatch stop Care approval from setting bvn_verified, or need an explicit override? Today approval is not blocked.",
+      "One-off cleanup of motorist rows whose nin_verified / bvn_verified / identity_verified_at were set from number length by earlier signups.",
+      "gov_id submissions still store any primary ID number in the nin_* columns; only the BVN step was corrected.",
+      "src/app/api/auth/signup/route.ts remains far over the 300-line limit; split it in its own change.",
+      "Customer ID submissions compare the holder name with the profile name only; no payout bank account name is read for customers."
+    ],
+    "external": [
+      "Set the ID provider key on the host: signup with a NIN or BVN returns 503 in production without it.",
+      "Merge batch 1 (fix/otp-and-id-lookup-hardening) first; this branch is stacked on it.",
+      "Live QA for R9.",
+      "Independent human review against the implementation commit."
+    ]
+  }
+}
