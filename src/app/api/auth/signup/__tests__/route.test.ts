@@ -6,8 +6,8 @@ const mocks = vi.hoisted(() => ({
   createUser: vi.fn(), identitySync: vi.fn(), mergeDetect: vi.fn(), sendMail: vi.fn(),
   verifyNin: vi.fn(), verifyBvn: vi.fn(),
 }));
-vi.mock("@/lib/server/prembly", () => ({
-  ID_LOOKUP_NOT_CONFIGURED: "NOT_CONFIGURED",
+vi.mock("@/lib/server/prembly", async (original) => ({
+  ...(await original<typeof import("@/lib/server/prembly")>()),
   verifyNinWithPrembly: mocks.verifyNin, verifyBvnWithPrembly: mocks.verifyBvn,
 }));
 vi.mock("@supabase/supabase-js", () => ({

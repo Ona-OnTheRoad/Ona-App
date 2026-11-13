@@ -102,13 +102,11 @@ export async function processDueNotificationRetries(limit = 30): Promise<{
         ok = result.sent > 0;
         errText = result.failures.join("; ").slice(0, 500);
       } else if (row.channel === "sms") {
-        const { sendAfricaTalkingSms } = await import(
-          "@/lib/server/africastalking"
-        );
+        const { sendSms } = await import("@/lib/server/sms/send");
         const to = String(
           (row.payload as { phone?: string })?.phone || "",
         );
-        const result = await sendAfricaTalkingSms({
+        const result = await sendSms({
           to,
           message: String(row.body || ""),
         });
