@@ -67,6 +67,11 @@ export async function loadOwnIdentityProfile(userId: string): Promise<{ profile:
         bank_account_name?: string | null;
         bank_account_number?: string | null;
         bank_code?: string | null;
+        phone_verified?: boolean;
+        gov_id_kind?: string | null;
+        gov_id_front_url?: string | null;
+        gov_id_reviewed_at?: string | null;
+        approved_at?: string | null;
       })
     | null;
   const storedPrimary = (() => {
@@ -105,6 +110,25 @@ export async function loadOwnIdentityProfile(userId: string): Promise<{ profile:
       string,
       string | undefined
     >;
+    const proT2Approved =
+      pr?.gov_id_review_status === "approved" ||
+      Boolean(pr?.verified) ||
+      Boolean(pr?.tier2_approved_at) ||
+      pr?.status === "approved" ||
+      mot?.identity_review_status === "approved" ||
+      Boolean(mot?.identity_verified_at);
+    const proIdentityStatus = (
+      proT2Approved
+        ? "approved"
+        : pr?.gov_id_review_status === "rejected" ||
+            mot?.identity_review_status === "rejected"
+          ? "rejected"
+          : pr?.gov_id_review_status === "submitted" ||
+              mot?.identity_review_status === "submitted"
+            ? "submitted"
+            : "none"
+    ) as UserProfile["identityReviewStatus"];
+
     const profileOut = profileToUserProfile(p, {
       accountType,
       primaryAccountType,
@@ -118,8 +142,18 @@ export async function loadOwnIdentityProfile(userId: string): Promise<{ profile:
       bio: pr?.bio || undefined,
       yearsExperience: pr?.years_experience || undefined,
       serviceRadiusKm: pr?.service_radius_km,
-      ninVerified: pr?.nin_verified,
-      bvnVerified: pr?.bvn_verified,
+      ninVerified: pr?.nin_verified || mot?.nin_verified,
+      bvnVerified: pr?.bvn_verified || mot?.bvn_verified,
+      govIdVerified: proT2Approved,
+      identityReviewStatus: proIdentityStatus,
+      identityVerifiedAt:
+        pr?.tier2_approved_at ||
+        pr?.gov_id_reviewed_at ||
+        pr?.approved_at ||
+        mot?.identity_verified_at ||
+        undefined,
+      govIdKind: pr?.gov_id_kind || mot?.gov_id_kind || undefined,
+      govIdFrontUrl: pr?.gov_id_front_url || mot?.gov_id_front_url || undefined,
       proJobsEligible: isProJobsEligible(pr as Parameters<typeof isProJobsEligible>[0]),
       docsStatus:
         (pr?.docs_status as UserProfile["docsStatus"]) || "approved",
@@ -164,7 +198,9 @@ export async function loadOwnIdentityProfile(userId: string): Promise<{ profile:
         : undefined,
       phoneVerified:
         Boolean((p as { phone_verified?: boolean }).phone_verified) ||
-        Boolean(mot?.phone_verified),
+        Boolean(mot?.phone_verified) ||
+        Boolean(pr?.phone_verified) ||
+        proT2Approved,
     });
     return { profile: profileOut };
   }
