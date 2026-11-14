@@ -245,7 +245,6 @@ export async function POST(req: Request) {
       .from("profiles")
       .update({
         phone_verified: true,
-        phone_verified_at: ts,
         updated_at: ts,
       })
       .eq("id", profileRow.id);

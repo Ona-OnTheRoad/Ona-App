@@ -180,13 +180,14 @@ export function AccountIdentityFields({ f }: { f: MotoristFields }) {
               onChange={(e) => {
                 if (phoneLocked) return;
                 setPhoneNational(
-                  e.target.value.replace(/\D/g, "").slice(0, 15),
+                  e.target.value.replace(/\D/g, "").slice(0, 11),
                 );
                 setFieldError("phone", null);
               }}
               onBlur={() =>
                 setFieldError("phone", phoneNationalError(phoneNational))
               }
+              maxLength={11}
               placeholder="Enter phone number"
               aria-required
               type="tel"

@@ -72,12 +72,13 @@ export function PhoneField({
           tabIndex={phoneLocked ? -1 : undefined}
           onChange={(e) => {
             if (phoneLocked) return;
-            setPhoneNational(e.target.value.replace(/\D/g, "").slice(0, 15));
+            setPhoneNational(e.target.value.replace(/\D/g, "").slice(0, 11));
             setFieldError("phone", null);
           }}
           onBlur={() =>
             setFieldError("phone", phoneNationalError(phoneNational))
           }
+          maxLength={11}
           placeholder="8012345678"
           type="tel"
           inputMode="numeric"

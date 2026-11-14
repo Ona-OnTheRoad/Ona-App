@@ -42,7 +42,6 @@ async function markPhoneVerified(
     .from("profiles")
     .update({
       phone_verified: true,
-      phone_verified_at: ts,
       updated_at: ts,
     })
     .eq("id", row.id);
