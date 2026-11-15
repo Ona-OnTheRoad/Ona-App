@@ -41,7 +41,7 @@ export async function GET(
     const { data, error } = await supabase
       .from("repair_pro_profiles")
       .select(
-        "user_id, business_name, bank_name, bank_code, bank_account_number, bank_account_name",
+        "user_id, business_name, bank_name, bank_code, bank_account_number, bank_account_name, bank_account_resolved_at",
       )
       .eq("user_id", id)
       .maybeSingle();
@@ -60,6 +60,8 @@ export async function GET(
         bankCode: data.bank_code,
         accountNumber: account,
         accountName: data.bank_account_name,
+        // null = the name is self-declared, not confirmed by the bank.
+        nameResolvedAt: data.bank_account_resolved_at ?? null,
         masked: false,
       });
     }
@@ -73,6 +75,7 @@ export async function GET(
       accountName: data.bank_account_name
         ? String(data.bank_account_name).slice(0, 2) + "•••"
         : null,
+      nameResolvedAt: data.bank_account_resolved_at ?? null,
       masked: true,
       note: "Full bank details require Operations / Finance (L3) or higher.",
     });
