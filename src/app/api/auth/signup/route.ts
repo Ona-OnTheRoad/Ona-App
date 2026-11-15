@@ -13,6 +13,7 @@ import {
   rejectInvalidAge,
   rejectTakenPhone,
   resolveAttachUser,
+  resolveSignupBank,
 } from "@/lib/server/signup/preflight";
 import { writeProProfile } from "@/lib/server/signup/pro-profile";
 import { bodySchema } from "@/lib/server/signup/schema";
@@ -128,6 +129,11 @@ export async function POST(req: Request) {
 
   const phoneRejection = await rejectTakenPhone(ctx, attachUserId);
   if (phoneRejection) return phoneRejection;
+
+  // The bank, not the browser, says who holds the payout account. From here
+  // on `input.bankAccountName` is the bank's answer or empty.
+  const bankRejection = await resolveSignupBank(ctx);
+  if (bankRejection) return bankRejection;
 
   // Server-side NIN/BVN lookup, after the cheap rejections and before any
   // account exists. The outcome is evidence for Care; it never sets a verified flag.

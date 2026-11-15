@@ -8,10 +8,12 @@
  *   POST /api/profile/update                    the generic save (must not be a way round the above)
  *
  * Only the outside world is faked: SMS delivery (the code a user would receive
- * is captured), Supabase auth and the rate-limit store.
+ * is captured), Supabase auth, the rate-limit store and the bank's account
+ * resolve endpoint (it answers with the holder name BANK_HOLDER).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FakeSupabase, type Row } from "@/test-utils/fake-supabase";
+import { stubBankResolve, type FakeBank } from "@/test-utils/fake-bank-resolve";
 
 const h = vi.hoisted(() => {
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.test";
@@ -65,6 +67,10 @@ const PHONE = "+2348012345678";
 const TOKEN = "tok-user-1";
 const BANK_A = { bank_name: "GTBank", bank_account_name: "Ada User", bank_account_number: "0123456789", bank_code: "058" };
 const NEW_BANK = { bankName: "Access Bank", bankAccountName: "Ada User", bankAccountNumber: "9876543210", bankCode: "044" };
+
+/** What the bank says the holder is called; deliberately not what the client types. */
+const BANK_HOLDER = "ADA N USER";
+let bank: FakeBank;
 
 const db = () => h.db as FakeSupabase;
 const rows = (t: string): Row[] => (db().rows[t] ?? []) as Row[];
@@ -134,9 +140,11 @@ beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
   h.deliver.mockReset().mockResolvedValue({ ok: true });
   h.limits.block = null;
+  bank = stubBankResolve({ name: BANK_HOLDER });
   newDb();
 });
 afterEach(() => {
+  vi.unstubAllGlobals();
   vi.unstubAllEnvs();
   vi.restoreAllMocks();
   for (const k of ENV) { if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k]; }
@@ -474,5 +482,78 @@ describe("the generic profile save is not a way round the proof", () => {
 
   it("saves that do not touch the bank are unaffected", async () => {
     expect((await save({ city: "Ikeja", area: "Maryland" })).status).toBe(200);
+  });
+});
+
+describe("the account holder name comes from the bank, not the request", () => {
+  it("change_bank stores the bank's name and when it was confirmed; the typed name is discarded", async () => {
+    const res = await change({ bankProof: await getProof() }, { ...NEW_BANK, bankAccountName: "Somebody Else Entirely" });
+    expect(res.status).toBe(200);
+    for (const row of [proBank(), motBank()]) {
+      expect(row.bank_account_name).toBe(BANK_HOLDER);
+      expect(row.bank_account_resolved_at).toBeTruthy();
+    }
+    expect(JSON.stringify(rows("repair_pro_profiles"))).not.toContain("Somebody Else Entirely");
+    expect(bank.calls).toEqual([{ account_number: "9876543210", account_bank: "044" }]);
+  });
+
+  it("fails closed when the bank cannot be asked: old bank untouched, proof still usable", async () => {
+    const before = JSON.stringify([proBank(), motBank()]);
+    const proof = await getProof();
+    for (const mode of ["unavailable", "network"] as const) {
+      bank.mode = mode;
+      const r = await change({ bankProof: proof });
+      expect(r.status).toBe(503);
+      expect(await errCode(r)).toBe("bank_lookup_unavailable");
+      expect(JSON.stringify([proBank(), motBank()])).toBe(before);
+    }
+    expect(rows("profile_audit_log")).toHaveLength(0);
+    bank.mode = "resolved";
+    expect((await change({ bankProof: proof })).status).toBe(200);
+  });
+
+  it("rejects an account the bank does not know and leaves the old bank untouched", async () => {
+    const before = JSON.stringify([proBank(), motBank()]);
+    bank.mode = "not_found";
+    const r = await change({ bankProof: await getProof() });
+    expect(r.status).toBe(422);
+    expect(await errCode(r)).toBe("bank_account_not_found");
+    expect(JSON.stringify([proBank(), motBank()])).toBe(before);
+  });
+
+  it("the generic save cannot rewrite the name on its own", async () => {
+    expect((await change({ bankProof: await getProof() })).status).toBe(200);
+    bank.calls.length = 0;
+    const r = await save({ bankAccountName: "Attacker Chosen Name", city: "Abuja" });
+    expect(r.status).toBe(200);
+    expect(proBank().bank_account_name).toBe(BANK_HOLDER);
+    // Nor alongside the unchanged account, and the bank is not asked again.
+    const again = await save({ bankAccountNumber: "9876543210", bankCode: "044", bankAccountName: "Attacker Chosen Name" });
+    expect(again.status).toBe(200);
+    expect(proBank().bank_account_name).toBe(BANK_HOLDER);
+    expect(bank.calls).toHaveLength(0);
+  });
+
+  it("first-time setup through the generic save stores the bank's name; an unknown account is refused", async () => {
+    newDb({ repair_pro_profiles: [{ user_id: "user-1" }], motorist_profiles: [{ user_id: "user-1" }, { user_id: "user-2" }] });
+    bank.mode = "not_found";
+    const bad = await save({ bankAccountNumber: "9876543210", bankCode: "044", bankName: "Access Bank", bankAccountName: "Typed Name" });
+    expect(bad.status).toBe(422);
+    expect(proBank().bank_account_number).toBeUndefined();
+    bank.mode = "resolved";
+    const ok = await save({ bankAccountNumber: "9876543210", bankCode: "044", bankName: "Access Bank", bankAccountName: "Typed Name" });
+    expect(ok.status).toBe(200);
+    expect(proBank()).toMatchObject({ bank_account_number: "9876543210", bank_account_name: BANK_HOLDER });
+    expect(proBank().bank_account_resolved_at).toBeTruthy();
+  });
+
+  it("first-time setup while the bank is unreachable saves the account with no name", async () => {
+    newDb({ repair_pro_profiles: [{ user_id: "user-1" }], motorist_profiles: [{ user_id: "user-1" }, { user_id: "user-2" }] });
+    bank.mode = "unavailable";
+    const r = await save({ bankAccountNumber: "9876543210", bankCode: "044", bankName: "Access Bank", bankAccountName: "Typed Name" });
+    expect(r.status).toBe(200);
+    expect(proBank().bank_account_number).toBe("9876543210");
+    expect(proBank().bank_account_name ?? null).toBeNull();
+    expect(proBank().bank_account_resolved_at ?? null).toBeNull();
   });
 });

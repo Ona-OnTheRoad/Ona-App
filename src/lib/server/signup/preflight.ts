@@ -2,6 +2,7 @@ import "server-only";
 import { apiFail } from "@/lib/server/api-json";
 import { findPhoneOwners } from "@/lib/server/otp/phone-owners";
 import type { SignupContext } from "@/lib/server/signup/context";
+import { bankNameForSave } from "@/lib/server/payments/resolve-account";
 import { logSignupEvent } from "@/lib/server/signup/helpers";
 import type { SignupInput } from "@/lib/server/signup/schema";
 
@@ -137,5 +138,46 @@ export async function rejectTakenPhone(
       "phone_exists",
     );
   }
+  return null;
+}
+
+/**
+ * Replace the client's bank account name with the one the bank returns.
+ * The typed name is never stored. An unknown account stops signup; an
+ * unreachable bank does not (the account is saved without a name and is
+ * resolved before anything is paid to it).
+ */
+export async function resolveSignupBank(
+  ctx: SignupContext,
+): Promise<Response | null> {
+  const { input } = ctx;
+  const typedName = input.bankAccountName;
+  input.bankAccountName = undefined;
+  ctx.bankResolvedAt = null;
+
+  const accountNumber = (input.bankAccountNumber || "").replace(/\D/g, "");
+  const bankCode = (input.bankCode || "").trim();
+  // Incomplete bank details are stored as sent, as before, but without a name:
+  // there is nothing the bank can confirm yet.
+  if (accountNumber.length !== 10 || !bankCode) return null;
+  input.bankAccountNumber = accountNumber;
+  input.bankCode = bankCode;
+
+  const decision = await bankNameForSave({
+    accountNumber,
+    bankCode,
+    typedName,
+    onUnavailable: "save_unresolved",
+  });
+  if (!decision.ok) {
+    await logSignupEvent(ctx.supabase, {
+      ...ctx.eventBase,
+      success: false,
+      error_message: decision.code,
+    });
+    return apiFail(decision.message, decision.status, decision.code);
+  }
+  input.bankAccountName = decision.accountName || undefined;
+  ctx.bankResolvedAt = decision.resolvedAt;
   return null;
 }

@@ -16,6 +16,8 @@ export type SignupContext = {
   bvn: string;
   hasNin: boolean;
   hasBvn: boolean;
+  /** When the bank confirmed `input.bankAccountName`; null = not confirmed. */
+  bankResolvedAt?: string | null;
   /** Common fields for every `signup_events` row of this request. */
   eventBase: {
     email: string;

@@ -12,7 +12,9 @@ import { markUserPhoneVerified } from "@/lib/server/otp/mark-phone-verified";
 import { findPhoneOwners, phoneTail } from "@/lib/server/otp/phone-owners";
 import { requireContactChangeProof } from "@/lib/server/security/contact-change-guard";
 import { verifyBankChangeProof } from "@/lib/server/otp/bank-change-proof";
+import { refreshBankNameMatch } from "@/lib/server/identity/bank-name-match";
 import { isBankAccountTaken } from "@/lib/server/payments/bank-lookup";
+import { bankNameForSave } from "@/lib/server/payments/resolve-account";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -462,6 +464,21 @@ export async function POST(req: Request) {
         );
       }
 
+      // The bank says who holds the account; the typed name is not stored.
+      // If the bank cannot be asked, nothing changes.
+      const holder = await bankNameForSave({
+        accountNumber: bankData.bankAccountNumber!,
+        bankCode: bankData.bankCode!,
+        typedName: bankData.bankAccountName,
+        onUnavailable: "reject",
+      });
+      if (!holder.ok || !holder.accountName) {
+        return holder.ok
+          ? apiFail("Could not confirm this account with the bank.", 503, "bank_lookup_unavailable")
+          : apiFail(holder.message, holder.status, holder.code);
+      }
+      bankData.bankAccountName = holder.accountName;
+
       const { data: currentBank } = await supabase
         .from("repair_pro_profiles")
         .select("bank_name, bank_account_name, bank_account_number, bank_code")
@@ -471,7 +488,8 @@ export async function POST(req: Request) {
 
       const updateData: Record<string, unknown> = {
         bank_name: bankData.bankName,
-        bank_account_name: bankData.bankAccountName,
+        bank_account_name: holder.accountName,
+        bank_account_resolved_at: holder.resolvedAt,
         bank_account_number: bankData.bankAccountNumber,
         bank_code: bankData.bankCode,
         updated_at: now,
@@ -512,6 +530,8 @@ export async function POST(req: Request) {
         maskedNewValue: maskValue(bankData.bankAccountNumber ?? "", "bank"),
         verificationMethod: "otp_phone",
       });
+
+      await refreshBankNameMatch(supabase, userId, holder.accountName);
 
       await notifyUser(
         userId,
