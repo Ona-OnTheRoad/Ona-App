@@ -44,6 +44,7 @@ export function BankDetailsFields({
     loadingBanks,
     resolving,
     resolveMsg,
+    nameFromBank,
     iso,
     selectVal,
     onSelectBank,
@@ -121,7 +122,7 @@ export function BankDetailsFields({
               ? "Resolving account name…"
               : "Select bank + enter number to auto-fill"
           }
-          readOnly={resolving}
+          readOnly={resolving || nameFromBank}
         />
         {resolveMsg ? (
           <p

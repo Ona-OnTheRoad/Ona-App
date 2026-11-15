@@ -7,6 +7,8 @@ interface BankAccountFieldsProps {
   onAccountNameChange: (name: string) => void;
   resolving: boolean;
   resolveMsg: string | null;
+  /** The name is the bank's answer; the server stores that, not typed text. */
+  nameFromBank?: boolean;
   bankCode: string;
 }
 
@@ -17,6 +19,7 @@ export function BankAccountFields({
   onAccountNameChange,
   resolving,
   resolveMsg,
+  nameFromBank = false,
   bankCode,
 }: BankAccountFieldsProps) {
   const isVerified =
@@ -74,7 +77,7 @@ export function BankAccountFields({
               ? "Resolving account name..."
               : "Select bank + enter number to auto-fill"
           }
-          readOnly={resolving}
+          readOnly={resolving || nameFromBank}
           className={`h-12 w-full rounded-ona-ctl border border-ona-border bg-ona-field px-4 text-[13px] font-medium text-ona-ink outline-none focus:outline-none focus:ring-0 transition-colors focus:border-ona-ink dark:focus:border-ona-border ${
             resolving ? "opacity-75" : ""
           }`}
