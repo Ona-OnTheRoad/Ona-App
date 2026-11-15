@@ -162,7 +162,16 @@ export async function requireUser(
   };
 }
 
-/** True when caller is a party on the job (motorist or assigned pro). */
+/**
+ * True only for the two people on the job: the customer and the Repair Pro currently
+ * assigned to it. Nobody else, in any status.
+ *
+ * This used to return true for EVERY signed-in user while a job was "searching" or
+ * "negotiating". That let any Pro or customer who knew a job id read the customer's
+ * location, vehicle and problem, and place offers on someone else's negotiation that were
+ * recorded as the real Pro's. Nothing that state allows needs it: the actions that mutate a
+ * job bind the caller to the customer or the assigned Pro anyway.
+ */
 export function isJobParty(
   userId: string,
   job: {
@@ -171,7 +180,6 @@ export function isJobParty(
     status?: string;
   },
 ): boolean {
-  if (userId === job.motoristId || userId === job.repairProId) return true;
-  if (job.status === "searching" || job.status === "negotiating") return true;
-  return false;
+  if (!userId) return false;
+  return userId === job.motoristId || userId === job.repairProId;
 }
