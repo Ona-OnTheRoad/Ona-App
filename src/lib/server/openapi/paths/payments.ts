@@ -62,9 +62,8 @@ export function registerPaymentsPaths(registry: OpenAPIRegistry) {
     method: "post",
     path: "/api/payments/resolve-account",
     tags: tag,
-    summary: "Resolve NUBAN account holder name",
+    summary: "Resolve NUBAN account holder name (session optional; anonymous callers are IP rate limited)",
     body: paymentsResolveAccountBodySchema,
-    authenticated: true,
   });
   registerProductPath({
     registry,
