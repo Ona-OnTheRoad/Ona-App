@@ -251,6 +251,36 @@ describe("syncPayoutAcrossRoles", () => {
     expect(pro?.bank_account_number).toBe("0123456789");
   });
 
+  it("carries the bank-confirmed name and its stamp to the other role and marks the record verified", async () => {
+    const stamp = "2026-11-14T10:00:00.000Z";
+    const db = new FakeDb({
+      profiles: [],
+      motorist_profiles: [
+        // Same account, still holding a typed name from before the bank confirmed it.
+        { user_id: userId, bank_account_number: "0123456789", bank_code: "058", bank_account_name: "Typed By User", updated_at: "2026-11-01T00:00:00.000Z" },
+      ],
+      repair_pro_profiles: [
+        { user_id: userId, bank_account_number: "0123456789", bank_code: "058", bank_account_name: "BANK HOLDER", bank_account_resolved_at: stamp, updated_at: "2026-11-14T10:00:00.000Z" },
+      ],
+      payout_methods: [],
+      user_roles: [],
+      identity_sync_log: [],
+    });
+    expect((await syncPayoutAcrossRoles(db as never, userId)).ok).toBe(true);
+    const mot = db.rows.motorist_profiles.find((r) => r.user_id === userId);
+    expect(mot).toMatchObject({ bank_account_name: "BANK HOLDER", bank_account_resolved_at: stamp });
+    expect(db.rows.payout_methods.find((r) => r.user_id === userId)).toMatchObject({ account_name: "BANK HOLDER", verified: true });
+  });
+
+  it("a typed, unconfirmed name is never marked verified", async () => {
+    const db = baseDb();
+    db.rows.repair_pro_profiles.push({ user_id: userId });
+    await syncPayoutAcrossRoles(db as never, userId);
+    expect(db.rows.payout_methods.find((r) => r.user_id === userId)?.verified).toBe(false);
+    const pro = db.rows.repair_pro_profiles.find((r) => r.user_id === userId);
+    expect(pro?.bank_account_resolved_at ?? null).toBeNull();
+  });
+
   it("does not invent a side-table row when the other role has not signed up", async () => {
     const db = baseDb();
     const res = await syncPayoutAcrossRoles(db as never, userId);

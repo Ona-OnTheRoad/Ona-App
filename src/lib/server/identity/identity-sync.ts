@@ -143,14 +143,14 @@ export async function syncPayoutAcrossRoles(
       supabase
         .from("motorist_profiles")
         .select(
-          "user_id, bank_name, bank_code, bank_account_name, bank_account_number, updated_at",
+          "user_id, bank_name, bank_code, bank_account_name, bank_account_number, bank_account_resolved_at, updated_at",
         )
         .eq("user_id", userId)
         .maybeSingle(),
       supabase
         .from("repair_pro_profiles")
         .select(
-          "user_id, bank_name, bank_code, bank_account_name, bank_account_number, updated_at",
+          "user_id, bank_name, bank_code, bank_account_name, bank_account_number, bank_account_resolved_at, updated_at",
         )
         .eq("user_id", userId)
         .maybeSingle(),
@@ -165,6 +165,7 @@ export async function syncPayoutAcrossRoles(
           bank_code?: string | null;
           bank_account_name?: string | null;
           bank_account_number?: string | null;
+          bank_account_resolved_at?: string | null;
           updated_at?: string | null;
         }
       | null
@@ -201,6 +202,9 @@ export async function syncPayoutAcrossRoles(
       account_name: pick(winner, "bank_account_name"),
       account_number: pick(winner, "bank_account_number"),
     };
+    // Set only when the bank confirmed the holder name (never from a typed name).
+    const resolvedAt =
+      (bank.account_name && winner?.bank_account_resolved_at) || null;
     const last4 = bank.account_number ? bank.account_number.slice(-4) : null;
     const bothRoles = Boolean(motRes.data && proRes.data);
 
@@ -213,7 +217,7 @@ export async function syncPayoutAcrossRoles(
         account_name: bank.account_name,
         account_number_last4: last4,
         linked_role: bothRoles ? "both" : source,
-        verified: false,
+        verified: Boolean(resolvedAt),
         updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id" },
@@ -227,6 +231,7 @@ export async function syncPayoutAcrossRoles(
       bank_name: bank.bank_name,
       bank_code: bank.bank_code,
       bank_account_name: bank.account_name,
+      bank_account_resolved_at: resolvedAt,
       bank_account_number: bank.account_number,
       updated_at: new Date().toISOString(),
     };
@@ -235,7 +240,9 @@ export async function syncPayoutAcrossRoles(
       const same =
         pick(mot, "bank_code") === bank.bank_code &&
         (pick(mot, "bank_account_number") || "").replace(/\D/g, "") ===
-          (bank.account_number || "").replace(/\D/g, "");
+          (bank.account_number || "").replace(/\D/g, "") &&
+        pick(mot, "bank_account_name") === bank.account_name &&
+        (mot?.bank_account_resolved_at || null) === resolvedAt;
       if (!same) {
         const { error: copyErr } = await supabase
           .from("motorist_profiles")
@@ -249,7 +256,9 @@ export async function syncPayoutAcrossRoles(
       const same =
         pick(pro, "bank_code") === bank.bank_code &&
         (pick(pro, "bank_account_number") || "").replace(/\D/g, "") ===
-          (bank.account_number || "").replace(/\D/g, "");
+          (bank.account_number || "").replace(/\D/g, "") &&
+        pick(pro, "bank_account_name") === bank.account_name &&
+        (pro?.bank_account_resolved_at || null) === resolvedAt;
       if (!same) {
         const { error: copyErr } = await supabase
           .from("repair_pro_profiles")
