@@ -76,6 +76,12 @@ async function confirm(input: ConfirmationInput): Promise<ConfirmationResult> {
   if (!alreadyFunded) {
     verified = await verifyCharge(payment.providerRef, payment.provider, { strictProvider: true });
     if (!verified.success) return { outcome: "pending", message: "Payment not confirmed yet. Wait and try again.", payment };
+    // The mock gateway has no real charge to read back: it confirms the stored obligation exactly.
+    // Without this its placeholder amount (0) is handed to the booking transaction, whose strict amount
+    // check then refuses every mock payment ("Payment association changed before booking").
+    if (payment.provider === "mock") {
+      verified = { ...verified, amountMinor: payment.amountMinor, currency: payment.currency };
+    }
     if (verified.reference !== payment.providerRef) return reject("Provider transaction reference does not match");
     // Flutterwave amount is in major units; Paystack amount is already in minor units.
     // Checkout instructs exact payment. No zero acceptance or invented tolerance.
