@@ -9,7 +9,9 @@ import {
 import { createClient } from "@supabase/supabase-js";
 import { isProService } from "@/lib/services";
 import { clampProServiceRadiusKm } from "@/lib/profile-system";
+import { refreshBankNameMatch } from "@/lib/server/identity/bank-name-match";
 import { isBankAccountTaken } from "@/lib/server/payments/bank-lookup";
+import { planBankNameColumns } from "@/lib/server/payments/bank-save";
 import type { ProService } from "@/lib/types";
 import { findPhoneOwners } from "@/lib/server/otp/phone-owners";
 import { rejectBankDestinationChange } from "@/lib/server/security/bank-change-gate";
@@ -188,6 +190,14 @@ export async function POST(req: Request) {
     if (blocked) return blocked;
   }
 
+  // The holder name comes from the bank, never from this request body.
+  const bankName = await planBankNameColumns(admin, userId, isRepairPro, {
+    bankAccountNumber: b.bankAccountNumber,
+    bankCode: b.bankCode,
+    bankAccountName: b.bankAccountName,
+  });
+  if (!bankName.ok) return bankName.response;
+
   // DOB age gate (same rules as signup) when client sends a date
   if (b.dateOfBirth != null) {
     const raw = b.dateOfBirth;
@@ -342,9 +352,7 @@ export async function POST(req: Request) {
               ...(b.bankName !== undefined
                 ? { bank_name: b.bankName || null }
                 : {}),
-              ...(b.bankAccountName !== undefined
-                ? { bank_account_name: b.bankAccountName || null }
-                : {}),
+              ...bankName.columns,
               ...(b.bankAccountNumber !== undefined
                 ? { bank_account_number: b.bankAccountNumber.replace(/\D/g, "") || null }
                 : {}),
@@ -455,9 +463,7 @@ export async function POST(req: Request) {
           : {}),
         ...(b.skillAnswers ? { skills: b.skillAnswers } : {}),
         ...(b.bankName !== undefined ? { bank_name: b.bankName || null } : {}),
-        ...(b.bankAccountName !== undefined
-          ? { bank_account_name: b.bankAccountName || null }
-          : {}),
+        ...bankName.columns,
         ...(b.bankAccountNumber !== undefined
           ? { bank_account_number: b.bankAccountNumber.replace(/\D/g, "") || null }
           : {}),
@@ -493,6 +499,9 @@ export async function POST(req: Request) {
   // Unified identity: keep the canonical bank record + the other role's side
   // table in sync after any bank change (one bank = payouts + refunds).
   if (hasBankPatch) {
+    if ("bank_account_name" in bankName.columns) {
+      await refreshBankNameMatch(admin, userId, bankName.columns.bank_account_name ?? null);
+    }
     try {
       const { syncPayoutAcrossRoles } =
         await import("@/lib/server/identity/identity-sync");

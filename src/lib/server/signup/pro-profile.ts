@@ -140,6 +140,7 @@ export async function writeProProfile(
             : null,
       bank_name: input.bankName || null,
       bank_account_name: input.bankAccountName || null,
+      bank_account_resolved_at: ctx.bankResolvedAt ?? null,
       bank_account_number: input.bankAccountNumber || null,
       bank_code: input.bankCode || null,
       docs_status: docsWasApproved ? "approved" : docsStatus,
