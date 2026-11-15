@@ -77,6 +77,7 @@ export function BankAccountScreen() {
     loadingBanks,
     resolving,
     resolveMsg,
+    nameFromBank,
     selectVal,
     onSelectBank,
     onAccountNumberChange,
@@ -240,6 +241,7 @@ export function BankAccountScreen() {
               onAccountNameChange={onAccountNameChange}
               resolving={resolving}
               resolveMsg={resolveMsg}
+              nameFromBank={nameFromBank}
               bankCode={bankCode}
             />
 

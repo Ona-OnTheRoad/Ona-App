@@ -27,6 +27,7 @@ export function Step5BankAccount({
     bankAccountNumber,
     resolving,
     resolveMsg,
+    nameFromBank,
     selectVal,
     onSelectBank,
     onAccountNumberChange,
@@ -127,6 +128,7 @@ export function Step5BankAccount({
             onChange={(e) => onAccountNameChange(e.target.value)}
             placeholder="Enter account name"
             autoComplete="name"
+            readOnly={resolving || nameFromBank}
             className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted uppercase font-medium tracking-wide outline-none focus:outline-none"
           />
           {resolveMsg && (

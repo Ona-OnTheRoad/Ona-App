@@ -36,6 +36,8 @@ export function useBankDetailsFields({
   const [loadingBanks, setLoadingBanks] = useState(true);
   const [resolving, setResolving] = useState(false);
   const [resolveMsg, setResolveMsg] = useState<string | null>(null);
+  /** The shown name is the bank's answer for the current bank + number. */
+  const [nameFromBank, setNameFromBank] = useState(false);
   const resolveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastResolved = useRef("");
 
@@ -101,6 +103,7 @@ export function useBankDetailsFields({
       if (lastResolved.current === key) return;
       setResolving(true);
       setResolveMsg(null);
+      setNameFromBank(false);
       const res = await resolveNigeriaAccountName({
         bankCode: code,
         accountNumber: number,
@@ -113,6 +116,7 @@ export function useBankDetailsFields({
           signupFullName,
         );
         setBankAccountName(res.accountName);
+        setNameFromBank(true);
         setResolveMsg(
           match.ok || !signupFullName?.trim() ? "Name verified" : null,
         );
@@ -165,6 +169,7 @@ export function useBankDetailsFields({
     setBankName(resolvedName);
     lastResolved.current = "";
     setResolveMsg(null);
+    setNameFromBank(false);
     emit({
       bankCode: code,
       bankName: resolvedName,
@@ -178,6 +183,7 @@ export function useBankDetailsFields({
     setBankAccountNumber(num);
     if (num.length < 10) {
       lastResolved.current = "";
+      setNameFromBank(false);
     }
     emit({
       bankCode,
@@ -205,6 +211,7 @@ export function useBankDetailsFields({
     loadingBanks,
     resolving,
     resolveMsg,
+    nameFromBank,
     iso,
     selectVal,
     onSelectBank,
