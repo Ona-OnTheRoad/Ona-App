@@ -7,8 +7,8 @@ import "server-only";
 export const OPENAPI_ROUTE_INVENTORY = {
   totals: {
     routeFiles: 185,
-    publicProduct: 18,
-    authenticatedProduct: 87,
+    publicProduct: 19,
+    authenticatedProduct: 86,
     admin: 65,
     webhook: 1,
     cronSweep: 7,

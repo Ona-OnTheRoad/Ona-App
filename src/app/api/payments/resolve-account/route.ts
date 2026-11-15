@@ -1,7 +1,9 @@
-import { rateLimitUnavailableResponse } from "@/lib/server/modules/rate-limit";
+import { checkIpRateLimit } from "@/lib/server/modules/ip-rate-limit";
+import { rateLimitAsync, rateLimitUnavailableResponse } from "@/lib/server/modules/rate-limit";
 import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { requireUser } from "@/lib/server/auth-utils";
+import { resolveBankAccount } from "@/lib/server/payments/resolve-account";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,32 +13,54 @@ const bodySchema = z.object({
   bankCode: z.string().min(1).max(20),
 });
 
+/** Anonymous (signup) budget per client IP. */
+const ANON_LIMIT = 10;
+const ANON_WINDOW_MS = 10 * 60_000;
+
+function tooManyLookups(retryAfterSec: number) {
+  const response = apiFail(
+    `Too many name lookups. Retry in ${retryAfterSec}s.`,
+    429,
+    "rate_limited",
+  );
+  response.headers.set("Retry-After", String(retryAfterSec));
+  return response;
+}
+
 /**
  * Flutterwave NUBAN resolve returns account holder name like bank apps.
  * POST /api/payments/resolve-account
  * { accountNumber, bankCode }
+ * Session optional: the signup bank step calls this before an account exists.
  */
 export async function POST(req: Request) {
   try {
+    // Signed-in callers get a per-user budget. Signup has no session yet, so
+    // anonymous callers are allowed on a tighter per-IP budget; it fails closed
+    // because every lookup is a paid provider call.
     const auth = await requireUser(req);
-    if (!auth.ok) return auth.response;
-
-    try {
-      const { rateLimitAsync } = await import("@/lib/server/modules/rate-limit");
-      const rl = await rateLimitAsync({
-        key: `resolve-account:${auth.userId}`,
-        limit: 20,
-        windowMs: 60_000,
-      });
-      if (!rl.ok) {
-        return apiFail(
-          `Too many name lookups. Retry in ${rl.retryAfterSec}s.`,
-          429,
-          "rate_limited",
-        );
+    if (auth.ok) {
+      try {
+        const rl = await rateLimitAsync({
+          key: `resolve-account:${auth.userId}`,
+          limit: 20,
+          windowMs: 60_000,
+        });
+        if (!rl.ok) return tooManyLookups(rl.retryAfterSec);
+      } catch (error) {
+        return rateLimitUnavailableResponse(error, req) || apiFail("Security checks unavailable", 503);
       }
-    } catch (error) {
-      return rateLimitUnavailableResponse(error, req) || apiFail("Security checks unavailable", 503);
+    } else {
+      const ipLimit = await checkIpRateLimit(req, {
+        name: "resolve-account",
+        limit: ANON_LIMIT,
+        windowMs: ANON_WINDOW_MS,
+      });
+      if (!ipLimit.ok) {
+        return ipLimit.reason === "limited"
+          ? tooManyLookups(ipLimit.retryAfterSec)
+          : apiFail("Security checks unavailable", 503, "rate_limit_unavailable");
+      }
     }
 
     const parsed = bodySchema.safeParse(await req.json());
@@ -53,49 +77,21 @@ export async function POST(req: Request) {
       return apiFail("Select a bank first.", 400);
     }
 
-    const secret = (process.env.FLUTTERWAVE_SECRET_KEY || "").trim();
-    if (!secret) {
+    const result = await resolveBankAccount({ accountNumber, bankCode });
+    if (result.status === "unavailable") {
       return apiFail(
-        "Name lookup is unavailable (payment keys not configured).",
+        result.message,
         503,
-        "no_keys",
+        result.code === "no_keys" ? "no_keys" : "resolve_unavailable",
       );
     }
-
-    const res = await fetch("https://api.flutterwave.com/v3/accounts/resolve", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${secret}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        account_number: accountNumber,
-        account_bank: bankCode,
-      }),
-    });
-
-    const json = (await res.json().catch(() => null)) as {
-      status?: string;
-      message?: string;
-      data?: {
-        account_number?: string;
-        account_name?: string;
-        bank_id?: number;
-      };
-    } | null;
-
-    if (!res.ok || json?.status !== "success" || !json?.data?.account_name) {
-      return apiFail(
-        json?.message ||
-          "Could not verify account. Check bank and account number.",
-        400,
-        "resolve_failed",
-      );
+    if (result.status === "not_found") {
+      return apiFail(result.message, 400, "resolve_failed");
     }
 
     return apiOk({
-      accountNumber: json.data.account_number || accountNumber,
-      accountName: String(json.data.account_name).trim(),
+      accountNumber: result.accountNumber,
+      accountName: result.accountName,
       bankCode,
     });
   } catch (e) {
