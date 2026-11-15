@@ -272,3 +272,38 @@ describe("Flutterwave webhook", () => {
     expect(providers.verifyCharge).not.toHaveBeenCalled();
   });
 });
+
+describe("mock gateway confirmation (dev / QA sandbox)", () => {
+  it("books with the stored amount even though the mock verifier reports a placeholder 0", async () => {
+    payment = { ...payment, provider: "mock", amountMinor: 727_000 } as EscrowPayment;
+    vi.mocked(providers.verifyCharge).mockResolvedValue({ success: true, reference: "ona_ref", amountMinor: 0, currency: "NGN", channel: "mock" });
+    const result = await confirmJobPayment({ reference: "ona_ref", motoristId: "customer" });
+    expect(result.outcome).toBe("confirmed");
+    const verifiedArg = vi.mocked(store.bookConfirmedJob).mock.calls[0][2];
+    expect(verifiedArg.amountMinor).toBe(727_000);
+    expect(verifiedArg.currency).toBe("NGN");
+  });
+
+  it("a real provider's amount is still passed through untouched (and still checked)", async () => {
+    payment = { ...payment, provider: "flutterwave", amountMinor: 100_000 } as EscrowPayment;
+    vi.mocked(providers.verifyCharge).mockResolvedValue({ ...transaction, amountMinor: 100_000 });
+    await confirmJobPayment({ reference: "ona_ref", motoristId: "customer" });
+    expect(vi.mocked(store.bookConfirmedJob).mock.calls[0][2].amountMinor).toBe(100_000);
+
+    vi.clearAllMocks();
+    payment = { ...payment, escrowStatus: "pending_payment", status: "pending" } as EscrowPayment;
+    job = { ...job, status: "agreed" } as JobRecord;
+    vi.mocked(providers.verifyCharge).mockResolvedValue({ ...transaction, amountMinor: 1 });
+    const wrongAmount = await confirmJobPayment({ reference: "ona_ref", motoristId: "customer" });
+    expect(wrongAmount.outcome).toBe("rejected");
+    expect(store.bookConfirmedJob).not.toHaveBeenCalled();
+  });
+
+  it("mock payments are still refused on a deployed runtime", async () => {
+    payment = { ...payment, provider: "mock" } as EscrowPayment;
+    vi.mocked(providers.isProductionRuntime).mockReturnValue(true);
+    const result = await confirmJobPayment({ reference: "ona_ref", motoristId: "customer" });
+    expect(result.outcome).toBe("rejected");
+    expect(store.bookConfirmedJob).not.toHaveBeenCalled();
+  });
+});
