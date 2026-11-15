@@ -31,6 +31,7 @@ import {
   findExistingFlutterwaveTransfer,
 } from "@/lib/server/payments/providers";
 import { isFeatureEnabled } from "@/lib/server/modules/settings/platform-settings";
+import { confirmedBankName } from "@/lib/server/payments/bank-save";
 import { getSystemSetting } from "@/lib/server/security/security-store";
 import type { CashoutRequest } from "@/lib/security/types";
 
@@ -135,22 +136,32 @@ export async function getBankOnFile(userId: string): Promise<BankOnFile> {
   try {
     const sb = createServiceSupabase();
     for (const table of ["repair_pro_profiles", "profiles"]) {
+      const isPro = table === "repair_pro_profiles";
       const { data } = await sb
         .from(table)
         .select(
-          "bank_code, bank_name, bank_account_number, bank_account_name",
+          isPro
+            ? "bank_code, bank_name, bank_account_number, bank_account_name, bank_account_resolved_at"
+            : "bank_code, bank_name, bank_account_number",
         )
-        .eq(
-          table === "repair_pro_profiles" ? "user_id" : "id",
-          userId,
-        )
+        .eq(isPro ? "user_id" : "id", userId)
         .maybeSingle();
-      if (data && (data.bank_code || data.bank_account_number)) {
+      const row = data as {
+        bank_code?: string | null;
+        bank_name?: string | null;
+        bank_account_number?: string | null;
+        bank_account_name?: string | null;
+        bank_account_resolved_at?: string | null;
+      } | null;
+      if (row && (row.bank_code || row.bank_account_number)) {
+        // The beneficiary name is the bank-confirmed one or nothing; a
+        // transfer without it is refused downstream.
+        const accountName = isPro ? await confirmedBankName(sb, userId, row) : null;
         return {
-          bankCode: data.bank_code || undefined,
-          bankName: data.bank_name || undefined,
-          accountNumber: data.bank_account_number || undefined,
-          accountName: data.bank_account_name || undefined,
+          bankCode: row.bank_code || undefined,
+          bankName: row.bank_name || undefined,
+          accountNumber: row.bank_account_number || undefined,
+          accountName: accountName || undefined,
         };
       }
     }

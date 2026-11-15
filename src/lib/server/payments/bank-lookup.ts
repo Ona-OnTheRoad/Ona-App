@@ -9,6 +9,7 @@ import "server-only";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { serverLogger } from "@/lib/server/structured-logger";
+import { confirmedBankName } from "@/lib/server/payments/bank-save";
 import type { IdentityCheck } from "@/lib/server/payments/self-payment-guard";
 
 export async function loadMotoristBankCode(
@@ -60,13 +61,16 @@ export async function loadMotoristBankDetails(
     const sb = createServiceSupabase();
     const { data } = await sb
       .from("motorist_profiles")
-      .select("bank_name, bank_account_name, bank_account_number, bank_code")
+      .select(
+        "bank_name, bank_account_name, bank_account_number, bank_code, bank_account_resolved_at",
+      )
       .eq("user_id", motoristId)
       .maybeSingle();
     if (!data) return null;
     return {
       bankName: (data.bank_name as string) || "",
-      accountName: (data.bank_account_name as string) || "",
+      // Bank-confirmed only; empty until the bank has confirmed the holder.
+      accountName: (await confirmedBankName(sb, motoristId, data)) || "",
       accountNumber: String(data.bank_account_number || "").replace(/\D/g, ""),
       bankCode: String(data.bank_code || "").trim(),
     };
@@ -93,7 +97,9 @@ export async function loadProBankDetails(
     const sb = createServiceSupabase();
     const { data } = await sb
       .from("repair_pro_profiles")
-      .select("bank_code, bank_account_number, bank_account_name")
+      .select(
+        "bank_code, bank_account_number, bank_account_name, bank_account_resolved_at",
+      )
       .eq("user_id", repairProId)
       .maybeSingle();
     if (!data) return null;
@@ -102,8 +108,10 @@ export async function loadProBankDetails(
       /\D/g,
       "",
     );
-    const accountName = String(data.bank_account_name || "").trim();
-    if (!bankCode || accountNumber.length < 10 || !accountName) return null;
+    if (!bankCode || accountNumber.length < 10) return null;
+    // Payouts go only to an account whose holder the bank has confirmed.
+    const accountName = await confirmedBankName(sb, repairProId, data);
+    if (!accountName) return null;
     return { bankCode, accountNumber, accountName };
   } catch {
     return null;
