@@ -44,7 +44,7 @@ function SignupErrorBody() {
     <AuthPlate>
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-5 py-8 text-center">
         <div
-          className="w-full max-w-[300px] rounded-3xl p-5 shadow-[0_8px_30px_rgba(15,23,42,0.12)] ring-1 ring-black/10"
+          className="w-full max-w-75 rounded-3xl p-5 shadow-[0_8px_30px_rgba(15,23,42,0.12)] ring-1 ring-black/10"
           style={{ backgroundColor: AUTH_BG }}
         >
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#fef2f2]">

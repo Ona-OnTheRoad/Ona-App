@@ -260,6 +260,18 @@ async function buildProList(
       primary_service: pr.primary_service ?? null,
       services: pr.services ?? [],
       status: pr.status ?? "pending",
+      verified: Boolean(pr.verified),
+      nin_verified: Boolean(pr.nin_verified),
+      bvn_verified: Boolean(pr.bvn_verified),
+      gov_id_kind: pr.gov_id_kind ?? meta.govIdKind ?? null,
+      gov_id_front_url: pr.gov_id_front_url ?? null,
+      gov_id_back_url: pr.gov_id_back_url ?? null,
+      gov_id_review_status:
+        pr.gov_id_review_status ??
+        (t2Ok ? "approved" : t2Pending ? "submitted" : "none"),
+      docs_status: docs,
+      certification_file_name: skillFileName,
+      certification_file_url: skillFileUrl,
       pipeline_status: pr.pipeline_status ?? null,
       needs_resubmit,
       bio: pr.bio ?? null,
@@ -530,6 +542,7 @@ export async function PATCH(req: Request) {
       const goLiveEnds = new Date(now);
       goLiveEnds.setUTCDate(goLiveEnds.getUTCDate() + 30);
       const t2Patch: Record<string, unknown> = {
+        phone_verified: true,
         nin_verified: true,
         bvn_verified: bvnVerified,
         verified: true,
@@ -563,6 +576,7 @@ export async function PATCH(req: Request) {
         const { error: e2 } = await supabase
           .from("repair_pro_profiles")
           .update({
+            phone_verified: true,
             nin_verified: true,
             bvn_verified: bvnVerified,
             verified: true,

@@ -100,7 +100,7 @@ export function phoneNationalError(
   const d = national.replace(/\D/g, "");
   if (!d) return emptyOk ? null : "Please enter your phone number.";
   if (d.length < 7) return "That phone number looks too short.";
-  if (d.length > 15) return "That phone number looks too long.";
+  if (d.length > 11) return "That phone number looks too long.";
   return null;
 }
 

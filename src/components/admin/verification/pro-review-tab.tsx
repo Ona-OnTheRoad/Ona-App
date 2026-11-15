@@ -25,6 +25,19 @@ interface ProQueueRow {
   nin_verified?: boolean;
   bvn_verified?: boolean;
   rejection_reason?: string;
+  levels?: {
+    t2_id?: {
+      front_url?: string | null;
+      back_url?: string | null;
+      review_status?: string | null;
+      gov_id_kind?: string | null;
+    };
+    t4_docs?: {
+      file_url?: string | null;
+      file_name?: string | null;
+      docs_status?: string | null;
+    };
+  };
 }
 
 export function ProReviewTab({
@@ -190,54 +203,72 @@ export function ProReviewTab({
                       {row.primary_service || "—"}
                     </td>
                     <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        {row.gov_id_front_url && (
-                          <a
-                            href={row.gov_id_front_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] text-ona-brand hover:underline font-semibold"
-                          >
-                            <span>Front</span>
-                            <ExternalLink className="w-2.5 h-2.5" />
-                          </a>
-                        )}
-                        {row.gov_id_back_url && (
-                          <a
-                            href={row.gov_id_back_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] text-ona-brand hover:underline font-semibold"
-                          >
-                            <span>Back</span>
-                            <ExternalLink className="w-2.5 h-2.5" />
-                          </a>
-                        )}
-                        {!row.gov_id_front_url && !row.gov_id_back_url && (
-                          <span className="text-gray-400 text-[11px]">No ID doc</span>
-                        )}
-                      </div>
-                      <div className="text-[10px] text-gray-400 mt-0.5">
-                        {row.gov_id_review_status || "not submitted"}
-                      </div>
+                      {(() => {
+                        const frontUrl = row.gov_id_front_url || row.levels?.t2_id?.front_url;
+                        const backUrl = row.gov_id_back_url || row.levels?.t2_id?.back_url;
+                        const reviewStatus = row.gov_id_review_status || row.levels?.t2_id?.review_status;
+                        return (
+                          <>
+                            <div className="flex items-center gap-2">
+                              {frontUrl && (
+                                <a
+                                  href={frontUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 text-[11px] text-ona-brand hover:underline font-semibold"
+                                >
+                                  <span>Front</span>
+                                  <ExternalLink className="w-2.5 h-2.5" />
+                                </a>
+                              )}
+                              {backUrl && (
+                                <a
+                                  href={backUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 text-[11px] text-ona-brand hover:underline font-semibold"
+                                >
+                                  <span>Back</span>
+                                  <ExternalLink className="w-2.5 h-2.5" />
+                                </a>
+                              )}
+                              {!frontUrl && !backUrl && (
+                                <span className="text-gray-400 text-[11px]">No ID doc</span>
+                              )}
+                            </div>
+                            <div className="text-[10px] text-gray-400 mt-0.5">
+                              {reviewStatus || "not submitted"}
+                            </div>
+                          </>
+                        );
+                      })()}
                     </td>
                     <td className="py-3 px-4">
-                      {row.certification_file_url ? (
-                        <a
-                          href={row.certification_file_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-semibold"
-                        >
-                          <span>{row.certification_file_name || "View Cert"}</span>
-                          <ExternalLink className="w-2.5 h-2.5" />
-                        </a>
-                      ) : (
-                        <span className="text-gray-400 text-[11px]">No cert</span>
-                      )}
-                      <div className="text-[10px] text-gray-400 mt-0.5">
-                        {row.docs_status || "none"}
-                      </div>
+                      {(() => {
+                        const certUrl = row.certification_file_url || row.levels?.t4_docs?.file_url;
+                        const certName = row.certification_file_name || row.levels?.t4_docs?.file_name;
+                        const docsStatus = row.docs_status || row.levels?.t4_docs?.docs_status;
+                        return (
+                          <>
+                            {certUrl ? (
+                              <a
+                                href={certUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+                              >
+                                <span>{certName || "View Cert"}</span>
+                                <ExternalLink className="w-2.5 h-2.5" />
+                              </a>
+                            ) : (
+                              <span className="text-gray-400 text-[11px]">No cert</span>
+                            )}
+                            <div className="text-[10px] text-gray-400 mt-0.5">
+                              {docsStatus || "none"}
+                            </div>
+                          </>
+                        );
+                      })()}
                     </td>
                     <td className="py-3 px-4">
                       <span className={cn(

@@ -141,7 +141,7 @@ export function ProPersonalInfoCard({
             Bio
           </p>
           <p className="mt-1 text-xs font-medium text-ona-ink">
-            {userProfile.bio || "I Love Working on Engine"}
+            {userProfile.bio || "I Love Working on Engine"} 
           </p>
         </div>
 

@@ -81,6 +81,10 @@ export async function loadSwitchedIdentityProfile(
     bank_code?: string | null;
     phone_verified?: boolean;
     docs_status?: string | null;
+    gov_id_kind?: string | null;
+    gov_id_front_url?: string | null;
+    gov_id_reviewed_at?: string | null;
+    approved_at?: string | null;
   } | null;
 
   // Shared identity phone flag (must survive Tap to Switch)
@@ -117,6 +121,24 @@ export async function loadSwitchedIdentityProfile(
 
   if (accountType === "professional") {
     const ds = proBank?.docs_status;
+    const proT2Approved =
+      pr?.gov_id_review_status === "approved" ||
+      Boolean(pr?.verified) ||
+      Boolean(pr?.tier2_approved_at) ||
+      pr?.status === "approved" ||
+      identityFromCustomer.govIdVerified ||
+      identityFromCustomer.identityReviewStatus === "approved" ||
+      Boolean(identityFromCustomer.identityVerifiedAt);
+    const proIdentityStatus: UserProfile["identityReviewStatus"] | undefined =
+      proT2Approved
+        ? "approved"
+        : pr?.gov_id_review_status === "rejected" ||
+            identityFromCustomer.identityReviewStatus === "rejected"
+          ? "rejected"
+          : pr?.gov_id_review_status === "submitted" ||
+              identityFromCustomer.identityReviewStatus === "submitted"
+            ? "submitted"
+            : identityFromCustomer.identityReviewStatus;
     extras = {
       services:
         (pr?.services as ProService[])?.filter(isProService) ||
@@ -130,7 +152,7 @@ export async function loadSwitchedIdentityProfile(
       // Prefer pro flags; fall back to customer NIN/BVN when pro not set
       ninVerified: pr?.nin_verified || motRow?.nin_verified,
       bvnVerified: pr?.bvn_verified || motRow?.bvn_verified,
-      phoneVerified,
+      phoneVerified: Boolean(phoneVerified || proT2Approved),
       docsStatus:
         ds === "none" ||
         ds === "under_review" ||
@@ -138,8 +160,18 @@ export async function loadSwitchedIdentityProfile(
         ds === "rejected"
           ? ds
           : undefined,
-      // Carry Customer T2 identity so Pro onboarding can skip gov ID
+      // Merge Customer T2 identity + Pro T2 identity so Pro /verify reflects approvals
       ...identityFromCustomer,
+      govIdVerified: proT2Approved,
+      identityReviewStatus: proIdentityStatus,
+      identityVerifiedAt:
+        pr?.tier2_approved_at ||
+        proBank?.gov_id_reviewed_at ||
+        proBank?.approved_at ||
+        identityFromCustomer.identityVerifiedAt,
+      govIdKind: proBank?.gov_id_kind || identityFromCustomer.govIdKind,
+      govIdFrontUrl:
+        proBank?.gov_id_front_url || identityFromCustomer.govIdFrontUrl,
       // Prefer pro bank; fall back to customer bank on same login
       bankName: proBank?.bank_name || motRow?.bank_name || undefined,
       bankAccountName:

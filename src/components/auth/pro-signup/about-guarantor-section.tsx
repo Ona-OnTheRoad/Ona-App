@@ -49,8 +49,9 @@ export function AboutGuarantorSection({
           style={styles.fieldStyle}
           value={guarantorPhone}
           onChange={(e) =>
-            setGuarantorPhone(e.target.value.replace(/\D/g, "").slice(0, 15))
+            setGuarantorPhone(e.target.value.replace(/\D/g, "").slice(0, 11))
           }
+          maxLength={11}
           placeholder="e.g. 8012345678"
           type="tel"
           inputMode="numeric"
