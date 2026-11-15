@@ -8,7 +8,13 @@ vi.mock("@/lib/supabase/server", () => ({
   createServiceSupabase: vi.fn(),
 }));
 
+// The bank-confirmed name is covered in bank-save.test.ts; here it is a fake.
+vi.mock("@/lib/server/payments/bank-save", () => ({
+  confirmedBankName: vi.fn(async () => "BANK HOLDER"),
+}));
+
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
+import { confirmedBankName } from "@/lib/server/payments/bank-save";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import {
   isBankAccountTaken,
@@ -21,6 +27,7 @@ import {
 
 const isSupabaseAdminConfiguredMock = vi.mocked(isSupabaseAdminConfigured);
 const createServiceSupabaseMock = vi.mocked(createServiceSupabase);
+const confirmedBankNameMock = vi.mocked(confirmedBankName);
 
 type TableResult = { data: unknown; error?: { message: string } | null };
 
@@ -49,6 +56,7 @@ function makeSb(byTable: Record<string, TableResult | TableResult[]>) {
 beforeEach(() => {
   vi.clearAllMocks();
   isSupabaseAdminConfiguredMock.mockReturnValue(true);
+  confirmedBankNameMock.mockResolvedValue("BANK HOLDER");
 });
 
 describe("loadMotoristBankCode / loadProBankCode", () => {
@@ -78,10 +86,21 @@ describe("loadMotoristBankDetails", () => {
     });
     expect(await loadMotoristBankDetails("u1")).toEqual({
       bankName: "GTB",
-      accountName: "Jane Doe",
+      // The bank-confirmed name, never the stored typed one.
+      accountName: "BANK HOLDER",
       accountNumber: "0123456789",
       bankCode: "058",
     });
+  });
+
+  it("has an empty account name until the bank has confirmed the holder", async () => {
+    confirmedBankNameMock.mockResolvedValue(null);
+    makeSb({
+      motorist_profiles: {
+        data: { bank_name: "GTB", bank_account_name: "Jane Doe", bank_account_number: "0123456789", bank_code: "058" },
+      },
+    });
+    expect((await loadMotoristBankDetails("u1"))?.accountName).toBe("");
   });
 
   it("returns null when no row exists", async () => {
@@ -102,6 +121,25 @@ describe("loadProBankDetails", () => {
         data: { bank_code: "058", bank_account_number: "123", bank_account_name: "X" },
       },
     });
+    expect(await loadProBankDetails("pro-1")).toBeNull();
+  });
+});
+
+describe("loadProBankDetails pays only a bank-confirmed holder", () => {
+  const row = { bank_code: "058", bank_account_number: "0123456789", bank_account_name: "Typed By User" };
+
+  it("returns the confirmed name as the beneficiary", async () => {
+    makeSb({ repair_pro_profiles: { data: row } });
+    expect(await loadProBankDetails("pro-1")).toEqual({
+      bankCode: "058",
+      accountNumber: "0123456789",
+      accountName: "BANK HOLDER",
+    });
+  });
+
+  it("returns null (funds stay in escrow) when the holder cannot be confirmed", async () => {
+    confirmedBankNameMock.mockResolvedValue(null);
+    makeSb({ repair_pro_profiles: { data: row } });
     expect(await loadProBankDetails("pro-1")).toBeNull();
   });
 });
