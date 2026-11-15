@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backend ID Items Status</title>
+<style>
+  :root {
+    --bg: #f6f5f2;
+    --surface: #ffffff;
+    --ink: #1c1b19;
+    --muted: #6b6860;
+    --line: #e4e1da;
+    --partial: #9a5b00;
+    --partial-bg: #fdf0d5;
+    --missing: #a3231c;
+    --missing-bg: #fbe3e0;
+    --chip: #efede8;
+    --accent: #1f4e79;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161614;
+      --surface: #201f1d;
+      --ink: #eceae4;
+      --muted: #a09c92;
+      --line: #34322e;
+      --partial: #f2c063;
+      --partial-bg: #3d2f10;
+      --missing: #f29a92;
+      --missing-bg: #421b18;
+      --chip: #2c2a27;
+      --accent: #8fbde6;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  main { max-width: 980px; margin: 0 auto; padding: 40px 16px 64px; }
+  h1 { font-size: 30px; line-height: 1.2; margin: 0 0 8px; letter-spacing: -0.01em; }
+  h2 { font-size: 20px; margin: 44px 0 6px; }
+  p { margin: 0 0 12px; }
+  .lede { color: var(--muted); max-width: 68ch; }
+  .sub { color: var(--muted); font-size: 14px; margin-bottom: 16px; max-width: 68ch; }
+  code {
+    font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--chip); padding: 1px 5px; border-radius: 4px;
+    overflow-wrap: anywhere;
+  }
+
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 28px 0 8px; }
+  .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+  .tile .n { font-size: 34px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+  .tile .l { color: var(--muted); font-size: 14px; margin-top: 6px; }
+  .tile.done .n { color: var(--muted); }
+  .tile.partial .n { color: var(--partial); }
+  .tile.missing .n { color: var(--missing); }
+
+  .bar { display: flex; height: 10px; border-radius: 99px; overflow: hidden; margin: 14px 0 0; background: var(--chip); }
+  .bar span:nth-child(1) { flex: 3; background: var(--partial); }
+  .bar span:nth-child(2) { flex: 6; background: var(--missing); }
+
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 16px; }
+  .filters button {
+    font: inherit; font-size: 14px; color: var(--ink);
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 99px; padding: 6px 14px; cursor: pointer;
+  }
+  .filters button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+  .item {
+    background: var(--surface); border: 1px solid var(--line); border-left-width: 5px;
+    border-radius: 12px; padding: 16px 18px; margin-bottom: 12px;
+  }
+  .item.partial { border-left-color: var(--partial); }
+  .item.missing { border-left-color: var(--missing); }
+  .item header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 6px; }
+  .id { font: 600 13px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--muted); }
+  .item h3 { font-size: 17px; margin: 0; flex: 1 1 260px; }
+  .pill { font-size: 13px; font-weight: 600; padding: 3px 10px; border-radius: 99px; white-space: nowrap; }
+  .pill.partial { color: var(--partial); background: var(--partial-bg); }
+  .pill.missing { color: var(--missing); background: var(--missing-bg); }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 10px; }
+  .chip { font-size: 12.5px; color: var(--muted); background: var(--chip); border-radius: 6px; padding: 2px 8px; }
+  .chip.warn { color: var(--missing); background: var(--missing-bg); }
+  .item p { margin: 0; }
+  .bugs { margin: 10px 0 0; padding: 10px 0 0 0; border-top: 1px dashed var(--line); list-style: none; }
+  .bugs li { padding-left: 18px; position: relative; margin-top: 6px; font-size: 15px; }
+  .bugs li::before { content: ""; position: absolute; left: 2px; top: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--missing); }
+  .bugs b { font-weight: 600; }
+  .note { border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; background: var(--surface); color: var(--muted); font-size: 14.5px; margin-top: 28px; }
+  .note b { color: var(--ink); }
+  @media (max-width: 560px) {
+    .tiles { grid-template-columns: 1fr; }
+    h1 { font-size: 25px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Backend identity items: status on dev</h1>
+  <p class="lede">The nine Backend-layer items from the tracking sheet, checked against the code on the <code>dev</code> branch at commit <code>7dba3d4</code> (13 November 2026). Suggested providers in the sheet were ignored; only whether the work exists was checked.</p>
+
+  <div class="tiles">
+    <div class="tile done"><div class="n">0</div><div class="l">Fully done</div></div>
+    <div class="tile partial"><div class="n">3</div><div class="l">Partly built</div></div>
+    <div class="tile missing"><div class="n">6</div><div class="l">Not built</div></div>
+  </div>
+  <div class="bar" role="img" aria-label="3 of 9 partly built, 6 of 9 not built"><span></span><span></span></div>
+
+  <h2>The nine items</h2>
+  <p class="sub">"Sheet" is the status in the tracking sheet. The coloured pill is what the code shows.</p>
+
+  <div class="filters" id="filters">
+    <button data-f="all" aria-pressed="true">All (9)</button>
+    <button data-f="partial" aria-pressed="false">Partly built (3)</button>
+    <button data-f="missing" aria-pressed="false">Not built (6)</button>
+  </div>
+
+  <section id="items">
+
+    <article class="item partial">
+      <header><span class="id">ONA-ID-101</span><h3>SMS OTP with provider failover</h3><span class="pill partial">Partly built</span></header>
+      <div class="meta"><span class="chip">P0</span><span class="chip">Phone OTP</span><span class="chip">Sheet: In Progress</span></div>
+      <p>Real SMS is sent through one provider (Africa's Talking) in <code>src/lib/server/africastalking.ts</code>. There is no second provider and no failover.</p>
+      <ul class="bugs">
+        <li><b>Silent SMS failure.</b> If the send fails, <code>src/app/api/auth/otp/send/route.ts</code> still answers "Code sent", so the user waits for a code that never arrives.</li>
+        <li><b>Demo code in production.</b> The code <code>336699</code> is accepted in production unless <code>OTP_DEMO_MODE</code> or <code>NEXT_PUBLIC_OTP_DEMO_MODE</code> is exactly <code>false</code>, with neither set to true (<code>src/lib/auth/demo-otp.ts</code>).</li>
+      </ul>
+    </article>
+
+    <article class="item missing">
+      <header><span class="id">ONA-ID-103</span><h3>WhatsApp OTP channel</h3><span class="pill missing">Not built</span></header>
+      <div class="meta"><span class="chip">P1</span><span class="chip">Phone OTP</span><span class="chip warn">Sheet: In Progress</span></div>
+      <p>No WhatsApp sending code exists anywhere in <code>src</code>.</p>
+    </article>
+
+    <article class="item missing">
+      <header><span class="id">ONA-ID-201</span><h3>OCR of ID documents</h3><span class="pill missing">Not built</span></header>
+      <div class="meta"><span class="chip">P0</span><span class="chip">Government ID</span><span class="chip warn">Sheet: In Progress</span></div>
+      <p>ID photos are uploaded through <code>src/app/api/verify/pro-id/route.ts</code> and reviewed by an admin by hand. Nothing reads the document.</p>
+    </article>
+
+    <article class="item partial">
+      <header><span class="id">ONA-ID-203</span><h3>Live NIN lookup with cached fallback</h3><span class="pill partial">Partly built</span></header>
+      <div class="meta"><span class="chip">P0</span><span class="chip">Government ID</span><span class="chip">Sheet: Blocked</span></div>
+      <p>A live lookup exists in <code>src/lib/server/prembly.ts</code> behind <code>/api/verify/nin</code>. There is no cache and no fallback.</p>
+      <ul class="bugs">
+        <li><b>Format-only pass.</b> With no <code>PREMBLY_API_KEY</code> set, any 11-digit number that is not all the same digit comes back as verified.</li>
+        <li><b>Open endpoint.</b> The route handler has no sign-in or rate-limit check of its own. Whether middleware covers it was not checked.</li>
+        <li><b>Result not kept.</b> The lookup result is only used in the browser during signup. <code>src/app/api/auth/signup/route.ts</code> (line 682) sets <code>nin_verified</code> from the number being 11 digits long.</li>
+      </ul>
+    </article>
+
+    <article class="item partial">
+      <header><span class="id">ONA-ID-205</span><h3>BVN identity match for payouts</h3><span class="pill partial">Partly built</span></header>
+      <div class="meta"><span class="chip">P0</span><span class="chip">Government ID</span><span class="chip">Sheet: In Progress</span></div>
+      <p>A BVN lookup exists behind <code>/api/verify/bvn</code>, but the name it returns is never compared with the profile or the bank account. <code>bvn_verified</code> is set by admin Tier 2 approval when a BVN is on file.</p>
+      <ul class="bugs">
+        <li><b>No identity match.</b> The core of this item, matching the BVN holder to the pro, is missing.</li>
+        <li><b>NIN copied into BVN.</b> The <code>nin</code> submission in <code>src/app/api/verify/pro-id/route.ts</code> writes the same number into both the NIN and BVN fields, so "BVN on file" can be true when only a NIN was given.</li>
+        <li><b>Same three bugs as ONA-ID-203.</b> Format-only pass, open endpoint and result not kept all apply to the BVN route too.</li>
+      </ul>
+    </article>
+
+    <article class="item missing">
+      <header><span class="id">ONA-ID-303</span><h3>Selfie vs ID photo face match</h3><span class="pill missing">Not built</span></header>
+      <div class="meta"><span class="chip">P0</span><span class="chip">Face Liveness</span><span class="chip warn">Sheet: In Review</span></div>
+      <p>No face comparison exists. Liveness runs in the browser, and <code>src/app/api/liveness/verify/route.ts</code> records the client's <code>passed: true</code> without receiving any image.</p>
+    </article>
+
+    <article class="item missing">
+      <header><span class="id">ONA-ID-305</span><h3>Periodic re-liveness before high-value jobs</h3><span class="pill missing">Not built</span></header>
+      <div class="meta"><span class="chip">P1</span><span class="chip">Face Liveness</span><span class="chip">Sheet: To Do</span></div>
+      <p>The liveness timestamp is stored but never expires, and dispatch does not check it.</p>
+    </article>
+
+    <article class="item missing">
+      <header><span class="id">ONA-ID-402</span><h3>Webhook receivers for KYC callbacks</h3><span class="pill missing">Not built</span></header>
+      <div class="meta"><span class="chip">P1</span><span class="chip">Security &amp; Audit</span><span class="chip warn">Sheet: In Review</span></div>
+      <p>The only webhook receiver is the Flutterwave payments one. The ID lookups are synchronous calls, so nothing waits for a callback today.</p>
+    </article>
+
+    <article class="item missing">
+      <header><span class="id">ONA-ID-403</span><h3>Notify user on KYC approval, rejection or retry</h3><span class="pill missing">Not built</span></header>
+      <div class="meta"><span class="chip">P2</span><span class="chip">Security &amp; Audit</span><span class="chip">Sheet: To Do</span></div>
+      <p>The admin review routes (<code>pro-review</code>, <code>customer-review</code>, <code>verification</code> under <code>src/app/api/admin/</code>) create no notification or push when they approve, reject or ask for a resubmit.</p>
+    </article>
+
+  </section>
+
+  <div class="note">
+    <b>How this was checked.</b> By reading the code on <code>dev</code> only. Nothing was run and no live deployment was checked. Items the sheet marks "In Review" or "In Progress" but that show as not built here (highlighted in red) may sit on another branch that was not looked at.
+  </div>
+</main>
+<script>
+  const buttons = document.querySelectorAll('#filters button');
+  const items = document.querySelectorAll('#items .item');
+  buttons.forEach(b => b.addEventListener('click', () => {
+    buttons.forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    const f = b.dataset.f;
+    items.forEach(i => { i.hidden = f !== 'all' && !i.classList.contains(f); });
+  }));
+</script>
+</body>
+</html>
