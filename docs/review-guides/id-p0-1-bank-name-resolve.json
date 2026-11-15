@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "id": "id-p0-1-bank-name-resolve",
+  "title": "ID P0-1: bank account name is resolved by the server",
+  "plan": "docs/review-guides/id-p0-1-bank-name-resolve.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "resolver",
+      "stage": "code",
+      "expectation": "One server helper resolves bank code + account number to a holder name and returns resolved, not_found or unavailable. The existing resolve-account route uses it and keeps its response shape and its per-user rate limit for signed-in callers.",
+      "verification": "Unit tests for the three outcomes, a missing key and a provider timeout; existing route behaviour unchanged.",
+      "status": "pending",
+      "evidence": [
+        "src/lib/server/payments/resolve-account.ts; src/app/api/payments/resolve-account/route.ts now wraps it (signed-in rate limit unchanged; auth is now optional, see resolve-anonymous; an unreachable bank now returns 503 instead of 400)",
+        "src/lib/server/payments/__tests__/resolve-account.test.ts: resolved, not_found, provider error, network failure, 401/403/429, missing key"
+      ]
+    },
+    {
+      "id": "resolve-anonymous",
+      "stage": "code",
+      "expectation": "POST /api/payments/resolve-account works without a session so the signup bank step can show the bank's name. Anonymous callers are limited to 10 lookups per 10 minutes per client IP, get 429 with Retry-After over budget, and get 503 (no bank call) if the limiter is unavailable. Signed-in callers keep 20 per minute per user.",
+      "verification": "Route tests for anonymous success, 429, limiter-unavailable 503 and the signed-in budget; a local run against the dev server.",
+      "status": "pending",
+      "evidence": [
+        "src/app/api/payments/resolve-account/route.ts; src/app/api/payments/resolve-account/__tests__/route.test.ts",
+        "Local dev server, 2026-11-14: 12 anonymous POSTs from one forwarded IP returned 10 provider answers then 429 twice. Not run on the hosted environment."
+      ]
+    },
+    {
+      "id": "signup-ignores-client-name",
+      "stage": "code",
+      "expectation": "Signup stores the resolved name for motorist and Repair Pro rows. A client-sent bankAccountName never reaches the database.",
+      "verification": "Route tests: a typed name that differs from the resolved name is not stored; the resolved name and bank_account_resolved_at are.",
+      "status": "pending",
+      "evidence": [
+        "src/lib/server/signup/preflight.ts resolveSignupBank; src/app/api/auth/signup/route.ts; src/lib/server/signup/pro-profile.ts writes bank_account_resolved_at",
+        "src/lib/server/signup/__tests__/resolve-signup-bank.test.ts. Tested at the helper, not through the full signup route. Motorist signup writes no bank columns, so only the Repair Pro row is affected."
+      ]
+    },
+    {
+      "id": "signup-unavailable",
+      "stage": "code",
+      "expectation": "When the resolver is unavailable, signup succeeds with bank_account_name null and bank_account_resolved_at null. When the bank reports no such account, signup is rejected before any account is created.",
+      "verification": "Route tests for both outcomes; no auth user created on not_found.",
+      "status": "pending",
+      "evidence": [
+        "src/lib/server/signup/__tests__/resolve-signup-bank.test.ts: unreachable bank continues with no name; unknown account returns 422 before createOrAttachUser is reached (ordering by code inspection of the route, not a route test)"
+      ]
+    },
+    {
+      "id": "profile-update",
+      "stage": "code",
+      "expectation": "POST /api/profile/update stores the resolved name on first-time bank setup, behaves like signup when the resolver is unavailable, and ignores a name-only patch. The existing destination-change gate still rejects a different account without proof.",
+      "verification": "Route tests: name-only patch leaves the stored name unchanged; first-time setup stores the resolved name; existing gate tests pass.",
+      "status": "pending",
+      "evidence": [
+        "src/lib/server/payments/bank-save.ts planBankNameColumns; src/app/api/profile/update/route.ts",
+        "src/lib/server/payments/__tests__/bank-save.test.ts; src/app/api/security/__tests__/change-bank-journey.test.ts (name-only save, unchanged-account save, first-time setup resolved / unknown / unreachable); existing gate tests pass"
+      ]
+    },
+    {
+      "id": "change-bank-fail-closed",
+      "stage": "code",
+      "expectation": "change_bank stores the resolved name. If the resolver is unavailable or the account is not found, the request fails and the previous bank row is unchanged.",
+      "verification": "Route tests for resolved, not_found and unavailable; previous row asserted byte-for-byte on the failures. Existing change-bank journey test passes.",
+      "status": "pending",
+      "evidence": [
+        "src/app/api/security/action/route.ts change_bank",
+        "src/app/api/security/__tests__/change-bank-journey.test.ts: typed name discarded; unreachable and network failure return 503 with both role rows unchanged and the proof still usable; unknown account returns 422"
+      ]
+    },
+    {
+      "id": "id-comparison",
+      "stage": "code",
+      "expectation": "The BVN/NIN bank-account name comparison uses the resolved name. With no resolved name it is unknown, never match. Resolving later recomputes it without a new ID provider call.",
+      "verification": "Tests: typed name equal to the ID holder but resolved name different yields mismatch; unresolved yields unknown; late resolve updates gov_id_meta.",
+      "status": "pending",
+      "evidence": [
+        "src/lib/server/identity/bank-name-match.ts; signup passes the resolved name into checkSignupIds",
+        "resolve-signup-bank.test.ts: typed BVN-holder name with a different bank name yields mismatch; unresolved yields unknown. bank-save.test.ts: late resolve rewrites gov_id_meta. Not changed: POST /api/verify/pro-id still passes the stored bank_account_name, which may be a legacy typed name until that account is next confirmed."
+      ]
+    },
+    {
+      "id": "payout-gate",
+      "stage": "code",
+      "expectation": "Escrow payout, cashout and refund bank loaders return a bank only when it is resolved. An unresolved row is resolved at that point and stored; on failure no transfer is attempted and funds stay where they are. beneficiary_name is always the resolved name.",
+      "verification": "Loader tests for resolved, legacy-unresolved-then-resolves and legacy-unresolved-fails; payout tests show no provider transfer call on failure.",
+      "status": "pending",
+      "evidence": [
+        "src/lib/server/payments/bank-save.ts confirmedBankName; src/lib/server/payments/bank-lookup.ts; src/lib/server/security/cashout-engine.ts getBankOnFile",
+        "bank-save.test.ts and bank-lookup.test.ts. No new test drives payout-settlement or the cashout engine end to end; getBankOnFile has no direct test."
+      ]
+    },
+    {
+      "id": "sync",
+      "stage": "code",
+      "expectation": "The cross-role bank sync copies the resolved name and resolved-at together, and payout_methods.verified reflects whether the name is resolved.",
+      "verification": "Sync tests for resolved and unresolved sources.",
+      "status": "pending",
+      "evidence": [
+        "src/lib/server/identity/identity-sync.ts",
+        "src/lib/server/identity/__tests__/identity-sync.test.ts: confirmed name and stamp mirrored, payout_methods.verified true; typed name never verified. change_bank does not call the sync, as before, so payout_methods is refreshed on the next sync."
+      ]
+    },
+    {
+      "id": "client-and-admin",
+      "stage": "code",
+      "expectation": "The account name field in the bank forms is display-only with no visual change. The admin bank endpoint returns nameResolvedAt.",
+      "verification": "Component tests for the two bank forms; admin route test. Manual check of both forms against docs/UI.md.",
+      "status": "pending",
+      "evidence": [
+        "use-bank-details-fields.ts exposes nameFromBank; the three name inputs are read-only once the bank has answered and stay editable when the lookup fails. src/components/profile/security/bank-change-flow.tsx is unchanged: it still has a typed name field, which the server discards.",
+        "src/app/api/admin/pros/[id]/bank/route.ts returns nameResolvedAt. No new component or admin route tests; existing component tests pass. Manual UI check not run."
+      ]
+    },
+    {
+      "id": "dev-stand-in",
+      "stage": "code",
+      "expectation": "Local development without a Flutterwave key can still complete mock payouts through an explicit stand-in that cannot be reached in production.",
+      "verification": "Test that the stand-in is refused when NODE_ENV is production or a real key is set.",
+      "status": "pending",
+      "evidence": [
+        "resolve-account.test.ts: accepted only with no key on a non-production runtime; refused in production and preview; ignored when a key is set"
+      ]
+    },
+    {
+      "id": "rules",
+      "stage": "code",
+      "expectation": "No protected file is edited; fee, split, timer and payout formulas are unchanged; touched files stay at or under 300 lines.",
+      "verification": "Diff review against docs/RULES.md section 10; full test suite, lint and typecheck.",
+      "status": "pending",
+      "evidence": [
+        "No protected file edited. Full suite 2464 tests, typecheck and lint pass locally. Files already over 300 lines grew slightly: profile/update/route.ts +9, security/action/route.ts +20, identity-sync.ts +9."
+      ]
+    },
+    {
+      "id": "migration-applied",
+      "stage": "release",
+      "expectation": "The migration is applied on the hosted database and existing rows read as unresolved.",
+      "verification": "Hosted schema check and a row count of resolved versus unresolved; no personal data in evidence.",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "live-resolve",
+      "stage": "release",
+      "expectation": "On the hosted environment a real account resolves at signup and bank change, and a legacy account resolves at its next payout.",
+      "verification": "Timestamped hosted run for each path; account details masked.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "ID P0-5: show the name mismatch on the Care review screen and stop approval over it.",
+      "POST /api/verify/pro-id: confirm the bank name before comparing, or record unknown for a legacy name.",
+      "Tests still missing: full signup route, getBankOnFile, admin bank route, bank form components.",
+      "bank-change-flow.tsx: replace the typed name field with the bank's answer.",
+      "Optional one-off backfill so legacy accounts are confirmed before their next payout."
+    ],
+    "external": [
+      "Apply migration 085 on the hosted database BEFORE deploying this code; the code reads and writes bank_account_resolved_at.",
+      "Confirm the live Flutterwave key resolves real accounts on signup, bank change and a legacy payout.",
+      "Monitor payouts held with 'Repair Pro bank incomplete' after release: these are legacy accounts the bank could not confirm."
+    ]
+  }
+}
