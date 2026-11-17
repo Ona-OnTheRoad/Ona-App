@@ -16,6 +16,26 @@ export const MAP_NEAR_ZOOM = 15;
  */
 export const LIVE_HEARTBEAT_MAX_MS = 5 * 60 * 1000;
 
+/**
+ * How long a pro who is still marked Live but has closed/backgrounded the app
+ * can keep being ALERTED (push) about new jobs. The pin only refreshes while the
+ * app is open, so without this a pro stops getting alerts ~5 min after leaving
+ * the app. Alerting only: seeing/claiming a job still needs a fresh heartbeat,
+ * which opening the app (by tapping the alert) provides at once.
+ */
+export const ALERTABLE_LOCATION_MAX_MS = 2 * 60 * 60 * 1000;
+
+/** True when the last known pin is recent enough to send a push alert. */
+export function hasAlertableLocation(
+  locationUpdatedAt: string | null | undefined,
+  nowMs: number = Date.now(),
+): boolean {
+  if (!locationUpdatedAt) return false;
+  const t = new Date(locationUpdatedAt).getTime();
+  if (!Number.isFinite(t)) return false;
+  return nowMs - t <= ALERTABLE_LOCATION_MAX_MS;
+}
+
 /** True when Live pin was refreshed within LIVE_HEARTBEAT_MAX_MS. */
 export function hasRecentLiveHeartbeat(
   locationUpdatedAt: string | null | undefined,

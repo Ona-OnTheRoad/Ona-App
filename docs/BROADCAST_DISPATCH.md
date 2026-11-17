@@ -49,6 +49,25 @@ A job the customer sends to a chosen pro is unchanged.
   (`vercel.json` only schedules it daily).
 * Load: each online pro's 3 s list poll now also runs one small pool query. Watch DB CPU after launch.
 
+## Alerts when the app is closed
+
+The pro's location pin only refreshes while the app is open and visible, and seeing/claiming a job needs a pin under 5 min old.
+So a pro who closes the app used to drop out within 5 min and get no alerts. Now:
+
+* **Alerts** (push) go to pros who are still marked Live and either have a fresh pin, or an older pin (up to **2 hours**,
+  `ALERTABLE_LOCATION_MAX_MS`) **and** a push subscription. Distance tiers still apply, using the last known pin.
+* **Seeing and claiming** still need a fresh pin. Tapping the alert opens the app, which sends a fresh pin at once, so the
+  claim works within seconds. A pro who moved far away gets a wasted alert, never a wrong job.
+* A pin older than 2 h, no push subscription, or logging out / switching to customer (which sets Away) means no alert.
+
+### Real-device checklist (cannot be proven by unit tests)
+
+1. Android Chrome and an iPhone (iPhone: install to Home Screen first). Sign in as a pro, allow notifications, go Live.
+2. Close the app completely (swipe away) and lock the phone.
+3. From a customer account within 2 km, post a request. The pro's phone should alert within seconds.
+4. Tap the alert: the job card opens; Accept should claim it. Repeat with the pro ~4 km away: the alert arrives after ~10 s.
+5. Confirm production has `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` set.
+
 ## Privacy note
 
 Every eligible pro in range now sees the customer's pin and problem text before accepting (previously only the one offered pro

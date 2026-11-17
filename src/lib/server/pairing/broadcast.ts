@@ -1,5 +1,5 @@
 import "server-only";
-import { hasRecentLiveHeartbeat, MAX_RADIUS_KM } from "@/lib/matching";
+import { hasAlertableLocation, hasRecentLiveHeartbeat, MAX_RADIUS_KM } from "@/lib/matching";
 import {
   BROADCAST_WINDOW_MS,
   broadcastStartedAtMs,
@@ -106,12 +106,21 @@ async function dispatchTradesFor(row: PoolRow): Promise<string[]> {
 export async function proCanSeePoolJob(
   pro: BroadcastPro,
   row: PoolRow,
-  opts: { nowMs?: number; atElapsedMs?: number; trades?: string[] } = {},
+  opts: {
+    nowMs?: number;
+    atElapsedMs?: number;
+    trades?: string[];
+    /** Push-alert check: accept a pin up to ALERTABLE_LOCATION_MAX_MS old (app closed). */
+    alertOnly?: boolean;
+  } = {},
 ): Promise<boolean> {
   const nowMs = opts.nowMs ?? Date.now();
   if (!pro.is_online || pro.lat == null || pro.lng == null) return false;
   if (pro.status === "suspended" || pro.status === "rejected") return false;
-  if (!hasRecentLiveHeartbeat(pro.location_updated_at, nowMs)) return false;
+  const located = opts.alertOnly
+    ? hasAlertableLocation(pro.location_updated_at, nowMs)
+    : hasRecentLiveHeartbeat(pro.location_updated_at, nowMs);
+  if (!located) return false;
   if (
     isSyntheticAccount({
       email: pro.profiles?.email,
@@ -311,7 +320,11 @@ export async function recordPoolResponse(
   return { ok: true };
 }
 
-/** Pros who could ever see this job (any tier) and have not been excluded. */
+/**
+ * Pros who could ever be ALERTED about this job (any tier, not excluded): online
+ * with a fresh pin, or online with an older pin (app closed) AND a push
+ * subscription so the alert can actually reach them.
+ */
 async function eligiblePros(sb: Sb, row: PoolRow): Promise<BroadcastPro[]> {
   const { data } = await sb
     .from("repair_pro_profiles")
@@ -327,12 +340,32 @@ async function eligiblePros(sb: Sb, row: PoolRow): Promise<BroadcastPro[]> {
   const tried = new Map((queue ?? []).map((q) => [String(q.pro_id), String(q.status)]));
   const trades = await dispatchTradesFor(row);
   const now = Date.now();
+  const stale = pros.filter((p) => !hasRecentLiveHeartbeat(p.location_updated_at, now));
+  const pushable = new Set<string>();
+  if (stale.length) {
+    const { data: subs } = await sb
+      .from("push_subscriptions")
+      .select("user_id")
+      .in("user_id", stale.map((p) => p.user_id));
+    for (const s of subs ?? []) pushable.add(String(s.user_id));
+  }
   const out: BroadcastPro[] = [];
   for (const p of pros) {
     const st = tried.get(String(p.user_id));
     if (st && EXCLUDED_QUEUE.has(st)) continue;
     if (p.user_id === row.motorist_id) continue;
-    if (await proCanSeePoolJob(p, row, { nowMs: now, atElapsedMs: Number.POSITIVE_INFINITY, trades })) out.push(p);
+    // App closed: only worth alerting if a push can actually be delivered.
+    if (!hasRecentLiveHeartbeat(p.location_updated_at, now) && !pushable.has(String(p.user_id))) continue;
+    if (
+      await proCanSeePoolJob(p, row, {
+        nowMs: now,
+        atElapsedMs: Number.POSITIVE_INFINITY,
+        trades,
+        alertOnly: true,
+      })
+    ) {
+      out.push(p);
+    }
   }
   return out;
 }
@@ -358,7 +391,7 @@ export async function notifyOpenTiers(sb: Sb, row: PoolRow, max = 25): Promise<n
   const due: BroadcastPro[] = [];
   for (const p of pros) {
     if (known.has(String(p.user_id))) continue;
-    if (await proCanSeePoolJob(p, row, { nowMs: now, atElapsedMs: now - startedAt, trades })) due.push(p);
+    if (await proCanSeePoolJob(p, row, { nowMs: now, atElapsedMs: now - startedAt, trades, alertOnly: true })) due.push(p);
     if (due.length >= max) break;
   }
   if (!due.length) return 0;

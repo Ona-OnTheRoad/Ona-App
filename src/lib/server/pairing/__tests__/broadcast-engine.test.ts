@@ -109,6 +109,14 @@ describe("open search broadcasts instead of picking one pro", () => {
     expect(jobRow().status).toBe("requested");
   });
 
+  it("does not fail fast when the only pro in range has the app closed but can be pushed", async () => {
+    tables.repair_pro_profiles = [pro("away", 1, { location_updated_at: iso(T0 - 60 * 60_000) })];
+    tables.push_subscriptions = [{ user_id: "away", endpoint: "e" }];
+    await advancePairing("job-1");
+    expect(jobRow().pairing_deadline).toBe(iso(T0 + 144_000));
+    expect(vi.mocked(insertNotification).mock.calls.map((c) => c[0].userId)).toEqual(["away"]);
+  });
+
   it("leaves a job that was claimed in the meantime alone", async () => {
     Object.assign(jobRow(), { repair_pro_id: "near", pairing_stage: "reserved" });
     const res = await advancePairing("job-1");

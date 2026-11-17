@@ -280,6 +280,54 @@ describe("broadcast: dismissing and notifying", () => {
   });
 });
 
+describe("broadcast: alerting pros who closed the app", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(T0);
+    vi.mocked(insertNotification).mockClear();
+  });
+  afterEach(() => vi.useRealTimers());
+
+  const world = (staleMs: number, subscribed: boolean): Tables => ({
+    service_requests: [job()],
+    repair_pro_profiles: [pro("away", 1, { location_updated_at: iso(T0 - staleMs) })],
+    request_pairing_queue: [],
+    push_subscriptions: subscribed ? [{ user_id: "away", endpoint: "e" }] : [],
+  });
+  const told = () => vi.mocked(insertNotification).mock.calls.map((c) => c[0].userId);
+
+  it("alerts an online pro whose pin is 1 h old (app closed) when they have a push subscription", async () => {
+    const t = world(60 * 60_000, true);
+    expect(await notifyOpenTiers(db(t), t.service_requests[0] as unknown as PoolRow)).toBe(1);
+    expect(told()).toEqual(["away"]);
+  });
+
+  it("does not alert a closed-app pro with no push subscription (nothing could reach them)", async () => {
+    const t = world(60 * 60_000, false);
+    expect(await notifyOpenTiers(db(t), t.service_requests[0] as unknown as PoolRow)).toBe(0);
+  });
+
+  it("stops alerting once the pin is older than 2 hours", async () => {
+    const t = world(2 * 60 * 60_000 + 1000, true);
+    expect(await notifyOpenTiers(db(t), t.service_requests[0] as unknown as PoolRow)).toBe(0);
+  });
+
+  it("still respects distance tiers for a closed-app pro", async () => {
+    const t = world(60 * 60_000, true);
+    (t.repair_pro_profiles[0] as Row).lat = kmNorth(4);
+    expect(await notifyOpenTiers(db(t), t.service_requests[0] as unknown as PoolRow)).toBe(0);
+    vi.setSystemTime(T0 + 10_000);
+    expect(await notifyOpenTiers(db(t), t.service_requests[0] as unknown as PoolRow)).toBe(1);
+  });
+
+  it("an alerted pro still cannot see or claim the job until the app is open again (fresh pin)", async () => {
+    const t = world(60 * 60_000, true);
+    expect(await seen("away", t)).toEqual([]);
+    (t.repair_pro_profiles[0] as Row).location_updated_at = iso(T0); // app reopened, pin refreshed
+    expect(await seen("away", t)).toEqual(["job-1"]);
+  });
+});
+
 describe("isOpenPoolRow", () => {
   it("is true only for an unclaimed, live sequential_pairing job", () => {
     expect(isOpenPoolRow({ pairing_stage: "sequential_pairing", repair_pro_id: null, status: "requested" })).toBe(true);
