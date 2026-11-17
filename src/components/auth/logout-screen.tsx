@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { BrandHeroMotion } from "@/components/auth/brand-hero-motion";
+import { OnaLogo } from "@/components/ui/ona-logo";
 import { playAppSound, unlockAudio } from "@/lib/sound-tone";
 import { useApp } from "@/lib/store";
 
@@ -52,12 +53,9 @@ export function LogoutScreen() {
 
       <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-end px-5 pb-8 pt-10">
         <div className="om-apple-motion-delay mb-auto mt-8 text-center">
-          <p
-            className="text-[18px] font-black tracking-tight leading-none"
-            aria-label="Ona"
-          >
-            <span className="text-white">Ona</span>
-          </p>
+          <div className="flex justify-center">
+            <OnaLogo size="sm" className="text-white" />
+          </div>
           <h1 className="mt-2 text-[24px] font-black text-white drop-shadow-md">
             Sign out?
           </h1>

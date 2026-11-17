@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { OnaLogo } from "@/components/ui/ona-logo";
 import type { Dispatch, MouseEvent, SetStateAction } from "react";
 import {
   LayoutGrid,
@@ -90,10 +91,8 @@ export function AdminNav({
       <div className="w-full h-full bg-[#f8f9fa] dark:bg-[#131316] border border-gray-200/80 dark:border-[#222228] rounded-[24px] p-4 flex flex-col overflow-hidden shadow-xs">
         {/* Brand Logo */}
         <div className="px-2 pt-1 pb-3">
-          <Link href="/admin" className="inline-block select-none">
-            <span className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white font-sans">
-              Ona<span className="text-ona-brand">.</span>
-            </span>
+          <Link href="/admin" className="inline-flex items-center select-none">
+            <OnaLogo size="md" className="text-gray-900 dark:text-white" />
           </Link>
         </div>
 

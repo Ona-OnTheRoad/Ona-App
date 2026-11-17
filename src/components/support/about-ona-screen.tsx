@@ -5,6 +5,7 @@ import { useAppConfig } from "@/components/app-config-provider";
 import { ONA_BUILD_ID, ONA_BUILD_LABEL } from "@/lib/build-id";
 import { navigateBack } from "@/lib/navigation";
 import { useApp } from "@/lib/store";
+import { OnaLogo } from "@/components/ui/ona-logo";
 import { SupportScreenHeader } from "./support-screen-header";
 
 export function AboutOnaScreen() {
@@ -26,10 +27,8 @@ export function AboutOnaScreen() {
 
         {/* Brand Card */}
         <div className="rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-6 shadow-xs text-center space-y-3">
-          <div className="flex justify-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand text-white text-[22px] font-black shadow-sm">
-              Ona
-            </div>
+          <div className="flex justify-center py-1">
+            <OnaLogo size="lg" className="text-ona-ink" />
           </div>
 
           <div>

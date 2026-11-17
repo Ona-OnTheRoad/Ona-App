@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowLeft } from "lucide-react";
+import { OnaLogo } from "@/components/ui/ona-logo";
 
 interface ProWizardHeaderProps {
   currentStep: number;
@@ -34,9 +35,7 @@ export function ProWizardHeader({
           <div className="w-9" />
         )}
 
-        <div className="text-xl font-bold tracking-tight text-ona-ink font-sans">
-          Ona<span className="text-brand">.</span>
-        </div>
+        <OnaLogo size="sm" className="text-ona-ink" />
 
         <div className="w-9" />
       </div>

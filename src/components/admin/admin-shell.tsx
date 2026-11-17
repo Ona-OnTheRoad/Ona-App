@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { SensitivePasswordHost } from "@/components/admin/sensitive-unlock";
 import { GUIDES } from "@/components/admin/admin-guide-banner";
+import { OnaLogo } from "@/components/ui/ona-logo";
 import { AdminNav } from "./admin-shell/admin-nav";
 import { useAdminShell } from "./admin-shell/use-admin-shell";
 
@@ -134,9 +135,7 @@ export function AdminShell({
           >
             {mobileNavOpen ? <X className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
           </button>
-          <span className="font-bold text-lg tracking-tight">
-            Ona<span className="text-ona-brand">.</span>
-          </span>
+          <OnaLogo size="sm" className="text-gray-900 dark:text-white" />
         </div>
 
         {/* Right: Theme Toggle + Bell Notification + Logout (Avatar removed on mobile for space) */}

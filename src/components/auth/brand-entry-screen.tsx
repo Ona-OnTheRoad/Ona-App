@@ -2,6 +2,7 @@
 
 import { BrandHeroMotion } from "@/components/auth/brand-hero-motion";
 import { WHEEL_GRAY } from "@/components/auth/auth-plate";
+import { OnaLogo } from "@/components/ui/ona-logo";
 import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -58,11 +59,13 @@ export function BrandEntryScreen({
             {t("auth.welcomeTo")}
           </p>
           <h1
-            className="mt-2 text-[36px] font-black tracking-tight"
+            className="mt-2.5 flex justify-center"
             aria-label={t("brand.name")}
           >
-            <span style={{ color: LOGIN_BTN_BG }}>O</span>
-            <span style={{ color: "#C8C9CD" }}>na</span>
+            <OnaLogo
+              size="lg"
+              className="text-[#C8C9CD] drop-shadow-sm"
+            />
           </h1>
           <p
             className="mx-auto mt-2.5 max-w-[300px] text-[12px] font-medium leading-relaxed tracking-[0.04em]"
