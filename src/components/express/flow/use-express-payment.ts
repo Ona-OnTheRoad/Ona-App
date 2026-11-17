@@ -160,17 +160,27 @@ export function useExpressPayment(a: Args) {
     };
   }, [stage, bankPay, requestId, detectedTrade]);
 
-  /** Cancel payment only, or payment together with the draft request. */
-  const cancelPay = async (mode: "payment" | "both") => {
+  /**
+   * Cancel the payment AND the draft request. There is no "payment only"
+   * option: a half-cancelled draft is what left a stale "Finish payment /
+   * Resume" card on the customer's home screen. We only leave the screen once
+   * the server confirms the draft is really cancelled.
+   */
+  const cancelPay = async () => {
     if (!requestId) return;
     setCancelBusy(true);
     setError(null);
     try {
-      await fetch("/api/requests/open-state", {
+      const res = await fetch("/api/requests/open-state", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requestId, mode }),
+        body: JSON.stringify({ requestId, mode: "both" }),
       });
+      if (!res.ok) {
+        setError("Could not cancel. Try again.");
+        setCancelBusy(false);
+        return;
+      }
       router.back();
     } catch {
       setError("Could not cancel. Try again.");

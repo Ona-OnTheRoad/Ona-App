@@ -63,6 +63,9 @@ export function useIncomingQueue({
     (j: JobRecord) => {
       if (!backendUserId) return;
       if (!PAIRING_ACTION_STAGES.has(j.status ?? "")) return;
+      // Open broadcast job: first pro to ACCEPT gets it. Merely seeing the card
+      // must not claim it, or whoever's phone renders first would win.
+      if (j.broadcastOffer) return;
       const stage = j.pairingStage ?? "";
       const needsOpen =
         stage === "waiting_for_selected" || stage === "waiting_for_pro";

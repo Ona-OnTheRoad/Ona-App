@@ -6,12 +6,14 @@ import type { CheckoutTone } from "./types";
 export function CancelChooser({
   tone,
   busyCancel,
+  cancelError,
   onCancelPayment,
   onCancelRequest,
   onKeepPaying,
 }: {
   tone: CheckoutTone;
   busyCancel: boolean;
+  cancelError?: string | null;
   onCancelPayment: () => void;
   onCancelRequest: () => void;
   onKeepPaying: () => void;
@@ -53,6 +55,11 @@ export function CancelChooser({
         >
           {busyCancel ? "Cancelling…" : "Cancel request"}
         </button>
+        {cancelError ? (
+          <p role="alert" className="px-4 pb-2 text-center text-[12px] font-semibold text-ona-danger">
+            {cancelError}
+          </p>
+        ) : null}
         <button
           type="button"
           disabled={busyCancel}

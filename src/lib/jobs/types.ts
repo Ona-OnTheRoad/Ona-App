@@ -200,6 +200,9 @@ export type JobRecord = {
   /** SSPE dispatch fields (see docs/SSPE_REFACTOR_PLAN.md §3) */
   pairingStage?: string | null;
   pairingDeadline?: string | null;
+  /** True for an open broadcast job shown to a pro who has NOT claimed it yet.
+   * Viewing it must never claim it: only the pro's Accept does. */
+  broadcastOffer?: boolean;
   queuePosition?: number | null;
   remainingCandidates?: number | null;
   reservationStatus?: string | null;

@@ -4,6 +4,7 @@
  */
 
 import { z } from "zod";
+import { clampProServiceRadiusKm } from "@/lib/profile-system";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import {
   canTransitionPipeline,
@@ -158,7 +159,7 @@ export async function PATCH(req: Request) {
   if (b.yearsExperience !== undefined)
     patch.years_experience = String(b.yearsExperience);
   if (b.serviceRadiusKm !== undefined)
-    patch.service_radius_km = b.serviceRadiusKm;
+    patch.service_radius_km = clampProServiceRadiusKm(b.serviceRadiusKm);
   if (b.lat !== undefined) patch.lat = b.lat;
   if (b.lng !== undefined) patch.lng = b.lng;
   if (b.guarantor !== undefined) patch.guarantor = b.guarantor;

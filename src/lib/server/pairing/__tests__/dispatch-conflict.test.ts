@@ -1,3 +1,6 @@
+// Legacy one-pro-at-a-time engine: these tests guard the PAIRING_DISPATCH_MODE=sequential rollback path.
+process.env.PAIRING_DISPATCH_MODE = "sequential";
+
 import { beforeEach, expect, it, vi } from "vitest";
 vi.mock("@/lib/supabase/server", () => ({ createServiceSupabase: vi.fn() }));
 vi.mock("@/lib/supabase/env", () => ({ isSupabaseAdminConfigured: () => true }));

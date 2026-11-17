@@ -81,26 +81,44 @@ export async function POST(req: Request) {
     const now = new Date().toISOString();
 
     // Close any open payment session for this booking
-    await sb
+    const { error: payErr } = await sb
       .from("ona_express_payments")
       .update({ status: "cancelled", updated_at: now })
       .eq("request_id", parsed.data.requestId)
       .eq("user_id", auth.userId)
       .eq("status", "pending");
+    if (payErr) return apiFail(payErr.message, 500);
 
     if (parsed.data.mode === "both") {
-      const { error } = await sb
+      const { data: cancelled, error } = await sb
         .from("service_requests")
         .update({
           status: "cancelled",
+          flow_status: "cancelled",
+          pairing_stage: null,
+          pairing_deadline: null,
           cancelled_at: now,
           cancel_reason: "customer cancelled during Ona Express payment",
         })
         .eq("id", parsed.data.requestId)
         .eq("motorist_id", auth.userId)
         .eq("source", "express")
-        .eq("status", "draft");
+        .eq("status", "draft")
+        .select("id");
       if (error) return apiFail(error.message, 500);
+      if (!cancelled?.length) {
+        // Nothing matched: fine if the request is already closed, but never
+        // report success while a resumable draft is still sitting there.
+        const { data: still } = await sb
+          .from("service_requests")
+          .select("status")
+          .eq("id", parsed.data.requestId)
+          .eq("motorist_id", auth.userId)
+          .maybeSingle();
+        if (String(still?.status) === "draft") {
+          return apiFail("Could not cancel this request. Try again.", 500);
+        }
+      }
     }
 
     return apiOk({ ok: true });

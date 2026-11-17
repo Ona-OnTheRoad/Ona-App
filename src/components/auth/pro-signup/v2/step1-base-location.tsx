@@ -2,6 +2,7 @@
 
 import { SheetSelect } from "@/components/ui/option-sheet";
 import * as Slider from "@radix-ui/react-slider";
+import { PRO_MAX_SERVICE_RADIUS_KM } from "@/lib/profile-system";
 import { NG_STATES } from "@/lib/artisan/catalog/locations";
 
 interface Step1BaseLocationProps {
@@ -115,7 +116,7 @@ export function Step1BaseLocation({
             value={[serviceRadiusKm]}
             onValueChange={([val]) => setServiceRadiusKm(val)}
             min={1}
-            max={50}
+            max={PRO_MAX_SERVICE_RADIUS_KM}
             step={1}
             aria-label="Service radius"
             className="relative flex items-center select-none touch-none w-full h-6 cursor-pointer"

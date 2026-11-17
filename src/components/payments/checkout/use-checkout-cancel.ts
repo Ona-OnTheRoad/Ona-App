@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { apiTransition } from "@/lib/jobs/client";
+import { cancelJobConfirmed } from "@/lib/jobs/cancel-job";
 import type { JobRecord } from "@/lib/jobs/types";
 
 type Router = { replace: (href: string) => void };
@@ -20,6 +20,7 @@ export function useCheckoutCancel({
   const [cancelOpen, setCancelOpen] = useState(false);
   const [busyCancel, setBusyCancel] = useState(false);
   const [confirmCancelRequest, setConfirmCancelRequest] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   const cancelPaymentOnly = () => {
     setCancelOpen(false);
@@ -34,17 +35,19 @@ export function useCheckoutCancel({
       return;
     }
     setBusyCancel(true);
-    try {
-      await apiTransition({
-        jobId: job.id,
-        event: "CANCEL",
-        actor: "motorist",
-        actorId,
-      });
-    } catch {
-      /* still leave */
-    }
+    setCancelError(null);
+    // Only leave once the server confirms the request is closed. Leaving on a
+    // failed CANCEL kept the request alive and resumable from the home screen.
+    const res = await cancelJobConfirmed({
+      jobId: job.id,
+      actor: "motorist",
+      actorId,
+    });
     setBusyCancel(false);
+    if (!res.ok) {
+      setCancelError(res.message);
+      return;
+    }
     setCancelOpen(false);
     router.replace("/");
   };
@@ -53,6 +56,7 @@ export function useCheckoutCancel({
     cancelOpen,
     setCancelOpen,
     busyCancel,
+    cancelError,
     confirmCancelRequest,
     setConfirmCancelRequest,
     cancelPaymentOnly,

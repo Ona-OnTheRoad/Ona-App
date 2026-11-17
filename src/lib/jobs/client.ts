@@ -568,7 +568,8 @@ export async function apiTransition(input: {
     | "OPEN"
     | "CONFIRM"
     | "LATER"
-    | "DECLINE";
+    | "DECLINE"
+    | "REOPEN";
   actor: "motorist" | "repair_pro" | "system" | "admin";
   actorId?: string;
   reason?: string;

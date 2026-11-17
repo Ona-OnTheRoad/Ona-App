@@ -47,7 +47,9 @@ export type TransitionEvent =
   /** Server sweep: current pro did not respond in 144s */
   | { type: "PAIRING_TIMEOUT" }
   /** Server dispatch: sequential_pairing → next waiting_for_pro */
-  | { type: "DISPATCH" };
+  | { type: "DISPATCH" }
+  /** Customer rejects the pro who took the job: it returns to the open pool */
+  | { type: "REOPEN"; by: "motorist" };
 
 const ALLOWED: Record<
   JobFlowStatus,
@@ -375,6 +377,8 @@ export function actorMay(
     case "LATER":
     case "DECLINE":
       return actor === "repair_pro";
+    case "REOPEN":
+      return actor === "motorist";
     case "PAIRING_TIMEOUT":
     case "DISPATCH":
       return actor === "system";

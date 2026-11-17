@@ -38,6 +38,28 @@ export async function POST(
     if (!job) return apiFail("Request not found", 404);
 
     if (job.repairProId !== auth.userId) {
+      // Open broadcast job the pro can see but has not claimed: the window is
+      // already armed server-side, so there is nothing to arm. Report it back
+      // so the card's countdown follows the shared deadline.
+      const { broadcastEnabled, isOpenPoolRow } = await import(
+        "@/lib/server/pairing/broadcast"
+      );
+      if (
+        broadcastEnabled() &&
+        isOpenPoolRow({
+          pairing_stage: job.pairingStage ?? null,
+          repair_pro_id: job.repairProId || null,
+          status: job.status,
+        })
+      ) {
+        return apiOk({
+          id: job.id,
+          pairingStage: "waiting_for_pro",
+          pairingDeadline: job.pairingDeadline ?? null,
+          armed: false,
+          serverNow: new Date().toISOString(),
+        });
+      }
       return apiFail("Not assigned to this request", 403);
     }
 

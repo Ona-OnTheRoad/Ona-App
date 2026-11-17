@@ -28,6 +28,7 @@ const bodySchema = z.object({
     "CONFIRM",
     "LATER",
     "DECLINE",
+    "REOPEN",
   ]),
   actor: z.enum(["motorist", "repair_pro", "system", "admin"]),
   actorId: z.string().optional(),
@@ -65,14 +66,54 @@ export async function POST(
 
     const job = await getJob(id);
     if (!job) return apiFail("Job not found", 404);
-    if (!isJobParty(auth.userId, job)) {
+
+    // An open broadcast job has no pro yet, so a pro who can see it is not a
+    // "party" until they claim it. Only Open / Later / Decline may be sent
+    // against an unclaimed job; the engine re-checks that this pro can see it.
+    let poolOffer = false;
+    if (
+      (b.event === "OPEN" || b.event === "LATER" || b.event === "DECLINE") &&
+      b.actor === "repair_pro" &&
+      auth.userId !== job.motoristId
+    ) {
+      const { broadcastEnabled, isOpenPoolRow } = await import(
+        "@/lib/server/pairing/broadcast"
+      );
+      poolOffer =
+        broadcastEnabled() &&
+        isOpenPoolRow({
+          pairing_stage: job.pairingStage ?? null,
+          repair_pro_id: job.repairProId || null,
+          status: job.status,
+        });
+    }
+    if (!poolOffer && !isJobParty(auth.userId, job)) {
+      // A pro who could have seen this open job but lost it (or it closed) gets
+      // an honest, recoverable answer the card understands, not "Forbidden".
+      if (
+        (b.event === "OPEN" || b.event === "LATER" || b.event === "DECLINE") &&
+        b.actor === "repair_pro" &&
+        auth.userId !== job.motoristId
+      ) {
+        const { broadcastEnabled, proCouldHaveSeenJob } = await import(
+          "@/lib/server/pairing/broadcast"
+        );
+        if (broadcastEnabled() && (await proCouldHaveSeenJob(id, auth.userId))) {
+          return apiFail(
+            job.repairProId
+              ? "Another pro has already taken this request"
+              : "Request is not open for this action",
+            409,
+          );
+        }
+      }
       return apiFail("Forbidden", 403, "forbidden");
     }
 
     // Bind actor from authenticated identity, not client spoof
     let actor: "motorist" | "repair_pro" = b.actor;
     if (auth.userId === job.motoristId) actor = "motorist";
-    else if (auth.userId === job.repairProId) actor = "repair_pro";
+    else if (auth.userId === job.repairProId || poolOffer) actor = "repair_pro";
     else {
       return apiFail("Forbidden", 403, "forbidden");
     }
@@ -87,6 +128,22 @@ export async function POST(
 
     if (!actorMay(b.event, actor)) {
       return apiFail("This actor cannot perform that action", 403);
+    }
+
+    // ── Customer rejects the pro → job goes back to the open pool ───────────
+    if (b.event === "REOPEN") {
+      const { broadcastEnabled } = await import("@/lib/server/pairing/broadcast");
+      if (!broadcastEnabled()) {
+        return apiFail("Finding another pro is not available right now", 409);
+      }
+      const { reopenJobToPool } = await import("@/lib/server/pairing/pairing-engine");
+      const res = await reopenJobToPool(id, { by: "customer", note: b.reason || "customer_rejected_pro" });
+      if (!res.ok) return apiFail(res.error, res.status || 400);
+      return apiOk({
+        job: await getJob(id),
+        noop: Boolean(res.noop),
+        serverNow: new Date().toISOString(),
+      });
     }
 
     // ── SSPE dispatch actions (Open / I-can-fix-this / Later / Decline) ─────

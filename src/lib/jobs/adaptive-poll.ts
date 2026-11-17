@@ -69,8 +69,12 @@ export function getMaxJobPollBackoffMs(status: JobStatus): number {
 
 /** Idle (no card on screen) incoming-request list poll when realtime is not confirmed. */
 export const INCOMING_IDLE_POLL_DEGRADED_MS = 3_000;
-/** Idle safety poll when the shared channel is `connected` and the browser is online. */
-export const INCOMING_IDLE_POLL_HEALTHY_MS = 10_000;
+/** Idle poll when the shared channel is `connected` and the browser is online.
+ * Kept at 3 s (was 10 s): open broadcast jobs have no assigned pro yet, so the
+ * realtime channel (filtered on repair_pro_id) never pushes them. The list poll
+ * is how an online pro sees a new nearby job, and the nearest tier only gets a
+ * 10 s head start, so a 10 s poll would erase it. */
+export const INCOMING_IDLE_POLL_HEALTHY_MS = 3_000;
 
 /**
  * Idle poll delay for the Repair Pro incoming-request popup. Slows only while

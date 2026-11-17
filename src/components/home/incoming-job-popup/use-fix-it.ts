@@ -72,7 +72,7 @@ export function useFixIt({
                 notifyRequestClosed(j.id, {
                   job: j,
                   status: j.status,
-                  movedOn: /not assigned|moved on/i.test(openRes.message || ""),
+                  movedOn: /not assigned|moved on|already (?:been )?taken/i.test(openRes.message || ""),
                 });
               } else {
                 setActionError(
@@ -103,7 +103,7 @@ export function useFixIt({
               notifyRequestClosed(j.id, {
                 job: j,
                 status: j.status,
-                movedOn: /not assigned|moved on/i.test(
+                movedOn: /not assigned|moved on|already (?:been )?taken/i.test(
                   confirmRes.message || "",
                 ),
               });

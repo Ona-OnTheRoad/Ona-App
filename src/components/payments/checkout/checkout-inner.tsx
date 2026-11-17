@@ -134,6 +134,7 @@ export function CheckoutInner() {
         <CancelChooser
           tone={tone}
           busyCancel={c.busyCancel}
+          cancelError={c.cancelError}
           onCancelPayment={c.cancelPaymentOnly}
           onCancelRequest={() => c.setConfirmCancelRequest(true)}
           onKeepPaying={() => c.setCancelOpen(false)}

@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import type { useRouter } from "next/navigation";
+import { cancelJobConfirmed } from "@/lib/jobs/cancel-job";
 import { apiTransition } from "@/lib/jobs/client";
 import type { JobRecord } from "@/lib/jobs/types";
 import { homePathForForbidden, isForbiddenMessage } from "@/lib/navigation";
@@ -44,19 +45,31 @@ export function useJobActions({
   };
 
   /**
-   * Cancel request: close UI instantly (optimistic), API in background.
-   * Avoids hanging on network for CANCEL during pairing / negotiate / agreed.
+   * Cancel request. Waits for the server to confirm before leaving the screen:
+   * the old "close instantly, cancel in the background" flow left the request
+   * alive (and resumable from the customer's home screen) whenever the CANCEL
+   * call failed or was slow. On failure we stay put and show the error.
    */
   const cancelRequestInstant = useCallback(
-    (actor: "motorist" | "repair_pro") => {
+    async (actor: "motorist" | "repair_pro") => {
       const j = jobRef.current;
       if (!j) return;
       setConfirmCancel(null);
-      setBusy(false);
+      setBusy(true);
       setErr(null);
+      const res = await cancelJobConfirmed({
+        jobId: j.id,
+        actor,
+        actorId: actorId || undefined,
+      });
+      setBusy(false);
+      if (!res.ok) {
+        setErr(res.message);
+        return;
+      }
       const ts = new Date().toISOString();
       commitJob(
-        {
+        res.job ?? {
           ...j,
           status: "cancelled",
           pairingStage: null,
@@ -69,27 +82,14 @@ export function useJobActions({
         },
         true,
       );
-      // Leave the screen immediately no wait for server
       if (actor === "repair_pro") {
         router.replace("/dashboard");
       } else {
         setCategory("none");
         router.replace("/");
       }
-      void apiTransition({
-        jobId: j.id,
-        event: "CANCEL",
-        actor,
-        actorId: actorId || undefined,
-      })
-        .then((res) => {
-          if (res.ok) commitJob(res.data.job, true);
-        })
-        .catch(() => {
-          /* optimistic cancel already applied */
-        });
     },
-    [actorId, commitJob, router, jobRef, setConfirmCancel, setBusy, setErr],
+    [actorId, commitJob, router, jobRef, setCategory, setConfirmCancel, setBusy, setErr],
   );
 
   const run = async (fn: () => Promise<JobApiResult>) => {

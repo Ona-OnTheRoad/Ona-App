@@ -14,7 +14,7 @@ type Props = {
   cancelAsk: boolean;
   cancelBusy: boolean;
   setCancelAsk: (v: boolean) => void;
-  onCancel: (mode: "payment" | "both") => void;
+  onCancel: () => void;
 };
 
 /** Pay stage: opening spinner, price summary, bank details, cancel footer. */

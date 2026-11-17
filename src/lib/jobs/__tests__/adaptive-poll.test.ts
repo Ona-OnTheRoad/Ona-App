@@ -8,8 +8,8 @@ import {
 } from "../adaptive-poll";
 
 describe("getIncomingIdlePollMs", () => {
-  it("is 10s only when connected and online", () => {
-    expect(getIncomingIdlePollMs({ subscriptionState: "connected" })).toBe(10_000);
+  it("stays at 3s even when connected: open broadcast jobs are never pushed by realtime", () => {
+    expect(getIncomingIdlePollMs({ subscriptionState: "connected" })).toBe(3_000);
   });
 
   it.each(["connecting", "reconnecting", "failed"] as const)("is 3s when %s", (s) => {

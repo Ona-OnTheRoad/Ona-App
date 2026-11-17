@@ -145,7 +145,7 @@ export function ExpressFlow({ isLight }: { isLight: boolean }) {
                 cancelAsk={payment.cancelAsk}
                 cancelBusy={payment.cancelBusy}
                 setCancelAsk={payment.setCancelAsk}
-                onCancel={(mode) => void payment.cancelPay(mode)}
+                onCancel={() => void payment.cancelPay()}
               />
             ) : null}
           </div>

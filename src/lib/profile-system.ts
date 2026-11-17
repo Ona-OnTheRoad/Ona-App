@@ -46,12 +46,12 @@ export function isExperienceUnset(years?: string | null): boolean {
 
 /**
  * Service radius options in km for Repair Pro My Profile.
- * Hard max is 5 km for every pro (same as marketplace discovery).
+ * Hard max is MAX_RADIUS_KM (10 km) for every pro, same as marketplace discovery.
  */
 export const PRO_MAX_SERVICE_RADIUS_KM = MAX_RADIUS_KM;
-export const SERVICE_RADIUS_OPTIONS_KM = [1, 3, 5] as const;
+export const SERVICE_RADIUS_OPTIONS_KM = [1, 3, 5, 10] as const;
 
-/** Clamp pro coverage radius to 1-5 km */
+/** Clamp pro coverage radius to 1-10 km */
 export function clampProServiceRadiusKm(km: number | null | undefined): number {
   const n =
     typeof km === "number" && Number.isFinite(km) ? km : DEFAULT_RADIUS_KM;

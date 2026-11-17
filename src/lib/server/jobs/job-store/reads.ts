@@ -118,6 +118,21 @@ export async function listJobsForUser(
       let mapped = rows.map((row) => rowToJob(row as unknown as Record<string, unknown>));
 
       if (role === "repair_pro") {
+        // Open broadcast jobs this pro can see; they flow through the same
+        // photo/media enrichment below. Never let a failure hide real jobs.
+        try {
+          const { listBroadcastOffersForPro } = await import(
+            "@/lib/server/pairing/broadcast"
+          );
+          const offers = await listBroadcastOffersForPro(sb, userId);
+          const have = new Set(mapped.map((j) => j.id));
+          mapped = [...offers.filter((j) => !have.has(j.id)), ...mapped];
+        } catch (e) {
+          console.error("[broadcast] pool read failed", e);
+        }
+      }
+
+      if (role === "repair_pro") {
         const needPhoto = mapped.filter(
           (j) =>
             !j.motoristPhoto?.trim() &&
@@ -280,6 +295,21 @@ async function listJobsForUserLean(
       for (const j of mapped) {
         if (role === "repair_pro" && isDeferredByPro(j, userId)) continue;
         if (!out.find((x) => x.id === j.id)) out.push(j);
+      }
+      if (role === "repair_pro") {
+        // Open broadcast jobs this pro can see (nearest first by tier). Best
+        // effort: a failure here must never hide the pro's own jobs.
+        try {
+          const { listBroadcastOffersForPro } = await import(
+            "@/lib/server/pairing/broadcast"
+          );
+          const offers = await listBroadcastOffersForPro(sb, userId);
+          for (const j of offers) {
+            if (!out.find((x) => x.id === j.id)) out.unshift(j);
+          }
+        } catch (e) {
+          console.error("[broadcast] pool read failed", e);
+        }
       }
     } catch {
       throw new JobPersistenceUnavailableError("Could not load the durable job list");
