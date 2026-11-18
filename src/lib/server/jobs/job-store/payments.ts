@@ -566,19 +566,16 @@ export async function startJobEscrowPayment(input: {
   }
 
   if (job.status !== "agreed") {
-    // Only reopen soft cancels that were NOT max-attempt payment cancels
-    const maxCancel = job.statusHistory?.some(
-      (h) => h.by === PAY_HISTORY.MAX_ATTEMPTS_CANCEL,
-    );
-    const canReopen =
-      !maxCancel &&
-      (job.status === "cancelled" || job.status === "expired") &&
-      job.escrowStatus !== "held" &&
-      job.escrowStatus !== "released" &&
-      job.escrowStatus !== "release_pending";
-    if (!canReopen) {
+    // Only an unpaid-booking timeout can be paid again. A job someone
+    // CANCELLED (the Repair Pro included) must never come back to life because
+    // the customer still had a payment screen open.
+    const { canReopenForPayment } = await import("@/lib/jobs/pay-reopen");
+    if (!canReopenForPayment(job)) {
       return {
-        error: `Job must be in Agreed status before payment (currently ${job.status}).`,
+        error:
+          job.status === "cancelled"
+            ? "This request was cancelled, so it can no longer be paid. You have not been charged."
+            : `Job must be in Agreed status before payment (currently ${job.status}).`,
       };
     }
     const ts = nowIso();
