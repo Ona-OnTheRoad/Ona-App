@@ -70,7 +70,7 @@ export function SwipeToRelease({
           isLight ? "text-slate-600" : "text-zinc-300",
         )}
       >
-        {busy ? "Confirming…" : "I am Satisfied Release Payment"}
+        {busy ? "Confirming…" : "I am satisfied · Release payment"}
       </span>
 
       {/* Slider knob */}

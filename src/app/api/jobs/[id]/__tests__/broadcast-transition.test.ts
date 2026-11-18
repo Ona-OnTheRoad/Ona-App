@@ -7,6 +7,7 @@ const m = vi.hoisted(() => ({
   reopenJobToPool: vi.fn(),
   transitionJob: vi.fn(),
   couldHaveSeen: vi.fn(),
+  needsBank: vi.fn(),
 }));
 
 // Real isJobParty: the access rule is what is under test.
@@ -24,6 +25,9 @@ vi.mock("@/lib/server/pairing/pairing-engine", () => ({
 vi.mock("@/lib/server/pairing/broadcast", async (orig) => ({
   ...(await orig<typeof import("@/lib/server/pairing/broadcast")>()),
   proCouldHaveSeenJob: m.couldHaveSeen,
+}));
+vi.mock("@/lib/server/payments/bank-lookup", () => ({
+  proMustAddBankToAccept: m.needsBank,
 }));
 vi.mock("@/lib/server/google-eta", () => ({ computeDriveMetrics: vi.fn() }));
 vi.mock("@/lib/server/structured-logger", () => ({ serverLogger: { warn: vi.fn(), error: vi.fn() } }));
@@ -50,6 +54,7 @@ beforeEach(() => {
   m.deferRequest.mockResolvedValue({ ok: true, jobId: "job-1" });
   m.reopenJobToPool.mockResolvedValue({ ok: true, jobId: "job-1" });
   m.couldHaveSeen.mockResolvedValue(false);
+  m.needsBank.mockResolvedValue(false);
 });
 
 describe("a pro acting on an open (unclaimed) broadcast job", () => {
@@ -87,6 +92,26 @@ describe("a pro acting on an open (unclaimed) broadcast job", () => {
     m.user = "cust-1";
     expect((await send({ event: "OPEN", actor: "repair_pro" })).status).toBe(403);
     expect(m.openRequest).not.toHaveBeenCalled();
+  });
+});
+
+describe("a pro without verified bank details cannot accept a job", () => {
+  it("is stopped on Open and on I-can-fix-this, with a message that says how to fix it", async () => {
+    m.needsBank.mockResolvedValue(true);
+    for (const event of ["OPEN", "CONFIRM"]) {
+      m.getJob.mockResolvedValue(event === "OPEN" ? { ...poolJob } : { ...claimed });
+      const res = await send({ event, actor: "repair_pro" });
+      expect(res.status).toBe(409);
+      expect(JSON.stringify(await res.json())).toMatch(/bank details/i);
+    }
+    expect(m.openRequest).not.toHaveBeenCalled();
+    expect(m.confirmRequest).not.toHaveBeenCalled();
+  });
+
+  it("can still decline or postpone a job", async () => {
+    m.needsBank.mockResolvedValue(true);
+    expect((await send({ event: "DECLINE", actor: "repair_pro" })).status).toBe(200);
+    expect((await send({ event: "LATER", actor: "repair_pro" })).status).toBe(200);
   });
 });
 

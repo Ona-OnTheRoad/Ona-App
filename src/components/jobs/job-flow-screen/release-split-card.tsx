@@ -30,7 +30,9 @@ export function ReleaseSplitCard({
   );
   return (
     <div className="rounded-ona-card border border-ona-border bg-ona-surface px-4 py-3 text-left">
-      <p className={onaEyebrowClass}>Escrow release breakdown</p>
+      <p className={onaEyebrowClass}>
+        {releaseProMajor != null ? "Escrow release breakdown" : "Held in escrow"}
+      </p>
       <div className="mt-1">
         {releaseProMajor != null
           ? row("You receive (87.5% + call-out)", releaseProMajor)
