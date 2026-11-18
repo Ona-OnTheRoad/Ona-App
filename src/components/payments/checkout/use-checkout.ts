@@ -15,6 +15,7 @@ import type { BankTransferInfo, Phase } from "./types";
 import { useBankPayPoll } from "./use-bank-pay-poll";
 import { useCheckoutCancel } from "./use-checkout-cancel";
 import { useCheckoutDerived } from "./use-checkout-derived";
+import { useCheckoutLiveStatus } from "./use-checkout-live-status";
 import { useCopyField } from "./use-copy-field";
 import { usePayGateTelemetry } from "./use-pay-gate-telemetry";
 
@@ -65,6 +66,17 @@ export function useCheckout() {
 
   usePayGateTelemetry(job, phase, authReady, isAuthenticated);
   useBankPayPoll(phase, jobId, router, reference);
+  // The Repair Pro can cancel while the customer is on a payment screen.
+  const onJobCancelled = useCallback((j: JobRecord) => {
+    setJob(j);
+    setPayUrl(null);
+    setReference(null);
+    setSessionEndsAt(null);
+    setBankPay(null);
+    setErr(null);
+    setPhase("cancelled");
+  }, []);
+  useCheckoutLiveStatus(phase, jobId, onJobCancelled);
 
   const derived = useCheckoutDerived(job, sessionEndsAt);
   const { copied, copyField } = useCopyField();
@@ -138,6 +150,12 @@ export function useCheckout() {
       void logPayGate("job-missing", { jobId: jobId || null });
       setErr("Job not found. Go back and open pay again.");
       setPhase("expired");
+      return;
+    }
+
+    // Cancelled (e.g. by the Repair Pro) → never start a payment
+    if (current.status === "cancelled") {
+      onJobCancelled(current);
       return;
     }
 

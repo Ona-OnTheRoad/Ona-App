@@ -7,6 +7,7 @@ import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { cn } from "@/lib/utils";
 import { BankPayView } from "./bank-pay-view";
 import { CancelChooser } from "./cancel-chooser";
+import { CancelledView } from "./cancelled-view";
 import { ExpiredView } from "./expired-view";
 import { MockEmbedView } from "./mock-embed-view";
 import { PayingView } from "./paying-view";
@@ -65,6 +66,7 @@ export function CheckoutInner() {
             {phase === "summary" ? "Secure your booking" : "Pay"}
           </h1>
         </div>
+        {phase === "cancelled" ? null : (
         <button
           type="button"
           onClick={() => c.setCancelOpen(true)}
@@ -75,9 +77,12 @@ export function CheckoutInner() {
           <X className="h-4 w-4" strokeWidth={2.25} />
           Cancel
         </button>
+        )}
       </div>
 
-      {phase === "expired" ? (
+      {phase === "cancelled" ? (
+        <CancelledView tone={tone} job={c.job} onHome={() => router.replace("/")} />
+      ) : phase === "expired" ? (
         <ExpiredView
           tone={tone}
           attemptsLeft={c.attemptsLeft}

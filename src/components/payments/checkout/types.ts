@@ -15,7 +15,8 @@ export type Phase =
   | "bank_pay" // in-app VA details + poll
   | "mock_embed"
   | "error"
-  | "expired";
+  | "expired"
+  | "cancelled";
 
 /** Theme-derived class tokens shared by the checkout views. */
 export type CheckoutTone = {

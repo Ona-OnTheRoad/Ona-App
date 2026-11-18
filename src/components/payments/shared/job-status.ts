@@ -23,14 +23,17 @@ export function isPaidOrLiveStatus(st: string | undefined): boolean {
   );
 }
 
-/** agreed | cancelled | expired with price → server re-opens to agreed + new pay link. */
+/**
+ * agreed, or expired because the customer ran out of time to pay (the server
+ * re-opens it to agreed + a new pay link, and decides precisely). A CANCELLED
+ * job is never payable: if the Repair Pro cancels, the customer must not be
+ * offered "Finish payment".
+ */
 export function isJobPayable(
   job: Pick<JobRecord, "status" | "agreedMajor">,
 ): boolean {
   return (
     job.status === "agreed" ||
-    ((job.status === "cancelled" || job.status === "expired") &&
-      job.agreedMajor != null &&
-      job.agreedMajor > 0)
+    (job.status === "expired" && job.agreedMajor != null && job.agreedMajor > 0)
   );
 }
