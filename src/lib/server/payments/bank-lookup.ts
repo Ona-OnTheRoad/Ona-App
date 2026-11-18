@@ -118,6 +118,17 @@ export async function loadProBankDetails(
   }
 }
 
+/**
+ * A pro who has not finished (and had verified) their bank details can do the
+ * work but cannot be paid, so the customer's release fails and the money sits
+ * in escrow. Gate accepting jobs on this instead. Set
+ * ENFORCE_PRO_BANK_ON_ACCEPT=false to switch the gate off.
+ */
+export async function proMustAddBankToAccept(proId: string): Promise<boolean> {
+  if (process.env.ENFORCE_PRO_BANK_ON_ACCEPT === "false") return false;
+  return !(await loadProBankDetails(proId));
+}
+
 /** Identity fields needed by self-payment-guard's isSamePerson check. */
 export async function loadIdentityCheck(
   userId: string,

@@ -8,14 +8,11 @@ import {
   COMPLETED_AUTO_RELEASE_WINDOW_MS,
   satisfiedReleaseEndsAtIso,
 } from "@/lib/jobs/constants";
+import { friendlyReleaseError } from "@/lib/jobs/release-messages";
 import type { JobRecord } from "@/lib/jobs/types";
 import { PRO_SERVICE_LABELS } from "@/lib/services";
 import { CompletedFooter } from "./completed-footer";
 import { computeReleaseAmounts } from "./release-amounts";
-import {
-  isEgressIpError,
-  ReleaseErrorCardBanner,
-} from "./release-error-banners";
 import { ReleaseSplitCard } from "./release-split-card";
 import { createSatisfiedHandler } from "./satisfied-release";
 import { DisputeNode } from "./shared-pieces";
@@ -78,16 +75,10 @@ export function renderCompletedStage(
   });
 
   const releaseBanner = stickyReleaseErr || err;
-  const copyReleaseErr = () => {
-    if (!releaseBanner) return;
-    void navigator.clipboard.writeText(releaseBanner).catch(() => null);
-  };
   const dismissReleaseErr = () => {
     setErr(null);
     setStickyReleaseErr(null);
   };
-  // Only show optional egress help when FLW message is clearly IP-related
-  const showEgressHint = isEgressIpError(releaseBanner);
 
   const autoReleaseEndsAt = satisfiedReleaseEndsAtIso(job);
 
@@ -116,6 +107,8 @@ export function renderCompletedStage(
 
   const proName = (job.repairProName || "").trim() || "Your Repair Pro";
   const proFirst = proName.split(/\s+/)[0];
+  // One friendly banner (in the footer); the raw server text is never shown.
+  const releaseError = friendlyReleaseError(releaseBanner, proFirst);
   const proPhotoSrc = job.repairProPhoto || undefined;
 
   return (
@@ -129,9 +122,7 @@ export function renderCompletedStage(
             isLight={isLight}
             busy={busy}
             motoristActor={motoristActor}
-            releaseBanner={releaseBanner}
-            showEgressHint={showEgressHint}
-            onCopyError={copyReleaseErr}
+            releaseError={releaseError}
             onDismissError={dismissReleaseErr}
             onSatisfied={onSatisfied}
             onOpenDispute={() => setDisputeOpen(true)}
@@ -171,7 +162,9 @@ export function renderCompletedStage(
                   {PRO_SERVICE_LABELS[job.serviceType] || "Repair Pro"}
                 </p>
               </div>
-              <Badge variant="matched">Matched</Badge>
+              <Badge variant="matched">
+                {payoutDone ? "Paid" : "Completed"}
+              </Badge>
             </div>
           ) : null}
           {payoutDone ? (
@@ -206,13 +199,6 @@ export function renderCompletedStage(
                 className="text-ona-ink"
               />
             </div>
-          ) : null}
-          {releaseBanner && showSatisfiedCta ? (
-            <ReleaseErrorCardBanner
-              message={releaseBanner}
-              onCopy={copyReleaseErr}
-              onDismiss={dismissReleaseErr}
-            />
           ) : null}
         </div>
       </OnaScreen>

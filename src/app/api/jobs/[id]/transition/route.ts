@@ -156,6 +156,21 @@ export async function POST(
       if (actor !== "repair_pro") {
         return apiFail("Only the assigned Repair Pro can do that", 403);
       }
+      // Accepting a job means being paid for it. Without verified bank details
+      // the customer's release would fail and the money would sit in escrow, so
+      // stop it here, where the pro can fix it, rather than after the work.
+      if (b.event === "OPEN" || b.event === "CONFIRM") {
+        const { proMustAddBankToAccept } = await import(
+          "@/lib/server/payments/bank-lookup"
+        );
+        if (await proMustAddBankToAccept(auth.userId)) {
+          return apiFail(
+            "Add and verify your bank details to accept jobs, so you can be paid. Go to Settings > Payments > Bank.",
+            409,
+            "bank_details_required",
+          );
+        }
+      }
       const { openRequest, confirmRequest, deferRequest, declineRequest } =
         await import("@/lib/server/pairing/pairing-engine");
       const idempotencyKey = b.idempotencyKey || undefined;

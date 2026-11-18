@@ -126,7 +126,7 @@ export function CountdownTimer({
   return (
     <div className={cn("w-full", className)}>
       <div className="mb-1 flex items-center justify-between gap-2">
-        <p className="text-[10px] font-medium tracking-wide text-black">
+        <p className="text-[10px] font-medium tracking-wide text-inherit opacity-70">
           Time left
         </p>
         <p

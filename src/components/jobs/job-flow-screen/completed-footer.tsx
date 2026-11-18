@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import { SwipeToRelease } from "@/components/jobs/motorist-release-pay-gate";
-import { ReleaseErrorFooterBanner } from "./release-error-banners";
+import type { FriendlyReleaseError } from "@/lib/jobs/release-messages";
+import { ReleaseErrorBanner } from "./release-error-banners";
 
 interface Props {
   showSatisfiedCta: boolean;
@@ -8,9 +9,7 @@ interface Props {
   isLight: boolean;
   busy: boolean;
   motoristActor: string;
-  releaseBanner: string | null;
-  showEgressHint: boolean;
-  onCopyError: () => void;
+  releaseError: FriendlyReleaseError | null;
   onDismissError: () => void;
   onSatisfied: () => void;
   onOpenDispute: () => void;
@@ -23,28 +22,34 @@ export function CompletedFooter({
   isLight,
   busy,
   motoristActor,
-  releaseBanner,
-  showEgressHint,
-  onCopyError,
+  releaseError,
   onDismissError,
   onSatisfied,
   onOpenDispute,
 }: Props): ReactElement {
   return showSatisfiedCta ? (
     <div className="flex w-full flex-col gap-2">
-      {releaseBanner ? (
-        <ReleaseErrorFooterBanner
-          message={releaseBanner}
-          showEgressHint={showEgressHint}
-          onCopy={onCopyError}
-          onDismiss={onDismissError}
-        />
+      {releaseError ? (
+        <ReleaseErrorBanner error={releaseError} onDismiss={onDismissError} />
       ) : null}
-      <SwipeToRelease
-        onRelease={onSatisfied}
-        busy={busy || !motoristActor}
-        isLight={isLight}
-      />
+      {releaseError?.blocksRelease ? (
+        // Swiping can't succeed until the pro fixes their bank details, so
+        // offer a plain retry instead of a slider that is certain to fail.
+        <button
+          type="button"
+          disabled={busy || !motoristActor}
+          onClick={onSatisfied}
+          className="mt-3 flex h-12 w-full items-center justify-center rounded-full border-0 bg-ona-field text-[13px] font-bold text-ona-ink disabled:opacity-60"
+        >
+          {busy ? "Checking…" : "Check again"}
+        </button>
+      ) : (
+        <SwipeToRelease
+          onRelease={onSatisfied}
+          busy={busy || !motoristActor}
+          isLight={isLight}
+        />
+      )}
       <button
         type="button"
         disabled={busy}

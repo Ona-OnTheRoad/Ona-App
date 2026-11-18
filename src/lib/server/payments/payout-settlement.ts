@@ -554,6 +554,9 @@ export async function attemptProPayout(input: {
 
   const bank = await loadProBankDetails(input.repairProId || esc.repairProId);
   if (!bank) {
+    // The customer can't fix this, the pro can: tell the pro what to do so the
+    // money doesn't sit in escrow until someone happens to notice.
+    await notifyProBankNeeded(input.repairProId || esc.repairProId, esc.requestId);
     return {
       ok: false,
       pendingSettlement: false,
@@ -1470,4 +1473,28 @@ export async function getPaymentOpsSnapshot(): Promise<{
       recentReleased: released.slice(0, 30),
     },
   };
+}
+
+/** Best-effort, deduped per job (groupKey): safe to call on every release attempt. */
+async function notifyProBankNeeded(
+  proId: string | null | undefined,
+  requestId: string | null | undefined,
+): Promise<void> {
+  if (!proId) return;
+  try {
+    const { insertNotification } = await import("@/lib/server/notifications");
+    await insertNotification({
+      userId: proId,
+      category: "payments",
+      priority: "high",
+      title: "Add your bank details to get paid",
+      body: "A customer is ready to release your payment, but your bank details are incomplete. Add and verify them now and it will be paid out.",
+      href: "/settings/payments/bank",
+      actionType: "none",
+      groupKey: `bank-needed-${requestId ?? proId}`,
+      ...(requestId ? { jobId: requestId } : {}),
+    });
+  } catch {
+    /* notification is best effort */
+  }
 }

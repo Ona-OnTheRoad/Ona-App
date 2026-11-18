@@ -1,6 +1,7 @@
 import { CheckCircle2, X } from "lucide-react";
 import { JobChargeLines } from "@/components/jobs/callout-fee-lines";
 import { satisfiedReleaseEndsAtIso } from "@/lib/jobs/constants";
+import { friendlyReleaseError } from "@/lib/jobs/release-messages";
 import type { JobRecord } from "@/lib/jobs/types";
 import { formatMoney, forceNairaCurrency } from "@/lib/pricing";
 import { jobCalloutQuoteOf, jobEscrowAmountMinor } from "@/lib/callout/payable";
@@ -37,6 +38,7 @@ export function ReleaseDialog({
   const card = isLight ? "#d4d5d9" : "#1c1c1e";
   const currency = forceNairaCurrency(pending.currency);
   const endsAt = satisfiedReleaseEndsAtIso(pending);
+  const friendly = friendlyReleaseError(err);
   return (
     <div
       className="absolute inset-0 z-[96] flex flex-col"
@@ -109,30 +111,23 @@ export function ReleaseDialog({
 
         {endsAt ? <AutoReleaseCountdown endsAt={endsAt} /> : null}
 
-        {err ? (
+        {friendly ? (
           <div
             className="mt-3 max-h-36 overflow-y-auto rounded-lg border border-red-500/40 bg-red-50 px-3 py-2 text-left"
             role="alert"
           >
             <p className="text-[12px] font-semibold leading-snug text-red-700">
-              {err}
+              {friendly.message}
             </p>
-            <div className="mt-1.5 flex gap-2">
-              <button
-                type="button"
-                onClick={() => void navigator.clipboard.writeText(err)}
-                className="text-[11px] font-bold text-red-700 underline"
-              >
-                Copy error
-              </button>
+            {friendly.blocksRelease ? null : (
               <button
                 type="button"
                 onClick={() => setErr(null)}
-                className="text-[11px] font-bold text-red-700 underline"
+                className="mt-1.5 text-[11px] font-bold text-red-700 underline"
               >
                 Dismiss
               </button>
-            </div>
+            )}
           </div>
         ) : null}
 
