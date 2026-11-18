@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Minimize2 } from "lucide-react";
 import { JobShell } from "@/components/jobs/job-shell";
 import { OnaRadar, type OnaRadarDot } from "@/components/ui/ona-radar";
 import { useApp } from "@/lib/store";
-import { apiTransition } from "@/lib/jobs/client";
+import { cancelSearchRequest } from "./cancel-search";
+import { apiPairingSweep } from "@/lib/jobs/client";
+import { BROADCAST_TIERS, broadcastStartedAtMs } from "@/lib/jobs/broadcast-tiers";
 import { useExactCountdown } from "@/lib/jobs/use-exact-countdown";
 import { secondsLeftFloor } from "@/lib/jobs/countdown-math";
 import { serverNow } from "@/lib/jobs/server-clock";
@@ -101,27 +103,56 @@ export function SearchingScreen({
     ? `Requesting ${proName}${distance ? ` · ${distance}` : ""}`
     : `Looking for the nearest ${skillLabel}`;
 
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+
   const cancelSearch = useCallback(
-    (auto: boolean) => {
+    async (auto: boolean) => {
       // Pending (/jobs/new) has no server job yet just go home, no CANCEL.
       if (job.id.startsWith("pending-")) {
         router.replace("/");
         return;
       }
-      // Navigate first no hang waiting on CANCEL network
-      router.replace(auto ? `/requests/${job.id}` : "/");
-      void apiTransition({
+      // Wait for the server to confirm. Leaving first and cancelling in the
+      // background left a cancelled search on the home screen as a request the
+      // customer could still resume whenever the CANCEL call failed or lagged.
+      setCancelling(true);
+      setCancelError(null);
+      const res = await cancelSearchRequest({
         jobId: job.id,
-        event: "CANCEL",
-        actor: "motorist",
-        actorId: job.motoristId,
-        reason: "motorist_cancelled_search",
-      }).catch(() => {
-        /* ignore */
+        motoristId: job.motoristId,
       });
+      if (res.ok || auto) {
+        router.replace(auto ? `/requests/${job.id}` : "/");
+        return;
+      }
+      setCancelling(false);
+      setCancelError(res.message);
     },
     [job.id, job.motoristId, router],
   );
+
+  // Drive the broadcast from the customer's open screen: nudge the server when
+  // each distance tier opens (so pros in the next ring get their push) and when
+  // the window ends with no taker (so the search expires and Retry appears).
+  // Server-side sweeps still own the truth; this just removes the wait on a cron.
+  useEffect(() => {
+    if (job.id.startsWith("pending-")) return;
+    const sweep = () => {
+      void apiPairingSweep({ source: "job-screen", trigger: "maintenance" }).catch(() => undefined);
+    };
+    const startedAt = broadcastStartedAtMs(job.statusHistory, job.createdAt) ?? Date.now();
+    const timers: number[] = [];
+    for (const tier of BROADCAST_TIERS) {
+      const delay = startedAt + tier.afterMs - Date.now();
+      if (tier.afterMs > 0 && delay > -500) timers.push(window.setTimeout(sweep, Math.max(0, delay) + 600));
+    }
+    if (job.pairingDeadline) {
+      const delay = Date.parse(job.pairingDeadline) - Date.now();
+      if (Number.isFinite(delay) && delay > -500) timers.push(window.setTimeout(sweep, Math.max(0, delay) + 600));
+    }
+    return () => timers.forEach((t) => window.clearTimeout(t));
+  }, [job.id, job.createdAt, job.statusHistory, job.pairingDeadline]);
 
   // Manual cancel (user-initiated) go home.
   const handleCancelSearch = useCallback(
@@ -170,14 +201,15 @@ export function SearchingScreen({
         </div>
         <div className="flex flex-col items-center text-center">
           <span className="inline-flex rounded-full border border-ona-brand bg-[#fdeeea] px-3 py-1.5 text-[12px] font-medium leading-none text-[#3a1710]">
-            Sequential dispatch
+            Nearest pros first
           </span>
           <h1 className="mt-3 text-[22px] font-bold leading-tight tracking-tight">
             Finding your nearest {skillLabel.toLowerCase()}
           </h1>
           <p className="mt-2 max-w-[300px] text-[13px] leading-snug text-ona-on-dark-muted">
-            We contact one verified pro at a time so you get a committed
-            response, not a bidding crowd.
+            Verified pros near you are alerted, closest first. The first to
+            accept takes your job, so you get a committed response, not a
+            bidding crowd.
           </p>
         </div>
         <div className="my-4 flex flex-1 items-center justify-center">
@@ -192,7 +224,7 @@ export function SearchingScreen({
             {nearbyLine ? <p className="sr-only">{nearbyLine}</p> : null}
           </div>
           <p className="text-[12px] text-ona-on-dark-muted">
-            Auto-moving to the next pro if unavailable
+            Widening the search automatically if nobody is free yet
           </p>
         </div>
       </div>
@@ -200,10 +232,16 @@ export function SearchingScreen({
         <button
           type="button"
           onClick={() => void handleCancelSearch()}
-          className="flex h-12 w-full items-center justify-center rounded-ona-ctl border-0 bg-transparent text-[16px] font-medium text-white active:bg-white/10"
+          disabled={cancelling}
+          className="flex h-12 w-full items-center justify-center rounded-ona-ctl border-0 bg-transparent text-[16px] font-medium text-white active:bg-white/10 disabled:opacity-60"
         >
-          Cancel search
+          {cancelling ? "Cancelling…" : "Cancel search"}
         </button>
+        {cancelError ? (
+          <p role="alert" className="mt-1 text-center text-[13px] text-red-300">
+            {cancelError}
+          </p>
+        ) : null}
       </div>
     </div>
   );

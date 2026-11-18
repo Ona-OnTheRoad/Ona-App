@@ -4,7 +4,7 @@ import type { AppFilters, ServiceCategory, Technician } from "@/lib/types";
 /** Max techs returned in any search (keep load reasonable) */
 export const MAX_TECHNICIANS = 24;
 /** Hard max search radius in km pros farther away are never listed or mapped */
-export const MAX_RADIUS_KM = 5;
+export const MAX_RADIUS_KM = 10;
 /** Default search radius (motorist pin and book-for-someone meet pin) */
 export const DEFAULT_RADIUS_KM = 5;
 /** Map camera zoom for ~1 km street view (radius still uses MAX_RADIUS_KM) */
@@ -15,6 +15,26 @@ export const MAP_NEAR_ZOOM = 15;
  * Pros refresh location_updated_at while Live (~every 3 min); 5 min = one missed tick grace.
  */
 export const LIVE_HEARTBEAT_MAX_MS = 5 * 60 * 1000;
+
+/**
+ * How long a pro who is still marked Live but has closed/backgrounded the app
+ * can keep being ALERTED (push) about new jobs. The pin only refreshes while the
+ * app is open, so without this a pro stops getting alerts ~5 min after leaving
+ * the app. Alerting only: seeing/claiming a job still needs a fresh heartbeat,
+ * which opening the app (by tapping the alert) provides at once.
+ */
+export const ALERTABLE_LOCATION_MAX_MS = 2 * 60 * 60 * 1000;
+
+/** True when the last known pin is recent enough to send a push alert. */
+export function hasAlertableLocation(
+  locationUpdatedAt: string | null | undefined,
+  nowMs: number = Date.now(),
+): boolean {
+  if (!locationUpdatedAt) return false;
+  const t = new Date(locationUpdatedAt).getTime();
+  if (!Number.isFinite(t)) return false;
+  return nowMs - t <= ALERTABLE_LOCATION_MAX_MS;
+}
 
 /** True when Live pin was refreshed within LIVE_HEARTBEAT_MAX_MS. */
 export function hasRecentLiveHeartbeat(
@@ -235,7 +255,7 @@ export function filterAndRankTechnicians(
     excludeProIds,
     radiusDemoteProIds,
   } = options;
-  // Always cap at 5 km never show pros outside this (self or book-for-someone).
+  // Always cap at MAX_RADIUS_KM (10 km) never show pros outside this (self or book-for-someone).
   const radius = Math.min(Math.max(radiusKm, 0), MAX_RADIUS_KM);
   const exclude = new Set(
     Array.from(excludeProIds || []).map((id) => String(id)),
@@ -265,7 +285,7 @@ export function filterAndRankTechnicians(
     if (visPct <= 0) return false;
     const d = t.distanceKm;
     if (typeof d !== "number" || !Number.isFinite(d)) return false;
-    // Live + in customer radius (≤5 km). Tier still gates T1 above;
+    // Live + in customer radius (≤ MAX_RADIUS_KM). Tier still gates T1 above;
     // ranking (not hard hide) softens lower tiers via scoreTechnician.
     return d <= radius + 0.75;
   });

@@ -73,7 +73,7 @@ export function seedNegotiationScreen(card: JobRecord, fresh: JobRecord): void {
 export function isStaleRequestError(message?: string | null): boolean {
   return Boolean(
     message &&
-    /not open for this action|not awaiting confirmation|moved on while opening|moved on before confirmation|not assigned to this request/i.test(
+    /not open for this action|not awaiting confirmation|moved on while opening|moved on before confirmation|not assigned to this request|already (?:been )?taken|no longer available/i.test(
       message,
     ),
   );

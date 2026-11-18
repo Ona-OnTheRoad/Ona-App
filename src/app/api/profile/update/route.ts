@@ -382,7 +382,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // Existing pro row lock skill + years; clamp radius to 5 km
+    // Existing pro row lock skill + years; clamp radius to the 10 km max
     const { data: existingPro } = await admin
       .from("repair_pro_profiles")
       .select("services, primary_service, years_experience, service_radius_km")
@@ -409,7 +409,7 @@ export async function POST(req: Request) {
             .slice(0, 1)
       : b.services?.filter((s): s is ProService => isProService(s)).slice(0, 9);
 
-    // Hard max 5 km for all pros
+    // Hard max 10 km for all pros
     const clampedRadius =
       b.serviceRadiusKm !== undefined
         ? clampProServiceRadiusKm(Number(b.serviceRadiusKm))

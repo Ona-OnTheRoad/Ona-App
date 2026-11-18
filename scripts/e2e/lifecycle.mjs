@@ -57,6 +57,8 @@ const projectHost = new URL(url).host;
 const SITE = { lat: 0.01, lng: 0.01, label: "E2E test site (open ocean)" };
 const P1_AT = { lat: 0.0105, lng: 0.0105 };
 const P2_AT = { lat: 0.016, lng: 0.016 };
+// ~4 km north of the site: outside the 2 km first tier, inside the 5 km second tier.
+const P3_AT = { lat: 0.01 + 4 / 111, lng: 0.01 };
 
 // ───────────────────────── tiny test framework ─────────────────────────
 const results = [];
@@ -187,7 +189,7 @@ async function pay(c, jobId) {
 }
 
 // ───────────────────────── the run ─────────────────────────
-let C1, P1, P2;
+let C1, P1, P2, P3;
 async function main() {
   console.log(C.b(`\nOna end-to-end run ${RUN}`));
   console.log(`  server:   ${BASE}`);
@@ -204,14 +206,16 @@ async function main() {
   const paths = Object.keys(spec?.paths || {});
   const liveFns = new Set(paths.filter((p) => p.startsWith("/rpc/")).map((p) => p.slice(5)));
   const liveTables = new Set(paths.filter((p) => !p.startsWith("/rpc/") && p !== "/").map((p) => p.slice(1)));
-  const REQUIRED_FNS = { open_pairing_request: "081/082 migrations", dispatch_pairing_offer: "081 migration", timeout_pairing_request: "078", apply_confirmed_job_payment: "payment confirmation", claim_job_sweep_lease: "078", drain_job_outbox: "outbox", claim_payment_webhook_inbox: "webhooks" };
+  const REQUIRED_FNS = { open_pairing_request: "081/082 migrations", dispatch_pairing_offer: "081 migration", timeout_pairing_request: "078", apply_confirmed_job_payment: "payment confirmation", claim_job_sweep_lease: "078", claim_broadcast_offer: "086 migration (broadcast dispatch)", drain_job_outbox: "outbox", claim_payment_webhook_inbox: "webhooks" };
   for (const [fn, why] of Object.entries(REQUIRED_FNS)) check(`database has SQL function ${fn} (${why})`, liveFns.has(fn), liveFns.has(fn) ? "" : "MISSING: the database is behind the code, apply the pending migrations");
   check("database has table id_lookup_cache (migration 084, NIN/BVN outage cache)", liveTables.has("id_lookup_cache"), liveTables.has("id_lookup_cache") ? "" : "MISSING");
 
   C1 = await makeUser("customer");
   P1 = await makeUser("pro-1", P1_AT); P1.kind = "pro"; P1.at = P1_AT;
   P2 = await makeUser("pro-2", P2_AT); P2.kind = "pro"; P2.at = P2_AT;
-  check("created 1 customer + 2 Repair Pros (tagged, open-ocean location)", C1 && P1 && P2);
+  P3 = await makeUser("pro-3", P3_AT); P3.kind = "pro"; P3.at = P3_AT;
+  await setPro(P3, { is_online: false });
+  check("created 1 customer + 3 Repair Pros (tagged, open-ocean location)", C1 && P1 && P2 && P3);
 
   // ───────── Scenario 1: happy path ─────────
   head("1. Happy path: request -> match -> negotiate -> pay -> work -> release -> rate");
@@ -392,37 +396,97 @@ async function main() {
     }
   }
 
-  // ───────── 1b: automatic matching ─────────
-  head("1b. Open search: the customer posts a request and the system finds a Pro");
-  await setPro(P1, { is_online: true }); await setPro(P2, { is_online: true });
-  const { job: j2 } = await createJob(C1);
-  const d2 = j2 && (await waitDispatched(C1, j2.id, 12000));
-  const dispatchWorks = Boolean(d2);
-  check("an open-search job is automatically matched to a nearby online Pro", dispatchWorks, dispatchWorks ? `${d2.status}` : "NOT matched: job stays in sequential_pairing (see the SQL function checks in section 0)");
+  // ───────── 1b: open search is a broadcast, nearest pros first ─────────
+  head("1b. Open search: every Pro in range can see it, nearest first, first to accept wins");
+  await setPro(P1, { is_online: true }); await setPro(P2, { is_online: true }); await setPro(P3, { is_online: true });
+  const seenBy = async (u, id) => ((await api(u.token, "GET", `/api/jobs?userId=${u.id}&role=repair_pro&lean=1`)).data?.jobs || []).some((j) => j.id === id);
+  // Warm the dev server's route compilation first: the first request to a route can take many seconds,
+  // which would otherwise eat into the 10 s tier timings measured below.
+  await transition(P3, "00000000-0000-0000-0000-000000000000", "OPEN");
+  await seenBy(P1, "warm"); await seenBy(P3, "warm"); await api(C1.token, "GET", "/api/requests/open-state");
+  const { job: j2 } = await createJob(C1, { radiusKm: 10 });
+  check("an open-search job is created and NOT assigned to any one Pro", j2?.id && !j2.repairProId && j2.status === "sequential_pairing", `${j2?.status} / ${j2?.repairProId || "unassigned"}`);
+  if (j2?.id) {
+    // Time is measured from the SERVER's broadcast start, not from when this script made the call.
+    const startMs = Date.parse((await dbJob(j2.id)).status_history?.[0]?.at);
+    const since = () => Date.now() - startMs;
+    check("the nearest Pro (<1 km) sees it immediately", await seenBy(P1, j2.id));
+    check("a second Pro within 2 km also sees it immediately", await seenBy(P2, j2.id));
+    const farEarly = await seenBy(P3, j2.id);
+    const t1 = since();
+    if (t1 < 9500) check("a Pro ~4 km away does NOT see it during the first 10 s (nearest first)", !farEarly, `checked at ${t1} ms`);
+    else note(`tier-hiding check skipped: the machine was too slow (${t1} ms elapsed before the check)`);
+    const farClaim = await transition(P3, j2.id, "OPEN");
+    const t2 = since();
+    if (t2 < 9500) {
+      check("the far Pro cannot claim it before their tier opens (403)", farClaim.status === 403, `${errMsg(farClaim)} (at ${t2} ms)`);
+      const stillOpen = await dbJob(j2.id);
+      check("a refused claim leaves the job unassigned", !stillOpen.repair_pro_id, String(stillOpen.repair_pro_id));
+    } else note(`early-claim check skipped: too slow (${t2} ms elapsed)`);
 
-  // ───────── Scenario 2: decline and re-route ─────────
-  head("2. A Pro declines -> the job is re-offered to the next Pro; customer cancels");
-  if (!dispatchWorks) note("SKIPPED: re-routing depends on automatic matching, which does not work on this database (see 1b)");
-  if (dispatchWorks && d2) {
-    const first = pickPro(d2, P1, P2), second = first === P1 ? P2 : P1;
-    check("the first Pro was chosen from the two nearby Pros", Boolean(first));
-    const dec = await transition(first, j2.id, "DECLINE", { reason: "e2e decline" });
-    check("the first Pro declines", dec.ok, errMsg(dec));
-    const re = await waitFor(async () => { const r = await getJob(C1, j2.id); const j = r.data?.job; return j && j.repairProId === second.id ? j : null; });
-    check("the job is re-offered to the OTHER Pro", Boolean(re), re ? re.status : `still ${(await getJob(C1, j2.id)).data?.job?.repairProId === first.id ? "with the first Pro" : "unassigned"}`);
-    const declinedSee = await getJob(first, j2.id);
-    check("the Pro who declined can no longer act on the job", !declinedSee.ok || declinedSee.data?.job?.repairProId !== first.id, errMsg(declinedSee));
-    if (re) {
-      const o2 = await transition(second, j2.id, "OPEN");
-      const c2 = await transition(second, j2.id, "CONFIRM", gps(second.at));
-      check("the second Pro opens and confirms -> negotiating", o2.ok && c2.ok && c2.data?.job?.status === "negotiating", errMsg(o2) + " | " + errMsg(c2));
-      const cancel = await transition(C1, j2.id, "CANCEL", { reason: "e2e cancel" });
-      check("the customer cancels during negotiation", cancel.ok, errMsg(cancel) + " " + (cancel.data?.job?.status || ""));
-      note(`status after customer cancel during negotiation: ${await jobStatus(C1, j2.id)} (state machine maps negotiating+CANCEL -> searching)`);
-      const noEsc = await dbEscrow(j2.id);
-      check("no payment record exists for a job cancelled before payment", noEsc.length === 0, `${noEsc.length} rows`);
-    }
+    const wait = Math.max(0, 10500 - since());
+    await sleep(wait);
+    check("after 10 s the ~4 km Pro can see it too (5 km tier opened)", await seenBy(P3, j2.id));
+
+    // the race: two Pros tap accept at the same instant
+    const preClaimed = (await dbJob(j2.id)).repair_pro_id;
+    check("nobody has claimed the job before the race starts", !preClaimed, `held by ${preClaimed}`);
+    const [a, b2] = await Promise.all([transition(P1, j2.id, "OPEN"), transition(P2, j2.id, "OPEN")]);
+    const wins = [a, b2].filter((r) => r.ok).length;
+    check("two Pros claim at the same instant: exactly ONE wins", wins === 1, `${a.status}/${b2.status}`);
+    const loser = a.ok ? b2 : a, winner = a.ok ? P1 : P2, loserPro = a.ok ? P2 : P1;
+    check("the loser is told it was already taken (409)", loser.status === 409, errMsg(loser));
+    const claimed = await dbJob(j2.id);
+    check("the job belongs to the winner only", claimed.repair_pro_id === winner.id, String(claimed.repair_pro_id));
+    const act = await sb.from("request_reservations").select("id,pro_id").eq("request_id", j2.id).eq("status", "active");
+    check("exactly one active reservation exists", (act.data || []).length === 1 && act.data[0].pro_id === winner.id, JSON.stringify(act.data));
+    check("it disappears from the other Pros' lists", !(await seenBy(loserPro, j2.id)) && !(await seenBy(P3, j2.id)));
+    const peek = await getJob(loserPro, j2.id);
+    check("the losing Pro cannot read the job (403)", [403, 404].includes(peek.status), errMsg(peek));
+    const late = await transition(P3, j2.id, "OPEN");
+    check("a third Pro tapping accept afterwards is told it is taken (409)", late.status === 409, errMsg(late));
+
+    const cf = await transition(winner, j2.id, "CONFIRM", gps(winner.at));
+    check("the winner taps 'I can fix this' -> negotiating", cf.ok && cf.data?.job?.status === "negotiating", errMsg(cf));
+
+    // ───────── Scenario 2: the customer rejects the Pro and the job re-opens ─────────
+    head("2. Customer rejects the Pro -> the job re-opens for the others; then cancels");
+    const rj = await transition(C1, j2.id, "REOPEN", { reason: "e2e rejected" });
+    check("the customer rejects the Pro (Find another pro)", rj.ok, errMsg(rj));
+    const re = await dbJob(j2.id);
+    check("the job is back in the open pool (unassigned, searching)", !re.repair_pro_id && re.flow_status === "sequential_pairing", `${re.flow_status} / ${re.repair_pro_id}`);
+    check("the earlier negotiation is cleared", Array.isArray(re.offers) ? re.offers.length === 0 : true && re.agreed_major == null);
+    await sleep(500);
+    check("the rejected Pro no longer sees it", !(await seenBy(winner, j2.id)));
+    const reclaim = await transition(winner, j2.id, "OPEN");
+    check("the rejected Pro cannot claim it again", !reclaim.ok && [403, 409].includes(reclaim.status), errMsg(reclaim));
+    check("the other nearby Pro sees it again", await seenBy(loserPro, j2.id));
+    const o2 = await transition(loserPro, j2.id, "OPEN");
+    const c2 = await transition(loserPro, j2.id, "CONFIRM", gps(loserPro.at));
+    check("the other Pro takes it and confirms -> negotiating", o2.ok && c2.ok && c2.data?.job?.status === "negotiating", errMsg(o2) + " | " + errMsg(c2));
+    const stray = await transition(P3, j2.id, "REOPEN");
+    check("a Pro cannot re-open someone else's job (403)", stray.status === 403, errMsg(stray));
+    const cancel = await transition(C1, j2.id, "CANCEL", { reason: "e2e cancel" });
+    check("the customer cancels during negotiation", cancel.ok, errMsg(cancel) + " " + (cancel.data?.job?.status || ""));
+    check("the cancelled job is really closed on the server", ["cancelled"].includes((await dbJob(j2.id)).status), String((await dbJob(j2.id)).status));
+    const noEsc = await dbEscrow(j2.id);
+    check("no payment record exists for a job cancelled before payment", noEsc.length === 0, `${noEsc.length} rows`);
   }
+
+  head("2b. Customer cancels a search: it is gone, with nothing left to resume");
+  const { job: j2b } = await createJob(C1, { radiusKm: 10 });
+  if (j2b?.id) {
+    const cs = await transition(C1, j2b.id, "CANCEL", { reason: "motorist_cancelled_search" });
+    check("cancelling a live search succeeds", cs.ok, errMsg(cs));
+    const row = await dbJob(j2b.id);
+    check("the search is cancelled in the database", row.status === "cancelled", row.status);
+    check("no Pro still sees the cancelled search", !(await seenBy(P1, j2b.id)) && !(await seenBy(P3, j2b.id)));
+    const os = await api(C1.token, "GET", "/api/requests/open-state");
+    check("the customer has no open request and no Resume card", os.ok && os.data?.hasOpen === false && os.data?.expressPending == null, JSON.stringify(os.data));
+    const again = await transition(C1, j2b.id, "CANCEL", { reason: "again" });
+    check("cancelling twice does not reopen or break anything", (await dbJob(j2b.id)).status === "cancelled", errMsg(again));
+  }
+  await setPro(P3, { is_online: false });
 
   // ───────── Scenario 3: cancel after payment -> refund ─────────
   head("3. Customer pays, then cancels before the Pro starts -> escrow is refunded");

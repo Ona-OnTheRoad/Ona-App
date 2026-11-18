@@ -7,9 +7,10 @@ import * as Slider from "@radix-ui/react-slider";
 import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import { navigateBack } from "@/lib/navigation";
 import { useApp } from "@/lib/store";
+import { PRO_MAX_SERVICE_RADIUS_KM } from "@/lib/profile-system";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
-const MAX_RADIUS = 5;
+const MAX_RADIUS = PRO_MAX_SERVICE_RADIUS_KM;
 
 export default function SettingsAvailabilityPage() {
   const router = useRouter();

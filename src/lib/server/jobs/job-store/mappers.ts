@@ -294,7 +294,7 @@ export function splitMinor(amountMinor: number) {
   };
 }
 
-/** Customer's chosen search radius (0-5 slider), clamped to a usable minimum
+/** Customer's chosen search radius (0-10 slider), clamped to a usable minimum
  * so pairing always has a tight starting circle and a sane cap. */
 export function clampCustomerRadius(radius: number | null | undefined): number {
   if (radius == null || !Number.isFinite(radius) || radius <= 0) {

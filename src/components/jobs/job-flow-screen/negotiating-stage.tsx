@@ -8,6 +8,7 @@ import { isNegotiationTimerArmed } from "@/lib/jobs/constants";
 import type { JobRecord } from "@/lib/jobs/types";
 import { PRO_SERVICE_LABELS } from "@/lib/services";
 import { firstNameOnly } from "@/lib/utils";
+import { FindAnotherPro } from "./find-another-pro";
 import { NegotiationCounterCard } from "./negotiation-counter-card";
 import { NegotiationFooter } from "./negotiation-footer";
 import { NegotiationSummary } from "./negotiation-summary";
@@ -117,6 +118,24 @@ export function renderNegotiatingStage(
               Ona protects both sides by holding the agreed total in escrow.
             </p>
           </div>
+
+          {viewer === "motorist" ? (
+            <FindAnotherPro
+              isLight={isLight}
+              busy={busy}
+              onConfirm={() =>
+                void run(() =>
+                  apiTransition({
+                    jobId: job.id,
+                    event: "REOPEN",
+                    actor: "motorist",
+                    actorId,
+                    reason: "customer_rejected_pro",
+                  }),
+                )
+              }
+            />
+          ) : null}
 
           <div className="flex flex-col items-center justify-center py-3">
             {isNegotiationTimerArmed(job) ? (

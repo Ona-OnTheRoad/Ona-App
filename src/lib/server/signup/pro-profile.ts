@@ -3,6 +3,7 @@ import { apiFail } from "@/lib/server/api-json";
 import type { SignupContext, VerifiedFlags } from "@/lib/server/signup/context";
 import { last4, logSignupEvent } from "@/lib/server/signup/helpers";
 import { deriveProFields } from "@/lib/server/signup/pro-fields";
+import { clampProServiceRadiusKm } from "@/lib/profile-system";
 
 /** Writes the Repair Pro side table and guarantor. Returns the stored flags, or the failure to send. */
 export async function writeProProfile(
@@ -77,7 +78,7 @@ export async function writeProProfile(
       is_online: false,
       bio: input.bio || null,
       years_experience: input.yearsExperience || null,
-      service_radius_km: input.serviceRadiusKm ?? 10,
+      service_radius_km: clampProServiceRadiusKm(input.serviceRadiusKm ?? 10),
       // Home / signup pin (live pin updated again on Go Live)
       lat: input.lat ?? null,
       lng: input.lng ?? null,

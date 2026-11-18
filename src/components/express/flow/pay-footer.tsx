@@ -7,7 +7,7 @@ type Props = {
   cancelAsk: boolean;
   cancelBusy: boolean;
   setCancelAsk: (v: boolean) => void;
-  onCancel: (mode: "payment" | "both") => void;
+  onCancel: () => void;
 };
 
 export function PayFooter({
@@ -63,19 +63,10 @@ export function PayFooter({
               <button
                 type="button"
                 disabled={cancelBusy}
-                onClick={() => onCancel("payment")}
+                onClick={() => onCancel()}
                 className="flex h-12 w-full items-center justify-center rounded-[14px] bg-gray-100 text-[14px] font-semibold text-gray-900 transition-colors hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 cursor-pointer border-0 disabled:opacity-50"
               >
-                Cancel payment only
-              </button>
-
-              <button
-                type="button"
-                disabled={cancelBusy}
-                onClick={() => onCancel("both")}
-                className="flex h-10 w-full items-center justify-center text-[14px] font-semibold text-[#FF6B35] transition-colors hover:underline cursor-pointer border-0 bg-transparent disabled:opacity-50"
-              >
-                Cancel payment and request
+                {cancelBusy ? "Cancelling…" : "Cancel request"}
               </button>
             </div>
           </div>

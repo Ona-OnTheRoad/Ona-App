@@ -25,6 +25,23 @@ export async function POST(
     const existing = await getJob(id);
     if (!existing) return apiFail("Job not found", 404);
     if (existing.repairProId !== auth.userId) {
+      // Open broadcast job this pro never claimed: Later only hides it from them.
+      const { broadcastEnabled, isOpenPoolRow } = await import(
+        "@/lib/server/pairing/broadcast"
+      );
+      if (
+        broadcastEnabled() &&
+        isOpenPoolRow({
+          pairing_stage: existing.pairingStage ?? null,
+          repair_pro_id: existing.repairProId || null,
+          status: existing.status,
+        })
+      ) {
+        const { deferRequest } = await import("@/lib/server/pairing/pairing-engine");
+        const res = await deferRequest(id, proId);
+        if (!res.ok) return apiFail(res.error, res.status || 400);
+        return apiOk({ job: existing });
+      }
       return apiFail("Not your job", 403);
     }
 

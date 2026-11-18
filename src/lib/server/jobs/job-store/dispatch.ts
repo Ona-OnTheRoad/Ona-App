@@ -317,6 +317,18 @@ async function assignNextPro(
   sb: SupabaseClient,
   skipNotifyPreviousPro = false,
 ): Promise<boolean> {
+  // Broadcast mode: do not hand the job to one chosen pro. Send it back to the
+  // open pool (previous pro excluded) so every eligible pro in range can claim
+  // it, nearest first. PAIRING_DISPATCH_MODE=sequential restores the old path.
+  const { broadcastEnabled } = await import("@/lib/server/pairing/broadcast");
+  if (broadcastEnabled()) {
+    const { reopenJobToPool } = await import("@/lib/server/pairing/pairing-engine");
+    const res = await reopenJobToPool(job.id, {
+      by: skipNotifyPreviousPro ? "pro" : "sweep",
+      note: "reroute",
+    });
+    return res.ok;
+  }
   const nextPro = await findNextPro(job, sb);
   if (!nextPro) return false;
 

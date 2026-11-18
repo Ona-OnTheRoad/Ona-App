@@ -168,11 +168,11 @@ describe("GET /api/pros", () => {
     expect(techIds).not.toContain("pro-far-pending");
     // pro-far-rejected (~2.8 km) > 2 km -> excluded
     expect(techIds).not.toContain("pro-far-rejected");
-    // pro-far-approved (~2.8 km) <= 5.75 km -> included
+    // pro-far-approved (~2.8 km) <= 10.75 km -> included
     expect(techIds).toContain("pro-far-approved");
 
     // Check meta
-    expect(json.data.meta.maxRadiusKm).toBe(5);
+    expect(json.data.meta.maxRadiusKm).toBe(10);
     expect(json.data.meta.docsPendingRadiusKm).toBe(2);
   });
 

@@ -1,3 +1,6 @@
+// Legacy one-pro-at-a-time engine: these tests guard the PAIRING_DISPATCH_MODE=sequential rollback path.
+process.env.PAIRING_DISPATCH_MODE = "sequential";
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/server/jobs/deadlines/sweep-lease", () => ({

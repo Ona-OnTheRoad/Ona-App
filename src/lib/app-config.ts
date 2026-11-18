@@ -201,7 +201,7 @@ export function mergeConfig(
   ) {
     base.verification.trialDays = DEFAULT_APP_CONFIG.verification.trialDays;
   }
-  // Marketplace radius is hard-capped at 5 km ignore stale DB values above that
+  // Marketplace radius is hard-capped at MAX_RADIUS_KM ignore stale DB values above that
   const maxR = Number(base.matching.maxRadiusKm);
   base.matching.maxRadiusKm = Math.min(
     MAX_RADIUS_KM,

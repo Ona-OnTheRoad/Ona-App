@@ -21,6 +21,18 @@ import { windowLeftMs, windowStillOpen } from "@/lib/jobs/deadline";
 import { hasRecentLiveHeartbeat, MAX_RADIUS_KM } from "@/lib/matching";
 import { orderCandidatesByMerit } from "@/lib/server/merit/merit-engine";
 import { isSyntheticAccount } from "@/lib/server/synthetic-accounts";
+import { BROADCAST_WINDOW_MS } from "@/lib/jobs/broadcast-tiers";
+import {
+  broadcastEnabled,
+  broadcastWindow,
+  claimBroadcastOffer,
+  countReachablePros,
+  isOpenPoolRow,
+  notifyOpenTiers,
+  proCanSeePoolJob,
+  recordPoolResponse,
+  type PoolRow,
+} from "./broadcast";
 
 export const PAIRING_WINDOW_MS = 144_000; // 144s per pro (display + enforce)
 export const DEFER_DURATION_MS = 5 * 60_000; // Later = 5 min exclusion from re-offer
@@ -33,17 +45,17 @@ export const OPEN_REARM_FLOOR_MS = 10_000;
 export const SURFACE_FALLBACK_GRACE_MS = 8000;
 const EMPTY_SEARCH_HOLD_MS = 4000;
 // Search starts tight (1 km) and expands toward the customer's chosen radius
-// (0-5 km slider), capped at 5 km. The customer's radius caps each request
+// (0-10 km slider), capped at 10 km. The customer's radius caps each request
 // via service_requests.radius_km (see nextRadiusKm's maxKm).
-export const RADIUS_STEPS_KM = [1, 2, 3, MAX_RADIUS_KM];
+export const RADIUS_STEPS_KM = [1, 2, 5, MAX_RADIUS_KM];
 export const MAX_PAIRING_RADIUS_KM =
   RADIUS_STEPS_KM[RADIUS_STEPS_KM.length - 1];
 /**
  * Search-radius cap per customer round (round 0 = fresh search, round N = N-th
- * retry). Fresh searches stay tight (2 km); each Retry widens toward the 5 km
+ * retry). Fresh searches stay tight (2 km); each Retry widens toward the 10 km
  * marketplace cap so a nearby pro is hit before expanding further out.
  */
-export const PAIRING_ROUND_MAX_KM = [2, 3, 4, MAX_PAIRING_RADIUS_KM];
+export const PAIRING_ROUND_MAX_KM = [2, 5, MAX_PAIRING_RADIUS_KM, MAX_PAIRING_RADIUS_KM];
 /**
  * Pros contacted per search round (one-by-one, 144s each).
  * Cap is a safety ceiling when many Live pros exist. Once every unique Live
@@ -486,7 +498,14 @@ async function advancePairingOnce(jobId: string): Promise<PairingResult> {
     return { ok: true, noop: true, jobId: row.id };
   }
 
-  // One-click: start at customer's full cap (5km) for instant hit, not 1km stepwise.
+  // Open search: every eligible pro in range sees the job (nearest first) and
+  // the first to accept wins. The sequential engine below is the rollback path
+  // (PAIRING_DISPATCH_MODE=sequential) and still serves nothing else.
+  if (broadcastEnabled() && row.pairing_stage === "sequential_pairing") {
+    return advanceBroadcast(sb, row);
+  }
+
+  // One-click: start at customer's full cap (10km) for instant hit, not 1km stepwise.
   const radius = Number(row.pairing_radius_km) ||
     Math.min(
       Number(row.radius_km) > 0 ? Number(row.radius_km) : MAX_PAIRING_RADIUS_KM,
@@ -560,6 +579,173 @@ async function advancePairingOnce(jobId: string): Promise<PairingResult> {
   }
 
   return markExhausted(sb, row);
+}
+
+/**
+ * Keep an open broadcast alive. The job sits unclaimed in `sequential_pairing`
+ * with no pro; pros see it according to the distance tiers and claim it via
+ * Open. Here we only (a) expire it when the window ends with no taker, (b) arm
+ * the deadline the sweep and the customer's countdown use, (c) notify pros
+ * whose tier just opened, and (d) fail fast when nobody could ever see it.
+ */
+async function advanceBroadcast(
+  sb: ReturnType<typeof createServiceSupabase>,
+  row: PairingRow,
+): Promise<PairingResult> {
+  const now = Date.now();
+  const pool = row as unknown as PoolRow;
+  const { endsAt } = broadcastWindow(pool);
+  if (now >= endsAt) return markExhausted(sb, row);
+
+  const reachable = await countReachablePros(sb, pool);
+  const current = row.pairing_deadline ? Date.parse(row.pairing_deadline) : Number.NaN;
+  let target: number;
+  if (reachable === 0) {
+    // Nobody online/in range: hold briefly (a pro may be about to come online),
+    // then expire so the customer can Retry instead of waiting 144 s for no one.
+    if (Number.isFinite(current) && now >= current) return markExhausted(sb, row);
+    target =
+      Number.isFinite(current) && current > now && current <= now + EMPTY_SEARCH_HOLD_MS
+        ? current
+        : now + EMPTY_SEARCH_HOLD_MS;
+  } else {
+    target = endsAt;
+  }
+
+  if (!Number.isFinite(current) || Math.abs(current - target) > 1000) {
+    const { data: armed, error } = await sb
+      .from("service_requests")
+      .update({ pairing_deadline: new Date(target).toISOString(), updated_at: nowIso() })
+      .eq("id", row.id)
+      .eq("job_version", Number(row.job_version ?? 0))
+      .eq("pairing_stage", "sequential_pairing")
+      .is("repair_pro_id", null)
+      .select("id")
+      .maybeSingle();
+    if (error) return { ok: false, error: "Could not arm the search window", status: 500 };
+    if (!armed) return { ok: true, noop: true, jobId: row.id };
+  }
+
+  if (reachable > 0) {
+    try {
+      await notifyOpenTiers(sb, pool);
+    } catch (e) {
+      console.error("[broadcast] tier notify failed", e);
+    }
+  }
+  return { ok: true, jobId: row.id, currentProId: null, noop: true };
+}
+
+/**
+ * Send a claimed-but-unfinished job back to the open pool: the Pro who held it
+ * is excluded for this request, the negotiation is wiped, and every other
+ * eligible pro can claim it again (nearest first). Used when the customer
+ * rejects the pro, the pro backs out, or the pro never responds.
+ */
+export async function reopenJobToPool(
+  jobId: string,
+  opts: { by: "customer" | "pro" | "sweep"; note?: string | null },
+): Promise<PairingResult> {
+  if (!isSupabaseAdminConfigured()) {
+    return { ok: false, error: "Supabase is not configured", status: 503 };
+  }
+  const sb = createServiceSupabase();
+  const row = await loadPairingRow(sb, jobId, true);
+  if (!row) return { ok: false, error: "Job not found", status: 404 };
+  const proId = row.repair_pro_id;
+  if (!proId && row.flow_status !== "searching") {
+    // Already unclaimed: nothing to release (idempotent).
+    return { ok: true, noop: true, jobId, currentProId: null };
+  }
+  const reopenable = ["reserved", "selected_review", "waiting_for_pro", "negotiating", "searching"];
+  if (!reopenable.includes(String(row.flow_status)) || ["cancelled", "expired"].includes(String(row.status))) {
+    return { ok: false, error: "This request can no longer be reopened", status: 409 };
+  }
+
+  const ts = nowIso();
+  const unarmedEnds = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: moved, error } = await sb
+    .from("service_requests")
+    .update({
+      pairing_stage: "sequential_pairing",
+      flow_status: "sequential_pairing",
+      status: "requested",
+      pairing_deadline: new Date(Date.now() + BROADCAST_WINDOW_MS).toISOString(),
+      reservation_status: "none",
+      assignment_status: "none",
+      repair_pro_id: null,
+      repair_pro_name: null,
+      repair_pro_photo: null,
+      offers: [],
+      pro_base_major: null,
+      agreed_major: null,
+      negotiate_ends_at: unarmedEnds,
+      updated_at: ts,
+      status_history: [
+        ...history(row),
+        ...(proId ? [{ status: "sequential_pairing", at: ts, by: `excluded:${proId}` }] : []),
+        {
+          status: "sequential_pairing",
+          at: ts,
+          by: !proId
+            ? "reopened"
+            : opts.by === "customer"
+              ? `rejected:${proId}`
+              : `reopened:${proId}`,
+          note: opts.note || undefined,
+        },
+      ],
+    })
+    .eq("id", row.id)
+    .eq("job_version", Number(row.job_version ?? 0))
+    .match(proId ? { repair_pro_id: proId } : {})
+    .select("id")
+    .maybeSingle();
+  if (error) return { ok: false, error: error.message, status: 500 };
+  if (!moved) return { ok: false, error: "Request changed; please try again", status: 409 };
+
+  if (!proId) {
+    const next = await advancePairing(jobId);
+    return { ok: true, jobId: row.id, currentProId: null, nextProId: next.ok ? (next.currentProId ?? null) : null };
+  }
+
+  // Exclude the pro who held it, release their reservation, void their call-out.
+  await sb
+    .from("request_pairing_queue")
+    .upsert(
+      {
+        request_id: row.id,
+        pro_id: proId,
+        position: Number(row.queue_position) || 0,
+        source: "broadcast",
+        status: "declined",
+        responded_at: ts,
+        result_note: opts.note || `reopened_by_${opts.by}`,
+      },
+      { onConflict: "request_id,pro_id" },
+    );
+  await sb
+    .from("request_reservations")
+    .update({ status: "cancelled", released_at: ts, released_by: `reopen_${opts.by}` })
+    .eq("request_id", row.id)
+    .in("status", ["active", "confirmed"]);
+  try {
+    const { voidCalloutForReroute } = await import("@/lib/server/callout/acceptance");
+    await voidCalloutForReroute(row.id, `reopen_${opts.by}`, proId);
+  } catch {
+    /* call-out optional */
+  }
+  if (opts.by !== "pro") {
+    await notifyPro(proId, row.id, "Request moved on", "The customer chose to look for another pro.", "sequential_pairing");
+  }
+
+  const next = await advancePairing(jobId);
+  return {
+    ok: true,
+    jobId: row.id,
+    currentProId: null,
+    nextProId: next.ok ? (next.currentProId ?? null) : null,
+  };
 }
 
 async function markExhausted(
@@ -704,7 +890,17 @@ export async function openRequest(
   if (!isSupabaseAdminConfigured()) {
     return { ok: false, error: "Supabase is not configured", status: 503 };
   }
-  return openPairingRequest(createServiceSupabase(), {
+  const sb = createServiceSupabase();
+  if (broadcastEnabled()) {
+    // Unclaimed open job: tapping Open is the claim. First pro wins atomically.
+    const row = await loadPairingRow(sb, jobId);
+    if (row && isOpenPoolRow(row)) {
+      const claim = await claimBroadcastOffer(sb, jobId, proId);
+      if (!claim.ok) return { ok: false, error: claim.error, status: claim.status };
+      return { ok: true, jobId, currentProId: proId, ...(claim.noop ? { noop: true } : {}) };
+    }
+  }
+  return openPairingRequest(sb, {
     jobId, proId, key: idempotencyKey,
     windowMs: PAIRING_WINDOW_MS, rearmFloorMs: OPEN_REARM_FLOOR_MS,
   });
@@ -936,6 +1132,30 @@ function sequentialUnlinkPatch(
   };
 }
 
+/** A pro dismissed an open job they never claimed: hide it from them only. */
+async function dismissPoolJob(
+  sb: ReturnType<typeof createServiceSupabase>,
+  row: PairingRow,
+  proId: string,
+  status: "declined" | "deferred",
+  note?: string | null,
+): Promise<PairingResult> {
+  const { data: pro } = await sb
+    .from("repair_pro_profiles")
+    .select(
+      "user_id, business_name, primary_service, services, lat, lng, location_updated_at, is_online, status, service_radius_km, profiles(email, full_name)",
+    )
+    .eq("user_id", proId)
+    .maybeSingle();
+  // Only a pro who could actually see this job may record a response for it.
+  if (!pro || !(await proCanSeePoolJob(pro as never, row as unknown as PoolRow))) {
+    return { ok: false, error: "Not assigned to this request", status: 403 };
+  }
+  const res = await recordPoolResponse(sb, row.id, proId, status, note);
+  if (!res.ok) return { ok: false, error: res.error, status: res.status };
+  return { ok: true, jobId: row.id, currentProId: null };
+}
+
 /** Pro declined → per-request permanent exclusion (D6) + immediate next pro. */
 export async function declineRequest(
   jobId: string,
@@ -948,6 +1168,10 @@ export async function declineRequest(
   const sb = createServiceSupabase();
   const row = await loadPairingRow(sb, jobId);
   if (!row) return { ok: false, error: "Job not found", status: 404 };
+  if (broadcastEnabled() && isOpenPoolRow(row)) {
+    // Dismissing an open job you never claimed only hides it from you.
+    return dismissPoolJob(sb, row, proId, "declined", reason);
+  }
   if (currentPro(row) !== proId) {
     return { ok: false, error: "Not assigned to this request", status: 403 };
   }
@@ -1000,6 +1224,9 @@ export async function deferRequest(
   const sb = createServiceSupabase();
   const row = await loadPairingRow(sb, jobId);
   if (!row) return { ok: false, error: "Job not found", status: 404 };
+  if (broadcastEnabled() && isOpenPoolRow(row)) {
+    return dismissPoolJob(sb, row, proId, "deferred", "pro_later");
+  }
   if (currentPro(row) !== proId) {
     return { ok: false, error: "Not assigned to this request", status: 403 };
   }
@@ -1342,6 +1569,23 @@ async function sweepPairingBatch(limit: number): Promise<{
         .or("reservation_status.neq.confirmed,reservation_status.is.null")
         .is("pairing_deadline", null);
       if (fbErr) throw new Error("Could not arm pairing fallback deadline");
+    }
+    // Open broadcasts still inside their window: re-run so pros whose distance
+    // tier has just opened get their push (idempotent via the pending queue
+    // marker) and an empty pool fails fast. Cheap: only unclaimed open jobs.
+    if (broadcastEnabled()) {
+      const { data: openPool } = await sb
+        .from("service_requests")
+        .select("id")
+        .eq("pairing_stage", "sequential_pairing")
+        .is("repair_pro_id", null)
+        .not("status", "in", "(cancelled,expired,completed,released)")
+        .order("created_at", { ascending: true })
+        .limit(limit);
+      for (const p of openPool ?? []) {
+        const res = await advancePairing(String(p.id));
+        if (res.ok && res.expired) expired++;
+      }
     }
     return { checked, timedOut, expired, batchFull: rows?.length === limit,
       unarmedBatchFull: unarmed?.length === limit };

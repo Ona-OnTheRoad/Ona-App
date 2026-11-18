@@ -1,3 +1,4 @@
+import { PRO_MAX_SERVICE_RADIUS_KM } from "@/lib/profile-system";
 import { Field } from "./field-parts";
 import type { ProFieldStyles } from "./field-styles";
 import type { ProSignupForm } from "./use-pro-signup-form";
@@ -36,7 +37,7 @@ export function StepArea({
         <input
           type="range"
           min={1}
-          max={5}
+          max={PRO_MAX_SERVICE_RADIUS_KM}
           step={1}
           value={serviceRadiusKm}
           onChange={(e) => setServiceRadiusKm(Number(e.target.value))}

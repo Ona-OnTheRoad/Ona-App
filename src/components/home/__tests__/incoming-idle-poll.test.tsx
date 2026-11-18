@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 /**
  * Idle poll cadence of the Repair Pro incoming-request popup follows realtime
- * health: 10s while the shared channel is `connected` and online, 3s otherwise.
+ * health. Open broadcast jobs are never pushed by realtime (no assigned pro yet),
+ * so the idle poll stays at 3s whether or not the channel is connected.
  * A card on screen keeps the fast cadence (covered in incoming-job-popup-close).
  */
 import { act, render } from "@testing-library/react";
@@ -197,12 +198,12 @@ describe("incoming popup idle poll cadence", () => {
     expect(listCalls()).toBe(base + 2);
   });
 
-  it("slows to 10s once the channel is connected (I1)", async () => {
+  it("keeps polling every 3s even when the channel is connected, so open broadcast jobs surface fast (I1)", async () => {
     render(<IncomingJobPopup />);
     await flush();
     await setStatus("connected");
     const base = listCalls();
-    await advance(9_900);
+    await advance(2_900);
     expect(listCalls()).toBe(base);
     await advance(100);
     expect(listCalls()).toBe(base + 1);
