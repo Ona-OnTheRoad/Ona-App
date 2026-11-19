@@ -1,6 +1,18 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET } from "../route";
 import { NextRequest } from "next/server";
+
+// The route falls through to Google/Nominatim; never hit the real network.
+beforeEach(() => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => new Response(JSON.stringify([]), { status: 200 })),
+  );
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("GET /api/geocode", () => {
   beforeEach(() => {
