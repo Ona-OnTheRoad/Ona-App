@@ -6,7 +6,6 @@ import { apiListJobs, apiTransition } from "@/lib/jobs/client";
 import { SATISFIED_REMINDER_INTERVAL_MS } from "@/lib/jobs/constants";
 import type { JobRecord } from "@/lib/jobs/types";
 import {
-  buildCustomerChargeMajor,
   formatMoney,
   forceNairaCurrency,
 } from "@/lib/pricing";
@@ -46,7 +45,7 @@ export function useReleasePayGate() {
   const [success, setSuccess] = useState(false);
   const [receipt, setReceipt] = useState<ReleaseReceiptData | null>(null);
 
-  const { quote: calloutQuote, ready: calloutReady } = useJobCallout(
+  const { quote: calloutQuote } = useJobCallout(
     pending?.id,
     pending?.status,
     pending?.calloutQuote,
@@ -210,13 +209,6 @@ export function useReleasePayGate() {
         fallbackQuote: jobCalloutQuoteOf(pending),
       });
     const total = displayTotal ?? 0;
-    const calloutMajor = parts?.calloutMajor ?? 0;
-    const labourMajor = parts?.labourMajor ?? pending.agreedMajor ?? 0;
-    // Pro receives 87.5% of labour + 100% call-out (matches server payout-settlement)
-    const labourSplit = buildCustomerChargeMajor(labourMajor);
-    const proShare =
-      Math.round((labourSplit.proPayoutMajor + calloutMajor) * 100) / 100;
-    const platformShare = Math.round(labourSplit.platformFeeMajor * 100) / 100;
 
     markDone(jobId);
     setMinimized(jobId, false);
@@ -226,8 +218,6 @@ export function useReleasePayGate() {
     playAppSound("payment_success");
     setReceipt({
       amount: formatMoney(total, currency),
-      pro: formatMoney(proShare, currency),
-      platform: formatMoney(platformShare, currency),
       note: "Payment confirmed releasing your Repair Pro's pay.",
     });
     setSuccess(true);
@@ -264,5 +254,9 @@ export function useReleasePayGate() {
     onMinimize,
     onExpand,
     onSatisfied,
+    onDismissReceipt: () => {
+      setSuccess(false);
+      setReceipt(null);
+    },
   };
 }

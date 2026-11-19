@@ -2,17 +2,17 @@ import { CheckCircle2 } from "lucide-react";
 
 export type ReleaseReceiptData = {
   amount: string;
-  pro: string;
-  platform: string;
   note?: string;
 };
 
 export function ReleaseReceipt({
   receipt,
   isLight,
+  onDone,
 }: {
   receipt: ReleaseReceiptData;
   isLight: boolean;
+  onDone: () => void;
 }) {
   const ink = isLight ? "#1a1b1e" : "#ffffff";
   const card = isLight ? "#d4d5d9" : "#1c1c1e";
@@ -44,14 +44,13 @@ export function ReleaseReceipt({
         >
           {receipt.amount}
         </p>
-        <div
-          className="mt-3 w-full space-y-1 text-[12px] font-semibold"
-          style={{ color: ink }}
+        <button
+          type="button"
+          onClick={onDone}
+          className="mt-5 w-full rounded-xl bg-emerald-500 py-3 text-[14px] font-black text-white active:scale-[0.98]"
         >
-          <p>Pro 87.5% · {receipt.pro}</p>
-          <p>Ona 5% · {receipt.platform}</p>
-          <p className="opacity-70">VAT 7.5% held on Flutterwave</p>
-        </div>
+          Done
+        </button>
       </div>
     </div>
   );
