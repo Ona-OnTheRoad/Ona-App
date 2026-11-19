@@ -10,8 +10,8 @@ import { useT } from "@/lib/i18n";
 import { useApp } from "@/lib/store";
 import type { ServiceCategory } from "@/lib/types";
 
-/** Tiles shown while the sheet is down: one row of the 3-column grid. */
-const QUICK_TILES = 3;
+/** Tiles shown while the sheet is down: one row of the 4-column grid. */
+const QUICK_TILES = 4;
 
 /** Stop sheet gestures (swipe / wheel) from firing while the user types. */
 const stopGesture = {
@@ -23,7 +23,7 @@ const stopGesture = {
 };
 
 /**
- * Trade picker: title + local search + 3-column tile grid (first row only while the
+ * Trade picker: title + local search + 4-column tile grid (first row only while the
  * sheet is down, all rows once expanded). Swipe left → help page.
  */
 export function CategoryTabs({
@@ -215,7 +215,7 @@ export function CategoryTabs({
               className="h-11 w-full rounded-ona-ctl border border-ona-border bg-ona-field pl-9 pr-3 text-[14px] text-ona-ink"
             />
           </div>
-          {/* Sheet down: just the first row (Mechanic, Vulcanizer, Tow truck) for instant access. */}
+          {/* Sheet down: just the first row (Mechanic, Vulcanizer, Tow, Battery) for instant access. */}
           {tabs.length > 0 ? (
             <TradeTileGrid
               tiles={expanded ? tabs : tabs.slice(0, QUICK_TILES)}
