@@ -79,8 +79,8 @@ export function VehicleView({ theme, vehicles: vs }: Props) {
       ) : null}
 
       {/* Vehicle-form actions pinned to the bottom */}
-      {vs.showVehicleForm ? (
-        <div className={PINNED_BOTTOM}>
+      <div className={cn(PINNED_BOTTOM, "flex flex-col gap-2")}>
+        {vs.showVehicleForm ? (
           <div className="flex gap-2">
             <button
               type="button"
@@ -101,10 +101,7 @@ export function VehicleView({ theme, vehicles: vs }: Props) {
               Save vehicle
             </button>
           </div>
-        </div>
-      ) : null}
-      {vs.showVehicleForm ? null : (
-        <div className={PINNED_BOTTOM}>
+        ) : (
           <button
             type="button"
             onClick={vs.openForm}
@@ -117,11 +114,9 @@ export function VehicleView({ theme, vehicles: vs }: Props) {
               + Add vehicle
             </span>
           </button>
-        </div>
-      )}
+        )}
 
-      {vs.pendingContinue ? (
-        <div className={PINNED_BOTTOM}>
+        {vs.pendingContinue ? (
           <button
             type="button"
             onClick={vs.continuePending}
@@ -129,8 +124,8 @@ export function VehicleView({ theme, vehicles: vs }: Props) {
           >
             Continue
           </button>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </div>
   );
 }

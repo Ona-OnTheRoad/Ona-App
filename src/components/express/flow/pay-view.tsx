@@ -30,7 +30,7 @@ export function PayView({
   onCancel,
 }: Props) {
   return (
-    <>
+    <div className="flex min-h-full flex-col">
       {!bankPay && !busy ? (
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3">
           <Loader2 className="h-6 w-6 animate-spin text-[#FF6B35]" />
@@ -56,6 +56,6 @@ export function PayView({
         setCancelAsk={setCancelAsk}
         onCancel={onCancel}
       />
-    </>
+    </div>
   );
 }

@@ -26,11 +26,11 @@ export default function SettingsAvailabilityPage() {
   const [vacation, setVacation] = useState(false);
   const [days, setDays] = useState<Record<string, boolean>>(() => ({
     Mon: true,
-    Tue: false,
-    Wed: false,
-    Thu: false,
-    Fri: false,
-    Sat: false,
+    Tue: true,
+    Wed: true,
+    Thu: true,
+    Fri: true,
+    Sat: true,
     Sun: false,
   }));
   const [msg, setMsg] = useState<string | null>(null);
