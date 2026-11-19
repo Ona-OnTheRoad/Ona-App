@@ -1,12 +1,15 @@
 "use client";
 
 import { ArrowLeft } from "lucide-react";
+import { NavMenuButton } from "@/components/layout/nav-slider/nav-menu-button";
 
 interface PaymentsScreenHeaderProps {
   title: string;
   onBack: () => void;
   className?: string;
   rightAction?: React.ReactNode;
+  /** Show the navigation-slider button (navigation destinations only). */
+  showMenu?: boolean;
 }
 
 export function PaymentsScreenHeader({
@@ -14,6 +17,7 @@ export function PaymentsScreenHeader({
   onBack,
   className,
   rightAction,
+  showMenu = false,
 }: PaymentsScreenHeaderProps) {
   return (
     <div className={`pt-3 pb-1 mb-2 ${className || ""}`}>
@@ -27,7 +31,11 @@ export function PaymentsScreenHeader({
         >
           <ArrowLeft className="h-5 w-5" strokeWidth={2.4} />
         </button>
-        {rightAction ? <div>{rightAction}</div> : null}
+        {rightAction ? (
+          <div>{rightAction}</div>
+        ) : showMenu ? (
+          <NavMenuButton />
+        ) : null}
       </div>
 
       {/* Screen Title */}

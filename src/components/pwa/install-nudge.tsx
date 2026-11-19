@@ -11,7 +11,7 @@ import { usePwaInstall } from "@/lib/pwa/use-pwa-install";
 const NUDGE_DELAY_MS = 8000;
 
 /**
- * "Install Ona" banner above the dock. Android/Chrome: opens the browser's own
+ * "Install Ona" banner at the bottom of the screen. Android/Chrome: opens the browser's own
  * install dialog. iOS Safari (no install API): shows Share → Add to Home Screen steps.
  * It stays hidden inside the installed app, once Ona is known to be installed, and
  * while snoozed (see src/lib/pwa/install.ts for the rules).
@@ -37,7 +37,7 @@ export function InstallNudge({ enabled }: { enabled: boolean }) {
       {enabled && mode && ready ? (
         <section
           aria-label={t("pwa.installTitle")}
-          className="ona2 absolute inset-x-3 bottom-[calc(var(--rfd-height)+0.5rem)] z-[60] flex items-center gap-3 rounded-ona-card border border-ona-border bg-ona-surface p-3 text-ona-ink shadow-lg"
+          className="ona2 absolute inset-x-3 bottom-4 z-[60] flex items-center gap-3 rounded-ona-card border border-ona-border bg-ona-surface p-3 text-ona-ink shadow-lg"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img

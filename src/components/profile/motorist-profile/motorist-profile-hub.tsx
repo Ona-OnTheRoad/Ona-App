@@ -1,5 +1,6 @@
 "use client";
 
+import { NavMenuButton } from "@/components/layout/nav-slider/nav-menu-button";
 import { useApp } from "@/lib/store";
 import { ProfileIdentityCard } from "./profile-identity-card";
 import { ProfileMenuCard } from "./profile-menu-card";
@@ -18,7 +19,8 @@ export function MotoristProfileHub({ isLight }: MotoristProfileHubProps) {
     <div className="ona2 flex h-full min-h-0 flex-col overflow-y-auto scrollbar-hide bg-ona-bg text-ona-ink">
       <div className="w-full max-w-lg mx-auto px-4 pt-4 pb-36">
         {/* Screen Title */}
-        <header className="pt-2 pb-2">
+        <header className="flex items-center gap-2 pt-2 pb-2">
+          <NavMenuButton className="-ml-2" />
           <h1 className="text-[20px] font-semibold tracking-tight text-ona-ink">
             Profile
           </h1>

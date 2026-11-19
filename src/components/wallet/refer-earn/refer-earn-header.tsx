@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowLeft } from "lucide-react";
+import { NavMenuButton } from "@/components/layout/nav-slider/nav-menu-button";
 
 interface ReferEarnHeaderProps {
   onBack: () => void;
@@ -11,7 +12,7 @@ export function ReferEarnHeader({ onBack }: ReferEarnHeaderProps) {
   return (
     <div className="pt-3 pb-1 mb-2">
       {/* Back button */}
-      <div className="flex items-center mb-2">
+      <div className="flex items-center justify-between mb-2">
         <button
           type="button"
           onClick={onBack}
@@ -20,6 +21,7 @@ export function ReferEarnHeader({ onBack }: ReferEarnHeaderProps) {
         >
           <ArrowLeft className="h-5 w-5" strokeWidth={2.4} />
         </button>
+        <NavMenuButton />
       </div>
 
       {/* Screen Title */}

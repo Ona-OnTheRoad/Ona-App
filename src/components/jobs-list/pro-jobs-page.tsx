@@ -1,5 +1,6 @@
 "use client";
 
+import { NavMenuButton } from "@/components/layout/nav-slider/nav-menu-button";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
@@ -28,7 +29,8 @@ export function ProJobsPage({
   return (
     <div className="ona2 relative flex h-full min-h-0 flex-col bg-ona-bg text-ona-ink">
       {/* Top Header */}
-      <header className="px-5 pt-4 pb-2 shrink-0">
+      <header className="flex shrink-0 items-center gap-2 px-5 pt-4 pb-2">
+        <NavMenuButton className="-ml-2" />
         <h1 className="text-2xl font-bold dark:text-[20px] dark:font-semibold tracking-tight text-ona-ink">
           Jobs
         </h1>

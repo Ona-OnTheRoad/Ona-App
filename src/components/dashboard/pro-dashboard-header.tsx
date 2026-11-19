@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Bell } from "lucide-react";
+import { NavMenuButton } from "@/components/layout/nav-slider/nav-menu-button";
 import { useNotifications } from "@/components/notifications/notification-provider";
 
 interface ProDashboardHeaderProps {
@@ -18,6 +19,7 @@ export function ProDashboardHeader({
   return (
     <header className="flex shrink-0 items-center justify-between px-5 pt-4 pb-2">
       <div className="flex items-center gap-2.5">
+        <NavMenuButton variant="brand" className="h-10 w-10" />
         <h1 className="text-[20px] font-bold dark:font-semibold tracking-tight text-ona-ink">
           {title}
         </h1>

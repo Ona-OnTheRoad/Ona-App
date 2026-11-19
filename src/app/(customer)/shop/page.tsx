@@ -5,6 +5,7 @@
  * Customer: trade bar "Shop". Repair Pro: hamburger Shop.
  */
 
+import { NavMenuButton } from "@/components/layout/nav-slider/nav-menu-button";
 import { useRouter } from "next/navigation";
 import { Loader2, ShoppingBag } from "lucide-react";
 import { OnaScreen } from "@/components/ui/ona-screen";
@@ -39,9 +40,12 @@ export default function ShopHomePage() {
     <OnaScreen>
       <div className="pb-4 pt-5">
         <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-[22px] font-bold leading-tight tracking-tight text-ona-ink">
-            {data.shopTitle}
-          </h1>
+          <div className="flex items-center gap-2">
+            <NavMenuButton className="-ml-2" />
+            <h1 className="text-[22px] font-bold leading-tight tracking-tight text-ona-ink">
+              {data.shopTitle}
+            </h1>
+          </div>
           <ShopHomeHeaderActions
             cartCount={cart.cartCount}
             onOrders={() => router.push("/shop/orders")}

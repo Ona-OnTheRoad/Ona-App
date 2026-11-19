@@ -8,10 +8,12 @@ import {
   navigateBack,
   resolveBackHref,
 } from "@/lib/navigation";
+import { NavMenuButton } from "@/components/layout/nav-slider/nav-menu-button";
+import { isNavRoute } from "@/components/layout/nav-slider/slider-nav";
 import { useApp } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
-/** Secondary page chrome: optional back + title. Navigation is the bottom dock. */
+/** Secondary page chrome: optional back + title, plus the menu button on navigation destinations. */
 export function PageHeader({
   title,
   subtitle,
@@ -108,6 +110,7 @@ export function PageHeader({
           </p>
         )}
       </div>
+      {isNavRoute(pathname) ? <NavMenuButton /> : null}
     </header>
   );
 }
