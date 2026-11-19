@@ -86,7 +86,9 @@ function ShopTradePageInner() {
         backHref="/shop"
       />
       <div className="min-h-0 flex-1 overflow-y-auto pb-6">
-        <ShopVehicleBar tradeKey={trade} />
+        <div className="px-3 pt-2">
+          <ShopVehicleBar tradeKey={trade} />
+        </div>
 
         {allParts ? (
           <TradeAllPartsView tone={tone} {...parts} {...cartProps} />

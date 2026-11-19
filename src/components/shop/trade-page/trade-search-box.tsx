@@ -23,11 +23,13 @@ export function TradeSearchBox({
 }: Props) {
   const { isLight, accentText, accentBg } = tone;
   return (
-    <div className="px-3 pt-2">
+    <div className="px-3 pt-3">
       <div
         className={cn(
-          "flex items-center gap-2 rounded-xl px-3 py-2.5",
-          isLight ? "bg-black/[0.02]" : "bg-white/[0.02]",
+          "flex h-12 items-center gap-2 rounded-xl border pl-3.5 pr-2",
+          isLight
+            ? "border-black/10 bg-black/[0.02]"
+            : "border-white/10 bg-white/[0.02]",
         )}
       >
         <Search className={`h-4 w-4 shrink-0 ${accentText}`} />
@@ -37,7 +39,8 @@ export function TradeSearchBox({
           onKeyDown={(e) => {
             if (e.key === "Enter") onSubmit();
           }}
-          placeholder={`Search ${label}… e.g. ${searchExample}`}
+          placeholder={`Search ${label}`}
+          aria-label={`Search ${label} by ${searchExample}`}
           className={cn(
             "min-w-0 flex-1 border-0 bg-transparent text-[14px] outline-none",
             isLight
@@ -50,7 +53,7 @@ export function TradeSearchBox({
           onClick={onSubmit}
           disabled={searching || !q.trim()}
           className={cn(
-            "rounded-lg border-0 px-3 py-1.5 text-[12px] font-bold text-white disabled:opacity-50",
+            "h-8 shrink-0 rounded-lg border-0 px-3.5 text-[12px] font-bold text-white disabled:opacity-50",
             accentBg,
           )}
         >
