@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const limiter = vi.hoisted(() => ({ outcome: { ok: true } as Record<string, unknown> }));
@@ -21,6 +21,15 @@ const limited = { ok: false, reason: "limited", retryAfterSec: 7 };
 beforeEach(() => {
   vi.clearAllMocks();
   limiter.outcome = { ok: true };
+  // The geocode route falls through to Google/Nominatim; never hit the network.
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => new Response(JSON.stringify([]), { status: 200 })),
+  );
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe("geocode", () => {

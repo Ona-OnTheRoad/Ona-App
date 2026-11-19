@@ -34,10 +34,17 @@ export function MotoristReleasePayGate() {
     onMinimize,
     onExpand,
     onSatisfied,
+    onDismissReceipt,
   } = useReleasePayGate();
 
   if (success && receipt) {
-    return <ReleaseReceipt receipt={receipt} isLight={isLight} />;
+    return (
+      <ReleaseReceipt
+        receipt={receipt}
+        isLight={isLight}
+        onDone={onDismissReceipt}
+      />
+    );
   }
 
   if (!pending) return null;
