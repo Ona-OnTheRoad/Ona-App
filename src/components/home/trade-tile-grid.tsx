@@ -6,10 +6,12 @@ import { cn } from "@/lib/utils";
 import type { TradeTile } from "@/components/home/trade-tiles";
 
 /**
- * Trade picker. Full mode: 3-column tile grid (icon over label).
+ * Trade picker. Full mode: 4-column tile grid (icon over label).
  * Compact mode (a trade is open): one scrolling row of chips so the flow keeps
  * the room. Plain buttons with aria-pressed (the active trade is a toggle).
  */
+const COLUMNS = 4;
+
 export function TradeTileGrid({
   tiles,
   active,
@@ -56,7 +58,7 @@ export function TradeTileGrid({
     <div
       role="group"
       aria-label={t("home.serviceCategory")}
-      className="grid grid-cols-3 gap-px overflow-hidden rounded-ona-card border border-ona-border bg-ona-border"
+      className="grid grid-cols-4 gap-px overflow-hidden rounded-ona-card border border-ona-border bg-ona-border"
     >
       {tiles.map(({ id, labelKey, icon: Icon }) => {
         const on = active === id;
@@ -80,6 +82,12 @@ export function TradeTileGrid({
           </button>
         );
       })}
+      {/* Empty cells in the last row stay white instead of showing the grid lines' grey. */}
+      {Array.from({ length: (COLUMNS - (tiles.length % COLUMNS)) % COLUMNS }).map(
+        (_, i) => (
+          <span key={`fill-${i}`} aria-hidden className="bg-ona-surface" />
+        ),
+      )}
     </div>
   );
 }

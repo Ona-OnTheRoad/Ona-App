@@ -38,7 +38,7 @@ export function PaymentsHubScreen() {
   return (
     <div className="ona2 flex h-full min-h-0 flex-col overflow-y-auto scrollbar-hide bg-ona-bg text-ona-ink">
       <div className="w-full max-w-lg mx-auto px-4 pb-20 space-y-5">
-        <PaymentsScreenHeader title={title} onBack={handleBack} />
+        <PaymentsScreenHeader title={title} onBack={handleBack} showMenu />
         <PaymentsHubMenuCard items={menuItems} />
       </div>
     </div>

@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { Bell, LocateFixed, MapPin } from "lucide-react";
+import { NavMenuButton } from "@/components/layout/nav-slider/nav-menu-button";
 import { useNotificationsOptional } from "@/components/notifications/notification-provider";
 import { useApp } from "@/lib/store";
 
-/** Floating location pill over the map with notification bell placed beside it. */
+/** Menu button, floating location pill over the map and the notification bell. */
 export function AppHeader() {
   const { location, retryLocation } = useApp();
   const notif = useNotificationsOptional();
@@ -13,6 +14,7 @@ export function AppHeader() {
 
   return (
     <header className="flex shrink-0 items-center gap-2.5 px-4 pb-1 pt-4">
+      <NavMenuButton variant="brand" />
       <div className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-full border border-ona-border bg-ona-surface pl-3.5 pr-1.5 shadow-sm">
         <MapPin
           aria-hidden

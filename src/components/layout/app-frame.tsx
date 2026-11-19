@@ -7,9 +7,9 @@ import type { ReactNode } from "react";
 import { AuthGate } from "@/components/auth/auth-gate";
 import { InAppCallProvider } from "@/components/call/in-app-call";
 import { RoleBootstrap } from "@/components/home/role-bootstrap";
-import { AppDock, useDockVisible } from "@/components/layout/app-dock";
-import { DockBlurBackdrop } from "@/components/layout/dock-blur-backdrop";
 import { InboundBanner } from "@/components/layout/inbound-banner";
+import { NavSlider } from "@/components/layout/nav-slider/nav-slider";
+import { isNavRoute } from "@/components/layout/nav-slider/slider-nav";
 import { PhoneShell } from "@/components/layout/phone-shell";
 import { Toaster } from "@/components/ui/sonner";
 import { InstallNudge } from "@/components/pwa/install-nudge";
@@ -29,20 +29,8 @@ export function AppFrame({ children }: { children: ReactNode }) {
   const isAdmin = pathname.startsWith("/admin");
   const { switchingRole, theme } = useApp();
   const isLight = theme === "light";
-  const dockVisible = useDockVisible();
+  const navRoute = isNavRoute(pathname);
   useSignupDraftCleanup();
-
-  // Tell the CSS when the floating dock is on screen: page scrollers then keep
-  // their last items clear of it while their content still runs underneath.
-  useEffect(() => {
-    const phone = document.getElementById("ona-phone");
-    if (!phone) return;
-    if (dockVisible) phone.dataset.dock = "1";
-    else delete phone.dataset.dock;
-    return () => {
-      delete phone.dataset.dock;
-    };
-  }, [dockVisible]);
 
   // iOS/Safari: unlock Web Audio on first tap so event sounds can play later
   useEffect(() => {
@@ -116,9 +104,8 @@ export function AppFrame({ children }: { children: ReactNode }) {
               ) : null}
               <Toaster />
               <PushEnrollment />
-              <InstallNudge enabled={dockVisible} />
-              <DockBlurBackdrop />
-              <AppDock />
+              <InstallNudge enabled={navRoute} />
+              <NavSlider />
               <NotificationCenter />
             </div>
           </NotificationProvider>

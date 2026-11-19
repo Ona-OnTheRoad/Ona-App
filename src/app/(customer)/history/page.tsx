@@ -5,6 +5,7 @@
  * View-only process; no chat.
  */
 
+import { NavMenuButton } from "@/components/layout/nav-slider/nav-menu-button";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { NoHistoryIllustration } from "@/components/requests/no-history-illustration";
@@ -113,10 +114,13 @@ export default function HistoryPage() {
 
   return (
     <div className="ona2 relative flex h-full min-h-0 flex-col">
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-hide flex flex-col pb-[calc(var(--dock-space,4.5rem)+1rem)]">
-        <h1 className="shrink-0 px-5 pt-5 text-[22px] font-bold leading-tight tracking-tight text-ona-ink">
-          Booking History
-        </h1>
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-hide flex flex-col pb-4">
+        <div className="flex shrink-0 items-center gap-2 px-5 pt-5">
+          <NavMenuButton className="-ml-2" />
+          <h1 className="text-[22px] font-bold leading-tight tracking-tight text-ona-ink">
+            Booking History
+          </h1>
+        </div>
 
         <div
           role="group"

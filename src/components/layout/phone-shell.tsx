@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { OfflineBanner } from "@/components/layout/offline-banner";
 import { DeletionBanner } from "@/components/profile/deletion-banner";
 import { useOverlayGatesReady } from "@/lib/use-overlay-gates-ready";
-import { usePhoneRect } from "@/components/layout/app-dock/use-phone-rect";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/lib/store";
 import { isPublicPath } from "@/lib/routes";
@@ -126,7 +125,6 @@ export function PhoneShell({
   const gatesReady = useOverlayGatesReady();
   const isLight = theme === "light";
   /** Publish --ona-phone-* CSS variables and keep them synced with screen size */
-  usePhoneRect();
   /** Phone frame interior explicit colors avoid browser class lag */
   const phoneInterior = isLight ? "#ffffff" : "#000000";
   const lastTapRef = useRef(0);
