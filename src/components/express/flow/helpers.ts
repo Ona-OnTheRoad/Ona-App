@@ -30,8 +30,8 @@ export function expressTheme(isLight: boolean): ExpressTheme {
   };
 }
 
-/** Pin an Express action block to the bottom of the step container. */
-export const PINNED_BOTTOM = "absolute inset-x-3 bottom-2";
+/** Pin an Express action block to the bottom of the flex column (above pb-24 dock clearance). */
+export const PINNED_BOTTOM = "mt-auto pt-4 shrink-0";
 
 export const PRIMARY_BTN =
   "h-11 w-full rounded-md border-0 bg-brand text-[14px] font-bold text-white";

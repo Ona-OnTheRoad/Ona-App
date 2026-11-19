@@ -18,7 +18,7 @@ export function DetectedView({
 }: Props) {
   const { isLight, ink, muted, rowCard } = theme;
   return (
-    <>
+    <div className="flex min-h-full flex-col">
       <div>
         <div
           className={cn("mt-2 rounded-[4px] px-4 py-5 text-center", rowCard)}
@@ -38,7 +38,7 @@ export function DetectedView({
         </div>
       </div>
       <div className={PINNED_BOTTOM}>
-        <button type="button" onClick={onContinue} className={PRIMARY_BTN}>
+        <button type="button" onClick={onContinue} className={PRIMARY_BTN} >
           Continue
         </button>
         <button
@@ -52,6 +52,6 @@ export function DetectedView({
           Not correct? Go back and adjust your answers
         </button>
       </div>
-    </>
+    </div>
   );
 }
