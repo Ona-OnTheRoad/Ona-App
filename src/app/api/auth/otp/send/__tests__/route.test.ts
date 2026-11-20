@@ -189,4 +189,76 @@ describe("POST /api/auth/otp/send delivery", () => {
     expect(body.data.delivery).toBe("demo");
     expect(writes.at(-1)).toMatchObject({ table: "phone_otps", op: "insert" });
   });
+
+  it("reports a failed SMS in development when OTP_DEMO_MODE=false", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("OTP_DEMO_MODE", "false");
+    vi.stubEnv("NEXT_PUBLIC_OTP_DEMO_MODE", "false");
+    const writes = fakeDb();
+    vi.mocked(isSmsConfigured).mockReturnValue(true);
+    vi.mocked(sendSms).mockResolvedValue({ ok: false, error: "provider down", attempts: [] });
+
+    const res = await send("phone");
+
+    expect(res.status).toBe(502);
+    expect((await res.json()).error.code).toBe("otp_delivery_failed");
+    expect(writes).toEqual([]);
+  });
+});
+
+describe("POST /api/auth/otp/send failed-delivery log", () => {
+  /** Every console.error line the route wrote, joined. */
+  function logged(): string {
+    return vi.mocked(console.error).mock.calls.map((c) => c.join(" ")).join("\n");
+  }
+
+  it("logs the provider error when it returns 502", async () => {
+    productionDemoOff();
+    fakeDb();
+    vi.mocked(isSmsConfigured).mockReturnValue(true);
+    vi.mocked(sendSms).mockResolvedValue({ ok: false, error: "africastalking: InsufficientBalance", attempts: [] });
+
+    await send("phone");
+
+    expect(logged()).toMatch(/\[otp\/send\] phone delivery failed: africastalking: InsufficientBalance/);
+    expect(logged()).not.toMatch(/demo code stored/);
+  });
+
+  it("logs the provider error when demo mode hides the failure", async () => {
+    fakeDb();
+    vi.mocked(isSmsConfigured).mockReturnValue(true);
+    vi.mocked(sendSms).mockResolvedValue({ ok: false, error: "africastalking: UserInBlacklist", attempts: [] });
+
+    const res = await send("phone");
+
+    expect(res.status).toBe(200);
+    expect(logged()).toMatch(
+      /\[otp\/send\] phone delivery failed \(demo code stored instead\): africastalking: UserInBlacklist/,
+    );
+  });
+
+  it("logs no phone number, email address or code", async () => {
+    productionDemoOff();
+    fakeDb();
+    vi.mocked(isSmsConfigured).mockReturnValue(true);
+    vi.mocked(sendSms).mockImplementation(async ({ message }) => ({
+      ok: false,
+      error: `rejected ${PHONE} (${PHONE.slice(1)}) body: ${message}`,
+      attempts: [],
+    }));
+    vi.mocked(isResendConfigured).mockReturnValue(true);
+    vi.mocked(sendResendEmail).mockResolvedValue({ ok: false, error: `bounced for ${EMAIL}` });
+
+    await send("phone");
+    await send("email");
+    const sentCode = codeIn(vi.mocked(sendSms).mock.calls[0][0].message);
+
+    const text = logged();
+    expect(text).toMatch(/phone delivery failed/);
+    expect(text).toMatch(/email delivery failed/);
+    expect(text).not.toContain(PHONE.slice(1));
+    expect(text).not.toContain(EMAIL);
+    expect(text).not.toContain(sentCode);
+    expect(text).not.toMatch(/\d{6}/);
+  });
 });

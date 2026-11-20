@@ -9,13 +9,51 @@ function production(server?: string, pub?: string) {
   vi.stubEnv("NEXT_PUBLIC_OTP_DEMO_MODE", pub ?? "");
 }
 
-describe("isDemoOtpAllowed", () => {
-  it("stays on outside production whatever the flags say", () => {
-    vi.stubEnv("NODE_ENV", "development");
-    vi.stubEnv("OTP_DEMO_MODE", "false");
-    vi.stubEnv("NEXT_PUBLIC_OTP_DEMO_MODE", "false");
+function development(server?: string, pub?: string) {
+  vi.stubEnv("NODE_ENV", "development");
+  vi.stubEnv("OTP_DEMO_MODE", server ?? "");
+  vi.stubEnv("NEXT_PUBLIC_OTP_DEMO_MODE", pub ?? "");
+}
+
+describe("isDemoOtpAllowed outside production", () => {
+  it("is on when no flag is set", () => {
+    development();
     expect(isDemoOtpAllowed()).toBe(true);
   });
+
+  it("is on when both flags are blank", () => {
+    development(" ", " ");
+    expect(isDemoOtpAllowed()).toBe(true);
+  });
+
+  it.each(["false", "0", "off", "FALSE"])(
+    "is off when the server flag is %j and the public flag is unset",
+    (value) => {
+      development(value);
+      expect(isDemoOtpAllowed()).toBe(false);
+    },
+  );
+
+  it("is off when only the public flag is false", () => {
+    development("", "false");
+    expect(isDemoOtpAllowed()).toBe(false);
+  });
+
+  it("is off when both flags are false", () => {
+    development("false", "false");
+    expect(isDemoOtpAllowed()).toBe(false);
+  });
+
+  it.each([["true", ""], ["1", ""], ["", "true"], ["false", "true"], ["true", "false"]])(
+    "is on when server=%j, public=%j",
+    (server, pub) => {
+      development(server, pub);
+      expect(isDemoOtpAllowed()).toBe(true);
+    },
+  );
+});
+
+describe("isDemoOtpAllowed", () => {
 
   it("is off in production when no flag is set", () => {
     production();

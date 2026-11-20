@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "id": "demo-otp-flag",
+  "title": "Demo OTP follows OTP_DEMO_MODE in every environment",
+  "plan": "docs/review-guides/demo-otp-flag.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "flag-off-in-dev",
+      "stage": "code",
+      "expectation": "Outside production, OTP_DEMO_MODE=false (or any non-true value) with the public flag unset or not true makes isDemoOtpAllowed() false, so verify routes reject 336699.",
+      "verification": "Unit tests in src/lib/auth/__tests__/demo-otp.test.ts with NODE_ENV=development and the flag set to false, 0 and an unrecognised value.",
+      "status": "pending",
+      "evidence": [
+        "src/lib/auth/demo-otp.ts isDemoOtpAllowed: a set flag wins over NODE_ENV",
+        "src/lib/auth/__tests__/demo-otp.test.ts: development cases for false, 0, off, FALSE, public-only false and both false; all failed on the previous code"
+      ]
+    },
+    {
+      "id": "flag-on-in-dev",
+      "stage": "code",
+      "expectation": "Outside production, either flag set to true or 1 makes isDemoOtpAllowed() true.",
+      "verification": "Unit tests with NODE_ENV=development for the server flag and for the public flag alone.",
+      "status": "pending",
+      "evidence": [
+        "src/lib/auth/__tests__/demo-otp.test.ts: development cases for server true/1, public-only true, and mixed true/false"
+      ]
+    },
+    {
+      "id": "unset-keeps-default",
+      "stage": "code",
+      "expectation": "With both flags unset or blank, behaviour is unchanged: on outside production (local dev, tests), off in production.",
+      "verification": "Unit tests for development and production with both flags blank; the full test suite passes without changes to other test files.",
+      "status": "pending",
+      "evidence": [
+        "src/lib/auth/__tests__/demo-otp.test.ts: development unset and blank-both cases on; existing production unset case off",
+        "Full suite (275 files / 2,709 tests) passes with no edits to test files other than the two named in this guide"
+      ]
+    },
+    {
+      "id": "production-unchanged",
+      "stage": "code",
+      "expectation": "Production results are identical to before for every flag combination covered by the existing tests.",
+      "verification": "Existing production cases in demo-otp.test.ts pass unchanged.",
+      "status": "pending",
+      "evidence": [
+        "src/lib/auth/__tests__/demo-otp.test.ts: existing production cases pass unchanged (unset, false/0/yes/[sensitive]/sensitive/blank off; true/TRUE/ true /1 on; public-only true on)"
+      ]
+    },
+    {
+      "id": "send-fails-without-demo-in-dev",
+      "stage": "code",
+      "expectation": "Outside production with demo off by flag, a failed SMS returns 502 otp_delivery_failed and writes nothing to phone_otps.",
+      "verification": "Route test in src/app/api/auth/otp/send/__tests__/route.test.ts with NODE_ENV=development and OTP_DEMO_MODE=false.",
+      "status": "pending",
+      "evidence": [
+        "src/app/api/auth/otp/send/__tests__/route.test.ts: \"reports a failed SMS in development when OTP_DEMO_MODE=false\" (502, otp_delivery_failed, no writes); failed on the previous code"
+      ]
+    },
+    {
+      "id": "delivery-failure-logged",
+      "stage": "code",
+      "expectation": "Every failed real delivery logs the channel and the provider's error, both when the route returns 502 and when demo mode is on and it falls back to the demo code. The log contains no phone number, email address or code.",
+      "verification": "Route tests asserting the console.error call in both branches and that its text contains neither the target nor a 6-digit code.",
+      "status": "pending",
+      "evidence": [
+        "src/app/api/auth/otp/send/route.ts: console.error on every failed delivery; redactDeliveryError strips the target and 6+ digit runs",
+        "src/app/api/auth/otp/send/__tests__/route.test.ts: failed-delivery log tests for the 502 path, the demo-fallback path and redaction of phone, email and code; the last two failed on the previous code"
+      ]
+    },
+    {
+      "id": "suite-green",
+      "stage": "code",
+      "expectation": "Full test suite, typecheck and lint pass.",
+      "verification": "npm test, npm run typecheck, npm run lint.",
+      "status": "pending",
+      "evidence": [
+        "Local, 2026-11-20 on uncommitted fix/demo-otp-flag: vitest 275 files / 2,709 tests pass; tsc --noEmit passes; eslint src/lib/auth src/app/api/auth/otp/send reports nothing. Full-repo lint not run."
+      ]
+    },
+    {
+      "id": "live-dev-check",
+      "stage": "live",
+      "expectation": "On a local next dev run with OTP_DEMO_MODE=false and NEXT_PUBLIC_OTP_DEMO_MODE=false, 336699 is rejected at login and a failed SMS shows the delivery-failed message, with the provider error in the server log.",
+      "verification": "Manual run on localhost against the dev Supabase project.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent review against the implementation commit."
+    ],
+    "external": [
+      "Live dev check (live-dev-check) is pending.",
+      "Confirm hosted flag values are unchanged; production semantics are the same, so no host change is expected."
+    ]
+  }
+}

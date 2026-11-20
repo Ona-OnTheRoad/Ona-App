@@ -40,6 +40,15 @@ function appOrigin(req: Request): string | null {
   }
 }
 
+/**
+ * Provider errors can echo the request back. Strip the target and any run of
+ * 6+ digits (a code, or a phone number in another format) before logging.
+ */
+function redactDeliveryError(error: string, target: string): string {
+  const text = target ? error.split(target).join("[target]") : error;
+  return text.replace(/\+?\d{6,}/g, "[redacted]");
+}
+
 function hashCode(dest: string, code: string): string {
   return createHash("sha256")
     .update(`${dest}:${code}:${process.env.SUPABASE_SERVICE_ROLE_KEY || "om"}`)
@@ -240,9 +249,16 @@ export async function POST(req: Request) {
               channel === "phone"
                 ? "Code sent by SMS. Enter it below."
                 : "Code sent by email. Enter it below.";
-          } else if (!isDemoOtpAllowed()) {
-            console.error(`[otp/send] ${channel} delivery failed: ${sent.error}`);
-            return { ok: false as const, error: OTP_DELIVERY_FAILED_MESSAGE };
+          } else {
+            // Logged on both paths: with demo on, the fallback below would
+            // otherwise hide why the real code never arrived.
+            const demo = isDemoOtpAllowed();
+            console.error(
+              `[otp/send] ${channel} delivery failed${demo ? " (demo code stored instead)" : ""}: ${redactDeliveryError(sent.error, sendTo)}`,
+            );
+            if (!demo) {
+              return { ok: false as const, error: OTP_DELIVERY_FAILED_MESSAGE };
+            }
           }
           // Demo mode on: fall through and store the demo code instead.
         }
