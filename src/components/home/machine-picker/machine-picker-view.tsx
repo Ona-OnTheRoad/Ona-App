@@ -68,7 +68,12 @@ export function MachinePickerView({
 
   return (
     <div>
-      <div className="mt-2 flex items-center gap-1 px-0.5 pb-2">
+      <div
+        className={cn(
+          "mt-2 flex items-center gap-1 px-0.5 pb-2",
+          !question && "justify-end",
+        )}
+      >
         <button
           type="button"
           disabled={!canNext}
@@ -78,9 +83,11 @@ export function MachinePickerView({
         >
           <ChevronRight className="h-6 w-6" strokeWidth={2.5} />
         </button>
-        <p className={cn("text-[14px] font-bold leading-snug", ink)}>
-          {question}
-        </p>
+        {question ? (
+          <p className={cn("text-[14px] font-bold leading-snug", ink)}>
+            {question}
+          </p>
+        ) : null}
       </div>
 
       {!otherMode ? (

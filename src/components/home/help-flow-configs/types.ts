@@ -103,8 +103,18 @@ export type OnPickFn = (
   },
 ) => boolean;
 
+/** Context handed to a trade's custom "machine" (type/brand/model) first step. */
+export interface MachineStepCtx {
+  isLight: boolean;
+  answers: Record<string, string>;
+  setAnswers: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  push: (next: string, nextAnswers: Record<string, string>) => void;
+}
+
 export interface HelpFlowConfig {
   sessionKey: string;
+  /** Renders the searchable type/brand/model picker for trades that open on "machine". */
+  renderMachineStep?: (ctx: MachineStepCtx) => React.ReactNode;
   hasVehicleStep?: boolean;
   defaultStack: string[];
   defaultTrade: ProService;

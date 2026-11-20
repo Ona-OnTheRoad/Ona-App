@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { GeneratorMachinePicker } from "@/components/home/generator-machine-picker";
 import {
   genScreen,
   nextGeneratorScreen,
@@ -28,6 +29,18 @@ export const generatorConfig: HelpFlowConfig = {
   applyConfirmChoice: genApplyConfirm as unknown as ApplyConfirmFn,
   confirmQuestion: genConfirmQuestion as unknown as ConfirmQuestionFn,
   hasVehicleStep: false,
+  renderMachineStep: ({ isLight, answers, setAnswers, push }) => (
+    <GeneratorMachinePicker
+      isLight={isLight}
+      question=""
+      initial={answers}
+      onConfirm={(partial) => {
+        const nextAnswers = { ...answers, ...partial };
+        setAnswers(nextAnswers);
+        push("start", nextAnswers);
+      }}
+    />
+  ),
   defaultStack: ["machine"],
   defaultTrade: "generator",
   nearestProServices: ["generator"],

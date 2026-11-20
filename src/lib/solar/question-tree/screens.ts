@@ -1,8 +1,12 @@
-import { SOLAR_START_QUESTION } from "./constants";
+import { SOLAR_MACHINE_QUESTION, SOLAR_START_QUESTION } from "./constants";
 import { SOLAR_START_OPTIONS } from "./options";
 import type { SolarScreen } from "./types";
 
 export const SOLAR_SCREENS: Record<string, SolarScreen> = {
+  machine: {
+    question: SOLAR_MACHINE_QUESTION,
+    kind: "choice",
+  },
   start: {
     question: SOLAR_START_QUESTION,
     kind: "choice",
