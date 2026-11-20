@@ -145,11 +145,11 @@ describe("generator question tree", () => {
     );
   });
 
-  it("requires 2 photos (min 2, max 4)", () => {
-    expect(GEN_MIN_PHOTOS).toBe(2);
+  it("requires 1 photo (min 1, max 4)", () => {
+    expect(GEN_MIN_PHOTOS).toBe(1);
     expect(GEN_MAX_PHOTOS).toBe(4);
     expect(canFindGeneratorPro(0)).toBe(false);
-    expect(canFindGeneratorPro(1)).toBe(false);
+    expect(canFindGeneratorPro(1)).toBe(true);
     expect(canFindGeneratorPro(2)).toBe(true);
     expect(canFindGeneratorPro(4)).toBe(true);
     expect(canAdvanceText("ok")).toBe(true);

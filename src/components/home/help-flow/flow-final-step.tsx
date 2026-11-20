@@ -88,6 +88,16 @@ export function FlowFinalStep({
     : null;
   const urgencyLabel =
     CALLOUT_URGENCY_OPTIONS.find((o) => o.id === urgency)?.label ?? "Normal";
+  const photosShort = photos.length < config.minPhotos;
+  const photoWord = config.minPhotos === 1 ? "photo" : "photos";
+  /** Tells the customer why the send button is greyed out instead of leaving it silent. */
+  const blockedReason = busy
+    ? null
+    : photosShort
+      ? `Add at least ${config.minPhotos} ${photoWord} to continue (${photos.length}/${config.minPhotos}).`
+      : !canSend
+        ? "Answer the question above to continue."
+        : null;
   const sendText = busy
     ? `${config.busyLabel}…`
     : preview
@@ -130,6 +140,11 @@ export function FlowFinalStep({
             {/* Photos */}
             {finalStep === "photos" ? (
               <div>
+                {config.minPhotos > 0 ? (
+                  <p className={cn("mb-2 text-[12px] font-medium", muted)}>
+                    {`At least ${config.minPhotos} ${photoWord} needed, you can add up to ${config.maxPhotos}.`}
+                  </p>
+                ) : null}
                 <div className="flex flex-wrap gap-1.5">
                   {photos.map((p, i) => (
                     <button
@@ -235,6 +250,14 @@ export function FlowFinalStep({
         >
           {sendText}
         </Button>
+        {blockedReason ? (
+          <p
+            role="status"
+            className={cn("text-center text-[12px] font-medium", muted)}
+          >
+            {blockedReason}
+          </p>
+        ) : null}
         {hasNext ? (
           <Button
             size="ona"

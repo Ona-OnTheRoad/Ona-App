@@ -18,5 +18,5 @@ export const TOW_FINAL_COPY = {
   meetProNo: "No, proceed with Tow only",
 } as const;
 
-export const TOW_MIN_PHOTOS = 2;
+export const TOW_MIN_PHOTOS = 1;
 export const TOW_MAX_PHOTOS = 4;

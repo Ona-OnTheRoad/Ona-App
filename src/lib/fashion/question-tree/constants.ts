@@ -16,5 +16,5 @@ export const FASHION_FINAL_COPY = {
   home: "Do you need home service (measurement or delivery) or will you visit the tailor?",
 } as const;
 
-export const FASHION_MIN_PHOTOS = 2;
+export const FASHION_MIN_PHOTOS = 1;
 export const FASHION_MAX_PHOTOS = 4;

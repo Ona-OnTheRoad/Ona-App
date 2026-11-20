@@ -2,7 +2,7 @@ import type { PainterOption } from "./types";
 
 export const PAINTER_START_QUESTION = "What kind of painting work do you need?";
 
-export const PAINTER_MIN_PHOTOS = 2;
+export const PAINTER_MIN_PHOTOS = 1;
 export const PAINTER_MAX_PHOTOS = 4;
 
 export const PAINTER_START_OPTIONS: PainterOption[] = [

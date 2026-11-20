@@ -118,11 +118,11 @@ describe("carpenter question tree", () => {
     }
   });
 
-  it("requires 2 photos (min 2, max 4)", () => {
-    expect(CARPENTER_MIN_PHOTOS).toBe(2);
+  it("requires 1 photo (min 1, max 4)", () => {
+    expect(CARPENTER_MIN_PHOTOS).toBe(1);
     expect(CARPENTER_MAX_PHOTOS).toBe(4);
     expect(canFindCarpenterPro(0)).toBe(false);
-    expect(canFindCarpenterPro(1)).toBe(false);
+    expect(canFindCarpenterPro(1)).toBe(true);
     expect(canFindCarpenterPro(2)).toBe(true);
     expect(canFindCarpenterPro(4)).toBe(true);
     expect(canAdvanceText("ok")).toBe(true);

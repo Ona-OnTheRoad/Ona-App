@@ -3,7 +3,7 @@
 export const PLUMBER_START_QUESTION =
   "What is the main plumbing problem you are experiencing?";
 
-export const PLUMBER_MIN_PHOTOS = 2;
+export const PLUMBER_MIN_PHOTOS = 1;
 export const PLUMBER_MAX_PHOTOS = 4;
 
 export const PLUMBER_FINAL_COPY = {

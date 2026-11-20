@@ -93,11 +93,11 @@ describe("fashion (tailoring) question tree", () => {
     }
   });
 
-  it("requires 2 photos (min 2, max 4)", () => {
-    expect(FASHION_MIN_PHOTOS).toBe(2);
+  it("requires 1 photo (min 1, max 4)", () => {
+    expect(FASHION_MIN_PHOTOS).toBe(1);
     expect(FASHION_MAX_PHOTOS).toBe(4);
     expect(canFindFashionPro(0)).toBe(false);
-    expect(canFindFashionPro(1)).toBe(false);
+    expect(canFindFashionPro(1)).toBe(true);
     expect(canFindFashionPro(2)).toBe(true);
     expect(canFindFashionPro(4)).toBe(true);
     expect(canAdvanceText("ok")).toBe(true);
