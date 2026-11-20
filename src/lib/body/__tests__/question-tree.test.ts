@@ -100,10 +100,11 @@ describe("body question tree", () => {
     }
   });
 
-  it("requires 4 photos before dispatch", () => {
-    expect(BODY_MIN_PHOTOS).toBe(4);
+  it("requires 1 photo before dispatch (up to 4 allowed)", () => {
+    expect(BODY_MIN_PHOTOS).toBe(1);
     expect(BODY_MAX_PHOTOS).toBe(4);
-    expect(canFindBodyPro(3)).toBe(false);
+    expect(canFindBodyPro(0)).toBe(false);
+    expect(canFindBodyPro(1)).toBe(true);
     expect(canFindBodyPro(4)).toBe(true);
     expect(canAdvanceText("ok")).toBe(true);
     expect(canAdvanceText(" ")).toBe(false);

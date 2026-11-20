@@ -5,7 +5,7 @@ export const GEN_MACHINE_OTHER_ID = "other";
 
 export const GEN_START_QUESTION = "What kind of generator work do you need?";
 
-export const GEN_MIN_PHOTOS = 2;
+export const GEN_MIN_PHOTOS = 1;
 export const GEN_MAX_PHOTOS = 4;
 
 export const GEN_SUPPLY_OPTIONS = [

@@ -14,5 +14,5 @@ export const BODY_FINAL_COPY = {
   tow: "Do you need the vehicle towed to a safer place or workshop?",
 } as const;
 
-export const BODY_MIN_PHOTOS = 4;
+export const BODY_MIN_PHOTOS = 1;
 export const BODY_MAX_PHOTOS = 4;

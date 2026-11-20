@@ -112,11 +112,11 @@ describe("plumber question tree", () => {
     }
   });
 
-  it("requires 2 photos (min 2, max 4)", () => {
-    expect(PLUMBER_MIN_PHOTOS).toBe(2);
+  it("requires 1 photo (min 1, max 4)", () => {
+    expect(PLUMBER_MIN_PHOTOS).toBe(1);
     expect(PLUMBER_MAX_PHOTOS).toBe(4);
     expect(canFindPlumberPro(0)).toBe(false);
-    expect(canFindPlumberPro(1)).toBe(false);
+    expect(canFindPlumberPro(1)).toBe(true);
     expect(canFindPlumberPro(2)).toBe(true);
     expect(canFindPlumberPro(4)).toBe(true);
     expect(canAdvanceText("ok")).toBe(true);

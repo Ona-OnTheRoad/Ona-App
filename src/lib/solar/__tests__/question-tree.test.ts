@@ -126,11 +126,11 @@ describe("solar question tree", () => {
     );
   });
 
-  it("requires 2 photos (min 2, max 4)", () => {
-    expect(SOLAR_MIN_PHOTOS).toBe(2);
+  it("requires 1 photo (min 1, max 4)", () => {
+    expect(SOLAR_MIN_PHOTOS).toBe(1);
     expect(SOLAR_MAX_PHOTOS).toBe(4);
     expect(canFindSolarPro(0)).toBe(false);
-    expect(canFindSolarPro(1)).toBe(false);
+    expect(canFindSolarPro(1)).toBe(true);
     expect(canFindSolarPro(2)).toBe(true);
     expect(canFindSolarPro(4)).toBe(true);
     expect(canAdvanceText("ok")).toBe(true);

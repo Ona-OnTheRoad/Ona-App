@@ -3,7 +3,7 @@ import type { CarpenterOption } from "./types";
 export const CARPENTER_START_QUESTION =
   "What kind of furniture or carpentry work do you need?";
 
-export const CARPENTER_MIN_PHOTOS = 2;
+export const CARPENTER_MIN_PHOTOS = 1;
 export const CARPENTER_MAX_PHOTOS = 4;
 
 export const CARPENTER_START_OPTIONS: CarpenterOption[] = [
