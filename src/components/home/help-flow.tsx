@@ -19,6 +19,7 @@ import type {
 import { FlowFinalStep } from "./help-flow/flow-final-step";
 import { FlowProgressBar } from "./help-flow/flow-progress-bar";
 import { FlowVehicleStep } from "./help-flow/flow-vehicle-step";
+import { OnaFlowHeader } from "@/components/ui/ona-flow-header";
 import { FlowQuestionStep } from "./help-flow/flow-question-step";
 import { flowStyles, flowTag } from "./help-flow/flow-styles";
 import type { FlowDir } from "./help-flow/types";
@@ -268,6 +269,25 @@ export function HelpFlow({
               finalBack={finalBack}
               send={send}
             />
+          ) : step === "machine" && config.renderMachineStep ? (
+            <>
+              <OnaFlowHeader
+                tag={tag}
+                title={config.screen("machine")?.question ?? ""}
+                subtitle="A few quick answers help us match you with the right professional."
+              />
+              <div
+                key={`${step}-${dir}`}
+                className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-hide om-mech-slide-fwd"
+              >
+                {config.renderMachineStep({
+                  isLight,
+                  answers,
+                  setAnswers,
+                  push,
+                })}
+              </div>
+            </>
           ) : (
             <FlowQuestionStep
               config={config}

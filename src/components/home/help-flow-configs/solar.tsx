@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { SolarMachinePicker } from "@/components/home/solar-machine-picker";
 import {
   solarScreen,
   nextSolarScreen,
@@ -28,6 +29,18 @@ export const solarConfig: HelpFlowConfig = {
   applyConfirmChoice: solarApplyConfirm as unknown as ApplyConfirmFn,
   confirmQuestion: solarConfirmQuestion as unknown as ConfirmQuestionFn,
   hasVehicleStep: false,
+  renderMachineStep: ({ isLight, answers, setAnswers, push }) => (
+    <SolarMachinePicker
+      isLight={isLight}
+      question=""
+      initial={answers}
+      onConfirm={(partial) => {
+        const nextAnswers = { ...answers, ...partial };
+        setAnswers(nextAnswers);
+        push("start", nextAnswers);
+      }}
+    />
+  ),
   defaultStack: ["machine"],
   defaultTrade: "solar",
   nearestProServices: ["solar"],
