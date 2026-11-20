@@ -49,36 +49,44 @@ describe("solar question tree", () => {
 
   it("walks the full installation (A), cleaning (D) and upgrade (E) chains to final", () => {
     expect(nextSolarScreen("a_property", "residential", {})).toBe("a_power");
-    expect(nextSolarScreen("a_power", "full-house", {})).toBe("a_system");
+    expect(nextSolarScreen("a_power", "full-house", {})).toBe("a_backup");
+    expect(nextSolarScreen("a_backup", "overnight", {})).toBe("a_system");
     expect(nextSolarScreen("a_system", "hybrid", {})).toBe("a_equipment");
     expect(nextSolarScreen("a_equipment", "no", {})).toBe("a_supply");
     expect(nextSolarScreen("a_supply", "technician-supplies", {})).toBe(
       "a_roof",
     );
-    expect(nextSolarScreen("a_roof", "long-span", {})).toBe("final");
+    expect(nextSolarScreen("a_roof", "long-span", {})).toBe("a_budget");
+    expect(nextSolarScreen("a_budget", "1-3m", {})).toBe("final");
 
     expect(nextSolarScreen("d_count", "6 panels", {})).toBe("d_last");
     expect(nextSolarScreen("d_last", "6 months ago", {})).toBe("d_condition");
-    expect(nextSolarScreen("d_condition", "dirty-dusty", {})).toBe("d_check");
+    expect(nextSolarScreen("d_condition", "dirty-dusty", {})).toBe("d_access");
+    expect(nextSolarScreen("d_access", "easy", {})).toBe("d_check");
     expect(nextSolarScreen("d_check", "yes", {})).toBe("final");
 
     expect(nextSolarScreen("e_upgrade", "more-panels", {})).toBe("e_current");
     expect(nextSolarScreen("e_current", "3.5kVA", {})).toBe("e_load");
-    expect(nextSolarScreen("e_load", "Fridge", {})).toBe("final");
+    expect(nextSolarScreen("e_load", "fridge", {})).toBe("e_space");
+    expect(nextSolarScreen("e_space", "yes", {})).toBe("final");
   });
 
   it("walks the fault (B), battery/inverter (C) and other (F) chains to confirm", () => {
-    expect(nextSolarScreen("b_problem", "no-power", {})).toBe("b_age");
+    expect(nextSolarScreen("b_problem", "no-power", {})).toBe("b_lights");
+    expect(nextSolarScreen("b_lights", "blank", {})).toBe("b_when");
+    expect(nextSolarScreen("b_when", "always", {})).toBe("b_age");
     expect(nextSolarScreen("b_age", "2 years", {})).toBe("b_inverter");
     expect(nextSolarScreen("b_inverter", "3.5kVA", {})).toBe("b_warranty");
     expect(nextSolarScreen("b_warranty", "no", {})).toBe("confirm");
 
     expect(nextSolarScreen("c_which", "inverter", {})).toBe("c_symptom");
     expect(nextSolarScreen("c_symptom", "beeping", {})).toBe("c_type");
-    expect(nextSolarScreen("c_type", "lithium", {})).toBe("c_bank");
+    expect(nextSolarScreen("c_type", "lithium", {})).toBe("c_age");
+    expect(nextSolarScreen("c_age", "1-3", {})).toBe("c_bank");
     expect(nextSolarScreen("c_bank", "2 batteries", {})).toBe("confirm");
 
-    expect(nextSolarScreen("f_describe", "Advise me", {})).toBe("f_location");
+    expect(nextSolarScreen("f_describe", "Advise me", {})).toBe("f_when");
+    expect(nextSolarScreen("f_when", "today", {})).toBe("f_location");
     expect(nextSolarScreen("f_location", "house", {})).toBe("confirm");
   });
 

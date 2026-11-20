@@ -44,20 +44,24 @@ describe("plumber question tree", () => {
     expect(nextPlumberScreen("a_flow", "completely-none", {})).toBe("a_area");
     expect(nextPlumberScreen("a_area", "whole-house", {})).toBe("a_supply");
     expect(nextPlumberScreen("a_supply", "borehole", {})).toBe("a_tank");
-    expect(nextPlumberScreen("a_tank", "overhead-tank", {})).toBe("a_started");
+    expect(nextPlumberScreen("a_tank", "overhead-tank", {})).toBe("a_pump");
+    expect(nextPlumberScreen("a_pump", "no-pump", {})).toBe("a_tankwater");
+    expect(nextPlumberScreen("a_tankwater", "empty", {})).toBe("a_started");
     expect(nextPlumberScreen("a_started", "Since yesterday", {})).toBe("final");
   });
 
   it("walks the full leakage (B) chain to final", () => {
     expect(nextPlumberScreen("b_source", "pipe", {})).toBe("b_flow");
-    expect(nextPlumberScreen("b_flow", "slow-dripping", {})).toBe("b_damage");
+    expect(nextPlumberScreen("b_flow", "slow-dripping", {})).toBe("b_shutoff");
+    expect(nextPlumberScreen("b_shutoff", "stopped", {})).toBe("b_damage");
     expect(nextPlumberScreen("b_damage", "yes", {})).toBe("b_exact");
     expect(nextPlumberScreen("b_exact", "no", {})).toBe("final");
   });
 
   it("walks the full blocked (C) chain to final", () => {
     expect(nextPlumberScreen("c_blocked", "kitchen-sink", {})).toBe("c_backup");
-    expect(nextPlumberScreen("c_backup", "backing-up", {})).toBe("c_tried");
+    expect(nextPlumberScreen("c_backup", "backing-up", {})).toBe("c_other");
+    expect(nextPlumberScreen("c_other", "smell", {})).toBe("c_tried");
     expect(nextPlumberScreen("c_tried", "no", {})).toBe("c_howlong");
     expect(nextPlumberScreen("c_howlong", "Since last night", {})).toBe(
       "final",
@@ -66,27 +70,33 @@ describe("plumber question tree", () => {
 
   it("walks the full tap/shower (D), geyser (E) and toilet (F) chains to final", () => {
     expect(nextPlumberScreen("d_what", "tap-leaking", {})).toBe("d_mount");
-    expect(nextPlumberScreen("d_mount", "wall-mounted", {})).toBe("d_fix");
+    expect(nextPlumberScreen("d_mount", "wall-mounted", {})).toBe("d_water");
+    expect(nextPlumberScreen("d_water", "hot", {})).toBe("d_fix");
     expect(nextPlumberScreen("d_fix", "repair", {})).toBe("final");
 
     expect(nextPlumberScreen("e_issue", "not-heating", {})).toBe("e_type");
-    expect(nextPlumberScreen("e_type", "electric", {})).toBe("e_age");
+    expect(nextPlumberScreen("e_type", "electric", {})).toBe("e_power");
+    expect(nextPlumberScreen("e_power", "off", {})).toBe("e_age");
     expect(nextPlumberScreen("e_age", "3 years", {})).toBe("final");
 
     expect(nextPlumberScreen("f_happening", "weak-flush", {})).toBe(
-      "f_cistern",
+      "f_refill",
     );
+    expect(nextPlumberScreen("f_refill", "slow", {})).toBe("f_cistern");
     expect(nextPlumberScreen("f_cistern", "dual-flush", {})).toBe("final");
   });
 
   it("walks the full installation (G) and other (H) chains to final", () => {
-    expect(nextPlumberScreen("g_install", "kitchen", {})).toBe("g_building");
-    expect(nextPlumberScreen("g_building", "existing", {})).toBe("final");
+    expect(nextPlumberScreen("g_install", "kitchen", {})).toBe("g_scope");
+    expect(nextPlumberScreen("g_scope", "one", {})).toBe("g_building");
+    expect(nextPlumberScreen("g_building", "existing", {})).toBe("g_materials");
+    expect(nextPlumberScreen("g_materials", "i-will", {})).toBe("final");
 
     expect(nextPlumberScreen("h_describe", "gurgling noise", {})).toBe(
       "h_area",
     );
-    expect(nextPlumberScreen("h_area", "Upstairs bathroom", {})).toBe("final");
+    expect(nextPlumberScreen("h_area", "bathroom", {})).toBe("h_when");
+    expect(nextPlumberScreen("h_when", "today", {})).toBe("final");
   });
 
   it("is strictly plumbing always Plumber, never a confirm card", () => {

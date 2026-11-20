@@ -50,10 +50,36 @@ export const PLUMBER_SCREENS: Record<string, PlumberScreen> = {
       { id: "neither", label: "Neither" },
     ],
   },
+  a_pump: {
+    question: "If you use a pump, what is it doing?",
+    kind: "choice",
+    options: [
+      { id: "no-pump", label: "I don't use a pump" },
+      { id: "not-running", label: "Not starting at all" },
+      { id: "humming", label: "Humming or running but no water comes out" },
+      { id: "weak", label: "Running but the pressure is weak" },
+      { id: "trips", label: "Keeps tripping or switching off" },
+    ],
+  },
+  a_tankwater: {
+    question: "Is there water in the overhead tank or storage?",
+    kind: "choice",
+    options: [
+      { id: "full", label: "Yes, it has water" },
+      { id: "empty", label: "No, it is empty" },
+      { id: "no-tank", label: "I have no tank" },
+      { id: "not-sure", label: "I'm not sure" },
+    ],
+  },
   a_started: {
     question: "When did the problem start?",
-    kind: "text",
-    placeholder: "e.g. Since yesterday morning",
+    kind: "choice",
+    options: [
+      { id: "today", label: "Today" },
+      { id: "days", label: "In the last few days" },
+      { id: "week-plus", label: "More than a week ago" },
+      { id: "gradual", label: "It has been getting worse slowly" },
+    ],
   },
 
   // Branch B water leakage
@@ -76,6 +102,16 @@ export const PLUMBER_SCREENS: Record<string, PlumberScreen> = {
       { id: "slow-dripping", label: "Slow dripping" },
       { id: "strong-flowing", label: "Strong flowing" },
       { id: "not-sure", label: "I'm not sure" },
+    ],
+  },
+  b_shutoff: {
+    question: "Have you been able to stop the water?",
+    kind: "choice",
+    options: [
+      { id: "stopped", label: "Yes, I closed a valve or the main" },
+      { id: "no-valve", label: "I can't find the valve" },
+      { id: "cant-stop", label: "I tried but it will not stop" },
+      { id: "not-yet", label: "Not yet" },
     ],
   },
   b_damage: {
@@ -119,6 +155,16 @@ export const PLUMBER_SCREENS: Record<string, PlumberScreen> = {
       { id: "not-sure", label: "I'm not sure" },
     ],
   },
+  c_other: {
+    question: "What else do you notice?",
+    kind: "choice",
+    options: [
+      { id: "only-this", label: "Only this one is blocked" },
+      { id: "others-slow", label: "Other drains are slow too" },
+      { id: "gurgling", label: "Gurgling sounds from drains" },
+      { id: "smell", label: "A bad sewage smell" },
+    ],
+  },
   c_tried: {
     question:
       "Have you already tried any chemical or local method to clear it?",
@@ -132,8 +178,13 @@ export const PLUMBER_SCREENS: Record<string, PlumberScreen> = {
   },
   c_howlong: {
     question: "How long has it been blocked?",
-    kind: "text",
-    placeholder: "e.g. Since last night",
+    kind: "choice",
+    options: [
+      { id: "today", label: "Since today" },
+      { id: "days", label: "A few days" },
+      { id: "week-plus", label: "More than a week" },
+      { id: "recurring", label: "It keeps coming back" },
+    ],
   },
 
   // Branch D faulty or damaged tap / shower / mixer
@@ -158,6 +209,16 @@ export const PLUMBER_SCREENS: Record<string, PlumberScreen> = {
       { id: "wall-mounted", label: "Wall-mounted" },
       { id: "standing", label: "Standing" },
       { id: "sensor", label: "Sensor tap" },
+      { id: "not-sure", label: "I'm not sure" },
+    ],
+  },
+  d_water: {
+    question: "Which water is affected?",
+    kind: "choice",
+    options: [
+      { id: "cold", label: "Cold water only" },
+      { id: "hot", label: "Hot water only" },
+      { id: "both", label: "Both hot and cold" },
       { id: "not-sure", label: "I'm not sure" },
     ],
   },
@@ -193,10 +254,26 @@ export const PLUMBER_SCREENS: Record<string, PlumberScreen> = {
       { id: "not-sure", label: "I'm not sure" },
     ],
   },
+  e_power: {
+    question: "Does the unit have its energy supply?",
+    kind: "choice",
+    options: [
+      { id: "on", label: "Yes, it is on, but still not right" },
+      { id: "off", label: "No, the light is off or it is dead" },
+      { id: "trips", label: "It trips the breaker when switched on" },
+      { id: "gas-smell", label: "I smell gas (do not use it)" },
+      { id: "not-sure", label: "I'm not sure" },
+    ],
+  },
   e_age: {
     question: "How old is the unit (if known)?",
-    kind: "text",
-    placeholder: "e.g. About 3 years old",
+    kind: "choice",
+    options: [
+      { id: "under-2", label: "Under 2 years" },
+      { id: "2-5", label: "2 - 5 years" },
+      { id: "over-5", label: "Over 5 years" },
+      { id: "not-sure", label: "I'm not sure" },
+    ],
   },
 
   // Branch F toilet flushing problem
@@ -212,6 +289,16 @@ export const PLUMBER_SCREENS: Record<string, PlumberScreen> = {
       },
       { id: "cistern-leaking", label: "Cistern leaking" },
       { id: "handle-broken", label: "Handle or button broken" },
+    ],
+  },
+  f_refill: {
+    question: "Does the cistern fill with water?",
+    kind: "choice",
+    options: [
+      { id: "fills", label: "Yes, it fills normally" },
+      { id: "slow", label: "It fills very slowly" },
+      { id: "no-fill", label: "It does not fill at all" },
+      { id: "overflows", label: "It keeps filling and overflowing" },
     ],
   },
   f_cistern: {
@@ -241,6 +328,16 @@ export const PLUMBER_SCREENS: Record<string, PlumberScreen> = {
       { id: "full-repipe", label: "Full house re-piping" },
     ],
   },
+  g_scope: {
+    question: "How many fixtures or rooms are involved?",
+    kind: "choice",
+    options: [
+      { id: "one", label: "One fixture or room" },
+      { id: "2-3", label: "2 - 3 fixtures or rooms" },
+      { id: "4-plus", label: "4 or more" },
+      { id: "whole", label: "The whole property" },
+    ],
+  },
   g_building: {
     question: "Is the building new, under renovation, or existing?",
     kind: "choice",
@@ -252,6 +349,15 @@ export const PLUMBER_SCREENS: Record<string, PlumberScreen> = {
     ],
   },
 
+  g_materials: {
+    question: "Who is supplying the pipes and fittings?",
+    kind: "choice",
+    options: [
+      { id: "i-will", label: "I will buy them" },
+      { id: "plumber", label: "The plumber should supply them" },
+      { id: "not-sure", label: "I'm not sure, advise me" },
+    ],
+  },
   // Branch H something else / not sure
   h_describe: {
     question: "Please describe the plumbing problem in your own words.",
@@ -260,7 +366,22 @@ export const PLUMBER_SCREENS: Record<string, PlumberScreen> = {
   },
   h_area: {
     question: "Which area of the house or property is affected?",
-    kind: "text",
-    placeholder: "e.g. Upstairs bathroom",
+    kind: "choice",
+    options: [
+      { id: "kitchen", label: "Kitchen" },
+      { id: "bathroom", label: "Bathroom or toilet" },
+      { id: "outside", label: "Outside or compound" },
+      { id: "tank-roof", label: "Tank or roof" },
+      { id: "whole", label: "The whole property" },
+    ],
+  },
+  h_when: {
+    question: "When did you first notice it?",
+    kind: "choice",
+    options: [
+      { id: "today", label: "Today" },
+      { id: "days", label: "In the last few days" },
+      { id: "week-plus", label: "More than a week ago" },
+    ],
   },
 };

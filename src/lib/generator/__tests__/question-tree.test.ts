@@ -28,21 +28,21 @@ describe("generator question tree", () => {
 
   it("skips later petrol/diesel screens when type is already known", () => {
     expect(
-      nextGeneratorScreen("b_start", "dead", { machine_type: "petrol" }),
+      nextGeneratorScreen("b_signs", "none", { machine_type: "petrol" }),
     ).toBe("b_service");
     expect(
-      nextGeneratorScreen("b_start", "dead", { machine_type: "inverter" }),
+      nextGeneratorScreen("b_signs", "none", { machine_type: "inverter" }),
     ).toBe("b_service");
     expect(
-      nextGeneratorScreen("b_start", "dead", { machine_type: "diesel" }),
+      nextGeneratorScreen("b_signs", "none", { machine_type: "diesel" }),
     ).toBe("b_service");
-    expect(nextGeneratorScreen("b_start", "dead", {})).toBe("b_type");
+    expect(nextGeneratorScreen("b_signs", "none", {})).toBe("b_type");
     expect(
-      nextGeneratorScreen("b_start", "dead", { machine_type: "canopy" }),
+      nextGeneratorScreen("b_signs", "none", { machine_type: "canopy" }),
     ).toBe("b_type");
     expect(
       nextGeneratorScreen("d_last", "1 year", { machine_type: "diesel" }),
-    ).toBe("d_problem");
+    ).toBe("d_usage");
     expect(nextGeneratorScreen("d_last", "1 year", {})).toBe("d_spec");
   });
 
@@ -72,34 +72,43 @@ describe("generator question tree", () => {
     expect(nextGeneratorScreen("a_property", "residential", {})).toBe(
       "a_power",
     );
-    expect(nextGeneratorScreen("a_power", "full-house", {})).toBe("a_type");
+    expect(nextGeneratorScreen("a_power", "full-house", {})).toBe("a_hours");
+    expect(nextGeneratorScreen("a_hours", "4-8", {})).toBe("a_type");
     expect(nextGeneratorScreen("a_type", "diesel", {})).toBe("a_size");
-    expect(nextGeneratorScreen("a_size", "5-10", {})).toBe("a_supply");
+    expect(nextGeneratorScreen("a_size", "5-10", {})).toBe("a_noise");
+    expect(nextGeneratorScreen("a_noise", "some", {})).toBe("a_supply");
     expect(nextGeneratorScreen("a_supply", "i-will", {})).toBe("a_changeover");
     expect(nextGeneratorScreen("a_changeover", "automatic", {})).toBe("final");
 
     expect(nextGeneratorScreen("d_service", "normal", {})).toBe("d_last");
     expect(nextGeneratorScreen("d_last", "1 year", {})).toBe("d_spec");
     expect(nextGeneratorScreen("d_spec", "petrol 3.5kVA", {})).toBe(
-      "d_problem",
+      "d_usage",
     );
+    expect(nextGeneratorScreen("d_usage", "daily-long", {})).toBe("d_problem");
     expect(nextGeneratorScreen("d_problem", "smoke", {})).toBe("final");
 
     expect(nextGeneratorScreen("f_happening", "overheating", {})).toBe(
       "f_when",
     );
     expect(nextGeneratorScreen("f_when", "after 20 mins", {})).toBe("f_oil");
-    expect(nextGeneratorScreen("f_oil", "okay", {})).toBe("final");
+    expect(nextGeneratorScreen("f_oil", "okay", {})).toBe("f_also");
+    expect(nextGeneratorScreen("f_also", "none", {})).toBe("final");
   });
 
   it("walks the will-not-start (B), no-power (C), change-over (E) and other (G) chains to confirm", () => {
-    expect(nextGeneratorScreen("b_start", "dead", {})).toBe("b_type");
+    expect(nextGeneratorScreen("b_start", "dead", {})).toBe("b_method");
+    expect(nextGeneratorScreen("b_method", "key", {})).toBe("b_signs");
+    expect(nextGeneratorScreen("b_signs", "click", {})).toBe("b_type");
     expect(nextGeneratorScreen("b_type", "petrol", {})).toBe("b_service");
     expect(nextGeneratorScreen("b_service", "never", {})).toBe("b_fuel");
     expect(nextGeneratorScreen("b_fuel", "yes", {})).toBe("b_work");
     expect(nextGeneratorScreen("b_work", "no", {})).toBe("confirm");
 
-    expect(nextGeneratorScreen("c_output", "no output", {})).toBe("c_voltage");
+    expect(nextGeneratorScreen("c_output", "none", {})).toBe("c_breaker");
+    expect(nextGeneratorScreen("c_breaker", "not-tripped", {})).toBe(
+      "c_voltage",
+    );
     expect(nextGeneratorScreen("c_voltage", "fluctuating", {})).toBe("c_load");
     expect(nextGeneratorScreen("c_load", "only heavy", {})).toBe(
       "c_changeover",
@@ -107,12 +116,15 @@ describe("generator question tree", () => {
     expect(nextGeneratorScreen("c_changeover", "yes", {})).toBe("confirm");
 
     expect(nextGeneratorScreen("e_issue", "wiring", {})).toBe("e_kind");
-    expect(nextGeneratorScreen("e_kind", "automatic", {})).toBe("e_history");
+    expect(nextGeneratorScreen("e_kind", "automatic", {})).toBe("e_phase");
+    expect(nextGeneratorScreen("e_phase", "single", {})).toBe("e_symptom");
+    expect(nextGeneratorScreen("e_symptom", "buzz", {})).toBe("e_history");
     expect(nextGeneratorScreen("e_history", "new install", {})).toBe("confirm");
 
     expect(nextGeneratorScreen("g_describe", "no power at all", {})).toBe(
-      "g_location",
+      "g_when",
     );
+    expect(nextGeneratorScreen("g_when", "today", {})).toBe("g_location");
     expect(nextGeneratorScreen("g_location", "shop", {})).toBe("confirm");
   });
 

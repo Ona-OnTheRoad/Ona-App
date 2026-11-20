@@ -33,10 +33,14 @@ export function nextGeneratorScreen(
     case "a_property":
       return "a_power";
     case "a_power":
+      return "a_hours";
+    case "a_hours":
       return "a_type";
     case "a_type":
       return "a_size";
     case "a_size":
+      return "a_noise";
+    case "a_noise":
       return "a_supply";
     case "a_supply":
       return "a_changeover";
@@ -44,6 +48,10 @@ export function nextGeneratorScreen(
       return "final";
 
     case "b_start":
+      return "b_method";
+    case "b_method":
+      return "b_signs";
+    case "b_signs":
       return knownGeneratorFuel(_answers) ? "b_service" : "b_type";
     case "b_type":
       return "b_service";
@@ -55,6 +63,8 @@ export function nextGeneratorScreen(
       return "confirm";
 
     case "c_output":
+      return "c_breaker";
+    case "c_breaker":
       return "c_voltage";
     case "c_voltage":
       return "c_load";
@@ -66,8 +76,10 @@ export function nextGeneratorScreen(
     case "d_service":
       return "d_last";
     case "d_last":
-      return knownGeneratorFuel(_answers) ? "d_problem" : "d_spec";
+      return knownGeneratorFuel(_answers) ? "d_usage" : "d_spec";
     case "d_spec":
+      return "d_usage";
+    case "d_usage":
       return "d_problem";
     case "d_problem":
       return "final";
@@ -75,6 +87,10 @@ export function nextGeneratorScreen(
     case "e_issue":
       return "e_kind";
     case "e_kind":
+      return "e_phase";
+    case "e_phase":
+      return "e_symptom";
+    case "e_symptom":
       return "e_history";
     case "e_history":
       return "confirm";
@@ -84,9 +100,13 @@ export function nextGeneratorScreen(
     case "f_when":
       return "f_oil";
     case "f_oil":
+      return "f_also";
+    case "f_also":
       return "final";
 
     case "g_describe":
+      return "g_when";
+    case "g_when":
       return "g_location";
     case "g_location":
       return "confirm";
@@ -148,30 +168,40 @@ export function composeGeneratorProblem(
   const orderedIds = [
     "a_property",
     "a_power",
+    "a_hours",
     "a_type",
     "a_size",
+    "a_noise",
     "a_supply",
     "a_changeover",
     "b_start",
+    "b_method",
+    "b_signs",
     "b_type",
     "b_service",
     "b_fuel",
     "b_work",
     "c_output",
+    "c_breaker",
     "c_voltage",
     "c_load",
     "c_changeover",
     "d_service",
     "d_last",
     "d_spec",
+    "d_usage",
     "d_problem",
     "e_issue",
     "e_kind",
+    "e_phase",
+    "e_symptom",
     "e_history",
     "f_happening",
     "f_when",
     "f_oil",
+    "f_also",
     "g_describe",
+    "g_when",
     "g_location",
   ];
   for (const id of orderedIds) {
