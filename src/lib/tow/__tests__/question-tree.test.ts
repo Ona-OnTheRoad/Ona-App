@@ -192,9 +192,9 @@ describe("tow question tree", () => {
     expect(text).toContain("please hurry");
   });
 
-  it("requires at least two photos before finding a Tow pro", () => {
+  it("requires at least one photo before finding a Tow pro", () => {
     expect(canFindTowPro(0)).toBe(false);
-    expect(canFindTowPro(1)).toBe(false);
+    expect(canFindTowPro(1)).toBe(true);
     expect(canFindTowPro(2)).toBe(true);
     expect(canFindTowPro(4)).toBe(true);
     expect(canAdvanceText("ok")).toBe(true);

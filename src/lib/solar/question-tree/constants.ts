@@ -6,7 +6,7 @@ export const SOLAR_MACHINE_OTHER_ID = "other";
 
 export const SOLAR_START_QUESTION = "What kind of solar work do you need?";
 
-export const SOLAR_MIN_PHOTOS = 2;
+export const SOLAR_MIN_PHOTOS = 1;
 export const SOLAR_MAX_PHOTOS = 4;
 
 export const SOLAR_FINAL_COPY = {

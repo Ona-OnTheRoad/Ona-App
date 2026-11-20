@@ -120,11 +120,11 @@ describe("painter question tree", () => {
     }
   });
 
-  it("requires 2 photos (min 2, max 4)", () => {
-    expect(PAINTER_MIN_PHOTOS).toBe(2);
+  it("requires 1 photo (min 1, max 4)", () => {
+    expect(PAINTER_MIN_PHOTOS).toBe(1);
     expect(PAINTER_MAX_PHOTOS).toBe(4);
     expect(canFindPainterPro(0)).toBe(false);
-    expect(canFindPainterPro(1)).toBe(false);
+    expect(canFindPainterPro(1)).toBe(true);
     expect(canFindPainterPro(2)).toBe(true);
     expect(canFindPainterPro(4)).toBe(true);
     expect(canAdvanceText("ok")).toBe(true);
