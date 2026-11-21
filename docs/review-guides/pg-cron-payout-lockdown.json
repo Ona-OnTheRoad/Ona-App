@@ -29,7 +29,8 @@
       "verification": "Migration CI: install with seeded config, then assert cron.job.command contains 'headers :=' and no literal secret; confirm the pg_net signature in CI.",
       "status": "passed-local",
       "evidence": [
-        "Local, 2026-11-21, Postgres 16.15 with stub cron/net schemas mirroring the real signatures (pg_net: url, body, params, headers, timeout_milliseconds): the old 067 command, executed, delivered params={Content-Type, Authorization: Bearer old-secret-123} and headers={Content-Type} only. The 087 stored command delivered params={} and headers={Content-Type, Authorization: Bearer dev-secret-abc}. CI pins net.http_post argument names (url, ..., params, headers) on real pg_net."
+        "Local, 2026-11-21, Postgres 16.15 with stub cron/net schemas mirroring the real signatures (pg_net: url, body, params, headers, timeout_milliseconds): the old 067 command, executed, delivered params={Content-Type, Authorization: Bearer old-secret-123} and headers={Content-Type} only. The 087 stored command delivered params={} and headers={Content-Type, Authorization: Bearer dev-secret-abc}. CI pins net.http_post argument names (url, ..., params, headers) on real pg_net.",
+        "Dev Supabase project, 2026-11-21 (read-only): real net.http_post (pg_net 0.20.4) arguments are url, body, params, headers, timeout_milliseconds, confirming 067's third positional argument was params."
       ]
     },
     {
@@ -105,9 +106,10 @@
       "expectation": "Full test suite, typecheck, lint and migration CI pass.",
       "affectedAreas": [],
       "verification": "npm run lint && npm run typecheck && npm run test; GitHub 'Fresh Supabase migrations' job.",
-      "status": "pending",
+      "status": "passed",
       "evidence": [
-        "Local, 2026-11-21 on uncommitted fix/pg-cron-payout-lockdown (from dev 9dd0077): vitest 284 files / 2,840 tests pass (incl. migration-ci.test.ts); tsc --noEmit passes; eslint 0 errors, 142 warnings. The 087 CI assertion block passed on the stub database, left no job or config rows, and failed on a 067-only database. GitHub migration CI with real pg_cron/pg_net pending."
+        "Local, 2026-11-21 on uncommitted fix/pg-cron-payout-lockdown (from dev 9dd0077): vitest 284 files / 2,840 tests pass (incl. migration-ci.test.ts); tsc --noEmit passes; eslint 0 errors, 142 warnings. The 087 CI assertion block passed on the stub database, left no job or config rows, and failed on a 067-only database. GitHub migration CI with real pg_cron/pg_net pending.",
+        "GitHub PR #109 on ffc3d3e: Fresh Supabase migrations (real pg_cron/pg_net, including the 087 assertions), Lint & Type Check, Tests and Build all pass."
       ]
     },
     {
@@ -118,20 +120,19 @@
       "verification": "Anon RPC probe; SQL editor queries on cron.job, cron.job_run_details and net._http_response.",
       "status": "pending",
       "evidence": [
-        "2026-11-21, before the fix: anon RPC payout_retry_cron_status() succeeded and returned []; ona_cron_config was empty (no job, no secret)."
+        "2026-11-21, before the fix: anon RPC payout_retry_cron_status() succeeded and returned []; ona_cron_config was empty (no job, no secret).",
+        "2026-11-21: 087 applied to the dev project in one transaction and recorded in public.schema_migrations (pg_cron 1.6.4 and pg_net 0.20.4 already enabled; cron.job empty before and after). Anon/authenticated EXECUTE now false and service_role true on all four functions; anon-key RPCs to payout_retry_cron_status and install_payout_retry_cron refused with 42501; install returns needs_url. Secret and URL not seeded yet, so the job is not installed and the 200 check is still pending."
       ]
     }
   ],
   "remainingWork": {
     "code": [
-      "Independent review against the implementation commit.",
-      "GitHub 'Fresh Supabase migrations' run with real pg_cron and pg_net (confirms the net.http_post argument order, privileges and install behaviour)."
+      "Independent review against the implementation commit."
     ],
     "external": [
-      "Apply migration 087 to the dev Supabase project.",
-      "Enable pg_cron and pg_net; seed payout_retry_secret (= CRON_SECRET on ona-dev-app) and payout_retry_url=https://ona-dev-app.vercel.app; run install_payout_retry_cron().",
-      "Confirm net._http_response shows 200 from payout-retry and that an anon-key RPC to the cron functions is refused.",
-      "Production: same steps with the production host and secret, as a separate rollout."
+      "Seed payout_retry_secret (= CRON_SECRET on ona-dev-app) and payout_retry_url=https://ona-dev-app.vercel.app on the dev project, run install_payout_retry_cron(), then confirm net._http_response shows 200.",
+      "Migration 086 (claim_broadcast_offer) is not applied on the dev project; apply it separately.",
+      "Production: apply 087 and repeat the setup with the production host and secret, as a separate rollout."
     ]
   }
 }
