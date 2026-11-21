@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { DEMO_OTP_CODE, isDemoOtp, isDemoOtpAllowed } from "@/lib/auth/demo-otp";
+import {
+  DEMO_OTP_CODE,
+  isDemoFallbackAllowed,
+  isDemoOtp,
+  isDemoOtpAllowed,
+} from "@/lib/auth/demo-otp";
 
 afterEach(() => vi.unstubAllEnvs());
 
@@ -79,6 +84,31 @@ describe("isDemoOtpAllowed", () => {
   it("is on in production when only the public flag is true", () => {
     production("", "true");
     expect(isDemoOtpAllowed()).toBe(true);
+  });
+});
+
+describe("isDemoFallbackAllowed", () => {
+  it.each([["", ""], ["false", "false"], ["true", "true"]])(
+    "is always on outside production (server=%j, public=%j), devOnly or not",
+    (server, pub) => {
+      development(server, pub);
+      expect(isDemoFallbackAllowed()).toBe(true);
+      expect(isDemoFallbackAllowed({ devOnly: true })).toBe(true);
+    },
+  );
+
+  it("follows the demo flag in production", () => {
+    production("true", "true");
+    expect(isDemoFallbackAllowed()).toBe(true);
+    production("false", "false");
+    expect(isDemoFallbackAllowed()).toBe(false);
+    production();
+    expect(isDemoFallbackAllowed()).toBe(false);
+  });
+
+  it("is never on in production for devOnly callers, even with the flag on", () => {
+    production("true", "true");
+    expect(isDemoFallbackAllowed({ devOnly: true })).toBe(false);
   });
 });
 

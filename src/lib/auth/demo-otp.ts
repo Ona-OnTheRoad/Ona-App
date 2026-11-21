@@ -46,6 +46,20 @@ export function isDemoOtpAllowed(_channel?: OtpChannel): boolean {
   return process.env.NODE_ENV !== "production";
 }
 
+/**
+ * May a send that failed (or had no provider) store the demo code instead?
+ *
+ * Outside production: always, even with the flag `false`, so local work keeps
+ * going when SMS/email is down; the stored code is then the only one that
+ * verifies. In production: only while `isDemoOtpAllowed()` (a hosted staging
+ * build with the flag on), and never for `devOnly` callers (signup proof,
+ * bank and contact changes), which must not trust the demo code on a host.
+ */
+export function isDemoFallbackAllowed(opts: { devOnly?: boolean } = {}): boolean {
+  if (process.env.NODE_ENV !== "production") return true;
+  return !opts.devOnly && isDemoOtpAllowed();
+}
+
 /** Destination key stored in phone_otps.phone for email channel */
 export function emailOtpKey(email: string): string {
   return `email:${email.trim().toLowerCase()}`;

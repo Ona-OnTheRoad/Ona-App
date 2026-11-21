@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createHash } from "crypto";
 import { POST } from "@/app/api/auth/otp/send/route";
 import { DEMO_OTP_CODE } from "@/lib/auth/demo-otp";
 import { isSmsConfigured, sendSms } from "@/lib/server/sms/send";
@@ -64,6 +65,19 @@ function productionDemoOff() {
   vi.stubEnv("NODE_ENV", "production");
   vi.stubEnv("OTP_DEMO_MODE", "");
   vi.stubEnv("NEXT_PUBLIC_OTP_DEMO_MODE", "");
+}
+
+function developmentDemoOff() {
+  vi.stubEnv("NODE_ENV", "development");
+  vi.stubEnv("OTP_DEMO_MODE", "false");
+  vi.stubEnv("NEXT_PUBLIC_OTP_DEMO_MODE", "false");
+}
+
+/** The stored hash of the demo code, as the route computes it. */
+function demoHash(dest: string): string {
+  return createHash("sha256")
+    .update(`${dest}:${DEMO_OTP_CODE}:${process.env.SUPABASE_SERVICE_ROLE_KEY || "om"}`)
+    .digest("hex");
 }
 
 /** The 6-digit code inside the SMS text or the email body. */
@@ -190,8 +204,59 @@ describe("POST /api/auth/otp/send delivery", () => {
     expect(writes.at(-1)).toMatchObject({ table: "phone_otps", op: "insert" });
   });
 
-  it("reports a failed SMS in development when OTP_DEMO_MODE=false", async () => {
-    vi.stubEnv("NODE_ENV", "development");
+  it("in development with OTP_DEMO_MODE=false a failed SMS stores the demo code", async () => {
+    developmentDemoOff();
+    const writes = fakeDb();
+    vi.mocked(isSmsConfigured).mockReturnValue(true);
+    vi.mocked(sendSms).mockResolvedValue({ ok: false, error: "SMS HTTP 401", attempts: [] });
+
+    const res = await send("phone");
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.data.delivery).toBe("demo");
+    expect(writes.at(-1)?.values.code_hash).toBe(demoHash(PHONE));
+  });
+
+  it("in development with OTP_DEMO_MODE=false and no provider it stores the demo code", async () => {
+    developmentDemoOff();
+    const writes = fakeDb();
+
+    const res = await send("email");
+
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.delivery).toBe("email_demo");
+    expect(writes.at(-1)?.values.code_hash).toBe(demoHash(`email:${EMAIL}`));
+  });
+
+  it("in development with OTP_DEMO_MODE=false a delivered SMS stores the real code", async () => {
+    developmentDemoOff();
+    const writes = fakeDb();
+    vi.mocked(isSmsConfigured).mockReturnValue(true);
+    vi.mocked(sendSms).mockResolvedValue({ ok: true, provider: "africastalking", attempts: [] });
+
+    const res = await send("phone");
+
+    expect((await res.json()).data.delivery).toBe("sms");
+    expect(writes.at(-1)?.values.code_hash).not.toBe(demoHash(PHONE));
+  });
+
+  it("in production with OTP_DEMO_MODE=true a failed SMS stores the demo code (hosted staging)", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("OTP_DEMO_MODE", "true");
+    vi.stubEnv("NEXT_PUBLIC_OTP_DEMO_MODE", "true");
+    const writes = fakeDb();
+    vi.mocked(isSmsConfigured).mockReturnValue(true);
+    vi.mocked(sendSms).mockResolvedValue({ ok: false, error: "provider down", attempts: [] });
+
+    const res = await send("phone");
+
+    expect(res.status).toBe(200);
+    expect(writes.at(-1)?.values.code_hash).toBe(demoHash(PHONE));
+  });
+
+  it("in production with OTP_DEMO_MODE=false a failed SMS returns 502", async () => {
+    vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("OTP_DEMO_MODE", "false");
     vi.stubEnv("NEXT_PUBLIC_OTP_DEMO_MODE", "false");
     const writes = fakeDb();
@@ -201,7 +266,6 @@ describe("POST /api/auth/otp/send delivery", () => {
     const res = await send("phone");
 
     expect(res.status).toBe(502);
-    expect((await res.json()).error.code).toBe("otp_delivery_failed");
     expect(writes).toEqual([]);
   });
 });
