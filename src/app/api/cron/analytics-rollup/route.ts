@@ -1,6 +1,7 @@
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
+import { hasSchedulerSecret } from "@/lib/server/jobs/deadlines/scheduler-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,31 +12,18 @@ type Metric = {
   value: number;
 };
 
-/**
- * Analytics daily rollup cron, pre-aggregates yesterday + today's key
- * metrics into analytics_daily_rollups so admin dashboards stop scanning
- * raw tables on every request. Safe to run multiple times (upsert).
- */
-function cronAuthorized(req: Request): boolean {
-  const secret =
-    process.env.CRON_SECRET ||
-    process.env.ONA_CRON_SECRET ||
-    process.env.JOB_EXPIRE_SECRET;
-  if (!secret) return true;
-  const url = new URL(req.url);
-  const provided =
-    url.searchParams.get("secret") ||
-    req.headers.get("x-cron-secret") ||
-    req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  return provided === secret;
-}
-
 function dayString(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+/**
+ * Analytics daily rollup cron, pre-aggregates yesterday + today's key
+ * metrics into analytics_daily_rollups so admin dashboards stop scanning
+ * raw tables on every request. Safe to run multiple times (upsert).
+ * Scheduler secret only (hasSchedulerSecret: header, fails closed).
+ */
 export async function GET(req: Request) {
-  if (!cronAuthorized(req)) return apiFail("Unauthorized", 401, "unauthorized");
+  if (!hasSchedulerSecret(req)) return apiFail("Unauthorized", 401, "unauthorized");
   if (!isSupabaseAdminConfigured())
     return apiFail("Supabase not configured", 500);
 

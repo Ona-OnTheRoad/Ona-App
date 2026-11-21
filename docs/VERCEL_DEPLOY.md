@@ -18,13 +18,14 @@ Minimum for a working deploy: Supabase (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC
 
 ## Cron jobs
 
-Defined in `vercel.json` and sent to the `/api/...` routes with the cron secret:
+Defined in `vercel.json`. Vercel calls each route with `Authorization: Bearer $CRON_SECRET`. Every cron route checks it with `hasSchedulerSecret()`: the secret must arrive in a header (`Authorization: Bearer` or `x-cron-secret`), never in `?secret=`, and when no secret is configured the route returns 401. Set `CRON_SECRET` on every deployment that runs crons. Any other scheduler (cron-job.org, the pg_cron payout job) must send the same value in a header.
 
 | Path | Schedule (UTC) |
 |------|----------------|
 | `/api/jobs/expire-stale` | daily 00:00 |
 | `/api/jobs/pairing-sweep` | daily 00:05 |
 | `/api/cron/notification-retry` | daily 00:10 |
+| `/api/cron/prune-idempotent-ops` | daily 00:20 (deletes `idempotent_ops` rows older than 7 days) |
 | `/api/payments/payout-retry` | daily 08:00 |
 | `/api/cron/egress-ip` | daily 08:30 |
 | `/api/cron/analytics-rollup` | daily 08:45 |
