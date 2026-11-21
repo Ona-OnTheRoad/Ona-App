@@ -253,3 +253,15 @@ Code: unit tests for the prune query and for the retention outlasting the client
 Approved scope: [review guide](review-guides/cron-auth-fail-closed.md) on branch `fix/cron-auth-fail-closed`. Six routes had their own weaker copy of the scheduler check: `security/cashout/verify`, `payments/payout-retry`, `cron/egress-ip`, `cron/notification-retry`, `cron/analytics-rollup` and `cron/purge-accounts`. With no secret configured, cashout verify, notification retry and analytics rollup were open to anyone. Payout retry and egress-ip accepted a spoofable `vercel-cron` User-Agent. Five of them accepted `?secret=`. All six now use `hasSchedulerSecret()`: header only, constant-time, 401 when no secret is set. Payout retry keeps its admin `escrow_release` path. Behaviour after auth is unchanged. No migration.
 
 Code: per-route tests (shared cases in `src/test-utils/scheduler-auth-cases.ts`) for refused, accepted and admin paths. Independent review pending. External: confirm `CRON_SECRET` on every host that runs crons, that the pg_cron `payout_retry_secret` equals a host cron secret, and that external schedulers (cron-job.org) send the secret in a header. Then confirm each cron still returns 200 and an unauthenticated call returns 401.
+
+## pg_cron payout-retry lockdown (2026-11-21)
+
+Approved scope: [review guide](review-guides/pg-cron-payout-lockdown.md) on branch `fix/pg-cron-payout-lockdown`. Migration `087` fixes three defects in `067`:
+- `set_cron_secret`, `install_payout_retry_cron` and `payout_retry_cron_status` were `security definer` and callable with the anon key. They are now service_role only.
+- The job passed its Bearer token to `net.http_post` by position, into `params`, so it sent no `Authorization` header and put the secret in the URL. It now passes `headers :=` by name.
+- The host was hard-coded to `336699.vercel.app`. It now comes from `ona_cron_config.payout_retry_url` (https origin only), read on every run.
+
+The old job is unscheduled on migrate and reinstalled only once both the URL and the secret are seeded. Setup steps are in `docs/VERCEL_DEPLOY.md`.
+
+Code: migration CI assertions for privileges, the pg_net argument order, URL validation, install reasons and the stored command. Local run on Postgres 16 with stub `cron`/`net` schemas matching the real signatures. Independent review pending. External: apply 087 to the dev project, enable pg_cron and pg_net, seed `payout_retry_secret` (= `CRON_SECRET`) and `payout_retry_url=https://ona-dev-app.vercel.app`, install, and confirm `net._http_response` shows 200 and that the anon key is refused.
+

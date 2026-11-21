@@ -56,7 +56,7 @@ The four requested searches were expanded to handle multiline Supabase chains, a
 5. **Money retry authorization varies:** cashout verify is open without configured secret; payout retry has no-secret User-Agent/open-cron branches. Deployment environment decides whether these branches are reachable.
 6. **Separate money ledgers:** job escrow uses `payments`; payouts use `payout_transfer_ledger`; shop uses `shop_payments`; Express uses `ona_express_payments`; referral/cashout uses credit wallets/transactions and cashout requests. A change in one ledger is not automatically reflected in the others.
 7. **Direct identity/availability writes are adjacent mutation paths:** identity submission now uses APIs; Go Live fallback still directly updates allowed Pro presence fields, influencing discovery. They are listed below even though not direct money ledger writes.
-8. **Database schedulers and operator scripts are additional entry points:** Vercel is not the only scheduler; SQL migration 047 defined `pairing_sweep`, migration 048 retires its schedule, and migration 067 configures HTTP payout retry. Applied scheduler configuration is unverified. No maintenance script was executed.
+8. **Database schedulers and operator scripts are additional entry points:** Vercel is not the only scheduler; SQL migration 047 defined `pairing_sweep`, migration 048 retires its schedule, and migration 067 configures HTTP payout retry (corrected by 087: header auth, configurable origin, service_role-only functions). Applied scheduler configuration is unverified. No maintenance script was executed.
 
 ## Cron and sweep entry points
 
@@ -64,7 +64,7 @@ The four requested searches were expanded to handle multiline Supabase chains, a
 |---|---|---|---|
 | `/api/jobs/pairing-sweep` GET/POST | Cron secret, any authenticated user; local no-secret branch | Pairing timeouts, queue progression, request expiry, notifications | Production/preview fail closed for anonymous no-secret calls; auth user can trigger global sweep. Vercel `5 0 * * *` UTC. |
 | `/api/jobs/expire-stale` GET/POST | Fully authorized for booked expiry; other branches run without auth | Job cancellation/refund/expiry, pairing, zombie repair, scheduled dispatch, payout retries | Partial guard described above. Vercel `0 0 * * *` UTC. |
-| `/api/payments/payout-retry` GET/POST | Scheduler secret (header) or staff | Due payouts | Vercel `0 8 * * *` UTC; SQL migration 067 adds pg_cron HTTP retry configuration. |
+| `/api/payments/payout-retry` GET/POST | Scheduler secret (header) or staff | Due payouts | Vercel `0 8 * * *` UTC; pg_cron job `ona-payout-retry` every 10 min (migration 067; fixed in 087 to send the Bearer header and read its origin from `ona_cron_config.payout_retry_url`; its functions are service_role only). |
 | `/api/security/cashout/verify` GET/POST | Scheduler secret (header); fails closed | Retry/settle cashout | Not listed in `vercel.json`. Route comment proposes scheduling; not proof of deployment. |
 | `/api/cron/purge-accounts` GET | Scheduler secret (header); fails closed everywhere | `purge_expired_deletions` RPC, deletion/cascade effects | Updated 2026-11-21: no local open branch; not in `vercel.json`. |
 | `/api/cron/notification-retry` GET/POST | Scheduler secret (header); fails closed | Notification retry/delivery state | Vercel `10 0 * * *` UTC; route evidence below. |
