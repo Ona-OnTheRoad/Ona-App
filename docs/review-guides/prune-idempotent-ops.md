@@ -34,13 +34,13 @@ Inspect each acceptance criterion in the paired JSON guide against the exact rev
 - Every row type gets the same 7-day retention, whatever its `op_type`. Today OTP send is the only caller of `runIdempotent`. A future caller that needs replays beyond 7 days would need its own rule.
 - Cron routes run daily on the Vercel Hobby plan, so the table can hold up to about 8 days of rows.
 - One `delete` statement per run. At current volume that's a few hundred rows a day. Very high volume would need batched deletes.
-- Out of scope: `/api/cron/notification-retry` and `/api/cron/egress-ip` accept a `?secret=` query parameter and run without auth when no secret is set. That needs its own fix.
+- Out of scope here: `/api/cron/notification-retry` and `/api/cron/egress-ip` accepted a `?secret=` query parameter and ran without auth when no secret was set. Fixed separately in PR #107 ([cron-auth-fail-closed](cron-auth-fail-closed.md)).
 
 ## Remaining work
 
 Code and review:
 - Independent review against the implementation commit.
-- Separate fix: `/api/cron/notification-retry` and `/api/cron/egress-ip` should use `hasSchedulerSecret()`.
+- ~~Separate fix: `/api/cron/notification-retry` and `/api/cron/egress-ip` should use `hasSchedulerSecret()`.~~ Done in PR #107.
 
 External and deployment:
 - Vercel sends `CRON_SECRET` as the Bearer token. Confirm it's set on every host that runs crons, or this route returns 401 and prunes nothing.
