@@ -12,7 +12,7 @@ import { phoneOrFilter, phonesMatch } from "@/lib/server/phone-match";
 import {
   DEMO_OTP_CODE,
   emailOtpKey,
-  isDemoOtpAllowed,
+  isDemoFallbackAllowed,
 } from "@/lib/auth/demo-otp";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
@@ -38,6 +38,15 @@ function appOrigin(req: Request): string | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Provider errors can echo the request back. Strip the target and any run of
+ * 6+ digits (a code, or a phone number in another format) before logging.
+ */
+function redactDeliveryError(error: string, target: string): string {
+  const text = target ? error.split(target).join("[target]") : error;
+  return text.replace(/\+?\d{6,}/g, "[redacted]");
 }
 
 function hashCode(dest: string, code: string): string {
@@ -240,11 +249,18 @@ export async function POST(req: Request) {
               channel === "phone"
                 ? "Code sent by SMS. Enter it below."
                 : "Code sent by email. Enter it below.";
-          } else if (!isDemoOtpAllowed()) {
-            console.error(`[otp/send] ${channel} delivery failed: ${sent.error}`);
-            return { ok: false as const, error: OTP_DELIVERY_FAILED_MESSAGE };
+          } else {
+            // Logged on both paths: with the fallback, the demo code stored
+            // below would otherwise hide why the real code never arrived.
+            const demo = isDemoFallbackAllowed();
+            console.error(
+              `[otp/send] ${channel} delivery failed${demo ? " (demo code stored instead)" : ""}: ${redactDeliveryError(sent.error, sendTo)}`,
+            );
+            if (!demo) {
+              return { ok: false as const, error: OTP_DELIVERY_FAILED_MESSAGE };
+            }
           }
-          // Demo mode on: fall through and store the demo code instead.
+          // Fallback allowed (dev, or demo flag on): store the demo code instead.
         }
 
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();

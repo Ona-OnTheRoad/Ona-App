@@ -8,10 +8,11 @@ and `src/lib/server/auth/otp-delivery.ts`). The same rule applies to phone and e
 | State | Code behaviour |
 |---|---|
 | Provider configured (`AT_*` / `TERMII_*` for SMS, `RESEND_API_KEY` for email) | A random 6-digit code is sent. |
-| No provider, `OTP_DEMO_MODE` / `NEXT_PUBLIC_OTP_DEMO_MODE` exactly `true` | Demo code `336699` is stored and accepted (staging only). |
-| No provider, demo flags unset | The send fails with 503 `otp_delivery_unavailable`. No code is issued. |
-| Provider configured but a send fails, demo off | 502 `otp_delivery_failed`. Nothing is stored, so the user's current code is not rotated. |
-| Local / `next dev` | Demo code always works. |
+| Hosted build (`NODE_ENV=production`, which is every Vercel deployment, previews included), `OTP_DEMO_MODE` / `NEXT_PUBLIC_OTP_DEMO_MODE` `true` | `336699` is accepted at login, and stored when the send fails or there is no provider (staging only). Signup, bank change and contact change never use it on a hosted build. |
+| Hosted build, demo flags unset or `false`, no provider | The send fails with 503 `otp_delivery_unavailable`. No code is issued. |
+| Hosted build, demo flags unset or `false`, provider configured but a send fails | 502 `otp_delivery_failed`. Nothing is stored, so the user's current code is not rotated. |
+| Local `next dev` / tests, flags unset or `true` | `336699` always works. |
+| Local `next dev`, flags `false` | Only the real code works when it is delivered. When the send fails or there is no provider, `336699` is stored instead (logged as `… delivery failed (demo code stored instead)`), so local work is not blocked. |
 
 **Production must not set the demo flags** once real delivery is on: while either is `true` the demo
 code is accepted for any account. Remove both (or set them to `false`) at go-live.
@@ -24,7 +25,7 @@ code is accepted for any account. Remove both (or set them to `false`) at go-liv
 | `AT_API_KEY` | yes | From the Africa's Talking dashboard. Server only, never `NEXT_PUBLIC_*` |
 | `AT_SENDER_ID` | recommended | Approved alphanumeric sender (e.g. `ONA`). See below |
 | `NEXT_PUBLIC_APP_URL` | recommended | `https://<your-domain>`. Used for Chrome auto-fill (see below) |
-| `OTP_DEMO_MODE` / `NEXT_PUBLIC_OTP_DEMO_MODE` | avoid in production | Exactly `true` turns the demo code on. Leave unset in production |
+| `OTP_DEMO_MODE` / `NEXT_PUBLIC_OTP_DEMO_MODE` | avoid in production | `true` (or `1`) turns the demo code on; `false` turns it off, also under `next dev`. Leave unset in live production; set both together |
 | `OTP_PROOF_SECRET` | optional | Signs the signup phone proof. Falls back to `SUPABASE_SERVICE_ROLE_KEY`; set a dedicated value to rotate it independently |
 | `OTP_SIGNUP_DAILY_BUDGET` | optional | Max signup SMS per day across the whole app (default 3000). Circuit breaker against SMS pumping |
 

@@ -506,6 +506,28 @@ describe("send-code guards", () => {
     expect(rows("profiles")[0].phone).toBe(NEW_PHONE);
   });
 
+  it("in local development with OTP_DEMO_MODE=false a failed send falls back to the demo code", async () => {
+    const proof = await passIdentity();
+    vi.stubEnv("NODE_ENV", "development");
+    process.env.OTP_DEMO_MODE = "false";
+    process.env.NEXT_PUBLIC_OTP_DEMO_MODE = "false";
+    h.deliver.mockResolvedValueOnce({ ok: false, error: "SMS HTTP 401" });
+    const send = await sendNew("phone", NEW_PHONE, proof);
+    expect(send.status).toBe(200);
+    expect((await send.json()).data.delivery).toBe("demo");
+    expect(JSON.stringify(vi.mocked(console.error).mock.calls)).toContain("demo code stored instead");
+    const res = await change("change_phone", NEW_PHONE, { code: "336699", identityProof: proof });
+    expect(res.status).toBe(200);
+  });
+
+  it("in production the demo flag cannot turn a failed send into a demo code", async () => {
+    const proof = await passIdentity();
+    process.env.OTP_DEMO_MODE = "true";
+    process.env.NEXT_PUBLIC_OTP_DEMO_MODE = "true";
+    h.deliver.mockResolvedValueOnce({ ok: false, error: "gateway down" });
+    expect((await sendNew("phone", NEW_PHONE, proof)).status).toBe(502);
+  });
+
   it("per-user and per-IP caps return 429 before any message is sent", async () => {
     const proof = await passIdentity();
     const before = h.deliver.mock.calls.length;

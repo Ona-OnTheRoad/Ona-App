@@ -520,6 +520,9 @@ export async function backendSendOtp(
   const settled = res && parsed ? parsed : null;
   if (settled) {
     if (!settled.ok) {
+      // A definite failure: the ledger stores it under this sticker and would
+      // replay it to every later tap. Drop the sticker so a retry sends again.
+      clearIdemKey(intentKey);
       return { error: settled.error?.message || "Could not send code." };
     }
     if (settled.data?.pending) {
@@ -556,6 +559,8 @@ async function settleSend(
     return { error: null, message: result?.message || "Code sent." };
   }
   if (v.status === "error") {
+    // Same as a clean failure: do not let the stored error replay forever.
+    clearIdemKey(intentKey);
     return { error: v.error || "Could not send code." };
   }
   // Unproven neutral outcome, offer a resend.

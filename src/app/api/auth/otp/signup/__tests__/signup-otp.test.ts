@@ -210,6 +210,48 @@ describe("POST /api/auth/otp/signup/send", () => {
     expect(sms.send).not.toHaveBeenCalled();
     expect(otpRows()).toHaveLength(1);
   });
+
+  it("in development with OTP_DEMO_MODE=false a failed SMS falls back to the demo code, which then verifies", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    process.env.OTP_DEMO_MODE = "false";
+    process.env.NEXT_PUBLIC_OTP_DEMO_MODE = "false";
+    goLive();
+    sms.send.mockResolvedValue({ ok: false, error: "SMS HTTP 401" });
+
+    const res = await call(send, { phone: PHONE });
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.delivery).toBe("demo");
+    const open = otpRows().filter((r) => !r.consumed_at);
+    expect(open).toHaveLength(1);
+    expect(open[0].code_hash).toBe(hashSignupCode(PHONE, "336699"));
+    expect(JSON.stringify(vi.mocked(console.error).mock.calls)).toContain("demo_fallback");
+
+    const ok = await call(verify, { phone: PHONE, code: "336699" });
+    expect(ok.status).toBe(200);
+    expect(verifyPhoneProof((await ok.json()).data.proof, PHONE)).toBe(true);
+  });
+
+  it("in development with OTP_DEMO_MODE=false the demo code does not verify a real SMS that went out", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    process.env.OTP_DEMO_MODE = "false";
+    process.env.NEXT_PUBLIC_OTP_DEMO_MODE = "false";
+    goLive();
+
+    expect((await call(send, { phone: PHONE })).status).toBe(200);
+    const res = await call(verify, { phone: PHONE, code: "336699" });
+    expect(res.status).toBe(401);
+  });
+
+  it("the demo flag can NOT turn a failed SMS into a demo code in production", async () => {
+    process.env.OTP_DEMO_MODE = "true";
+    process.env.NEXT_PUBLIC_OTP_DEMO_MODE = "true";
+    goLive();
+    sms.send.mockResolvedValue({ ok: false, error: "InsufficientBalance" });
+
+    const res = await call(send, { phone: PHONE });
+    expect(res.status).toBe(502);
+    expect(otpRows().every((r) => r.consumed_at)).toBe(true);
+  });
 });
 
 describe("POST /api/auth/otp/signup/verify", () => {

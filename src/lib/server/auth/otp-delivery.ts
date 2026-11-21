@@ -1,5 +1,5 @@
 import "server-only";
-import { isDemoOtpAllowed } from "@/lib/auth/demo-otp";
+import { isDemoFallbackAllowed } from "@/lib/auth/demo-otp";
 import { isResendConfigured, sendResendEmail } from "@/lib/server/resend";
 import { buildOtpMessage } from "@/lib/server/africastalking";
 import { isSmsConfigured, sendSms } from "@/lib/server/sms/send";
@@ -15,16 +15,16 @@ export const OTP_DELIVERY_UNAVAILABLE_MESSAGE =
 export type OtpDeliveryPlan =
   /** A real provider is configured: issue a random code and send it. */
   | { kind: "real" }
-  /** No provider, demo mode on: store the demo code, send nothing. */
+  /** No provider, demo fallback allowed (dev, or demo flag on): store the demo code, send nothing. */
   | { kind: "demo" }
-  /** No provider and no demo mode: nothing could reach the user. */
+  /** No provider and no demo fallback: nothing could reach the user. */
   | { kind: "unavailable" };
 
 export function planOtpDelivery(channel: OtpChannel): OtpDeliveryPlan {
   const configured =
     channel === "phone" ? isSmsConfigured() : isResendConfigured();
   if (configured) return { kind: "real" };
-  return isDemoOtpAllowed() ? { kind: "demo" } : { kind: "unavailable" };
+  return isDemoFallbackAllowed() ? { kind: "demo" } : { kind: "unavailable" };
 }
 
 /** What the code is for; only changes the wording a user reads. */

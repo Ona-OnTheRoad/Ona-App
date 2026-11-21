@@ -16,7 +16,7 @@ import {
 } from "@/lib/server/otp/signup-otp";
 import { isPhoneProofConfigured } from "@/lib/server/otp/phone-proof";
 import { canonicalPhone } from "@/lib/server/phone-match";
-import { DEMO_OTP_CODE, isDemoOtpAllowed } from "@/lib/auth/demo-otp";
+import { DEMO_OTP_CODE, isDemoFallbackAllowed } from "@/lib/auth/demo-otp";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { createServiceSupabase } from "@/lib/supabase/server";
 
@@ -73,9 +73,10 @@ export async function POST(req: Request) {
   if (!phone) return apiFail("Enter a valid phone number (e.g. +234…)", 400);
 
   // The demo code is a development convenience only. In production a signup code
-  // must come from a real SMS, otherwise "verified" would mean nothing.
-  const demoAllowed =
-    process.env.NODE_ENV !== "production" && isDemoOtpAllowed("phone");
+  // must come from a real SMS, otherwise "verified" would mean nothing. In
+  // development it stands in when there is no SMS provider or the send fails,
+  // whatever OTP_DEMO_MODE says.
+  const demoAllowed = isDemoFallbackAllowed({ devOnly: true });
   // Any configured SMS provider counts (the delivery layer fails over between them).
   const smsReady = isSmsConfigured();
   if ((!smsReady && !demoAllowed) || !isPhoneProofConfigured()) {
@@ -179,19 +180,24 @@ export async function POST(req: Request) {
 
     const useDemoCode = demoAllowed && !smsReady;
     const code = useDemoCode ? DEMO_OTP_CODE : String(randomInt(100000, 999999));
-    const now = new Date().toISOString();
+    const consumeOpenCodes = () =>
+      supabase
+        .from("phone_otps")
+        .update({ consumed_at: new Date().toISOString() })
+        .eq("phone", dest)
+        .is("consumed_at", null);
+    /** Replace any open code for this number with `value`. */
+    const storeCode = async (value: string) => {
+      await consumeOpenCodes();
+      const { error } = await supabase.from("phone_otps").insert({
+        phone: dest,
+        code_hash: hashSignupCode(phone, value),
+        expires_at: new Date(Date.now() + SIGNUP_OTP_TTL_SEC * 1000).toISOString(),
+      });
+      return error;
+    };
 
-    await supabase
-      .from("phone_otps")
-      .update({ consumed_at: now })
-      .eq("phone", dest)
-      .is("consumed_at", null);
-    const { error: insertError } = await supabase.from("phone_otps").insert({
-      phone: dest,
-      code_hash: hashSignupCode(phone, code),
-      expires_at: new Date(Date.now() + SIGNUP_OTP_TTL_SEC * 1000).toISOString(),
-    });
-    if (insertError) return apiFail("Could not create a code. Try again.", 500);
+    if (await storeCode(code)) return apiFail("Could not create a code. Try again.", 500);
 
     let delivery: "sms" | "demo" = "demo";
     if (smsReady) {
@@ -210,16 +216,18 @@ export async function POST(req: Request) {
           error: sms.error,
         });
         if (!demoAllowed) {
-          await supabase
-            .from("phone_otps")
-            .update({ consumed_at: new Date().toISOString() })
-            .eq("phone", dest)
-            .is("consumed_at", null);
+          await consumeOpenCodes();
           return apiFail(
             "We couldn't send the SMS right now. You can try again, or skip and verify later.",
             502,
             "sms_failed",
           );
+        }
+        // Development fallback: the code that never arrived is replaced by
+        // the demo code, so it is the one that verifies.
+        console.error("otp.signup.demo_fallback: demo code stored instead");
+        if (await storeCode(DEMO_OTP_CODE)) {
+          return apiFail("Could not create a code. Try again.", 500);
         }
       }
     }
