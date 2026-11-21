@@ -97,8 +97,7 @@
   ],
   "remainingWork": {
     "code": [
-      "Independent review against the implementation commit.",
-      "Separate fix: /api/cron/notification-retry and /api/cron/egress-ip accept ?secret= and run open when no secret is set; move them to hasSchedulerSecret()."
+      "Independent review against the implementation commit."
     ],
     "external": [
       "Vercel sends CRON_SECRET as the Bearer token; confirm CRON_SECRET is set on each host that runs crons, or the route returns 401.",

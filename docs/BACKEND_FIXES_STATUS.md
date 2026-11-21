@@ -246,7 +246,7 @@ Code: `src/lib/auth/__tests__/demo-otp.test.ts`, `src/app/api/auth/otp/send/__te
 
 Approved scope: [review guide](review-guides/prune-idempotent-ops.md) on branch `fix/prune-idempotent-ops`. Nothing deleted rows from `idempotent_ops` (migration 064), so each OTP send added a row forever. A daily cron, `/api/cron/prune-idempotent-ops` at 00:20 UTC, deletes rows older than 7 days, any status. That's well past the 48-hour client op-key lifetime, so no row a client can still replay or verify is removed. Auth uses `hasSchedulerSecret()` (header only, fails closed). No migration.
 
-Code: unit tests for the prune query and for the retention outlasting the client TTL, plus route tests for auth, `no_db` and delete failure. Independent review pending. Code follow-up: `/api/cron/notification-retry` and `/api/cron/egress-ip` still accept `?secret=` and run open when no secret is set; that needs its own fix. External: after deploy, confirm the Vercel cron runs and no rows older than about 8 days remain.
+Code: unit tests for the prune query and for the retention outlasting the client TTL, plus route tests for auth, `no_db` and delete failure. Independent review pending. Code follow-up: none. The `notification-retry` / `egress-ip` cron auth gap noted here was fixed in PR #107 (see [Cron routes fail closed](#cron-routes-fail-closed-2026-11-21)). External: after deploy, confirm the Vercel cron runs and no rows older than about 8 days remain.
 
 ## Cron routes fail closed (2026-11-21)
 
