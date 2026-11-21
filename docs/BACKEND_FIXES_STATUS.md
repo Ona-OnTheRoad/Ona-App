@@ -235,3 +235,9 @@ Code: the 11 existing signup route tests pass with no edit to the test file; a s
 Approved scope: [review guide](review-guides/signup-preflight-hardening.md) on branch `fix/signup-preflight-hardening`. Closes the three signup findings left during the route split. Phone uniqueness keeps the `findPhoneOwners` path already on `dev` (no 500-row scan). Dual-role attach rebinds a mismatched submitted email to the session email (or `403 identity_mismatch` when `keepOtherRole` is false). Success `profile` / `extras` (including `phoneVerified`) are built once with a consistent `primaryService` fallback.
 
 Code: signup route tests for variant phone collision, email rebind and identity mismatch. Independent review pending. Code follow-up: none for these three findings when local checks pass. External: live QA of phone collision and dual-role attach email paths.
+
+## Idempotent-ops ledger retention (2026-11-21)
+
+Approved scope: [review guide](review-guides/prune-idempotent-ops.md) on branch `fix/prune-idempotent-ops`. Nothing deleted rows from `idempotent_ops` (migration 064), so each OTP send added a row forever. A daily cron, `/api/cron/prune-idempotent-ops` at 00:20 UTC, deletes rows older than 7 days, any status. That's well past the 48-hour client op-key lifetime, so no row a client can still replay or verify is removed. Auth uses `hasSchedulerSecret()` (header only, fails closed). No migration.
+
+Code: unit tests for the prune query and for the retention outlasting the client TTL, plus route tests for auth, `no_db` and delete failure. Independent review pending. Code follow-up: `/api/cron/notification-retry` and `/api/cron/egress-ip` still accept `?secret=` and run open when no secret is set; that needs its own fix. External: after deploy, confirm the Vercel cron runs and no rows older than about 8 days remain.

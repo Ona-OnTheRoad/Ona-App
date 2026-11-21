@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "id": "prune-idempotent-ops",
+  "title": "Prune the idempotent-operations ledger daily",
+  "plan": "docs/review-guides/prune-idempotent-ops.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "prune-old-rows",
+      "stage": "code",
+      "expectation": "pruneIdempotentOps deletes idempotent_ops rows created before now minus 7 days (any status) and returns the deleted count and cutoff; newer rows are kept.",
+      "affectedAreas": [
+        "src/lib/server/idempotency-prune.ts"
+      ],
+      "verification": "Unit test with a mocked Supabase client: asserts the table, the lt('created_at', cutoff) filter and the cutoff value for a fixed now.",
+      "status": "passed-local",
+      "evidence": [
+        "Local, 2026-11-21: src/lib/server/__tests__/idempotency-prune.test.ts asserts table, delete count mode, a single lt('created_at', now-7d) filter (no status filter), custom retention, null count and error return."
+      ]
+    },
+    {
+      "id": "retention-outlives-client-key",
+      "stage": "code",
+      "expectation": "Retention (7 days) is longer than the client sticker TTL (48 h), so no row a client can still replay or verify is deleted.",
+      "affectedAreas": [
+        "src/lib/server/idempotency-prune.ts",
+        "src/lib/jobs/idempotency.ts"
+      ],
+      "verification": "Test asserting the default retention exceeds the client TTL; source inspection.",
+      "status": "passed-local",
+      "evidence": [
+        "Local, 2026-11-21: test asserts 7-day retention >= 2x IDEM_KEY_TTL_MS (now exported from src/lib/jobs/idempotency.ts)."
+      ]
+    },
+    {
+      "id": "cron-auth",
+      "stage": "code",
+      "expectation": "The route runs only with a valid scheduler secret header (hasSchedulerSecret); no secret, a wrong secret, or a ?secret= query param returns 401 and deletes nothing.",
+      "affectedAreas": [
+        "src/app/api/cron/prune-idempotent-ops/route.ts"
+      ],
+      "verification": "Route tests for authorized, missing, wrong and query-param secrets.",
+      "status": "passed-local",
+      "evidence": [
+        "Local, 2026-11-21: route tests refuse no secret, wrong bearer, near-miss header, ?secret= query and an unset secret under NODE_ENV=development; x-cron-secret and Bearer accepted. Prune not called on any refusal."
+      ]
+    },
+    {
+      "id": "cron-errors",
+      "stage": "code",
+      "expectation": "No Supabase admin config returns 503 no_db; a database error returns 500; success returns { deleted, cutoff } and logs one line.",
+      "affectedAreas": [
+        "src/app/api/cron/prune-idempotent-ops/route.ts"
+      ],
+      "verification": "Route tests.",
+      "status": "passed-local",
+      "evidence": [
+        "Local, 2026-11-21: route tests for 503 no_db, 500 prune_failed with log line, and 200 { deleted, cutoff } with log line."
+      ]
+    },
+    {
+      "id": "cron-scheduled",
+      "stage": "code",
+      "expectation": "vercel.json schedules /api/cron/prune-idempotent-ops daily at 20 0 * * *; docs/VERCEL_DEPLOY.md lists it.",
+      "affectedAreas": [
+        "vercel.json",
+        "docs/VERCEL_DEPLOY.md"
+      ],
+      "verification": "Source inspection.",
+      "status": "passed-local",
+      "evidence": [
+        "Source, 2026-11-21: vercel.json entry '20 0 * * *' after notification-retry; docs/VERCEL_DEPLOY.md cron table row added."
+      ]
+    },
+    {
+      "id": "suite-green",
+      "stage": "code",
+      "expectation": "Full test suite, typecheck and lint pass.",
+      "affectedAreas": [],
+      "verification": "npm run lint && npm run typecheck && npm run test.",
+      "status": "passed-local",
+      "evidence": [
+        "Local, 2026-11-21 on uncommitted fix/prune-idempotent-ops (from dev 0f3a2ed): vitest 277 files / 2,708 tests pass; tsc --noEmit passes; eslint 0 errors, 142 warnings, none in changed files."
+      ]
+    },
+    {
+      "id": "live-prune",
+      "stage": "live",
+      "expectation": "After deploy, the Vercel cron runs and the table holds no rows older than about 8 days.",
+      "affectedAreas": [],
+      "verification": "Vercel cron log for the route, then a count of idempotent_ops rows older than 8 days.",
+      "status": "pending",
+      "evidence": [
+        "Read-only count, 2026-11-21, dev Supabase project: 22 rows, 10 older than 7 days. The route has not been run against it."
+      ]
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent review against the implementation commit.",
+      "Separate fix: /api/cron/notification-retry and /api/cron/egress-ip accept ?secret= and run open when no secret is set; move them to hasSchedulerSecret()."
+    ],
+    "external": [
+      "Vercel sends CRON_SECRET as the Bearer token; confirm CRON_SECRET is set on each host that runs crons, or the route returns 401.",
+      "After deploy, confirm the cron run in the Vercel log and that no idempotent_ops rows older than about 8 days remain."
+    ]
+  }
+}

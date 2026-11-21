@@ -26,6 +26,10 @@
       "schedule": "10 0 * * *"
     },
     {
+      "path": "/api/cron/prune-idempotent-ops",
+      "schedule": "20 0 * * *"
+    },
+    {
       "path": "/api/cron/analytics-rollup",
       "schedule": "45 8 * * *"
     }
