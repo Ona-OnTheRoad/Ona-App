@@ -32,6 +32,37 @@ Defined in `vercel.json`. Vercel calls each route with `Authorization: Bearer $C
 
 These are daily because of the Vercel **Hobby** plan limit. Deadlines (pairing, negotiation, pay window) are server-owned; the client sweep keeps them near-real-time between cron runs. Faster server-side sweeps need a Pro plan or an external scheduler.
 
+## pg_cron jobs (Supabase)
+
+Vercel Hobby crons run once a day, so payout retry also runs from the database every 10 minutes: pg_cron schedules it and pg_net sends the HTTP request. The job `ona-payout-retry` (migrations `067` and `087`) calls `POST <payout_retry_url>/api/payments/payout-retry` with `Authorization: Bearer <payout_retry_secret>`. The route checks that header with `hasSchedulerSecret()`, like every other cron route.
+
+Set up once per Supabase project, in the SQL editor:
+
+1. Enable the extensions: Dashboard → Database → Extensions → `pg_cron` and `pg_net`.
+2. Store the secret. Use the same value as `CRON_SECRET` on the host the job calls:
+   ```sql
+   select public.set_cron_secret('payout_retry_secret', '<CRON_SECRET>');
+   ```
+3. Store the host. Only an `https://` origin with no path is accepted; for dev, `https://ona-dev-app.vercel.app`:
+   ```sql
+   select public.set_cron_secret('payout_retry_url', 'https://ona-dev-app.vercel.app');
+   ```
+4. Install the job. It returns `{"ok": true, ...}`, or a `reason`: `needs_url`, `needs_secret`, `needs_pg_cron` or `needs_pg_net`.
+   ```sql
+   select public.install_payout_retry_cron();
+   ```
+5. Verify after the next 10-minute mark:
+   ```sql
+   select public.payout_retry_cron_status();   -- jobs, URL, whether a secret is set (never the secret)
+   select jobname, status, start_time from cron.job_run_details order by start_time desc limit 5;
+   select status_code, left(content::text, 200), created from net._http_response order by created desc limit 5;
+   ```
+   `cron.job_run_details` only shows that the SQL ran; the HTTP result is in `net._http_response`. A `401` means the stored secret doesn't match the host's `CRON_SECRET`.
+
+The URL and the secret are read on every run. To rotate the secret or change the host, run step 2 or 3 again; there is no need to reinstall. To stop the job: `select cron.unschedule('ona-payout-retry');`.
+
+These functions are callable only by `service_role` and the SQL editor, not by the anon key or signed-in users. Keep **one** job per database, and point each database only at the host that uses it.
+
 ## Issue 3 minute deadline scheduler
 
 The dedicated `/api/jobs/deadline-sweep` endpoint requires a configured server secret and migration `20261007_078_job_sweep_leases.sql`. Prepare an external one-minute HTTPS schedule for the current hosting setup; the daily entries above remain unchanged. See [Issue 3 setup, acceptance and rollback](ISSUE_3_DEADLINE_SCHEDULER.md). This repository change does not configure a hosted scheduler.
