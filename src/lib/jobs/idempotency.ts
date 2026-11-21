@@ -15,7 +15,8 @@
 
 const MAP_KEY = "om-idem-keys";
 const MAX_ENTRIES = 50;
-const TTL_MS = 48 * 60 * 60 * 1000;
+/** How long a sticker is kept; the server ledger must retain rows longer than this. */
+export const IDEM_KEY_TTL_MS = 48 * 60 * 60 * 1000;
 
 type Stored = { sticker: string; ts: number };
 
@@ -44,7 +45,7 @@ function prune(map: Record<string, Stored>): Record<string, Stored> {
   const now = Date.now();
   const entries = Object.entries(map);
   const fresh = entries
-    .filter(([, v]) => v && v.sticker && now - v.ts < TTL_MS)
+    .filter(([, v]) => v && v.sticker && now - v.ts < IDEM_KEY_TTL_MS)
     .sort((a, b) => a[1].ts - b[1].ts);
   const keep = fresh.slice(-MAX_ENTRIES);
   return Object.fromEntries(keep);

@@ -25,6 +25,7 @@ Defined in `vercel.json` and sent to the `/api/...` routes with the cron secret:
 | `/api/jobs/expire-stale` | daily 00:00 |
 | `/api/jobs/pairing-sweep` | daily 00:05 |
 | `/api/cron/notification-retry` | daily 00:10 |
+| `/api/cron/prune-idempotent-ops` | daily 00:20 (deletes `idempotent_ops` rows older than 7 days) |
 | `/api/payments/payout-retry` | daily 08:00 |
 | `/api/cron/egress-ip` | daily 08:30 |
 | `/api/cron/analytics-rollup` | daily 08:45 |
