@@ -15,6 +15,7 @@
 
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { sendResendEmail } from "@/lib/server/resend";
+import { hasSchedulerSecret } from "@/lib/server/jobs/deadlines/scheduler-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,31 +32,6 @@ function expectedIps(): string[] {
   }
   // Default: IPs whitelisted on Flutterwave ↔ Settings ↔ API ↔ IP Whitelisting.
   return ["152.233.48.151", "152.233.42.58"];
-}
-
-function cronAuthorized(req: Request): boolean {
-  const secrets = [
-    process.env.CRON_SECRET?.trim(),
-    process.env.ONA_CRON_SECRET?.trim(),
-    process.env.JOB_EXPIRE_SECRET?.trim(),
-  ].filter((s): s is string => Boolean(s));
-  const auth = req.headers.get("authorization") || "";
-  const header =
-    req.headers.get("x-cron-secret") ||
-    req.headers.get("x-job-expire-secret") ||
-    "";
-  const url = new URL(req.url);
-  const querySecret = url.searchParams.get("secret") || "";
-  for (const secret of secrets) {
-    if (auth === `Bearer ${secret}`) return true;
-    if (auth === secret) return true;
-    if (header === secret) return true;
-    if (querySecret === secret) return true;
-  }
-  if (secrets.length > 0) return false;
-  const ua = req.headers.get("user-agent") || "";
-  if (ua.includes("vercel-cron")) return true;
-  return false;
 }
 
 async function fetchEgressIp(): Promise<
@@ -120,7 +96,7 @@ async function storeAlertedIp(ip: string): Promise<void> {
 }
 
 async function run(req: Request) {
-  if (!cronAuthorized(req)) {
+  if (!hasSchedulerSecret(req)) {
     return apiFail("Unauthorized", 401, "auth");
   }
 
