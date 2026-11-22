@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "id": "cron-auth-fail-closed",
+  "title": "Every cron route authenticates with hasSchedulerSecret and fails closed",
+  "plan": "docs/review-guides/cron-auth-fail-closed.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "shared-check",
+      "stage": "code",
+      "expectation": "cashout/verify, payout-retry, egress-ip, notification-retry, analytics-rollup and purge-accounts authenticate schedulers only through hasSchedulerSecret(); no local cronAuthorized/authorized copy remains.",
+      "affectedAreas": [
+        "src/app/api/security/cashout/verify/route.ts",
+        "src/app/api/payments/payout-retry/route.ts",
+        "src/app/api/cron/egress-ip/route.ts",
+        "src/app/api/cron/notification-retry/route.ts",
+        "src/app/api/cron/analytics-rollup/route.ts",
+        "src/app/api/cron/purge-accounts/route.ts"
+      ],
+      "verification": "Source inspection; grep for cronAuthorized and searchParams.get(\"secret\") under src/app/api returns nothing.",
+      "status": "passed-local",
+      "evidence": [
+        "Source, 2026-11-21: all six routes call hasSchedulerSecret(req); grep for cronAuthorized, searchParams.get(\"secret\") and ALLOW_OPEN_PAYOUT_CRON under src (outside tests) returns nothing.",
+        "Old-code note: purge-accounts read CRON_SECRET once at module load, so in tests the old route was open as if no secret were set; on a host where the secret is present at load it already refused. The new code reads the secret per request."
+      ]
+    },
+    {
+      "id": "fails-closed",
+      "stage": "code",
+      "expectation": "With no secret configured, every one of the six routes returns 401 to a scheduler-style request in any NODE_ENV, and runs no work.",
+      "affectedAreas": [],
+      "verification": "Route tests per route with CRON_SECRET, ONA_CRON_SECRET and JOB_EXPIRE_SECRET blank under NODE_ENV=development.",
+      "status": "passed-local",
+      "evidence": [
+        "Local, 2026-11-21: each route's test sets all three secrets blank under NODE_ENV=development (with VERCEL=1, ALLOW_OPEN_PAYOUT_CRON=true and a vercel-cron UA) and gets 401 with no work, for every method. Against the old route code this case fails on all six routes (11 method cases)."
+      ]
+    },
+    {
+      "id": "no-query-or-ua",
+      "stage": "code",
+      "expectation": "?secret=<valid secret> and a 'vercel-cron' User-Agent are refused (401, no work) on every route; ALLOW_OPEN_PAYOUT_CRON no longer opens payout-retry.",
+      "affectedAreas": [],
+      "verification": "Route tests per route.",
+      "status": "passed-local",
+      "evidence": [
+        "Local, 2026-11-21: ?secret=<valid> and a vercel-cron User-Agent return 401 with no work on every route and method. Against the old code ?secret= fails on all six routes (11 method cases)."
+      ]
+    },
+    {
+      "id": "headers-accepted",
+      "stage": "code",
+      "expectation": "Authorization: Bearer <secret> and x-cron-secret: <secret> run the route's work and return its existing success body.",
+      "affectedAreas": [],
+      "verification": "Route tests per route with the work function mocked.",
+      "status": "passed-local",
+      "evidence": [
+        "Local, 2026-11-21: Authorization: Bearer and x-cron-secret get past auth on every route and method; after-auth tests check each route's existing success body (and analytics-rollup's existing 500 without Supabase, purge-accounts' 503 no_db)."
+      ]
+    },
+    {
+      "id": "payout-admin-path",
+      "stage": "code",
+      "expectation": "payout-retry without a scheduler secret still runs for an admin with escrow_release (source: admin) and returns the admin auth error otherwise.",
+      "affectedAreas": [
+        "src/app/api/payments/payout-retry/route.ts"
+      ],
+      "verification": "Route tests with requirePermission mocked.",
+      "status": "passed-local",
+      "evidence": [
+        "Local, 2026-11-21: payout-retry without a secret runs for an admin with escrow_release (source: admin), returns the AdminAuthError status/code otherwise (403 forbidden), and a scheduler run reports source: cron without calling requirePermission."
+      ]
+    },
+    {
+      "id": "behaviour-after-auth-unchanged",
+      "stage": "code",
+      "expectation": "Status codes and response bodies after auth are unchanged on every route.",
+      "affectedAreas": [],
+      "verification": "Diff inspection: only the auth gate changes in each route.",
+      "status": "passed-local",
+      "evidence": [
+        "Diff, 2026-11-21: each route only swaps its gate call and drops the local function (6 files, 22 insertions, 133 deletions); purge-accounts keeps no_db before auth as before."
+      ]
+    },
+    {
+      "id": "docs-updated",
+      "stage": "code",
+      "expectation": "MUTATION_INVENTORY.md rows for these routes, VERCEL_DEPLOY.md cron notes and BACKEND_FIXES_STATUS.md reflect header-only, fail-closed auth.",
+      "affectedAreas": [
+        "docs/MUTATION_INVENTORY.md",
+        "docs/VERCEL_DEPLOY.md",
+        "docs/BACKEND_FIXES_STATUS.md"
+      ],
+      "verification": "Source inspection.",
+      "status": "passed-local",
+      "evidence": [
+        "Source, 2026-11-21: MUTATION_INVENTORY.md rows for the six routes, VERCEL_DEPLOY.md cron auth paragraph, BACKEND_FIXES_STATUS.md section."
+      ]
+    },
+    {
+      "id": "suite-green",
+      "stage": "code",
+      "expectation": "Full test suite, typecheck and lint pass.",
+      "affectedAreas": [],
+      "verification": "npm run lint && npm run typecheck && npm run test.",
+      "status": "passed-local",
+      "evidence": [
+        "Local, 2026-11-21 on uncommitted fix/cron-auth-fail-closed (from dev 0f3a2ed): vitest 283 files / 2,805 tests pass; tsc --noEmit passes; eslint 0 errors, 142 warnings, none in changed files."
+      ]
+    },
+    {
+      "id": "live-schedulers",
+      "stage": "live",
+      "expectation": "After deploy, every Vercel cron and the pg_cron payout-retry job still return 200; an unauthenticated request to each route returns 401.",
+      "affectedAreas": [],
+      "verification": "Vercel cron logs, cron.job_run_details for ona-payout-retry, and a curl without a secret against each route on the host.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent review against the implementation commit."
+    ],
+    "external": [
+      "Confirm CRON_SECRET is set on every Vercel deployment that runs crons (Vercel sends it as the Bearer token); without it every cron route now returns 401.",
+      "Confirm the pg_cron payout_retry_secret (ona_cron_config) equals a host cron secret, then check cron.job_run_details for ona-payout-retry returning 200.",
+      "Any external scheduler (cron-job.org) must send Authorization: Bearer <secret> or x-cron-secret, never ?secret=.",
+      "After deploy, curl each of the six routes without a secret and confirm 401."
+    ]
+  }
+}

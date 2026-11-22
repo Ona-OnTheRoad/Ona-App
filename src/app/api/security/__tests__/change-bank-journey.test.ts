@@ -350,6 +350,27 @@ describe("the code step", () => {
     expect((await change({ bankProof: (await v.json()).data.bankProof })).status).toBe(200);
   });
 
+  it("in local development with OTP_DEMO_MODE=false a failed SMS falls back to the demo code", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    process.env.OTP_DEMO_MODE = "false";
+    process.env.NEXT_PUBLIC_OTP_DEMO_MODE = "false";
+    h.deliver.mockResolvedValueOnce({ ok: false, error: "SMS HTTP 401" });
+    const s = await send();
+    expect(s.status).toBe(200);
+    expect((await s.json()).data.delivery).toBe("demo");
+    expect(JSON.stringify(vi.mocked(console.error).mock.calls)).toContain("demo code stored instead");
+    expect((await verify("336699")).status).toBe(200);
+  });
+
+  it("in production the demo flag cannot turn a failed SMS into a demo code", async () => {
+    process.env.OTP_DEMO_MODE = "true";
+    process.env.NEXT_PUBLIC_OTP_DEMO_MODE = "true";
+    h.deliver.mockResolvedValueOnce({ ok: false, error: "gateway down" });
+    const r = await send();
+    expect(r.status).toBe(502);
+    expect((await verify("336699")).status).not.toBe(200);
+  });
+
   it("per-user and per-IP caps return 429 before any SMS is sent; verify is rate limited too", async () => {
     h.limits.block = "change-bank-day:";
     expect((await send()).status).toBe(429);

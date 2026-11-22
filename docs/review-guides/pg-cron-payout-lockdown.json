@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "id": "pg-cron-payout-lockdown",
+  "title": "Lock down and fix the pg_cron payout-retry job",
+  "plan": "docs/review-guides/pg-cron-payout-lockdown.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "functions-private",
+      "stage": "code",
+      "expectation": "anon and authenticated cannot EXECUTE set_cron_secret(text,text), install_payout_retry_cron(), payout_retry_cron_status() or pairing_sweep() (when present); service_role can.",
+      "affectedAreas": [
+        "supabase/migrations/20261121_087_pg_cron_payout_lockdown.sql",
+        "scripts/migration-ci-assertions.sql"
+      ],
+      "verification": "Migration CI privilege assertions (has_function_privilege) on a fresh full replay.",
+      "status": "passed-local",
+      "evidence": [
+        "Local, 2026-11-21, Postgres 16.15 with stub cron/net schemas mirroring the real signatures (pg_net: url, body, params, headers, timeout_milliseconds): after 087, `set role anon` gets 'permission denied' for set_cron_secret, install_payout_retry_cron, payout_retry_cron_status and pairing_sweep (stub); before 087 has_function_privilege('anon', ...) was true for all three 067 functions and pairing_sweep. CI assertions added for the four 087 signatures."
+      ]
+    },
+    {
+      "id": "header-auth",
+      "stage": "code",
+      "expectation": "The scheduled command calls net.http_post with named arguments and sends Authorization: Bearer <secret> in headers, not in params.",
+      "affectedAreas": [
+        "supabase/migrations/20261121_087_pg_cron_payout_lockdown.sql"
+      ],
+      "verification": "Migration CI: install with seeded config, then assert cron.job.command contains 'headers :=' and no literal secret; confirm the pg_net signature in CI.",
+      "status": "passed-local",
+      "evidence": [
+        "Local, 2026-11-21, Postgres 16.15 with stub cron/net schemas mirroring the real signatures (pg_net: url, body, params, headers, timeout_milliseconds): the old 067 command, executed, delivered params={Content-Type, Authorization: Bearer old-secret-123} and headers={Content-Type} only. The 087 stored command delivered params={} and headers={Content-Type, Authorization: Bearer dev-secret-abc}. CI pins net.http_post argument names (url, ..., params, headers) on real pg_net.",
+        "Dev Supabase project, 2026-11-21 (read-only): real net.http_post (pg_net 0.20.4) arguments are url, body, params, headers, timeout_milliseconds, confirming 067's third positional argument was params."
+      ]
+    },
+    {
+      "id": "configurable-url",
+      "stage": "code",
+      "expectation": "The job URL comes from ona_cron_config.payout_retry_url (https origin only), read at each run; no hard-coded host remains; install returns needs_url without it and refuses a non-https or path-bearing value.",
+      "affectedAreas": [
+        "supabase/migrations/20261121_087_pg_cron_payout_lockdown.sql"
+      ],
+      "verification": "Migration CI behaviour assertions.",
+      "status": "passed-local",
+      "evidence": [
+        "Local, 2026-11-21, Postgres 16.15 with stub cron/net schemas mirroring the real signatures (pg_net: url, body, params, headers, timeout_milliseconds): install returns needs_url without a URL; set_cron_secret rejects http://, a path, a trailing slash, credentials, a query, an empty host and a bare host (SQLSTATE 22023); stored command has no host and calls https://ona-dev-app.vercel.app/api/payments/payout-retry from config; secret rotation applied on the next run with no reinstall."
+      ]
+    },
+    {
+      "id": "old-job-removed",
+      "stage": "code",
+      "expectation": "An existing ona-payout-retry job is unscheduled on migrate and reinstalled only when URL and secret are both configured.",
+      "affectedAreas": [
+        "supabase/migrations/20261121_087_pg_cron_payout_lockdown.sql"
+      ],
+      "verification": "Source inspection; CI replay (067 then 087).",
+      "status": "passed-local",
+      "evidence": [
+        "Local, 2026-11-21, Postgres 16.15 with stub cron/net schemas mirroring the real signatures (pg_net: url, body, params, headers, timeout_milliseconds): with the 067 job installed and no URL seeded, applying 087 left 0 ona-payout-retry jobs."
+      ]
+    },
+    {
+      "id": "status-no-secret",
+      "stage": "code",
+      "expectation": "payout_retry_cron_status() reports job, schedule, active, url and whether a secret is configured, never the secret.",
+      "affectedAreas": [
+        "supabase/migrations/20261121_087_pg_cron_payout_lockdown.sql"
+      ],
+      "verification": "Migration CI assertion on the returned JSON.",
+      "status": "passed-local",
+      "evidence": [
+        "Local, 2026-11-21, Postgres 16.15 with stub cron/net schemas mirroring the real signatures (pg_net: url, body, params, headers, timeout_milliseconds): status returns {jobs, payout_retry_url, payout_retry_secret_configured}; CI asserts the secret never appears in it."
+      ]
+    },
+    {
+      "id": "applies-without-extensions",
+      "stage": "code",
+      "expectation": "The migration applies cleanly where pg_cron or pg_net is absent.",
+      "affectedAreas": [
+        "supabase/migrations/20261121_087_pg_cron_payout_lockdown.sql"
+      ],
+      "verification": "Source inspection of extension guards; CI applies with extensions present.",
+      "status": "passed-local",
+      "evidence": [
+        "Local, 2026-11-21, Postgres 16.15 with stub cron/net schemas mirroring the real signatures (pg_net: url, body, params, headers, timeout_milliseconds): on a database without cron/net (067 applies only partially there, its sql status function needs cron.job), 087 applied cleanly; install returned needs_pg_cron after URL and secret were seeded; status returned jobs {}."
+      ]
+    },
+    {
+      "id": "docs-updated",
+      "stage": "code",
+      "expectation": "VERCEL_DEPLOY.md has the pg_cron setup steps; MUTATION_INVENTORY.md and BACKEND_FIXES_STATUS.md are updated.",
+      "affectedAreas": [
+        "docs/VERCEL_DEPLOY.md",
+        "docs/MUTATION_INVENTORY.md",
+        "docs/BACKEND_FIXES_STATUS.md"
+      ],
+      "verification": "Source inspection.",
+      "status": "passed-local",
+      "evidence": [
+        "Source, 2026-11-21: VERCEL_DEPLOY.md 'pg_cron jobs (Supabase)' section, MUTATION_INVENTORY.md payout-retry rows, BACKEND_FIXES_STATUS.md section."
+      ]
+    },
+    {
+      "id": "suite-green",
+      "stage": "code",
+      "expectation": "Full test suite, typecheck, lint and migration CI pass.",
+      "affectedAreas": [],
+      "verification": "npm run lint && npm run typecheck && npm run test; GitHub 'Fresh Supabase migrations' job.",
+      "status": "passed",
+      "evidence": [
+        "Local, 2026-11-21 on uncommitted fix/pg-cron-payout-lockdown (from dev 9dd0077): vitest 284 files / 2,840 tests pass (incl. migration-ci.test.ts); tsc --noEmit passes; eslint 0 errors, 142 warnings. The 087 CI assertion block passed on the stub database, left no job or config rows, and failed on a 067-only database. GitHub migration CI with real pg_cron/pg_net pending.",
+        "GitHub PR #109 on ffc3d3e: Fresh Supabase migrations (real pg_cron/pg_net, including the 087 assertions), Lint & Type Check, Tests and Build all pass."
+      ]
+    },
+    {
+      "id": "live-dev-job",
+      "stage": "live",
+      "expectation": "On the dev Supabase project: anon RPC to the cron functions is refused; after seeding payout_retry_url=https://ona-dev-app.vercel.app and the secret, net._http_response shows 200 from payout-retry.",
+      "affectedAreas": [],
+      "verification": "Anon RPC probe; SQL editor queries on cron.job, cron.job_run_details and net._http_response.",
+      "status": "pending",
+      "evidence": [
+        "2026-11-21, before the fix: anon RPC payout_retry_cron_status() succeeded and returned []; ona_cron_config was empty (no job, no secret).",
+        "2026-11-21: 087 applied to the dev project in one transaction and recorded in public.schema_migrations (pg_cron 1.6.4 and pg_net 0.20.4 already enabled; cron.job empty before and after). Anon/authenticated EXECUTE now false and service_role true on all four functions; anon-key RPCs to payout_retry_cron_status and install_payout_retry_cron refused with 42501; install returns needs_url. Secret and URL not seeded yet, so the job is not installed and the 200 check is still pending."
+      ]
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent review against the implementation commit."
+    ],
+    "external": [
+      "Seed payout_retry_secret (= CRON_SECRET on ona-dev-app) and payout_retry_url=https://ona-dev-app.vercel.app on the dev project, run install_payout_retry_cron(), then confirm net._http_response shows 200.",
+      "Migration 086 (claim_broadcast_offer) is not applied on the dev project; apply it separately.",
+      "Production: apply 087 and repeat the setup with the production host and secret, as a separate rollout."
+    ]
+  }
+}

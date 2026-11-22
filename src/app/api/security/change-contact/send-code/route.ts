@@ -18,7 +18,7 @@ import {
 } from "@/lib/server/otp/change-contact-otp";
 import { verifyIdentityProof } from "@/lib/server/otp/identity-proof";
 import { findPhoneOwners, phoneTail } from "@/lib/server/otp/phone-owners";
-import { DEMO_OTP_CODE, isDemoOtpAllowed } from "@/lib/auth/demo-otp";
+import { DEMO_OTP_CODE, isDemoFallbackAllowed } from "@/lib/auth/demo-otp";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { createServiceSupabase } from "@/lib/supabase/server";
 
@@ -102,8 +102,9 @@ export async function POST(req: Request) {
   }
 
   const real = planOtpDelivery(channel).kind === "real";
-  // The shared demo code can authorise a contact change only in local development.
-  const demoAllowed = process.env.NODE_ENV !== "production" && isDemoOtpAllowed();
+  // The shared demo code can authorise a contact change only in local development,
+  // where it also stands in when the send fails (whatever OTP_DEMO_MODE says).
+  const demoAllowed = isDemoFallbackAllowed({ devOnly: true });
   if ((!real && !demoAllowed) || !isChangeContactConfigured()) {
     console.error("otp.change_contact.unavailable: provider or signing secret not configured");
     return apiFail(
@@ -200,7 +201,8 @@ export async function POST(req: Request) {
       }
     }
 
-    const code = real ? String(randomInt(100000, 999999)) : DEMO_OTP_CODE;
+    let code = real ? String(randomInt(100000, 999999)) : DEMO_OTP_CODE;
+    let fellBack = false;
 
     // Deliver BEFORE storing: a failed send must not rotate the code the user
     // already holds, nor leave a stored code nobody received.
@@ -213,12 +215,19 @@ export async function POST(req: Request) {
         purpose: "verify",
       });
       if (!sent.ok) {
-        console.error(`[change-contact] ${channel} delivery failed: ${sent.error}`);
-        return apiFail(
-          "We couldn't send the code right now. Please try again shortly.",
-          502,
-          "delivery_failed",
+        console.error(
+          `[change-contact] ${channel} delivery failed${demoAllowed ? " (demo code stored instead)" : ""}: ${sent.error}`,
         );
+        if (!demoAllowed) {
+          return apiFail(
+            "We couldn't send the code right now. Please try again shortly.",
+            502,
+            "delivery_failed",
+          );
+        }
+        // Development fallback: store the demo code in place of the one that never arrived.
+        code = DEMO_OTP_CODE;
+        fellBack = true;
       }
     }
 
@@ -240,7 +249,7 @@ export async function POST(req: Request) {
       target: mask(channel, target),
       expiresInSec: CHANGE_CONTACT_TTL_SEC,
       resendInSec: CHANGE_CONTACT_RESEND_SEC,
-      delivery: real ? channel : "demo",
+      delivery: real && !fellBack ? channel : "demo",
     });
   } catch (error) {
     const limited = rateLimitUnavailableResponse(error, req);

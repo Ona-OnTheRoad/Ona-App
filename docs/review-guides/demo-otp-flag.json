@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "id": "demo-otp-flag",
+  "title": "Demo OTP follows OTP_DEMO_MODE in every environment, with a development fallback",
+  "plan": "docs/review-guides/demo-otp-flag.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "flag-off-in-dev",
+      "stage": "code",
+      "expectation": "Outside production, OTP_DEMO_MODE=false (or any non-true value) with the public flag unset or not true makes isDemoOtpAllowed() false, so 336699 is not accepted for a send that was delivered.",
+      "verification": "Unit tests in src/lib/auth/__tests__/demo-otp.test.ts with NODE_ENV=development and the flag set to false, 0 and an unrecognised value.",
+      "status": "pending",
+      "evidence": [
+        "src/lib/auth/demo-otp.ts isDemoOtpAllowed: a set flag wins over NODE_ENV",
+        "src/lib/auth/__tests__/demo-otp.test.ts: development cases for false, 0, off, FALSE, public-only false and both false; all failed on the previous code"
+      ]
+    },
+    {
+      "id": "flag-on-in-dev",
+      "stage": "code",
+      "expectation": "Outside production, either flag set to true or 1 makes isDemoOtpAllowed() true.",
+      "verification": "Unit tests with NODE_ENV=development for the server flag and for the public flag alone.",
+      "status": "pending",
+      "evidence": [
+        "src/lib/auth/__tests__/demo-otp.test.ts: development cases for server true/1, public-only true, and mixed true/false"
+      ]
+    },
+    {
+      "id": "unset-keeps-default",
+      "stage": "code",
+      "expectation": "With both flags unset or blank, behaviour is unchanged: on outside production (local dev, tests), off in production.",
+      "verification": "Unit tests for development and production with both flags blank; the full test suite passes without changes to other test files.",
+      "status": "pending",
+      "evidence": [
+        "src/lib/auth/__tests__/demo-otp.test.ts: development unset and blank-both cases on; existing production unset case off",
+        "Full suite (275 files / 2,709 tests) passes with no edits to test files other than the two named in this guide"
+      ]
+    },
+    {
+      "id": "production-unchanged",
+      "stage": "code",
+      "expectation": "Production results are identical to before for every flag combination covered by the existing tests.",
+      "verification": "Existing production cases in demo-otp.test.ts pass unchanged.",
+      "status": "pending",
+      "evidence": [
+        "src/lib/auth/__tests__/demo-otp.test.ts: existing production cases pass unchanged (unset, false/0/yes/[sensitive]/sensitive/blank off; true/TRUE/ true /1 on; public-only true on)"
+      ]
+    },
+    {
+      "id": "dev-fallback",
+      "stage": "code",
+      "expectation": "Outside production with the flags false, a failed send or a missing provider stores 336699 as the code for login, signup, change-bank and change-contact; it then verifies through the normal stored-code check, and the response reports delivery demo.",
+      "verification": "Route tests per send route with NODE_ENV=development and both flags false: failed send stores the demo hash and verifies; a delivered SMS stores the real code and 336699 is refused.",
+      "status": "pending",
+      "evidence": [
+        "src/lib/auth/demo-otp.ts isDemoFallbackAllowed; src/lib/server/auth/otp-delivery.ts planOtpDelivery; login, signup, change-bank and change-contact send routes",
+        "src/app/api/auth/otp/send/__tests__/route.test.ts, src/app/api/auth/otp/signup/__tests__/signup-otp.test.ts, src/app/api/security/__tests__/change-bank-journey.test.ts, src/app/api/security/__tests__/change-contact-journey.test.ts: development fallback cases; all failed on the previous code"
+      ]
+    },
+    {
+      "id": "production-fallback",
+      "stage": "code",
+      "expectation": "In production, login falls back to 336699 only while a demo flag is true; with the flags unset or false a failed send returns 502 and no provider returns 503. Signup, change-bank and change-contact never fall back in production, even with the flags true.",
+      "verification": "Unit tests for isDemoFallbackAllowed; route tests with NODE_ENV=production for the flag on and off.",
+      "status": "pending",
+      "evidence": [
+        "src/lib/auth/__tests__/demo-otp.test.ts isDemoFallbackAllowed cases",
+        "Route tests: login production flag true stores the demo hash, flag false returns 502; signup, change-bank and change-contact return 502 with the flags true"
+      ]
+    },
+    {
+      "id": "delivery-failure-logged",
+      "stage": "code",
+      "expectation": "Every failed real delivery logs the channel and the provider's error, both when the route returns 502 and when demo mode is on and it falls back to the demo code. The log contains no phone number, email address or code.",
+      "verification": "Route tests asserting the console.error call in both branches and that its text contains neither the target nor a 6-digit code.",
+      "status": "pending",
+      "evidence": [
+        "src/app/api/auth/otp/send/route.ts: console.error on every failed delivery; redactDeliveryError strips the target and 6+ digit runs",
+        "src/app/api/auth/otp/send/__tests__/route.test.ts: failed-delivery log tests for the 502 path, the demo-fallback path and redaction of phone, email and code; the last two failed on the previous code"
+      ]
+    },
+    {
+      "id": "send-failure-not-sticky",
+      "stage": "code",
+      "expectation": "After a definite OTP send failure (clean error response, or the ledger reports a lost send as failed), the next send uses a new op key and really runs; after a lost response with no conclusive answer the op key is reused.",
+      "verification": "src/lib/supabase/__tests__/backend-send-otp.test.ts; the two failure cases fail with the app-api.ts change reverted.",
+      "status": "pass",
+      "evidence": [
+        "2026-11-21 live: login for one number kept returning 502 with no '[otp/send]' log line; idempotent_ops held an error from 2026-11-20 15:06 UTC under the browser's reused op key, replayed on every tap.",
+        "Local, 2026-11-21: new test file 3/3 pass; 2 of 3 fail with the fix stashed.",
+        "Live, 2026-11-21 local next dev (flags true): two stale 502 replays with no '[otp/send]' line, then a fresh send logged 'phone delivery failed (demo code stored instead): africastalking: SMS HTTP 401', returned 200, and /api/auth/otp/verify returned 200. Tester confirmed the OTP screen appeared and login worked."
+      ]
+    },
+    {
+      "id": "suite-green",
+      "stage": "code",
+      "expectation": "Full test suite, typecheck and lint pass.",
+      "verification": "npm test, npm run typecheck, npm run lint.",
+      "status": "pending",
+      "evidence": [
+        "Local, 2026-11-21 on uncommitted fix/demo-otp-flag: vitest 275 files / 2,725 tests pass; tsc --noEmit passes; eslint 0 errors, 142 warnings, none in changed files.",
+        "Local, 2026-11-21 after the sticky-failure fix: vitest 276 files / 2,728 tests pass; tsc --noEmit passes; eslint 0 errors, 142 warnings (3 pre-existing in app-api.ts, none on changed lines)."
+      ]
+    },
+    {
+      "id": "live-dev-check",
+      "stage": "live",
+      "expectation": "On a local next dev run with both flags false: when the SMS send fails, login still succeeds with 336699 and the server log shows the provider error with '(demo code stored instead)'; when it is delivered, 336699 is refused.",
+      "verification": "Manual run on localhost against the dev Supabase project.",
+      "status": "pending",
+      "evidence": [
+        "2026-11-20, before the fallback: login send returned 502 and logged '[otp/send] phone delivery failed: africastalking: SMS HTTP 401'. The fallback path is not yet observed live.",
+        "2026-11-21, flags true (not this check's condition): fallback stored 336699 after an Africa's Talking 401 and login succeeded. The flags-false run is still not observed."
+      ]
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent review against the implementation commit."
+    ],
+    "external": [
+      "Live dev check (live-dev-check) of the fallback path is pending.",
+      "Hosted staging that needs the demo code keeps OTP_DEMO_MODE and NEXT_PUBLIC_OTP_DEMO_MODE true; live production leaves both unset."
+    ]
+  }
+}
