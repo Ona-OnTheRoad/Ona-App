@@ -24,6 +24,24 @@ interface Props {
   setReceiptOpen: (fn: (o: boolean) => boolean) => void;
 }
 
+/**
+ * Receipt wording. Internal payout-queue states are not the customer's business
+ * (their money is already released); nobody sees raw snake_case.
+ */
+export function escrowReceiptLabel(
+  viewer: JobViewer,
+  escrowStatus: string | null | undefined,
+): string {
+  const e = String(escrowStatus || "released").toLowerCase();
+  if (
+    viewer === "motorist" &&
+    ["pending_settlement", "release_pending", "payout_on_hold"].includes(e)
+  ) {
+    return "released";
+  }
+  return e.replace(/_/g, " ");
+}
+
 /** Step 2: payment released / job complete (+ receipt and review result). */
 export function JobCompleteBody({
   job,
@@ -55,7 +73,7 @@ export function JobCompleteBody({
       </h1>
       <p className="mt-2 max-w-[280px] text-[13px] leading-snug text-ona-muted">
         {payoutPending
-          ? "Thanks, your payment is confirmed. Payout is processing."
+          ? "Thanks, your payment is confirmed and the job is closed."
           : "Thanks, payment released and job closed."}
       </p>
       <p className="mt-4 text-[12px] text-ona-muted">
@@ -92,7 +110,7 @@ export function JobCompleteBody({
       {receiptOpen && (
         <div className="mt-2 space-y-1 text-[12px] font-medium text-ona-muted">
           <p>Ref {job.paymentReference || job.id}</p>
-          <p>Escrow {job.escrowStatus || "released"}</p>
+          <p>Escrow {escrowReceiptLabel(viewer, job.escrowStatus)}</p>
         </div>
       )}
 

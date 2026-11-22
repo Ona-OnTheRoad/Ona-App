@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { Loader2, ShieldAlert } from "lucide-react";
+import { Loader2, PauseCircle, ShieldAlert } from "lucide-react";
 import {
   CopperButton,
   GhostButton,
@@ -43,6 +43,62 @@ export function renderPendingSettlementStage(
         <p className={cn("mt-2 text-[13px] leading-snug", muted)}>
           Your payout is being processed automatically. You’ll be notified when
           it’s released to your bank.
+        </p>
+        {job.agreedMajor != null ? (
+          <div className="mt-4 w-full text-left">
+            <JobChargeLines
+              agreedMajor={job.agreedMajor}
+              amountMinor={jobEscrowAmountMinor(job)}
+              quote={calloutQuote ?? job.calloutQuote}
+              fallbackQuote={job.calloutQuote}
+              currency={job.currency}
+              ink={ink}
+              muted={muted}
+              isLight={isLight}
+            />
+          </div>
+        ) : null}
+      </JobCard>
+    </JobShell>
+  );
+}
+
+/**
+ * PAYOUT ON HOLD (pro view only): automatic retries ended (24h, or the transfer
+ * hard-failed) and an admin must release it. Not a spinner: nothing is retrying.
+ */
+export function renderPayoutOnHoldStage(
+  c: JobFlowCtx,
+  job: JobRecord,
+): ReactElement {
+  const { isLight, router, ink, muted, calloutQuote } = c;
+  return (
+    <JobShell
+      isLight={isLight}
+      title="Payout on hold"
+      compactHeader
+      onBack={() => router.replace("/dashboard")}
+      footer={
+        <button
+          type="button"
+          onClick={() => router.replace("/dashboard")}
+          className="inline-flex h-12 w-full items-center justify-center rounded-md border-0 bg-[#FF6B35] text-[14px] font-black text-white"
+        >
+          Dashboard
+        </button>
+      }
+    >
+      <JobCard isLight={isLight} className="text-center">
+        <PauseCircle
+          className="mx-auto h-12 w-12 text-[#FF6B35]"
+          strokeWidth={1.75}
+          aria-hidden
+        />
+        <p className={cn("mt-3 text-[17px] font-black", ink)}>Payout on hold</p>
+        <p className={cn("mt-2 text-[13px] leading-snug", muted)}>
+          We couldn’t complete your payout automatically. Our team has been told
+          and will release it manually. If your bank details changed, update
+          them in Settings → Payments.
         </p>
         {job.agreedMajor != null ? (
           <div className="mt-4 w-full text-left">

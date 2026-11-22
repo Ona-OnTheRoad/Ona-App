@@ -29,6 +29,17 @@ UI stayed on **“Payout processing”** after Flutterwave had already paid the 
 7. **UI spinner** only when `escrow_status` is `pending_settlement` or `release_pending`  
 8. **Auto-retry**: every **10 minutes**, max **24 hours**, then admin suspend  
 9. **Min service charge ₦120** so pro 87.5% ≥ FLW ₦100 minimum  
+10. **Payout on hold (job state `payout_on_hold`)**: when auto-retry ends (24h window, or a hard transfer
+    failure such as an invalid account) the payment row returns to `held` with `meta.payoutSuspended`, AND the
+    *job* is moved from `pending_settlement` to `payout_on_hold` (`markJobPayoutOnHold`). Without this the
+    Repair Pro's screen spun forever because only the payment row changed. The Pro sees "Payout on hold" (not a
+    spinner), gets one notification, and the job is listed under "Payment processing" on their dashboard. An
+    admin release (or a later FLW success) moves it to `released` as before. The customer never sees the payout
+    queue: their payment reads as released as soon as they confirm.
+11. **Float alert**: every retry run compares Flutterwave **Available** with the net payouts still owed
+    (`checkPayoutFloatAndAlert`). If it is short, finance staff get one email per day (Resend), and the admin
+    Payments console shows a banner (also for suspended payouts needing manual release). Customer collections
+    sit in **Ledger** until Flutterwave settles them; transfers can only use **Available**.
 
 ## Manual recovery (if ever desynced)
 

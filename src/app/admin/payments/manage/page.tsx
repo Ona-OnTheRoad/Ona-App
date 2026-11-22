@@ -3,6 +3,7 @@
 import { AdminGuideBanner } from "@/components/admin/admin-guide-banner";
 import { DetailPanel } from "@/components/admin/payments-manage/detail-panel";
 import { OpsCards } from "@/components/admin/payments-manage/ops-cards";
+import { PayoutAttention } from "@/components/admin/payments-manage/payout-attention";
 import { PasswordPanel } from "@/components/admin/payments-manage/password-panel";
 import { PaymentsList } from "@/components/admin/payments-manage/payments-list";
 import { styles } from "@/components/admin/payments-manage/styles";
@@ -106,6 +107,7 @@ export default function PaymentManagementPage() {
         />
       )}
 
+      <PayoutAttention ops={ops} payments={payments} />
       <OpsCards ops={ops} />
 
       <div style={{ display: "flex", gap: selectedId ? 16 : 0 }}>

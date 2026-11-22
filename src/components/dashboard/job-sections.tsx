@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isPayoutOnHold } from "@/lib/jobs/constants";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Clock } from "lucide-react";
 import { isAutomotiveTrade } from "@/lib/artisan/catalog";
@@ -170,7 +171,7 @@ export function PayoutProcessingSection({
                     </p>
                   ) : null}
                   <p className={cn("mt-0.5 text-[10px] font-medium", muted)}>
-                    Payout pending
+                    {isPayoutOnHold(j) ? "Payout on hold" : "Payout pending"}
                   </p>
                 </div>
               </div>

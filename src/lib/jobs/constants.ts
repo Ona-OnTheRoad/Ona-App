@@ -445,6 +445,23 @@ export function isPayoutPendingSettlement(job: {
   return esc === "pending_settlement" || esc === "release_pending";
 }
 
+/**
+ * Job-level escrow state: the payout could not be completed automatically
+ * (24h of retries ended, or the transfer hard-failed) and now waits for an
+ * admin. The payment row itself goes back to `held` with `meta.payoutSuspended`;
+ * this value mirrors that onto the job so the Pro stops seeing a spinner.
+ */
+export const PAYOUT_ON_HOLD_ESCROW = "payout_on_hold";
+
+export function isPayoutOnHold(job: {
+  status?: string;
+  releasedAt?: string | null;
+  escrowStatus?: string | null;
+}): boolean {
+  if (job.releasedAt || job.status === "released") return false;
+  return String(job.escrowStatus || "").toLowerCase() === PAYOUT_ON_HOLD_ESCROW;
+}
+
 /** Platform / pro split on release */
 /** Ona platform fee share of service charge S (VAT 7.5% is held on FLW separately). */
 export const PLATFORM_FEE_PERCENT = 5;

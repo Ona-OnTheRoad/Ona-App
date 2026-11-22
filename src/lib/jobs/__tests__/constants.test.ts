@@ -29,6 +29,8 @@ import {
   isCompletedPastAutoReleaseDeadline,
   needsCustomerReleaseConfirm,
   isPayoutPendingSettlement,
+  isPayoutOnHold,
+  PAYOUT_ON_HOLD_ESCROW,
   canOpenDisputeNow,
   isNegotiationTimerArmed,
   nearbyProsStatusLine,
@@ -613,5 +615,28 @@ describe("nearbyProsStatusLine", () => {
 
   it("returns null when none nearby", () => {
     expect(nearbyProsStatusLine(0, "Mechanic")).toBeNull();
+  });
+});
+
+describe("isPayoutOnHold", () => {
+  it("is true only for the on-hold escrow state", () => {
+    expect(PAYOUT_ON_HOLD_ESCROW).toBe("payout_on_hold");
+    expect(isPayoutOnHold({ status: "satisfied", escrowStatus: "payout_on_hold" })).toBe(true);
+    expect(isPayoutOnHold({ escrowStatus: "PAYOUT_ON_HOLD" })).toBe(true);
+  });
+
+  it("is false for every other state, and once released", () => {
+    for (const esc of ["pending_settlement", "release_pending", "held", "released", "refunded", null, undefined, ""]) {
+      expect(isPayoutOnHold({ escrowStatus: esc })).toBe(false);
+    }
+    expect(isPayoutOnHold({ escrowStatus: "payout_on_hold", releasedAt: "2026-01-01" })).toBe(false);
+    expect(isPayoutOnHold({ status: "released", escrowStatus: "payout_on_hold" })).toBe(false);
+  });
+
+  it("is never confused with the spinner state (they never overlap)", () => {
+    const hold = { status: "satisfied", escrowStatus: "payout_on_hold" };
+    const pending = { status: "satisfied", escrowStatus: "pending_settlement" };
+    expect(isPayoutPendingSettlement(hold)).toBe(false);
+    expect(isPayoutOnHold(pending)).toBe(false);
   });
 });

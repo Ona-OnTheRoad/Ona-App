@@ -27,12 +27,21 @@ function humanStatus(
       tone: "ok",
     };
   }
+  // The payout queue is between Ona and the Repair Pro: once the customer has
+  // released, their payment is simply "Released".
+  const onHold =
+    meta.payoutSuspended === true ||
+    payoutStatus === "suspended_admin" ||
+    payoutStatus === "failed";
   if (esc === "pending_settlement" || esc === "release_pending") {
-    return {
-      label:
-        role === "professional" ? "Payout processing" : "Payment processing",
-      tone: "warn",
-    };
+    return role === "professional"
+      ? { label: "Payout processing", tone: "warn" }
+      : { label: "Released", tone: "ok" };
+  }
+  if (esc === "held" && onHold) {
+    return role === "professional"
+      ? { label: "Payout on hold", tone: "bad" }
+      : { label: "Released", tone: "ok" };
   }
   if (esc === "held") {
     return {
@@ -135,13 +144,19 @@ export async function GET(req: Request) {
       };
     });
 
+    // "Held" = money still in escrow from this user's point of view. A payout
+    // queued behind the customer's release reads as Released to the customer, so
+    // it must not also be counted as held (that would count it in both totals).
+    const isHeld = (p: { escrowStatus: unknown; statusLabel: unknown }) =>
+      ["held", "pending_settlement", "release_pending"].includes(
+        String(p.escrowStatus),
+      ) &&
+      p.statusLabel !== "Released" &&
+      p.statusLabel !== "Paid out";
+
     const summary = {
       totalCount: payments.length,
-      heldCount: payments.filter((p) =>
-        ["held", "pending_settlement", "release_pending"].includes(
-          String(p.escrowStatus),
-        ),
-      ).length,
+      heldCount: payments.filter(isHeld).length,
       releasedCount: payments.filter(
         (p) =>
           p.escrowStatus === "released" ||
@@ -154,11 +169,7 @@ export async function GET(req: Request) {
       refundedCount: payments.filter((p) => p.escrowStatus === "refunded")
         .length,
       heldMinor: payments
-        .filter((p) =>
-          ["held", "pending_settlement", "release_pending"].includes(
-            String(p.escrowStatus),
-          ),
-        )
+        .filter(isHeld)
         .reduce(
           (a, p) =>
             a +

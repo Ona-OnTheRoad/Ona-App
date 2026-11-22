@@ -10,6 +10,10 @@ import "server-only";
  */
 
 import {
+  checkPayoutFloatAndAlert,
+  markJobPayoutOnHold,
+} from "@/lib/server/payments/payout-alerts";
+import {
   getEscrowByRequest,
   listEscrowsByStatuses,
   updateEscrow,
@@ -418,6 +422,8 @@ export async function attemptProPayout(input: {
         },
       });
     }
+    // Also moves the JOB off the spinner (heals jobs suspended before this existed).
+    await markJobPayoutOnHold(esc.requestId);
     return {
       ok: false,
       pendingSettlement: false,
@@ -966,6 +972,7 @@ export async function attemptProPayout(input: {
           payoutSuspendedAt: nowIso(),
         },
       });
+      await markJobPayoutOnHold(esc.requestId);
       return {
         ok: false,
         pendingSettlement: false,
@@ -1164,6 +1171,7 @@ export async function attemptProPayout(input: {
         payoutClaimId: null,
       },
     });
+    await markJobPayoutOnHold(esc.requestId);
     return {
       ok: false,
       pendingSettlement: false,
@@ -1250,6 +1258,13 @@ export async function processDuePayoutRetries(limit = 25): Promise<{
     } else {
       failed++;
     }
+  }
+
+  // Warn finance when Flutterwave Available cannot cover what is owed (daily email).
+  try {
+    await checkPayoutFloatAndAlert();
+  } catch {
+    /* an alerting problem must never affect payout retries */
   }
 
   return {

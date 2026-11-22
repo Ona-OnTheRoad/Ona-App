@@ -1,6 +1,9 @@
 "use client";
 
-import { isPayoutPendingSettlement } from "@/lib/jobs/constants";
+import {
+  isPayoutOnHold,
+  isPayoutPendingSettlement,
+} from "@/lib/jobs/constants";
 import { renderAgreedStage } from "./job-flow-screen/agreed-stage";
 import {
   renderLoadingStage,
@@ -11,6 +14,7 @@ import {
 import {
   renderCancelledStage,
   renderDisputedStage,
+  renderPayoutOnHoldStage,
   renderPendingSettlementStage,
 } from "./job-flow-screen/closing-stages";
 import { renderCompletedStage } from "./job-flow-screen/completed-stage";
@@ -72,6 +76,11 @@ export function JobFlowScreen({
     viewer === "repair_pro"
   ) {
     return renderPendingSettlementStage(c, job);
+  }
+
+  // Retries ended and an admin must release it: say so (no spinner, nothing is retrying).
+  if (isPayoutOnHold(job) && viewer === "repair_pro") {
+    return renderPayoutOnHoldStage(c, job);
   }
 
   if (job.status === "released" || job.status === "satisfied") {

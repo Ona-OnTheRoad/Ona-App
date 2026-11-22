@@ -232,6 +232,11 @@ export class FakeQuery {
     const rows = this.sorted(this.db.rows[this.table] ?? []).filter((r) =>
       this.matches(r),
     );
+    // `update(...).select().maybeSingle()` applies the update to the rows it
+    // matched and returns the first updated row (null when nothing matched).
+    if (this.updateRow) {
+      for (const r of rows) Object.assign(r, this.updateRow);
+    }
     return { data: rows[0] ?? null, error: null };
   }
 
