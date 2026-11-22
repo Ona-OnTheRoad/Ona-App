@@ -199,6 +199,8 @@ export interface AppState {
   visibleMessageThreads: MessageThread[];
   locationError: string | null;
   isLocating: boolean;
+  /** True once a fresh GPS fix (or manual pin) replaced the cached/default location */
+  hasLiveFix: boolean;
   /** Re-fetch Live Repair Pros only (no location / filter changes) */
   refreshNearbyPros: () => void;
   setRadiusKm: (n: number) => void;

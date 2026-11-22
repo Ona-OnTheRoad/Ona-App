@@ -28,6 +28,8 @@ export function useMarketState() {
   const [messages, setMessages] = useState<MessageThread[]>([]);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [isLocating, setIsLocating] = useState(false);
+  /** A fresh GPS fix or manual pin has replaced the cached/default location this session */
+  const [hasLiveFix, setHasLiveFix] = useState(false);
   /** Live pros from Supabase (null = use demo seed) */
   const [cloudTechs, setCloudTechs] = useState<Technician[] | null>(null);
   return {
@@ -56,6 +58,8 @@ export function useMarketState() {
     setLocationError,
     isLocating,
     setIsLocating,
+    hasLiveFix,
+    setHasLiveFix,
     cloudTechs,
     setCloudTechs,
   };
