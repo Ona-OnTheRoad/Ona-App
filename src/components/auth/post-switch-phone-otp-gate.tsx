@@ -120,7 +120,7 @@ export function PostSwitchPhoneOtpGate() {
       <div
         className={cn(
           "w-full max-w-[360px] rounded-xl p-4 shadow-xl",
-          isLight ? "bg-[#c8c9cd] text-slate-900" : "bg-black text-white",
+          "ona2 border border-ona-border bg-ona-surface text-ona-ink",
         )}
       >
         <p className="text-[17px] font-bold tracking-tight">Confirm it’s you</p>

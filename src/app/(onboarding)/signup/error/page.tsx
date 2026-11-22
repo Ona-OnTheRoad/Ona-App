@@ -4,7 +4,6 @@ import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
 import {
-  AUTH_BG,
   AuthPlate,
   authPrimaryBtnClass,
   authPrimaryBtnStyle,
@@ -44,8 +43,7 @@ function SignupErrorBody() {
     <AuthPlate>
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-5 py-8 text-center">
         <div
-          className="w-full max-w-75 rounded-3xl p-5 shadow-[0_8px_30px_rgba(15,23,42,0.12)] ring-1 ring-black/10"
-          style={{ backgroundColor: AUTH_BG }}
+          className="ona2 w-full max-w-75 rounded-3xl bg-ona-bg p-5 shadow-[0_8px_30px_rgba(15,23,42,0.12)] ring-1 ring-black/10"
         >
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#fef2f2]">
             <AlertTriangle className="h-7 w-7 text-[#dc2626]" strokeWidth={2} />

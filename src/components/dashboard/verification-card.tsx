@@ -10,7 +10,7 @@ import type { useT } from "@/lib/i18n";
 import type { useApp } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
-/** Verification above Go Live card must contrast with shell (#c8c9cd / black) */
+/** Verification above Go Live card must contrast with shell (v2 white / #111114) */
 export function VerificationCard({
   artisan,
   t2CareOk,
@@ -37,7 +37,7 @@ export function VerificationCard({
       className={cn(
         "rounded-md px-3 py-3",
         isLight
-          ? "bg-white shadow-[0_1px_0_rgba(0,0,0,0.06)] ring-1 ring-black/10"
+          ? "ona2 border border-ona-border bg-ona-field shadow-[0_1px_0_rgba(0,0,0,0.06)]"
           : "bg-[#1c1c1e] ring-1 ring-white/15",
       )}
     >

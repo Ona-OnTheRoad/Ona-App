@@ -170,7 +170,7 @@ export default function TechnicianPage({
     return (
       <div
         className={`flex h-full flex-col items-center justify-center gap-2 p-6 ${
-          isLight ? "bg-[#c8c9cd] text-slate-800" : "bg-black text-white"
+          isLight ? "ona2 bg-ona-bg text-ona-ink" : "ona2 bg-ona-bg text-white"
         }`}
       >
         <p className="text-sm font-semibold">Loading technician…</p>
@@ -182,7 +182,7 @@ export default function TechnicianPage({
     return (
       <div
         className={`flex h-full flex-col items-center justify-center gap-3 p-6 ${
-          isLight ? "bg-[#c8c9cd]" : "bg-black"
+          "ona2 bg-ona-bg"
         }`}
       >
         <p

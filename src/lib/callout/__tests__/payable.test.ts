@@ -122,6 +122,48 @@ describe("getDisplayTotalMajor", () => {
     });
   });
 
+  it("never shows Call Out ₦0 under a total that includes it (quote not loaded after payment)", () => {
+    // Labour ₦20,000, call-out ₦1,270 charged: escrow ₦21,270, quote missing.
+    expect(jobChargeParts({ agreedMajor: 20000, amountMinor: 2127000, quote: null })).toEqual({
+      labourMajor: 20000,
+      calloutMajor: 1270,
+      totalMajor: 21270,
+    });
+    expect(
+      jobChargeParts({ agreedMajor: 20000, amountMinor: 2127000, quote: null, fallbackQuote: null }),
+    ).toMatchObject({ calloutMajor: 1270, totalMajor: 21270 });
+    // The three lines always add up.
+    const p = jobChargeParts({ agreedMajor: 20000, amountMinor: 2127000, quote: null })!;
+    expect(p.labourMajor + p.calloutMajor).toBe(p.totalMajor);
+  });
+
+  it("still infers it when the quote loads as not-eligible / empty but more was charged", () => {
+    expect(
+      jobChargeParts({
+        agreedMajor: 20000,
+        amountMinor: 2127000,
+        quote: quote({ calloutEligible: false, calloutStatus: "NOT_ELIGIBLE", calloutFee: null }),
+      }),
+    ).toMatchObject({ calloutMajor: 1270, totalMajor: 21270 });
+  });
+
+  it("does not invent a call-out when escrow equals the labour, or when there is no escrow", () => {
+    expect(jobChargeParts({ agreedMajor: 20000, amountMinor: 2000000, quote: null })).toEqual({
+      labourMajor: 20000, calloutMajor: 0, totalMajor: 20000,
+    });
+    expect(jobChargeParts({ agreedMajor: 20000, quote: null })).toEqual({
+      labourMajor: 20000, calloutMajor: 0, totalMajor: 20000,
+    });
+    // A cent of rounding noise is not a call-out.
+    expect(jobChargeParts({ agreedMajor: 20000, amountMinor: 2000000, quote: null })?.calloutMajor).toBe(0);
+  });
+
+  it("prefers the real quote over the inference when both exist", () => {
+    expect(
+      jobChargeParts({ agreedMajor: 20000, amountMinor: 2127000, quote: quote({ calloutFee: 1270 }) }),
+    ).toEqual({ labourMajor: 20000, calloutMajor: 1270, totalMajor: 21270 });
+  });
+
   it("falls back to labour + raw calloutFee when pending", () => {
     expect(
       getDisplayTotalMajor({ agreedMajor: 150, quote: quote({ calloutStatus: "PENDING", calloutFee: 1270 }) }),

@@ -142,9 +142,9 @@ export function BankForcePanel({
     if (msg) setErr(msg);
   };
 
-  const sheet = isLight ? "bg-[#c8c9cd]" : "bg-black";
-  const ink = isLight ? "text-slate-900" : "text-white";
-  const muted = isLight ? "text-slate-600" : "text-white/65";
+  const sheet = "ona2 bg-ona-bg";
+  const ink = "text-ona-ink";
+  const muted = "text-ona-muted";
 
   return (
     <div
@@ -206,9 +206,7 @@ export function BankForcePanel({
               onClick={() => setOpen(false)}
               className={cn(
                 "shrink-0 rounded-md border-0 px-2 py-1.5 text-[11px] font-bold",
-                isLight
-                  ? "bg-black/8 text-slate-800"
-                  : "bg-white/10 text-white",
+                "bg-ona-field text-ona-ink",
               )}
             >
               Later

@@ -62,12 +62,12 @@ export function CancelConfirmFromState({
 
 /** Reroute notification overlay for motorist. */
 export function RerouteAlertOverlay({
-  isLight,
   ink,
   muted,
   onContinue,
 }: {
-  isLight: boolean;
+  /** Kept for callers; the sheet colour now comes from the v2 tokens. */
+  isLight?: boolean;
   ink: string;
   muted: string;
   onContinue: () => void;
@@ -76,8 +76,7 @@ export function RerouteAlertOverlay({
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-12">
       <div
         className={cn(
-          "w-full rounded-t-2xl px-5 pb-6 pt-5",
-          isLight ? "bg-[#c8c9cd]" : "bg-[#1c1c1e]",
+          "ona2 w-full rounded-t-2xl bg-ona-surface px-5 pb-6 pt-5",
         )}
       >
         <h2 className={cn("mb-2 text-[18px] font-bold", ink)}>

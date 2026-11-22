@@ -2,7 +2,7 @@
 
 /**
  * Apple-premium Pro onboarding system (initial signup + Tap-to-switch setup).
- * One surface only: #c8c9cd light / black dark. No nested gray cards.
+ * One surface only: white light / #111114 dark. No nested gray cards.
  * Hairline list rows + large title + bottom primary CTA.
  */
 

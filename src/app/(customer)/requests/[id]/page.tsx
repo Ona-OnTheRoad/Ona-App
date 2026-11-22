@@ -43,7 +43,7 @@ export default function RequestProcessPage({
 
   const ink = isLight ? "text-slate-900" : "text-white";
   const muted = isLight ? "text-slate-700" : "text-white/75";
-  const stage = isLight ? "bg-[#c8c9cd]" : "bg-black";
+  const stage = "ona2 bg-ona-bg";
   const hairline = isLight ? "border-black/10" : "border-white/10";
   const backHref = isPro ? "/jobs" : "/history";
   const { quote: calloutQuote } = useJobCallout(

@@ -54,8 +54,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     if (isPublicPath(pathname)) {
       return (
         <div
-          className={cn(frame, "bg-[#c8c9cd]")}
-          style={{ backgroundColor: "#c8c9cd" }}
+          className={cn(frame, "ona2 bg-ona-bg")}
         >
           {children}
         </div>
@@ -82,10 +81,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   // Bank force is a lower panel on dashboard/home (BankForcePanel) not a hard block
   return (
     <div
-      className={cn(frame)}
-      style={{
-        backgroundColor: "#c8c9cd",
-      }}
+      className={cn(frame, "ona2 bg-ona-bg")}
     >
       {children}
     </div>

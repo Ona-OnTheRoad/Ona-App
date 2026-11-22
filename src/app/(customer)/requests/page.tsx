@@ -69,7 +69,7 @@ export default function RequestsPage() {
 
   const ink = isLight ? "text-slate-900" : "text-white";
   const muted = isLight ? "text-slate-700" : "text-white/75";
-  const stage = isLight ? "bg-[#c8c9cd]" : "bg-black";
+  const stage = "ona2 bg-ona-bg";
 
   const load = useCallback(async (trigger: JobTrigger = "action") => {
     if (!backendUserId) {

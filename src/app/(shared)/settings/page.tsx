@@ -161,7 +161,7 @@ export default function SettingsPage() {
     <div
       className={cn(
         "flex h-full flex-col",
-        isLight ? "bg-[#c8c9cd]" : "bg-black",
+        "ona2 bg-ona-bg",
       )}
     >
       <PageHeader

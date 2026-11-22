@@ -29,8 +29,7 @@ export function DisputeSheet({
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4">
       <div
         className={cn(
-          "max-h-[85vh] w-full max-w-md overflow-y-auto rounded-3xl p-5",
-          isLight ? "bg-[#c8c9cd]" : "bg-black",
+          "ona2 max-h-[85vh] w-full max-w-md overflow-y-auto rounded-3xl bg-ona-surface p-5",
         )}
       >
         <p

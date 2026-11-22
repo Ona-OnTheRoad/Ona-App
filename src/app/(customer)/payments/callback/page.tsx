@@ -8,7 +8,7 @@ export default function PaymentCallbackPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-full items-center justify-center bg-[#c8c9cd]">
+        <div className="flex h-full items-center justify-center ona2 bg-ona-bg">
           <Loader2 className="h-8 w-8 animate-spin text-brand" />
         </div>
       }

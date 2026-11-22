@@ -82,7 +82,7 @@ export function AcceptTripPopup() {
       <div
         className={cn(
           "w-full max-w-sm rounded-2xl border-0 p-4",
-          isLight ? "bg-[#c8c9cd]" : "bg-black",
+          "ona2 border border-ona-border bg-ona-surface",
         )}
       >
         <div className="flex items-start justify-between gap-2">

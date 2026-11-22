@@ -53,7 +53,7 @@ function CallbackInner() {
     };
   }, [ref]);
 
-  const bg = isLight ? "bg-[#c8c9cd]" : "bg-black";
+  const bg = "ona2 bg-ona-bg";
   const muted = isLight ? "text-slate-600" : "text-white/55";
 
   return (

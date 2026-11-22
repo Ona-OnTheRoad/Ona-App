@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 /**
  * Popup when user taps a finished chat/job.
  * Portals into #ona-phone so it stays inside the device frame.
- * Matches phone shell grey (#c8c9cd light / black dark) no border, no heavy shadow.
+ * Ona UI v2 surface (ona2 scope: white light / #111114 dark) with a hairline border.
  * View → read-only / summary; OK → dismiss.
  */
 export function ExpiredDialog({
@@ -52,7 +52,7 @@ export function ExpiredDialog({
       <div
         className={cn(
           "relative z-10 w-full max-w-[280px] rounded-xl border-0 px-4 py-4 text-center",
-          isLight ? "bg-[#c8c9cd] text-slate-900" : "bg-black text-white",
+          "ona2 border border-ona-border bg-ona-surface text-ona-ink",
         )}
       >
         <p

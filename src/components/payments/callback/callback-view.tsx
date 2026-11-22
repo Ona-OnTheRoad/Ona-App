@@ -22,7 +22,7 @@ export function CallbackView({
   bookedJobId: string | null;
 }) {
   const router = useRouter();
-  const sheet = isLight ? "bg-[#c8c9cd]" : "bg-black";
+  const sheet = "ona2 bg-ona-bg";
   const ink = isLight ? "text-slate-900" : "text-white";
 
   return (

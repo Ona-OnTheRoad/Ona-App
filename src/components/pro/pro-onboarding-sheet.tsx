@@ -217,7 +217,7 @@ export function ProOnboardingSheet() {
       <div
         className={cn(
           "om-sheet-spring pointer-events-auto relative flex w-full flex-col overflow-hidden",
-          isLight ? "bg-[#c8c9cd]" : "bg-black",
+          "ona2 bg-ona-bg",
         )}
         style={{
           height: expanded ? `${EXPANDED_H_PCT}%` : COLLAPSED_H,
@@ -278,7 +278,7 @@ export function ProOnboardingSheet() {
             <span
               className={cn(
                 "w-full text-left text-[13px] font-bold leading-tight",
-                isLight ? "text-slate-900" : "text-white",
+                "text-ona-ink",
               )}
             >
               {title}

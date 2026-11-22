@@ -69,7 +69,7 @@ export function LocationSearchBox({
             <li key={p.id} role="option" aria-selected="false">
               <button
                 type="button"
-                className="flex w-full items-start gap-2 border-0 bg-transparent px-2.5 py-2.5 text-left hover:bg-[#d4d5db] active:bg-[#c8c9cd]"
+                className="flex w-full items-start gap-2 border-0 bg-transparent px-2.5 py-2.5 text-left hover:bg-neutral-100 active:bg-neutral-200"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => onPickKnown(p)}
               >
@@ -92,7 +92,7 @@ export function LocationSearchBox({
             <li key={s.id} role="option" aria-selected="false">
               <button
                 type="button"
-                className="flex w-full items-start gap-2 border-0 bg-transparent px-2.5 py-2.5 text-left hover:bg-[#d4d5db] active:bg-[#c8c9cd]"
+                className="flex w-full items-start gap-2 border-0 bg-transparent px-2.5 py-2.5 text-left hover:bg-neutral-100 active:bg-neutral-200"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => onPickGoogle(s)}
               >

@@ -18,7 +18,7 @@ export function SnoozedDialog({
       <div
         className={cn(
           "w-full max-w-[360px] rounded-2xl border-0 p-5 text-center",
-          isLight ? "bg-[#c8c9cd] text-slate-900" : "bg-black text-white",
+          "ona2 border border-ona-border bg-ona-surface text-ona-ink",
         )}
       >
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#FF6B35]/20">

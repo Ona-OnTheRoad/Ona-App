@@ -77,9 +77,9 @@ export function BankSetupGate() {
     router.replace(isPro ? "/dashboard" : "/");
   };
 
-  const stage = isLight ? "bg-[#c8c9cd]" : "bg-black";
-  const ink = isLight ? "text-slate-900" : "text-white";
-  const muted = isLight ? "text-slate-600" : "text-white/65";
+  const stage = "ona2 bg-ona-bg";
+  const ink = "text-ona-ink";
+  const muted = "text-ona-muted";
 
   return (
     <div
@@ -110,7 +110,7 @@ export function BankSetupGate() {
           }}
           className={cn(
             "inline-flex items-center gap-1 rounded-md border-0 px-2 py-1.5 text-[11px] font-bold",
-            isLight ? "bg-black/8 text-slate-800" : "bg-white/10 text-white",
+            "bg-ona-field text-ona-ink",
           )}
           aria-label="Log out"
         >

@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { AUTH_BG } from "@/components/auth/auth-plate";
 
 /** Legacy route → full Repair Pro signup */
 export default function ProServiceRedirectPage() {
@@ -12,8 +11,7 @@ export default function ProServiceRedirectPage() {
   }, [router]);
   return (
     <div
-      className="h-full w-full"
-      style={{ backgroundColor: AUTH_BG }}
+      className="ona2 h-full w-full bg-ona-bg"
       aria-hidden
     />
   );

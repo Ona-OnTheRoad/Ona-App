@@ -26,7 +26,7 @@ export function ConfirmFixDialog({
       <div
         className={cn(
           "w-full max-w-[360px] rounded-2xl border-0 p-5",
-          isLight ? "bg-[#c8c9cd] text-slate-900" : "bg-black text-white",
+          "ona2 border border-ona-border bg-ona-surface text-ona-ink",
         )}
       >
         <p className="text-[15px] font-black">Confirm you can fix this</p>
