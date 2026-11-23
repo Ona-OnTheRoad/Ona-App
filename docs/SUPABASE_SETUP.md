@@ -70,6 +70,15 @@ npm run dev
 open http://localhost:3000/admin/login
 ```
 
+## Active projects
+
+| Use | Project ref | Notes |
+|-----|-------------|-------|
+| Dev / `.env.local` | `halsdbcilmskdanrckvn` | In use since November 2026; migrations up to `088` are recorded in `public.schema_migrations` |
+| Earlier dev | `ecmflahofeudjyoepcfk` | Replaced; older guides record migrations `077` and the issue 4 checks against it |
+
+Production is not listed here; check the Vercel `ona` project's env before applying a migration there.
+
 ## 7. Vercel
 
 | Project | Domain | Notes |

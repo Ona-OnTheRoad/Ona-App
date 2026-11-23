@@ -32,7 +32,8 @@ const patchSchema = z.object({
   portfolio: z.array(z.unknown()).optional(),
   govIdMeta: z.record(z.string(), z.unknown()).optional(),
   skillProof: z.record(z.string(), z.unknown()).optional().nullable(),
-  livenessPassedAt: z.string().optional().nullable(),
+  // livenessPassedAt is intentionally not accepted: only the server's provider
+  // check in /api/liveness/verify may set Tier 3 liveness.
   pipelineNotes: z.string().optional(),
   bankName: z.string().optional(),
   bankCode: z.string().optional(),
@@ -167,13 +168,6 @@ export async function PATCH(req: Request) {
   if (b.portfolio !== undefined) patch.portfolio = b.portfolio;
   if (b.govIdMeta !== undefined) patch.gov_id_meta = b.govIdMeta;
   if (b.skillProof !== undefined) patch.skill_proof = b.skillProof;
-  if (b.livenessPassedAt !== undefined) {
-    patch.liveness_passed_at = b.livenessPassedAt;
-    if (b.livenessPassedAt) {
-      patch.face_liveness_verified = true;
-      patch.face_liveness_at = b.livenessPassedAt;
-    }
-  }
   if (b.pipelineNotes !== undefined) patch.pipeline_notes = b.pipelineNotes;
   if (b.bankName !== undefined) patch.bank_name = b.bankName;
   if (b.bankCode !== undefined) patch.bank_code = b.bankCode;
@@ -202,17 +196,6 @@ export async function PATCH(req: Request) {
     .single();
 
   if (error) return apiFail(error.message, 500);
-
-  // Auto ladder after liveness (T3) or other verification fields
-  if (b.livenessPassedAt) {
-    try {
-      const { recomputeProVisibility } =
-        await import("@/lib/server/pro-visibility");
-      await recomputeProVisibility(supabase, b.userId);
-    } catch {
-      /* non-fatal */
-    }
-  }
 
   const { data: refreshed } = await supabase
     .from("repair_pro_profiles")

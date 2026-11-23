@@ -55,6 +55,7 @@ export function LivenessTier({
               "guest"
             }
             userId={backendUserId || undefined}
+            serverVerify
             onCancel={() => setShowLiveness(false)}
             onPassed={() => {
               const passedAt = new Date().toISOString();
@@ -75,33 +76,11 @@ export function LivenessTier({
                 "Face liveness passed. Complete BVN (Tier 3) for full T3 search reach.",
               );
               setErr(null);
-              // Persist liveness + auto-promote visibility T3 on server
-              void (async () => {
-                try {
-                  if (backendUserId) {
-                    const { authFetch } =
-                      await import("@/lib/api-auth-headers");
-                    await authFetch("/api/artisan/profile", {
-                      method: "PATCH",
-                      body: JSON.stringify({
-                        userId: backendUserId,
-                        livenessPassedAt: passedAt,
-                      }),
-                    });
-                    await authFetch("/api/profile/update", {
-                      method: "POST",
-                      body: JSON.stringify({
-                        faceLivenessVerified: true,
-                      }),
-                    }).catch(() => null);
-                    const { invalidateProfileCache } =
-                      await import("@/lib/supabase/profile-cache");
-                    invalidateProfileCache();
-                  }
-                } catch {
-                  /* local still saved */
-                }
-              })();
+              // The server already stored the verified pass (and recomputed
+              // visibility) in /api/liveness/verify; refresh the cached profile.
+              void import("@/lib/supabase/profile-cache")
+                .then(({ invalidateProfileCache }) => invalidateProfileCache())
+                .catch(() => undefined);
             }}
           />
         </div>
