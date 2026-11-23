@@ -1,4 +1,5 @@
 import "server-only";
+import { formatWait } from "@/lib/format-wait";
 import { apiFail } from "@/lib/server/api-json";
 import { clientIp } from "@/lib/server/modules/security";
 import {
@@ -27,7 +28,7 @@ export async function guardLivenessAttempt(
       const budget = await rateLimitAsync({ key, limit, windowMs: LIVENESS_WINDOW_MS });
       if (!budget.ok) {
         const res = apiFail(
-          `Too many verification attempts. Retry in ${budget.retryAfterSec}s.`,
+          `Too many verification attempts. Try again in ${formatWait(budget.retryAfterSec)}.`,
           429,
           "rate_limited",
         );
