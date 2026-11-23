@@ -9,7 +9,7 @@ import {
 import { livenessLog } from "@/lib/liveness/logger";
 import { SESSION_LEN } from "./constants";
 import { createDetectionTick } from "./detection-tick";
-import { pickChallenges } from "./helpers";
+import { pickChallenges, type TimedSample } from "./helpers";
 import type {
   Challenge,
   FaceLandmarkerInstance,
@@ -48,8 +48,9 @@ export function useFaceLiveness({
     Array.from({ length: SESSION_LEN }, () => false),
   );
   const earHistRef = useRef<number[]>([]);
-  const yawHistRef = useRef<number[]>([]);
-  const pitchHistRef = useRef<number[]>([]);
+  const yawHistRef = useRef<TimedSample[]>([]);
+  const pitchHistRef = useRef<TimedSample[]>([]);
+  const tiltHistRef = useRef<TimedSample[]>([]);
   const facePresentFramesRef = useRef(0);
   const faceMissingFramesRef = useRef(0);
   const motionEnergyRef = useRef(0);
@@ -86,6 +87,7 @@ export function useFaceLiveness({
     earHistRef.current = [];
     yawHistRef.current = [];
     pitchHistRef.current = [];
+    tiltHistRef.current = [];
     facePresentFramesRef.current = 0;
     faceMissingFramesRef.current = 0;
     motionEnergyRef.current = 0;
@@ -214,6 +216,7 @@ export function useFaceLiveness({
       earHistRef,
       yawHistRef,
       pitchHistRef,
+      tiltHistRef,
       facePresentFramesRef,
       faceMissingFramesRef,
       motionEnergyRef,

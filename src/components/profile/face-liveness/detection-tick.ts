@@ -1,7 +1,20 @@
 import type { RefObject } from "react";
 import { livenessLog } from "@/lib/liveness/logger";
 import { SESSION_LEN, SESSION_TARGET_MS, STEP_MS } from "./constants";
-import { blendScore, dist3, eyeAspectRatio, headPose } from "./helpers";
+import {
+  blendScore,
+  dist3,
+  eyeAspectRatio,
+  headPose,
+  headTiltRatio,
+  headTurnSide,
+  pushTimed,
+  TILT_MIN,
+  timedExtent,
+  TURN_SIDE_MIN,
+  timedRange,
+  type TimedSample,
+} from "./helpers";
 import type { Challenge, FaceLandmarkerInstance, LivenessLm } from "./types";
 
 export type DetectionTickDeps = {
@@ -14,8 +27,11 @@ export type DetectionTickDeps = {
   sessionStartedRef: RefObject<number>;
   passedStepsRef: RefObject<boolean[]>;
   earHistRef: RefObject<number[]>;
-  yawHistRef: RefObject<number[]>;
-  pitchHistRef: RefObject<number[]>;
+  /** Head yaw / pitch over the last POSE_WINDOW_MS (time-based, not frames). */
+  yawHistRef: RefObject<TimedSample[]>;
+  pitchHistRef: RefObject<TimedSample[]>;
+  /** Landmark head tilt (headTiltRatio) over the same window. */
+  tiltHistRef: RefObject<TimedSample[]>;
   facePresentFramesRef: RefObject<number>;
   faceMissingFramesRef: RefObject<number>;
   motionEnergyRef: RefObject<number>;
@@ -42,6 +58,7 @@ export function createDetectionTick(deps: DetectionTickDeps) {
     earHistRef,
     yawHistRef,
     pitchHistRef,
+    tiltHistRef,
     facePresentFramesRef,
     faceMissingFramesRef,
     motionEnergyRef,
@@ -133,10 +150,10 @@ export function createDetectionTick(deps: DetectionTickDeps) {
     const ear = eyeAspectRatio(face);
     earHistRef.current.push(ear);
     if (earHistRef.current.length > 18) earHistRef.current.shift();
-    yawHistRef.current.push(pose.yaw);
-    if (yawHistRef.current.length > 18) yawHistRef.current.shift();
-    pitchHistRef.current.push(pose.pitch);
-    if (pitchHistRef.current.length > 18) pitchHistRef.current.shift();
+    pushTimed(yawHistRef.current, now, pose.yaw);
+    pushTimed(pitchHistRef.current, now, pose.pitch);
+    const tilt = headTiltRatio(face);
+    if (tilt !== null) pushTimed(tiltHistRef.current, now, tilt);
 
     const ch = challengesRef.current[stepRef.current];
     if (!ch) {
@@ -154,11 +171,13 @@ export function createDetectionTick(deps: DetectionTickDeps) {
     const earMin = Math.min(...ears);
     const earMax = Math.max(...ears);
     const yaw = pose.yaw;
-    const pitch = pose.pitch;
-    const yaws = yawHistRef.current;
-    const pitches = pitchHistRef.current;
-    const yawRange = Math.max(...yaws) - Math.min(...yaws);
-    const pitchRange = Math.max(...pitches) - Math.min(...pitches);
+    const turnSide = headTurnSide(face);
+    // Up/down relative to where the head was in the last POSE_WINDOW_MS.
+    const tiltSpan = timedExtent(tiltHistRef.current);
+    const tiltedUp = tilt === null ? 0 : tiltSpan.max - tilt;
+    const tiltedDown = tilt === null ? 0 : tilt - tiltSpan.min;
+    const yawRange = timedRange(yawHistRef.current);
+    const pitchRange = timedRange(pitchHistRef.current);
 
     let passed = false;
     switch (ch.id) {
@@ -170,21 +189,23 @@ export function createDetectionTick(deps: DetectionTickDeps) {
       case "smile":
         passed = smile > 0.35;
         break;
+      // Size of the turn from the pose (|yaw|), direction from landmarks.
       case "turn_left":
-        // Mirrored selfie: left turn appears as positive or negative yaw accept either strong side
-        passed = yaw > 0.18 || yaw < -0.18 || yawRange > 0.28;
+        passed = Math.abs(yaw) > 0.18 && turnSide > TURN_SIDE_MIN;
         break;
       case "turn_right":
-        passed = yaw < -0.18 || yaw > 0.18 || yawRange > 0.28;
+        passed = Math.abs(yaw) > 0.18 && turnSide < -TURN_SIDE_MIN;
         break;
       case "nod":
-        passed = pitchRange > 0.2;
+        passed = pitchRange > 0.2 || tiltSpan.max - tiltSpan.min > TILT_MIN * 2;
         break;
+      // Direction and size from landmarks, relative to the person's own
+      // recent position (not a fixed level; a phone held low tilts the head).
       case "look_up":
-        passed = pitch < -0.12 || pitchRange > 0.18;
+        passed = tiltedUp > TILT_MIN;
         break;
       case "look_down":
-        passed = pitch > 0.12 || pitchRange > 0.18;
+        passed = tiltedDown > TILT_MIN;
         break;
     }
 
@@ -217,6 +238,7 @@ export function createDetectionTick(deps: DetectionTickDeps) {
           earHistRef.current = [];
           yawHistRef.current = [];
           pitchHistRef.current = [];
+          tiltHistRef.current = [];
           const next = challengesRef.current[stepRef.current];
           setFeedback(
             next ? `Good! Now ${next.label.toLowerCase()}` : "Hold on…",
@@ -232,6 +254,7 @@ export function createDetectionTick(deps: DetectionTickDeps) {
         earHistRef.current = [];
         yawHistRef.current = [];
         pitchHistRef.current = [];
+        tiltHistRef.current = [];
       } else if (facePresentFramesRef.current > 5) {
         setFeedback(ch.label);
       }
