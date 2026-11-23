@@ -7,7 +7,7 @@ Written: 2026-10-07. Implemented locally on `feat/payment-confirmation`; see [im
 - Working branch: `refactor/backend`, created from `origin/dev` at `03a745f`.
 - Step 1 (protected client-write lockdown) was committed as `08cb5c7` and pushed.
 - PR: https://github.com/Ona-OnTheRoad/Ona-App/pull/2 — base `dev`.
-- Migration `supabase/migrations/20261004_077_lock_client_writes.sql` was applied to the dev Supabase project `ecmflahofeudjyoepcfk`. All six guard triggers and expected client table privileges were verified. Production was not modified.
+- Migration `supabase/migrations/20261004_077_lock_client_writes.sql` was applied to the dev Supabase project `ecmflahofeudjyoepcfk` (the dev project at the time; the account now in use is `halsdbcilmskdanrckvn`, see `docs/SUPABASE_SETUP.md`). All six guard triggers and expected client table privileges were verified. Production was not modified.
 - Step 1 validation: disposable PostgreSQL fixture passed; lint passed with existing warnings; typecheck passed; 94 Vitest files / 1,086 tests passed.
 - Local app URL is `http://localhost:3100`. Leave port 3000 alone: another project uses it. Read current `.env.local` without printing secrets; the user has changed configuration and intends to restart the agent.
 - `reports/` contains the engineer and architecture reviews and remains outside the step 1 commit.

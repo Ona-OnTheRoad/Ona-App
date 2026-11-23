@@ -18,12 +18,15 @@ import type {
 } from "./types";
 import { retryLivenessSession } from "./retry-session";
 import { useLivenessBoot } from "./use-liveness-boot";
+import { captureSelfie, submitLivenessSelfie } from "./submit-selfie";
 
 type Params = {
   onPassed: () => void;
   onCancel: () => void;
   userKey: string;
   userId?: string;
+  /** Tier 3: capture a selfie and require the server's provider verdict. */
+  serverVerify?: boolean;
 };
 
 export function useFaceLiveness({
@@ -31,6 +34,7 @@ export function useFaceLiveness({
   onCancel,
   userKey,
   userId,
+  serverVerify = false,
 }: Params) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -152,41 +156,47 @@ export function useFaceLiveness({
     [stopCamera, userKey],
   );
 
-  const succeed = useCallback(() => {
-    runningRef.current = false;
+  const pass = useCallback(() => {
     clearLivenessFails(userKey);
     setPhase("success");
     setFeedback("Verified");
     setProgress(100);
-    const challenges = challengesRef.current.map((c) => c.id);
-    const durationMs = performance.now() - sessionStartedRef.current;
-    livenessLog("info", "session_pass", {
-      hook: "POST /api/liveness/verify",
-      challenges,
-      durationMs,
-    });
-    // Report pass to backend (no frames/media). Never blocks local success.
-    if (userId) {
-      void import("@/lib/api-auth-headers")
-        .then(({ authFetch }) =>
-          authFetch("/api/liveness/verify", {
-            method: "POST",
-            body: JSON.stringify({
-              userId,
-              passed: true,
-              challenges,
-              durationMs: Math.round(durationMs),
-              clientScore: 1,
-            }),
-          }),
-        )
-        .catch(() => undefined);
-    }
     window.setTimeout(() => {
       stopCamera();
       onPassed();
     }, 1400);
-  }, [onPassed, stopCamera, userKey, userId]);
+  }, [onPassed, stopCamera, userKey]);
+
+  const succeed = useCallback(() => {
+    runningRef.current = false;
+    const challenges = challengesRef.current.map((c) => c.id);
+    const durationMs = Math.round(performance.now() - sessionStartedRef.current);
+    livenessLog("info", "session_pass", { challenges, durationMs, serverVerify });
+    // Local-only gate (e.g. name change): the challenge alone is enough.
+    if (!serverVerify) return pass();
+    const selfie = captureSelfie(videoRef.current);
+    if (!userId || !selfie) {
+      setPhase("fail");
+      setErr(
+        userId
+          ? "Could not capture a photo. Try again in good light."
+          : "Sign in again to verify your face.",
+      );
+      return;
+    }
+    // Tier 3: only the server's provider verdict counts.
+    setPhase("verifying");
+    setFeedback("Checking your photo…");
+    void submitLivenessSelfie({ userId, selfie, challenges, durationMs }).then(
+      (r) => {
+        if (r.ok) return pass();
+        livenessLog("warn", "server_reject", { countsAsFail: r.countsAsFail });
+        if (r.countsAsFail) return failSession(r.message);
+        setPhase("fail");
+        setErr(r.message);
+      },
+    );
+  }, [failSession, pass, serverVerify, userId]);
 
   // Detection loop
   useEffect(() => {

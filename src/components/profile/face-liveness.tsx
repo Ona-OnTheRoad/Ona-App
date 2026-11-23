@@ -5,7 +5,8 @@
  * MediaPipe Face Landmarker (live stream only no video file stored).
  * Random challenges · anti-spoof heuristics · 6-fail lockout · copper success.
  *
- * Future: POST summary to /api/liveness/verify for server re-check (hook ready).
+ * With `serverVerify` (Tier 3) the challenge is only a UX gate: one frame is
+ * sent to /api/liveness/verify and success waits for the server's verdict.
  */
 
 import { FaceLivenessView } from "./face-liveness/face-liveness-view";
@@ -17,16 +18,25 @@ export function FaceLiveness({
   onCancel,
   userKey = "guest",
   userId,
+  serverVerify = false,
 }: {
   isLight: boolean;
   onPassed: () => void;
   onCancel: () => void;
   /** For lockout storage email / backend id */
   userKey?: string;
-  /** When set, reports pass to backend `/api/liveness/verify` */
+  /** Backend user id; required when `serverVerify` is set */
   userId?: string;
+  /** Tier 3: require a server provider pass before `onPassed` */
+  serverVerify?: boolean;
 }) {
-  const live = useFaceLiveness({ onPassed, onCancel, userKey, userId });
+  const live = useFaceLiveness({
+    onPassed,
+    onCancel,
+    userKey,
+    userId,
+    serverVerify,
+  });
 
   return (
     <FaceLivenessView

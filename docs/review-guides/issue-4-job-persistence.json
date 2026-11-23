@@ -98,7 +98,7 @@
       "verification": "Verify isolated-database reapplication and existing-row initialization, then record hosted rollout evidence separately.",
       "status": "pending",
       "evidence": [
-        "Applied to configured Supabase project ecmflahofeudjyoepcfk on 2026-10-07; verified job_version is NOT NULL, trigger is enabled, migration is recorded, and null version count is zero",
+        "Applied to configured Supabase project ecmflahofeudjyoepcfk (the dev project at the time; since replaced by halsdbcilmskdanrckvn) on 2026-10-07; verified job_version is NOT NULL, trigger is enabled, migration is recorded, and null version count is zero",
         "Isolated-database reapplication and runtime checks remain pending"
       ]
     },
