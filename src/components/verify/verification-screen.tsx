@@ -87,8 +87,8 @@ export function VerificationScreen({ isLight: propIsLight }: VerificationScreenP
               <Tier3LivenessCard
                 isLight={isLight}
                 isUnlocked={v.tier2Ok}
-                isVerified={Boolean(profileRecord?.livenessVerified)}
-                onClick={() => router.push("/settings/security")}
+                isVerified={Boolean(v.userProfile?.faceLivenessVerified)}
+                onClick={() => router.push("/verify/tier-3")}
               />
 
               {/* Card 4: Tier 4 Trade / Skill Certification proof */}

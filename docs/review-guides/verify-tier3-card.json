@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "verify-tier3-card",
+  "title": "Verify hub: Tier 3 liveness card label, verified state and route",
+  "plan": "docs/review-guides/verify-tier3-card.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "R1",
+      "stage": "code",
+      "expectation": "The Tier 3 card shows Start and is clickable when Tier 2 is approved, Locked and inert before Tier 2, and Verified and inert after liveness.",
+      "verification": "Component test.",
+      "status": "pass",
+      "evidence": [
+        "code: src/components/verify/__tests__/tier3-liveness-card.test.tsx covers all three states and click handling."
+      ]
+    },
+    {
+      "id": "R2",
+      "stage": "code",
+      "expectation": "The verify hub reads faceLivenessVerified for the Verified state and routes the card to /verify/tier-3, not /settings/security.",
+      "verification": "Code inspection; typecheck.",
+      "status": "pass",
+      "evidence": [
+        "code: verification-screen.tsx passes v.userProfile?.faceLivenessVerified and router.push('/verify/tier-3'). Typecheck is clean."
+      ]
+    },
+    {
+      "id": "R3",
+      "stage": "code",
+      "expectation": "/verify/tier-3 runs FaceLiveness with serverVerify for a Pro with Tier 2 approved. It shows a notice instead for non-Pros, Pros without Tier 2 and Pros already verified. On a pass it refreshes the profile cache and returns to /verify.",
+      "verification": "Code inspection.",
+      "status": "pass",
+      "evidence": [
+        "code: tier3-liveness-screen.tsx. No browser run (see H1)."
+      ]
+    },
+    {
+      "id": "R4",
+      "stage": "code",
+      "expectation": "lint has 0 errors; typecheck and the full test suite pass; new files stay at or under 300 lines.",
+      "verification": "npm run lint && npm run typecheck && npm run test.",
+      "status": "pass",
+      "evidence": [
+        "code: 2026-11-23, uncommitted tree. lint: 0 errors, 141 warnings (none in new files). typecheck clean. test: 288 files, 2869 tests passed."
+      ]
+    },
+    {
+      "id": "H1",
+      "stage": "hosted",
+      "expectation": "On dev, a Pro with Tier 2 approved sees Start, opens the camera check from /verify, and after a pass sees Verified.",
+      "verification": "Manual browser check.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": ["Independent review of the reviewed commit."],
+    "external": ["Browser check on dev (H1)."]
+  }
+}
