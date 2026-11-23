@@ -26,12 +26,12 @@ Other server wait messages (login, OTP, payments and so on) stay fixed text from
 
 ## Boundaries and limitations
 
-- `src/components/jobs/countdown-timer.tsx` is unchanged. It deliberately shows short pairing windows of 99 s or less as raw seconds ("66s"), per an earlier product decision. It is flagged for the product owner.
+- `src/components/jobs/countdown-timer.tsx`: updated in a follow-up at the user's request (2026-11-23). Short windows (≤ 99 s, such as the 66 s pairing) use `formatClock`: "1m 06s", then "59s". Long windows keep "19:05" / "01:02:03". Test: `src/components/jobs/__tests__/countdown-timer.test.tsx`.
 - `Retry-After` headers stay in seconds, as the standard expects.
 
 ## Remaining work
 
-- **Code:** independent review; a product decision on the job pairing timer.
+- **Code:** independent review.
 - **External:** spot-check a few messages in the browser on dev.
 
 ## Closeout
