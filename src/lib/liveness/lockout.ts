@@ -3,6 +3,8 @@
  * Stores only counters + timestamps (no media).
  */
 
+import { formatWait } from "@/lib/format-wait";
+
 const KEY = "ona-liveness-attempts-v1";
 export const LIVENESS_MAX_FAILS = 6;
 /** Cool-down after max fails (ms): one minute. */
@@ -84,7 +86,7 @@ export function clearLivenessFails(userKey: string) {
   write(userKey, { fails: 0, lockUntil: null });
 }
 
+/** Seconds under a minute, otherwise rounded-up minutes or hours. */
 export function formatRemaining(ms: number): string {
-  const m = Math.ceil(ms / 60000);
-  return m <= 1 ? "about 1 minute" : `${m} minutes`;
+  return formatWait(ms / 1000);
 }

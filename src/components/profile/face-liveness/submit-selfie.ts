@@ -24,8 +24,11 @@ export function captureSelfie(video: HTMLVideoElement | null): string | null {
 
 export type SubmitResult =
   | { ok: true }
-  /** `countsAsFail`: the provider said no (counts toward the local lockout). */
-  | { ok: false; message: string; countsAsFail: boolean };
+  /**
+   * `countsAsFail`: the provider said no (counts toward the local lockout).
+   * `retryAfterSec`: the server's attempt budget is spent (429 Retry-After).
+   */
+  | { ok: false; message: string; countsAsFail: boolean; retryAfterSec?: number };
 
 export async function submitLivenessSelfie(body: {
   userId: string;
@@ -45,7 +48,11 @@ export async function submitLivenessSelfie(body: {
       error?: { code?: string; message?: string };
     };
     if (res.ok && json.ok && json.data?.recorded === true) return { ok: true };
+    const retryAfter = Number(res.headers.get("Retry-After"));
     return {
+      ...(res.status === 429 && retryAfter > 0
+        ? { retryAfterSec: retryAfter }
+        : {}),
       ok: false,
       message:
         json.error?.message ||

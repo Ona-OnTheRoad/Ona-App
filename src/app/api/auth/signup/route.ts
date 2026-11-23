@@ -19,6 +19,7 @@ import { writeProProfile } from "@/lib/server/signup/pro-profile";
 import { bodySchema } from "@/lib/server/signup/schema";
 import { finishSignup } from "@/lib/server/signup/session";
 import type { UserRole } from "@/lib/supabase/types";
+import { formatWait } from "@/lib/format-wait";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -71,7 +72,7 @@ export async function POST(req: Request) {
     });
     if (!rl.ok) {
       return apiFail(
-        `Too many sign-up attempts. Retry in ${rl.retryAfterSec}s.`,
+        `Too many sign-up attempts. Try again in ${formatWait(rl.retryAfterSec)}.`,
         429,
         "rate_limited",
       );

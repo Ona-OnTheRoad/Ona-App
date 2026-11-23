@@ -8,6 +8,7 @@ import {
   getSupabaseUrl,
   isSupabaseConfigured,
 } from "@/lib/supabase/env";
+import { formatWait } from "@/lib/format-wait";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,7 +54,7 @@ export async function POST(req: Request) {
       const limited = !byIp.ok ? byIp : !byUser.ok ? byUser : null;
       if (limited) {
         return apiFail(
-          `Too many attempts. Retry in ${limited.retryAfterSec}s.`,
+          `Too many attempts. Try again in ${formatWait(limited.retryAfterSec)}.`,
           429,
           "rate_limited",
         );

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { requireUser } from "@/lib/server/auth-utils";
 import { resolveBankAccount } from "@/lib/server/payments/resolve-account";
+import { formatWait } from "@/lib/format-wait";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ const ANON_WINDOW_MS = 10 * 60_000;
 
 function tooManyLookups(retryAfterSec: number) {
   const response = apiFail(
-    `Too many name lookups. Retry in ${retryAfterSec}s.`,
+    `Too many name lookups. Try again in ${formatWait(retryAfterSec)}.`,
     429,
     "rate_limited",
   );

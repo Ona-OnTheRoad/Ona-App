@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { homePathForForbidden, isForbiddenMessage } from "@/lib/navigation";
+import { formatClock } from "@/lib/format-wait";
 
 const UNRECOVERABLE_KEYWORDS = [
   "supabase",
@@ -129,7 +130,7 @@ export default function AppError({
         className="text-[13px] font-semibold text-[#FF6B35] no-underline"
       >
         {unrecoverable && redirectSec > 0
-          ? `Go home (${redirectSec}s)`
+          ? `Go home (${formatClock(redirectSec)})`
           : "Go home"}
       </Link>
     </div>

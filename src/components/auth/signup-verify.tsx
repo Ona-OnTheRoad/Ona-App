@@ -21,6 +21,7 @@ import {
   type SignupDraft,
 } from "@/lib/signup-draft";
 import { toastError, toastInfo, toastSuccess } from "@/lib/toast";
+import { formatClock } from "@/lib/format-wait";
 
 /** A code stays valid this long on the server; never auto-text the same number again inside it. */
 const CODE_VALID_MS = 10 * 60 * 1000;
@@ -304,7 +305,7 @@ export function SignupVerify() {
                 className="flex min-h-11 items-center border-0 bg-transparent text-[13px] font-medium text-ona-brand-ink underline underline-offset-2 disabled:text-ona-muted disabled:no-underline"
               >
                 {resendLeft > 0
-                  ? `Resend code (${resendLeft}s)`
+                  ? `Resend code (${formatClock(resendLeft)})`
                   : "Resend code"}
               </button>
             </div>

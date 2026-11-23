@@ -117,7 +117,7 @@ describe("POST /api/auth/otp/signup/send", () => {
     expect(res.status).toBe(429);
     const body = await res.json();
     expect(body.error.code).toBe("resend_wait");
-    expect(body.error.message).toMatch(/wait \d+s/i);
+    expect(body.error.message).toMatch(/wait \d+ seconds/i);
     expect(sms.send).not.toHaveBeenCalled();
   });
 

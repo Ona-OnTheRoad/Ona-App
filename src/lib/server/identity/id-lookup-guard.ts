@@ -9,6 +9,7 @@ import {
   ID_LOOKUP_NOT_CONFIGURED,
   type PremblyVerifyResult,
 } from "@/lib/server/prembly";
+import { formatWait } from "@/lib/format-wait";
 
 /** Generous on purpose: many users share one carrier NAT address. */
 export const ID_LOOKUP_LIMIT = 20;
@@ -33,7 +34,7 @@ export async function guardIdLookup(
       {
         ok: false,
         code: "rate_limited",
-        message: `Too many verification attempts. Retry in ${budget.retryAfterSec}s.`,
+        message: `Too many verification attempts. Try again in ${formatWait(budget.retryAfterSec)}.`,
       },
       { status: 429, headers: { "Retry-After": String(budget.retryAfterSec) } },
     );

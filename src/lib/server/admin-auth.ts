@@ -23,6 +23,7 @@ import {
 } from "@/lib/server/modules/admin-roles";
 import { readUnlockFromCookies } from "@/lib/server/modules/sensitive-unlock";
 import { writeAuditLog } from "@/lib/server/modules/audit";
+import { formatWait } from "@/lib/format-wait";
 import { rateLimitAsync, RateLimitUnavailableError } from "@/lib/server/modules/rate-limit";
 
 export { ADMIN_SESSION_COOKIE };
@@ -252,7 +253,7 @@ export async function requireSensitiveAction(
   });
   if (!rl.ok) {
     throw new AdminAuthError(
-      `Too many sensitive attempts. Retry in ${rl.retryAfterSec}s`,
+      `Too many sensitive attempts. Try again in ${formatWait(rl.retryAfterSec)}`,
       429,
     );
   }
