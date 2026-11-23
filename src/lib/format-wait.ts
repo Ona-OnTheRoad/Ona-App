@@ -15,3 +15,16 @@ export function formatWait(totalSeconds: number): string {
   if (rest === 0) return `about ${h}`;
   return `about ${h} ${rest === 1 ? "1 minute" : `${rest} minutes`}`;
 }
+
+/**
+ * Compact live countdown or duration label, from seconds (no rounding up,
+ * for values that tick every second): 45 -> "45s", 66 -> "1m 06s",
+ * 3725 -> "1h 02m". Seconds stay seconds under a minute.
+ */
+export function formatClock(totalSeconds: number): string {
+  const sec = Math.max(0, Math.floor(Number(totalSeconds) || 0));
+  if (sec < 60) return `${sec}s`;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  if (sec < 3600) return `${Math.floor(sec / 60)}m ${pad(sec % 60)}s`;
+  return `${Math.floor(sec / 3600)}h ${pad(Math.floor((sec % 3600) / 60))}m`;
+}

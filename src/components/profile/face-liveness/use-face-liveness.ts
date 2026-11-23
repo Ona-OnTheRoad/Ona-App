@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   clearLivenessFails,
   formatRemaining,
@@ -18,6 +18,7 @@ import type {
 } from "./types";
 import { retryLivenessSession } from "./retry-session";
 import { useLivenessBoot } from "./use-liveness-boot";
+import { useLockCountdown } from "./use-lock-countdown";
 import { captureSelfie, submitLivenessSelfie } from "./submit-selfie";
 
 type Params = {
@@ -68,7 +69,14 @@ export function useFaceLiveness({
   const [err, setErr] = useState<string | null>(null);
   const [phase, setPhase] = useState<LivenessPhase>("boot");
   const [fails, setFails] = useState(0);
-  const [lockMs, setLockMs] = useState(0);
+  // Live lock countdown; when it ends, offer "Try again".
+  const { lockMs, setLockMs, lockLabel: lockMinutes } = useLockCountdown(
+    phase,
+    () => {
+      setErr("You can try again now.");
+      setPhase("fail");
+    },
+  );
 
   const stopCamera = useCallback(() => {
     runningRef.current = false;
@@ -115,7 +123,7 @@ export function useFaceLiveness({
       );
       livenessLog("warn", "locked", { remainingMs: lock.remainingMs });
     }
-  }, [userKey]);
+  }, [setLockMs, userKey]);
 
   // Boot once: camera + MediaPipe (CDN float16 low data)
   useLivenessBoot({
@@ -155,7 +163,7 @@ export function useFaceLiveness({
       setPhase("fail");
       setErr(`${reason} Attempt ${r.fails} of ${LIVENESS_MAX_FAILS}.`);
     },
-    [stopCamera, userKey],
+    [setLockMs, stopCamera, userKey],
   );
 
   const pass = useCallback(() => {
@@ -193,12 +201,19 @@ export function useFaceLiveness({
       (r) => {
         if (r.ok) return pass();
         livenessLog("warn", "server_reject", { countsAsFail: r.countsAsFail });
+        if (r.retryAfterSec) {
+          // Server attempt budget spent: show a live countdown, like the local lock.
+          stopCamera();
+          setLockMs(r.retryAfterSec * 1000);
+          setPhase("locked");
+          return;
+        }
         if (r.countsAsFail) return failSession(r.message);
         setPhase("fail");
         setErr(r.message);
       },
     );
-  }, [failSession, pass, serverVerify, userId]);
+  }, [failSession, pass, serverVerify, setLockMs, stopCamera, userId]);
 
   // Detection loop
   useEffect(() => {
@@ -252,11 +267,6 @@ export function useFaceLiveness({
       setModelReady,
     });
 
-  const lockMinutes = useMemo(
-    () => (lockMs > 0 ? formatRemaining(lockMs) : ""),
-    [lockMs],
-  );
-
   /** Stop the camera, then notify the parent (shared by Close / Cancel). */
   const cancelAndClose = () => {
     stopCamera();
@@ -270,7 +280,10 @@ export function useFaceLiveness({
     progress,
     ready,
     modelReady,
-    err,
+    err:
+      phase === "locked" && lockMs > 0
+        ? `Too many attempts. Try again in ${lockMinutes}.`
+        : err,
     phase,
     lockMinutes,
     onRetry,

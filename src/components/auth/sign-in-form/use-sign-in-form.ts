@@ -17,6 +17,7 @@ import {
 } from "./helpers";
 import { useCodeCooldown } from "./use-code-cooldown";
 import { useResendCountdown } from "@/lib/auth/use-resend-countdown";
+import { formatWait } from "@/lib/format-wait";
 
 /** State, countdown and handlers for the login form: email + password (default), or phone + SMS code. */
 export function useSignInForm() {
@@ -69,7 +70,7 @@ export function useSignInForm() {
       return;
     }
     if (cooldown.failedAttempts >= FAIL_THRESHOLD && cooldown.inCooldown) {
-      setError(`Please wait ${cooldown.cooldownLeft}s before requesting another code.`);
+      setError(`Please wait ${formatWait(cooldown.cooldownLeft)} before requesting another code.`);
       return;
     }
     const target = phone.trim();
@@ -83,11 +84,15 @@ export function useSignInForm() {
         forceResend: ambiguousSendRef.current,
       });
       if (res.error) {
-        const waitMatch = res.error.match(/wait\s+(\d+)\s*s/i);
+        // "Please wait 25 seconds" or "Please wait about 2 minutes"
+        const waitMatch = res.error.match(
+          /wait\s+(?:about\s+)?(\d+)\s*(seconds?|s|minutes?|m)\b/i,
+        );
         if (waitMatch) {
-          const sec = Number(waitMatch[1]) || COOLDOWN_SEC;
+          const unit = waitMatch[2].toLowerCase().startsWith("m") ? 60 : 1;
+          const sec = Number(waitMatch[1]) * unit || COOLDOWN_SEC;
           cooldown.startCooldown(sec);
-          setError(`Please wait ${sec}s before requesting another code.`);
+          setError(`Please wait ${formatWait(sec)} before requesting another code.`);
           return;
         }
         setError(publicMessage(res.error, "Could not send code."));
@@ -183,7 +188,7 @@ export function useSignInForm() {
         const nextFails = cooldown.registerFailure();
         if (nextFails >= FAIL_THRESHOLD) {
           setError(
-            `Please wait ${COOLDOWN_SEC}s before requesting another code.`,
+            `Please wait ${formatWait(COOLDOWN_SEC)} before requesting another code.`,
           );
         } else {
           setError(publicMessage(err, "Incorrect code. Try again."));
@@ -201,7 +206,7 @@ export function useSignInForm() {
 
   const displayError =
     cooldown.failedAttempts >= FAIL_THRESHOLD && cooldown.inCooldown
-      ? `Please wait ${cooldown.cooldownLeft}s before requesting another code.`
+      ? `Please wait ${formatWait(cooldown.cooldownLeft)} before requesting another code.`
       : error;
 
   function onPhoneChange(value: string) {

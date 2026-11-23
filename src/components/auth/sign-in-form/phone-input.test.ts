@@ -34,7 +34,7 @@ describe("splitPastedPhone / maskPhone / formatCountdown", () => {
     expect(maskPhone("")).toBe("");
   });
   it("formats mm:ss", () => {
-    expect(formatCountdown(45)).toBe("00:45");
-    expect(formatCountdown(75)).toBe("01:15");
+    expect(formatCountdown(45)).toBe("45s");
+    expect(formatCountdown(75)).toBe("1m 15s");
   });
 });

@@ -9,6 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import { fileToDataUrl, formatMb, getVideoDurationSec, uid } from "./helpers";
 import type { FlashSetters, StepBaseProps } from "./types";
+import { formatClock } from "@/lib/format-wait";
 
 type Props = StepBaseProps & FlashSetters;
 
@@ -65,7 +66,7 @@ export function VideoStep({
               const dur = await getVideoDurationSec(f);
               if (dur > INTRO_VIDEO_MAX_SEC + 0.25) {
                 setErr(
-                  `Video must be ${INTRO_VIDEO_MAX_SEC} seconds or less. This one is ${Math.ceil(dur)}s.`,
+                  `Video must be ${formatClock(INTRO_VIDEO_MAX_SEC)} or less. This one is ${formatClock(Math.ceil(dur))}.`,
                 );
                 return;
               }
