@@ -1,5 +1,6 @@
 "use client";
 
+import { formatClock } from "@/lib/format-wait";
 import { NEGOTIATE_WINDOW_MS } from "@/lib/jobs/constants";
 import { useExactCountdown } from "@/lib/jobs/use-exact-countdown";
 import { secondsLeftFloor } from "@/lib/jobs/countdown-math";
@@ -34,12 +35,13 @@ export function CountdownTimer({
   const m = Math.floor((totalSec % 3600) / 60);
   const s = totalSec % 60;
   /**
-   * Pairing is 66s show "66s"… not "01:06" (reads as 1 minute).
-   * Short windows ≤ 99s always display remaining seconds only.
+   * Short windows (≤ 99s, e.g. the 66s pairing) use the readable clock:
+   * "1m 06s" from a minute up, plain seconds ("59s") below. Not "01:06",
+   * which reads as one minute.
    */
   const shortSecondsOnly = totalMs > 0 && totalMs <= 99_000;
   const timeLabel = shortSecondsOnly
-    ? `${totalSec}s`
+    ? formatClock(totalSec)
     : h > 0
       ? `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
       : `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
