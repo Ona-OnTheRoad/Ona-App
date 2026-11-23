@@ -171,10 +171,12 @@ describe("POST /api/liveness/verify: provider gate", () => {
 describe("POST /api/liveness/verify: attempt budget", () => {
   it("returns 429 with Retry-After when the budget is spent", async () => {
     setup();
-    mocks.rateLimit.mockResolvedValue({ ok: false, retryAfterSec: 120 });
+    mocks.rateLimit.mockResolvedValue({ ok: false, retryAfterSec: 1502 });
     const res = await post({ selfie: SELFIE });
     expect(res.status).toBe(429);
-    expect(res.headers.get("Retry-After")).toBe("120");
+    expect(res.headers.get("Retry-After")).toBe("1502");
+    const body = await res.json();
+    expect(body.error.message).toBe("Too many verification attempts. Try again in about 26 minutes.");
     expect(mocks.face).not.toHaveBeenCalled();
   });
 

@@ -335,6 +335,9 @@ export function profileToUserProfile(
     bvn?: string;
     ninVerified?: boolean;
     bvnVerified?: boolean;
+    /** Server-recorded Tier 3 liveness (repair_pro_profiles.face_liveness_verified). */
+    faceLivenessVerified?: boolean;
+    faceLivenessAt?: string;
     proJobsEligible?: boolean;
     govIdVerified?: boolean;
     identityVerifiedAt?: string;
@@ -418,6 +421,8 @@ export function profileToUserProfile(
     bvn: extra?.bvn,
     ninVerified: extra?.ninVerified,
     bvnVerified: extra?.bvnVerified,
+    faceLivenessVerified: extra?.faceLivenessVerified,
+    faceLivenessAt: extra?.faceLivenessAt,
     proJobsEligible: extra?.proJobsEligible,
     govIdVerified: extra?.govIdVerified,
     identityVerifiedAt: extra?.identityVerifiedAt,
