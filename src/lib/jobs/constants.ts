@@ -455,6 +455,10 @@ export const PLATFORM_FEE_PERCENT = 5;
  */
 export const PRO_PAYOUT_PERCENT = 87.5;
 
+/** Customer-facing release prompt. Never mention the pro / Ona / VAT split here. */
+export const CONFIRM_RELEASE_NOTIFICATION_BODY =
+  "Your job is marked complete. Tap Release to pay your Repair Pro.";
+
 export const DISPUTE_REASONS: {
   id: DisputeReason;
   label: string;
@@ -497,7 +501,7 @@ export const TRIP_STATUS_COPY: Partial<
   },
   released: {
     title: "Payment released",
-    subtitle: "87.5% to Repair Pro · 5% Ona · 7.5% VAT on FLW",
+    subtitle: "Your payment has gone to your Repair Pro",
   },
   disputed: {
     title: "Dispute active",
