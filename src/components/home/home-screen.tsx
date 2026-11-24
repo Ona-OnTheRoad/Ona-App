@@ -136,7 +136,7 @@ export function HomeScreen() {
             "om-sheet-spring relative min-h-0 overflow-hidden",
             // Sheet fully open: the map shrinks to a peek, it is never hidden.
             sheetExpanded
-              ? "flex-[0_0_30%] opacity-100"
+              ? "flex-[0_0_40%] opacity-100"
               : shortSheet
                 ? "flex-1 opacity-100"
                 : "flex-[0_0_40%] opacity-100",
