@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, LogOut } from "lucide-react";
 import { useAppConfig } from "@/components/app-config-provider";
 import { useT, type MessageKey } from "@/lib/i18n";
 import { defaultBackHref, resetNavStack } from "@/lib/navigation";
@@ -129,14 +129,14 @@ export function NavSlider() {
   const switchLabel = isPro ? "Switch to Customer" : "Switch to Repair Pro";
 
   return (
-    <div className="ona2 absolute inset-0 z-[100] overflow-hidden">
+    <div className="ona2 absolute inset-0 z-[100] overflow-hidden bg-transparent">
       <button
         type="button"
         tabIndex={-1}
         aria-label={t("menu.closeMenu")}
         onClick={closeNavSlider}
         className={cn(
-          "absolute inset-0 border-0 bg-black/20 transition-opacity duration-200 motion-reduce:transition-none",
+          "absolute inset-0 border-0 bg-black/60 transition-opacity duration-200 motion-reduce:transition-none",
           shown ? "opacity-100" : "opacity-0",
         )}
       />
@@ -247,6 +247,20 @@ export function NavSlider() {
               ) : null}
             </div>
           ) : null}
+        </div>
+
+        <div className="mt-auto px-4 pt-6">
+          <button
+            type="button"
+            onClick={() => {
+              closeNavSlider();
+              router.push("/logout");
+            }}
+            className="flex h-12 w-full cursor-pointer items-center gap-4 rounded-ona-card border-0 bg-transparent px-4 text-[17px] font-semibold text-ona-danger transition-colors hover:bg-ona-field"
+          >
+            <LogOut className="h-[22px] w-[22px] shrink-0" strokeWidth={1.8} aria-hidden />
+            {t("menu.logOut")}
+          </button>
         </div>
       </aside>
     </div>
