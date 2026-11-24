@@ -124,15 +124,8 @@ export function HomeScreen() {
       data-theme-toggle-ok
       className="ona2 relative flex min-h-0 flex-1 flex-col overflow-hidden"
     >
-      {/* Floats over the map; sits in flow above the sheet when it is full-height */}
-      <div
-        className={cn(
-          "z-40",
-          sheetExpanded
-            ? "relative shrink-0 bg-ona-bg"
-            : "absolute inset-x-0 top-0",
-        )}
-      >
+      {/* Always floats over the map, also with the sheet fully open (a slice of map stays visible) */}
+      <div className="absolute inset-x-0 top-0 z-40">
         <AppHeader />
       </div>
 
@@ -141,14 +134,15 @@ export function HomeScreen() {
           data-map-surface
           className={cn(
             "om-sheet-spring relative min-h-0 overflow-hidden",
+            // Sheet fully open: the map shrinks to a peek, it is never hidden.
             sheetExpanded
-              ? "h-0 flex-[0_0_0%] opacity-0 pointer-events-none"
+              ? "flex-[0_0_30%] opacity-100"
               : shortSheet
                 ? "flex-1 opacity-100"
                 : "flex-[0_0_40%] opacity-100",
           )}
         >
-          {sheetExpanded ? null : !deferMap || mapRequested ? (
+          {!deferMap || mapRequested ? (
             <ServiceMap technicians={mapTechs} onSelect={setSelectedTechId} />
           ) : (
             <button
@@ -183,8 +177,7 @@ export function HomeScreen() {
               : shortSheet
                 ? "flex-[0_0_auto]"
                 : "flex-[0_0_60%]",
-            !sheetExpanded &&
-              "rounded-t-ona-sheet shadow-[0_-6px_24px_rgba(17,24,39,0.12)]",
+            "rounded-t-ona-sheet shadow-[0_-6px_24px_rgba(17,24,39,0.12)]",
           )}
           style={{ touchAction: "pan-y" }}
         >
