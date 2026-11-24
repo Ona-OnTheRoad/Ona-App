@@ -14,6 +14,7 @@ import {
   rateLimitUnavailableResponse,
 } from "@/lib/server/modules/rate-limit";
 import { issueIdentityProof } from "@/lib/server/otp/identity-proof";
+import { formatWait } from "@/lib/format-wait";
 
 /** Wrong email codes allowed per code before it is voided. */
 const MAX_CODE_ATTEMPTS = 5;
@@ -77,7 +78,7 @@ export async function POST(req: Request) {
     });
     if (!budget.ok) {
       return apiFail(
-        `Too many attempts. Retry in ${budget.retryAfterSec}s.`,
+        `Too many attempts. Try again in ${formatWait(budget.retryAfterSec)}.`,
         429,
         "rate_limited",
       );

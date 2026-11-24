@@ -13,7 +13,15 @@ describe("login profile persistence failure semantics", () => {
     vi.mocked(createServiceSupabase).mockReturnValue(sb as never);
     const result = await loadOrRepairLoginProfile("user-1", "ada@example.com", {});
     expect(result).toMatchObject({ hasMotorist: true, hasPro: true, profile: { bankName: "Pro Bank" } });
-    expect(sb.calls[2].steps[0].args).toEqual(["user_id, business_name, primary_service, services, years_experience, bio, service_radius_km, nin_verified, bvn_verified, docs_status, docs_rating_boost_applied, certification_file_name, certification_file_url, skills, rating_avg, jobs_completed, labour_prices, pricing_currency, vehicle_focus, created_at, bank_name, bank_account_name, bank_account_number, bank_code"]);
+    expect(sb.calls[2].steps[0].args).toEqual(["user_id, business_name, primary_service, services, years_experience, bio, service_radius_km, nin_verified, bvn_verified, face_liveness_verified, face_liveness_at, liveness_passed_at, docs_status, docs_rating_boost_applied, certification_file_name, certification_file_url, skills, rating_avg, jobs_completed, labour_prices, pricing_currency, vehicle_focus, created_at, bank_name, bank_account_name, bank_account_number, bank_code"]);
+  });
+
+  it("carries the server's Tier 3 liveness pass into the profile (survives reload)", async () => {
+    const live = { ...pro, face_liveness_verified: true, face_liveness_at: "2026-11-23T19:01:02.126Z" };
+    const sb = scriptedDb({ profiles: [{ data: { ...sharedProfile, role: "repair_pro" } }], motorist_profiles: [{ data: null }], repair_pro_profiles: [{ data: live }] });
+    vi.mocked(createServiceSupabase).mockReturnValue(sb as never);
+    const result = await loadOrRepairLoginProfile("user-1", "ada@example.com", {});
+    expect(result).toMatchObject({ profile: { faceLivenessVerified: true, faceLivenessAt: "2026-11-23T19:01:02.126Z" } });
   });
 
   it("treats side read errors without data as missing roles rather than throwing", async () => {

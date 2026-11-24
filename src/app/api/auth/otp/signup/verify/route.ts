@@ -16,6 +16,7 @@ import { canonicalPhone } from "@/lib/server/phone-match";
 import { isDemoOtp, isDemoOtpAllowed } from "@/lib/auth/demo-otp";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { createServiceSupabase } from "@/lib/supabase/server";
+import { formatWait } from "@/lib/format-wait";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -67,7 +68,7 @@ export async function POST(req: Request) {
       });
       if (!perIp.ok) {
         return apiFail(
-          `Too many attempts. Retry in ${perIp.retryAfterSec}s.`,
+          `Too many attempts. Try again in ${formatWait(perIp.retryAfterSec)}.`,
           429,
           "rate_limited",
         );

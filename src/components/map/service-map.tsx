@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { getGoogleMapsApiKey, shouldUseLiveMaps } from "@/lib/google-maps";
+import { useLocationGate } from "@/lib/location-gate";
 import type { Technician } from "@/lib/types";
 import { LiveGoogleMap } from "./service-map/live-google-map";
+import { LocationGatePrompt } from "./service-map/location-gate-prompt";
+import { MapLoading } from "./service-map/map-loading";
 import { OsmServiceMap } from "./service-map/osm-service-map-lazy";
 
 /**
@@ -21,6 +24,7 @@ export function ServiceMap({
   const hasKey = shouldUseLiveMaps();
   const [mapFailed, setMapFailed] = useState(false);
   const [retryTick, setRetryTick] = useState(0);
+  const { gate, allow, skip } = useLocationGate();
 
   // Always clear legacy fail flags when the live key is installed
   useEffect(() => {
@@ -45,6 +49,10 @@ export function ServiceMap({
       w.gm_authFailure = prev;
     };
   }, []);
+
+  // Open the map on the user, not on the fallback point. "denied" and "ready" fall through.
+  if (gate === "checking" || gate === "resolving") return <MapLoading />;
+  if (gate === "prompt") return <LocationGatePrompt onAllow={allow} onSkip={skip} />;
 
   if (!hasKey) {
     return <OsmServiceMap technicians={technicians} onSelect={onSelect} />;

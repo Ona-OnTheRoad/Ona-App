@@ -87,7 +87,8 @@ const bodySchema = z.object({
   bankAccountNumber: z.string().optional(),
   bankCode: z.string().optional(),
   password: z.string().min(6).optional(),
-  faceLivenessVerified: z.boolean().optional(),
+  // faceLivenessVerified is intentionally not accepted: only the server's
+  // provider check in /api/liveness/verify may set Tier 3 liveness.
   phoneVerified: z.boolean().optional(),
   guarantor: z
     .object({
@@ -468,32 +469,10 @@ export async function POST(req: Request) {
           ? { bank_account_number: b.bankAccountNumber.replace(/\D/g, "") || null }
           : {}),
         ...(b.bankCode !== undefined ? { bank_code: b.bankCode || null } : {}),
-        ...(b.faceLivenessVerified != null
-          ? {
-              face_liveness_verified: b.faceLivenessVerified,
-              face_liveness_at: b.faceLivenessVerified
-                ? new Date().toISOString()
-                : null,
-              liveness_passed_at: b.faceLivenessVerified
-                ? new Date().toISOString()
-                : null,
-            }
-          : {}),
         updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id" },
     );
-
-    // Auto visibility: liveness + BVN (with T2) → T3; + skill docs → T4
-    if (b.faceLivenessVerified) {
-      try {
-        const { recomputeProVisibility } =
-          await import("@/lib/server/pro-visibility");
-        await recomputeProVisibility(admin, userId);
-      } catch {
-        /* non-fatal */
-      }
-    }
   }
 
   // Unified identity: keep the canonical bank record + the other role's side

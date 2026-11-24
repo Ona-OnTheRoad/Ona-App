@@ -79,6 +79,7 @@ export function useAppValue(
     messages,
     locationError,
     isLocating,
+    hasLiveFix,
   } = market;
   const { setTheme, toggleTheme } = themeApi;
   const { setRegisteredAs } = applyApi;
@@ -177,6 +178,7 @@ export function useAppValue(
       visibleMessageThreads,
       locationError,
       isLocating,
+      hasLiveFix,
       refreshNearbyPros,
       setRadiusKm,
       setCategory,
@@ -263,6 +265,7 @@ export function useAppValue(
       messages,
       locationError,
       isLocating,
+      hasLiveFix,
       refreshNearbyPros,
       toggleFilter,
       setCategory,

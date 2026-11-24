@@ -1,3 +1,4 @@
+import { parseAudience } from "@/lib/notifications/audience";
 import type { AppNotification } from "@/lib/notifications/types";
 
 export function mapRow(row: Record<string, unknown>): AppNotification {
@@ -17,5 +18,6 @@ export function mapRow(row: Record<string, unknown>): AppNotification {
     messageText: (row.message_text as string) || null,
     readAt: (row.read_at as string) || null,
     createdAt: String(row.created_at || new Date().toISOString()),
+    audience: parseAudience(row.audience),
   };
 }

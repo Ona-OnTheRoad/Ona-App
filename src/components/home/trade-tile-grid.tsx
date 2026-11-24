@@ -6,12 +6,11 @@ import { cn } from "@/lib/utils";
 import type { TradeTile } from "@/components/home/trade-tiles";
 
 /**
- * Trade picker. Full mode: 4-column tile grid (icon over label).
+ * Trade picker. Full mode: 4-column grid of separate rounded tiles (icon over label),
+ * no divider lines.
  * Compact mode (a trade is open): one scrolling row of chips so the flow keeps
  * the room. Plain buttons with aria-pressed (the active trade is a toggle).
  */
-const COLUMNS = 4;
-
 export function TradeTileGrid({
   tiles,
   active,
@@ -58,7 +57,7 @@ export function TradeTileGrid({
     <div
       role="group"
       aria-label={t("home.serviceCategory")}
-      className="grid grid-cols-4 gap-px overflow-hidden rounded-ona-card border border-ona-border bg-ona-border"
+      className="grid grid-cols-4 gap-2"
     >
       {tiles.map(({ id, labelKey, icon: Icon }) => {
         const on = active === id;
@@ -69,10 +68,10 @@ export function TradeTileGrid({
             aria-pressed={id === "all" ? undefined : on}
             onClick={() => onPick(id)}
             className={cn(
-              "flex min-h-[72px] min-w-0 flex-col items-center justify-center gap-1.5 border-0 px-1 py-3 text-[12px] font-medium transition-colors active:bg-ona-field-strong",
+              "flex min-h-[72px] min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl border-0 px-1 py-3 text-[12px] font-medium transition-colors active:bg-ona-field-strong",
               on
                 ? "bg-ona-brand-soft text-ona-brand-ink"
-                : "bg-ona-surface text-ona-ink",
+                : "bg-ona-field text-ona-ink",
             )}
           >
             <Icon className="h-5 w-5 shrink-0" strokeWidth={on ? 2.3 : 1.8} />
@@ -82,12 +81,6 @@ export function TradeTileGrid({
           </button>
         );
       })}
-      {/* Empty cells in the last row stay white instead of showing the grid lines' grey. */}
-      {Array.from({ length: (COLUMNS - (tiles.length % COLUMNS)) % COLUMNS }).map(
-        (_, i) => (
-          <span key={`fill-${i}`} aria-hidden className="bg-ona-surface" />
-        ),
-      )}
     </div>
   );
 }

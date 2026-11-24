@@ -11,6 +11,7 @@ import { useApp } from "@/lib/store";
 import { useOverlayGatesReady } from "@/lib/use-overlay-gates-ready";
 import { isPublicPath } from "@/lib/routes";
 import { cn } from "@/lib/utils";
+import { formatClock } from "@/lib/format-wait";
 
 const RESEND_COOLDOWN_SEC = 66;
 
@@ -176,7 +177,7 @@ export function PostSwitchPhoneOtpGate() {
                   isLight ? "text-slate-500" : "text-white/55",
                 )}
               >
-                Resend verification code in {resendIn}s
+                Resend verification code in {formatClock(resendIn)}
               </p>
             ) : (
               <button

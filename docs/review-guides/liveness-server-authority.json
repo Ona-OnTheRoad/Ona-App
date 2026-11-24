@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "id": "liveness-server-authority",
+  "title": "Tier 3 liveness: server authority, Prembly face gate, legacy flag",
+  "plan": "docs/review-guides/liveness-server-authority.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "R1",
+      "stage": "code",
+      "expectation": "POST /api/liveness/verify with a bare { passed: true } (no selfie) returns 400 and writes nothing to repair_pro_profiles.",
+      "verification": "Route test (forge path).",
+      "status": "pass",
+      "evidence": [
+        "code: src/app/api/liveness/verify/__tests__/route.test.ts 'rejects a bare passed:true with no selfie' asserts 400 selfie_required, flag still false, no provider call, no recompute."
+      ]
+    },
+    {
+      "id": "R2",
+      "stage": "code",
+      "expectation": "POST /api/profile/update with faceLivenessVerified: true does not write face_liveness_verified, face_liveness_at or liveness_passed_at.",
+      "verification": "Route test asserting the upsert payload.",
+      "status": "pass",
+      "evidence": [
+        "code: src/app/api/liveness/verify/__tests__/forge-paths.test.ts asserts the pro row's liveness columns stay [false, null, null] while businessName is saved. The test fails against the pre-change route (checked locally) and passes after."
+      ]
+    },
+    {
+      "id": "R3",
+      "stage": "code",
+      "expectation": "PATCH /api/artisan/profile with livenessPassedAt does not write liveness_passed_at, face_liveness_verified or face_liveness_at.",
+      "verification": "Route test asserting the update patch.",
+      "status": "pass",
+      "evidence": [
+        "code: forge-paths.test.ts asserts liveness columns unchanged while bio is saved. It fails against the pre-change route (checked locally) and passes after."
+      ]
+    },
+    {
+      "id": "R4",
+      "stage": "code",
+      "expectation": "Tier 3 is set only after a server Prembly success on a validated selfie (JPEG/PNG/WebP data URL, size-bounded). The same write stores the selfie in face_liveness_selfie_url and liveness_meta { source: 'server_provider', provider, mode, checkMode, reference, confidence, verifiedAt }; no NIN or image goes into liveness_meta, logs or audit. Visibility is recomputed only after that write.",
+      "verification": "Route test with mocked provider success; unit tests of the selfie validator and evidence builder.",
+      "status": "pass",
+      "evidence": [
+        "code: route.test.ts 'sets Tier 3, stores selfie and evidence' asserts the flag, face_liveness_selfie_url, the liveness_meta shape, no NIN in meta, no NIN or image in audit, and recompute after the write.",
+        "code: face-check.test.ts covers parseSelfie (type, size, trailing junk), ninOnFile (plain and v1-encrypted) and buildLivenessMeta."
+      ]
+    },
+    {
+      "id": "R5",
+      "stage": "code",
+      "expectation": "A provider rejection returns 422 liveness_failed and writes no verified flags. In NIN + face mode, a Pro without an 11-digit NIN on file gets 422 nin_required and no provider call is made.",
+      "verification": "Route tests.",
+      "status": "pass",
+      "evidence": [
+        "code: route.test.ts covers provider rejection (422 liveness_failed, no flags, failure audited), nin_required with no provider call, liveness mode without a NIN, outage reported as 503, and 404 not_pro."
+      ]
+    },
+    {
+      "id": "R6",
+      "stage": "code",
+      "expectation": "In production without a Prembly key the face check returns NOT_CONFIGURED, the route returns 503 liveness_unavailable and nothing is marked verified. Outside production only, a clearly labelled local stand-in (provider 'local', mode 'sandbox_format') may pass.",
+      "verification": "Unit test of the face client under NODE_ENV=production; route test for 503.",
+      "status": "pass",
+      "evidence": [
+        "code: face-check.test.ts 'fails closed in production without a key' (NOT_CONFIGURED, no fetch) and 'labelled local stand-in outside production'; route.test.ts maps NOT_CONFIGURED to 503 liveness_unavailable with no flag written."
+      ]
+    },
+    {
+      "id": "R7",
+      "stage": "code",
+      "expectation": "The verify route enforces a per-user and a per-IP attempt budget (429 with Retry-After). A limiter outage returns 503 and never calls the provider.",
+      "verification": "Route tests with the limiter mocked to deny and to throw RateLimitUnavailableError.",
+      "status": "pass",
+      "evidence": [
+        "code: route.test.ts asserts 429 + Retry-After with no provider call, per-user and per-IP keys, and a limiter outage returning 503 with no provider call."
+      ]
+    },
+    {
+      "id": "R8",
+      "stage": "code",
+      "expectation": "Migration 088 adds repair_pro_profiles.liveness_meta (jsonb) and tags rows with a liveness flag and no evidence as source 'legacy_self_attested' without changing their flags or tier (grandfather decision). It is idempotent.",
+      "verification": "SQL review; migration CI if present.",
+      "status": "pass",
+      "evidence": [
+        "code: SQL reviewed. Uses add column if not exists, tags only rows where liveness_meta is null, adds a partial index, and leaves flags and tier untouched. Not run against a database yet (see H2).",
+        "hosted (dev): applied 2026-11-23 to the dev project halsdbcilmskdanrckvn (the Supabase account now in use, from .env.local). Re-running it skipped cleanly (idempotent)."
+      ]
+    },
+    {
+      "id": "R9",
+      "stage": "code",
+      "expectation": "The client captures a frame after the challenge, posts { selfie, challenges, durationMs } and shows success only when the server returns recorded: true; otherwise it shows the server message. Onboarding and the own-profile screen no longer send livenessPassedAt or faceLivenessVerified to the profile routes.",
+      "verification": "Code inspection; typecheck; lint.",
+      "status": "pass",
+      "evidence": [
+        "code: use-face-liveness.ts succeed() captures a frame (submit-selfie.ts), enters phase 'verifying' and calls onPassed only on recorded:true; a provider 'liveness_failed' counts toward the local lockout. serverVerify is set by liveness-tier.tsx and verification-section.tsx; name-change-form keeps the local-only gate and no longer calls the endpoint. liveness-tier.tsx no longer PATCHes livenessPassedAt or posts faceLivenessVerified; use-update-profile.ts no longer sends faceLivenessVerified. Typecheck passes. No browser run (see H3)."
+      ]
+    },
+    {
+      "id": "R10",
+      "stage": "code",
+      "expectation": "New and edited non-component files stay at or under 300 lines (profile/update was already over and only shrinks). Protected fee/job/payout files are untouched. lint has 0 errors; typecheck and the full test suite pass.",
+      "verification": "wc -l; git diff --stat; npm run lint && npm run typecheck && npm run test.",
+      "status": "pass",
+      "evidence": [
+        "code: npm run lint has 0 errors and 142 warnings, the same count as the unchanged tree. npm run typecheck is clean. npm run test: 287 files, 2866 tests passed (2026-11-23, uncommitted working tree).",
+        "code: new and edited non-component files are at or under 300 lines, except profile/update/route.ts, which went from 550 to 529. No RULES.md §10 file is touched."
+      ]
+    },
+    {
+      "id": "H1",
+      "stage": "hosted",
+      "expectation": "A live Prembly call on the tenant with a real selfie returns a success that the client recognises (path, body and response fields confirmed). A different face is rejected.",
+      "verification": "Manual check on a dev deployment with PREMBLY_API_KEY set.",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "H2",
+      "stage": "hosted",
+      "expectation": "Migration 088 is applied on dev and then production; the count of legacy_self_attested rows is recorded (count only, no personal data).",
+      "verification": "Supabase SQL on each project.",
+      "status": "pending",
+      "evidence": [
+        "2026-11-23: 088 applied to the dev project halsdbcilmskdanrckvn and recorded in public.schema_migrations. liveness_meta is jsonb; the partial index exists; 0 legacy_self_attested rows (0 of 18 pro rows had a liveness flag). anon has no SELECT on liveness_meta or face_liveness_selfie_url. A rolled-back authenticated-role UPDATE of liveness_meta/face_liveness_verified was refused by trg_zz_ona_guard_client_write. Production not modified."
+      ]
+    },
+    {
+      "id": "H3",
+      "stage": "hosted",
+      "expectation": "Camera smoke test: onboarding liveness on a phone captures, verifies and moves to Tier 3 progress; a failed provider verdict shows an error and does not unlock Tier 3.",
+      "verification": "Manual browser check.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent review of the reviewed commit.",
+      "Care UI (plan Phase C): show the selfie, liveness_meta and the legacy_self_attested flag in pro review, and let Care clear Tier 3 for flagged rows.",
+      "PATCH /api/artisan/profile accepts client govIdMeta, which can overwrite the server's gov_id_meta.idLookup evidence. Fix it in its own change.",
+      "Periodic re-liveness before high-value jobs (ONA-ID-305): a separate change."
+    ],
+    "external": [
+      "Apply migration 088 on production (dev done 2026-11-23, H2).",
+      "Confirm the Prembly face endpoint, body and response on the tenant; set PREMBLY_FACE_MODE / PREMBLY_FACE_PATH / PREMBLY_FACE_MIN_CONFIDENCE if the defaults do not match (H1).",
+      "Care to review the grandfathered legacy_self_attested rows; they keep Tier 3 reach until cleared (R7 risk stays open by decision).",
+      "Camera smoke test on a phone (H3)."
+    ]
+  }
+}

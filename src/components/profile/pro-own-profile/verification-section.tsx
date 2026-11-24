@@ -15,9 +15,12 @@ export function ProVerificationSection({
   setShowLiveness,
   onVerify,
   onLivenessPassed,
+  userId,
 }: {
   isLight: boolean;
   userProfile: UserProfile;
+  /** Backend user id for the server liveness check */
+  userId?: string;
   showLiveness: boolean;
   setShowLiveness: (v: boolean) => void;
   onVerify: () => void;
@@ -49,6 +52,9 @@ export function ProVerificationSection({
         <div className="mt-3">
           <FaceLiveness
             isLight={isLight}
+            userKey={userId || "guest"}
+            userId={userId}
+            serverVerify
             onCancel={() => setShowLiveness(false)}
             onPassed={onLivenessPassed}
           />

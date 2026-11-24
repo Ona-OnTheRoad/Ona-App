@@ -19,6 +19,10 @@ import type {
   AppNotification,
   NotificationFilter,
 } from "@/lib/notifications/types";
+import {
+  audienceForAccountType,
+  matchesAudience,
+} from "@/lib/notifications/audience";
 import { shouldListNotification } from "@/lib/notifications/types";
 import { useApp } from "@/lib/store";
 import { createBrowserSupabase } from "@/lib/supabase/client";
@@ -40,7 +44,8 @@ const NotificationContext = createContext<Ctx | null>(null);
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const { backendUserId, accountType, isAuthenticated } = useApp();
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  /** Every row for this account; `notifications` below is the active role's view */
+  const [allNotifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(false);
   const [centerOpen, setCenterOpen] = useState(false);
   const [filter, setFilter] = useState<NotificationFilter>("all");
@@ -79,7 +84,13 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     };
   }, [backendUserId]);
 
-  const role = accountType === "professional" ? "professional" : "motorist";
+  const role = audienceForAccountType(accountType);
+
+  // A dual-role account shares one user_id, so keep each side's notifications apart.
+  const notifications = useMemo(
+    () => allNotifications.filter((n) => matchesAudience(n, role)),
+    [allNotifications, role],
+  );
 
   const refresh = useCallback(async () => {
     if (!backendUserId || !isAuthenticated) {
@@ -91,7 +102,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     try {
       const { authFetch } = await import("@/lib/api-auth-headers");
       const res = await authFetch(
-        `/api/notifications?userId=${encodeURIComponent(backendUserId)}`,
+        `/api/notifications?userId=${encodeURIComponent(backendUserId)}&role=${role}`,
         { cache: "default" },
       );
       const json = await res.json();
@@ -115,7 +126,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [backendUserId, isAuthenticated]);
+  }, [backendUserId, isAuthenticated, role]);
 
   useEffect(() => {
     primed.current = false;
@@ -170,6 +181,9 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
           if (shouldListNotification(n)) {
             setNotifications((prev) => [n, ...prev]);
           }
+          // The other side's rows are kept (they show after a role switch) but
+          // must not toast or redirect while the user is in the wrong mode.
+          if (!matchesAudience(n, role)) return;
           pushToast(n);
           redirectToReleasePayIfNeeded(n);
         },
@@ -178,7 +192,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     return () => {
       void sb.removeChannel(channel);
     };
-  }, [backendUserId, isAuthenticated, pushToast]);
+  }, [backendUserId, isAuthenticated, pushToast, role]);
 
   const markRead = useCallback(
     async (ids: string[]) => {
@@ -204,15 +218,17 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const markAllRead = useCallback(async () => {
     const now = new Date().toISOString();
     setNotifications((prev) =>
-      prev.map((n) => ({ ...n, readAt: n.readAt || now })),
+      prev.map((n) =>
+        matchesAudience(n, role) ? { ...n, readAt: n.readAt || now } : n,
+      ),
     );
     if (!backendUserId) return;
     const { authFetch } = await import("@/lib/api-auth-headers");
     await authFetch("/api/notifications/read-all", {
       method: "POST",
-      body: JSON.stringify({ userId: backendUserId }),
+      body: JSON.stringify({ userId: backendUserId, role }),
     }).catch(() => null);
-  }, [backendUserId]);
+  }, [backendUserId, role]);
 
   const pushLocal = useCallback(
     (

@@ -151,7 +151,7 @@ export function useUpdateProfile(
               bankAccountNumber: next.bankAccountNumber,
               bankCode: next.bankCode,
               phoneVerified: next.phoneVerified,
-              faceLivenessVerified: next.faceLivenessVerified,
+              // faceLivenessVerified is server-owned (/api/liveness/verify).
               servedVehicleType: next.servedVehicleType,
               servedBrand: next.servedBrand,
               servedModel: next.servedModel,

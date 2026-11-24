@@ -4,6 +4,7 @@ import { apiFail, apiOk } from "@/lib/server/api-json";
 import { requireUser } from "@/lib/server/auth-utils";
 import { confirmJobPayment } from "@/lib/server/payments/confirm-job-payment";
 import { serverLogger } from "@/lib/server/structured-logger";
+import { formatWait } from "@/lib/format-wait";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,7 +34,7 @@ export async function POST(req: Request) {
       });
       if (!rl.ok) {
         return apiFail(
-          `Too many verify attempts. Retry in ${rl.retryAfterSec}s.`,
+          `Too many verify attempts. Try again in ${formatWait(rl.retryAfterSec)}.`,
           429,
           "rate_limited",
         );

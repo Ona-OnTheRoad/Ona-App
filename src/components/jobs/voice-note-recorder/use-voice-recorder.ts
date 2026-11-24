@@ -9,6 +9,7 @@ import {
 } from "@/lib/voice-record";
 import type { JobMedia } from "@/lib/jobs/types";
 import type { Phase } from "./types";
+import { formatClock } from "@/lib/format-wait";
 
 function wallClockMs(): number {
   return Date.now();
@@ -72,7 +73,7 @@ export function useVoiceRecorder({
   const paintElapsed = (sec: number) => {
     setElapsed(sec);
     if (elapsedEl.current) {
-      elapsedEl.current.textContent = `${sec}s`;
+      elapsedEl.current.textContent = formatClock(sec);
     }
   };
 

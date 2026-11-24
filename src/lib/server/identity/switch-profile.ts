@@ -28,6 +28,8 @@ export async function loadSwitchedIdentityProfile(
     serviceRadiusKm?: number;
     ninVerified?: boolean;
     bvnVerified?: boolean;
+    faceLivenessVerified?: boolean;
+    faceLivenessAt?: string;
     phoneVerified?: boolean;
     docsStatus?: UserProfile["docsStatus"];
     govIdVerified?: boolean;
@@ -152,6 +154,8 @@ export async function loadSwitchedIdentityProfile(
       // Prefer pro flags; fall back to customer NIN/BVN when pro not set
       ninVerified: pr?.nin_verified || motRow?.nin_verified,
       bvnVerified: pr?.bvn_verified || motRow?.bvn_verified,
+      faceLivenessVerified: Boolean(pr?.face_liveness_verified),
+      faceLivenessAt: pr?.face_liveness_at || pr?.liveness_passed_at || undefined,
       phoneVerified: Boolean(phoneVerified || proT2Approved),
       docsStatus:
         ds === "none" ||

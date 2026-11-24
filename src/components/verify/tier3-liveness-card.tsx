@@ -16,9 +16,9 @@ export function Tier3LivenessCard({
 }: Tier3LivenessCardProps) {
   return (
     <div
-      onClick={isUnlocked ? onClick : undefined}
+      onClick={isUnlocked && !isVerified ? onClick : undefined}
       className={`rounded-ona-card border border-ona-border dark:border-[#333E4F] bg-ona-surface dark:bg-transparent p-4 transition-all shadow-2xs ${
-        isUnlocked
+        isUnlocked && !isVerified
           ? "cursor-pointer hover:bg-black/1 dark:hover:bg-white/2"
           : "cursor-default"
       }`}
@@ -33,9 +33,12 @@ export function Tier3LivenessCard({
             <span>Verified</span>
             <CheckCircle2 className="h-4 w-4" strokeWidth={2.4} />
           </span>
+        ) : isUnlocked ? (
+          <span className="text-[12px] font-semibold text-brand">Start</span>
         ) : (
-          <span className="text-[12px] font-semibold text-ona-muted">
-            Locked
+          <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-ona-muted">
+            <Lock className="h-3.5 w-3.5" strokeWidth={2.4} />
+            <span>Locked</span>
           </span>
         )}
       </div>

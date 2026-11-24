@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import {
   MAP_STYLE_REVISION,
-  OSM_SATELLITE_ATTRIBUTION,
+  OSM_ATTRIBUTION,
   mapThemeForApp,
 } from "@/lib/map-theme";
 import L from "leaflet";
@@ -52,8 +52,30 @@ function MapSync({
 }) {
   const map = useMap();
 
+  const lastFitRef = useRef<{ lat: number; lng: number; pros: string } | null>(
+    null,
+  );
+  /** Stable across re-renders that pass a fresh-but-identical technicians array */
+  const prosKey = technicians
+    .filter((t) => t.hasLiveLocation !== false)
+    .map((t) => `${t.id}:${t.location.lat},${t.location.lng}`)
+    .join("|");
+
   // Deep view: you + each pro’s live GPS pin
   useEffect(() => {
+    // GPS jitter / periodic refresh must not yank the map back: once framed, only
+    // re-frame when the user moved (~75 m) or the set of pros changed.
+    const prev = lastFitRef.current;
+    if (
+      prev &&
+      prev.pros === prosKey &&
+      Math.abs(prev.lat - center.lat) <= 0.0007 &&
+      Math.abs(prev.lng - center.lng) <= 0.0007
+    ) {
+      return;
+    }
+    lastFitRef.current = { lat: center.lat, lng: center.lng, pros: prosKey };
+
     const live = technicians.filter(
       (t) =>
         t.hasLiveLocation !== false &&
@@ -67,7 +89,9 @@ function MapSync({
     } else {
       map.setView([center.lat, center.lng], 15, { animate: true });
     }
-  }, [map, center.lat, center.lng, technicians]);
+    // technicians is read via prosKey; the array identity changes every render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, center.lat, center.lng, prosKey]);
 
   useEffect(() => {
     const onFit = () => {
@@ -155,7 +179,7 @@ export function OsmServiceMap({
       >
         <TileLayer
           url={mapTheme.osmTileUrl}
-          attribution={OSM_SATELLITE_ATTRIBUTION}
+          attribution={OSM_ATTRIBUTION}
         />
         <MapSync
           center={center}

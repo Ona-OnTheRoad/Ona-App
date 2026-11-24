@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GoogleMap, Marker } from "@react-google-maps/api";
 import { LiveProPin } from "@/components/map/live-pro-pin";
 import { MAP_NEAR_ZOOM } from "@/lib/matching";
@@ -94,14 +94,25 @@ export function GoogleServiceMap({
     applyOnaMapTheme(map, isLight);
   }, [map, isLight]);
 
-  // Only pros with a real live GPS pin on the map
-  const livePros = technicians.filter(
-    (t) =>
-      t.hasLiveLocation !== false &&
-      Number.isFinite(t.location.lat) &&
-      Number.isFinite(t.location.lng) &&
-      !(t.location.lat === 0 && t.location.lng === 0),
+  // Only pros with a real live GPS pin on the map (memoised: a new array every render
+  // re-ran the fit effect below and re-panned/zoomed the map on every re-render)
+  const livePros = useMemo(
+    () =>
+      technicians.filter(
+        (t) =>
+          t.hasLiveLocation !== false &&
+          Number.isFinite(t.location.lat) &&
+          Number.isFinite(t.location.lng) &&
+          !(t.location.lat === 0 && t.location.lng === 0),
+      ),
+    [technicians],
   );
+  const lastFitRef = useRef<{ lat: number; lng: number } | null>(null);
+  const lastFitProsRef = useRef<string | null>(null);
+  /** Stable across re-renders that pass a fresh-but-identical technicians array */
+  const prosKey = livePros
+    .map((t) => `${t.id}:${t.location.lat},${t.location.lng}`)
+    .join("|");
 
   // Deep view: fit you + each pro’s live coordinates
   useEffect(() => {
@@ -109,6 +120,17 @@ export function GoogleServiceMap({
     const isPlaceholderCenter =
       Math.abs(center.lat - DEFAULT_USER_LOCATION.coordinates.lat) < 0.0001 &&
       Math.abs(center.lng - DEFAULT_USER_LOCATION.coordinates.lng) < 0.0001;
+
+    // GPS jitter / periodic refresh must not yank the map back: once framed, only
+    // re-frame when the user has actually moved (~75 m) or the pro set changed.
+    const prev = lastFitRef.current;
+    const moved =
+      !prev ||
+      Math.abs(prev.lat - center.lat) > 0.0007 ||
+      Math.abs(prev.lng - center.lng) > 0.0007;
+    if (!moved && lastFitProsRef.current === prosKey) return;
+    lastFitRef.current = { lat: center.lat, lng: center.lng };
+    lastFitProsRef.current = prosKey;
 
     if (livePros.length === 0) {
       map.panTo(center);
@@ -133,7 +155,8 @@ export function GoogleServiceMap({
     const z = map.getZoom();
     if (z != null && z > 18) map.setZoom(18);
     if (z != null && z < 15) map.setZoom(15);
-  }, [map, center.lat, center.lng, livePros]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, center.lat, center.lng, prosKey]);
 
   const mapOptions = useMemo(
     () => ({

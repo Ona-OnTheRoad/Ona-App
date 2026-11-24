@@ -8,6 +8,7 @@ import {
 } from "@/lib/supabase/env";
 import { loadLoginIdentity } from "@/lib/server/identity/login-identity";
 import { authLoginBodySchema as bodySchema } from "@/lib/server/openapi/schemas/auth";
+import { formatWait } from "@/lib/format-wait";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -65,7 +66,7 @@ export async function POST(req: Request) {
       });
       if (!byIp.ok) {
         return apiFail(
-          `Too many login attempts. Retry in ${byIp.retryAfterSec}s.`,
+          `Too many login attempts. Try again in ${formatWait(byIp.retryAfterSec)}.`,
           429,
           "rate_limited",
         );
@@ -77,7 +78,7 @@ export async function POST(req: Request) {
       });
       if (!byEmail.ok) {
         return apiFail(
-          `Too many login attempts for this email. Retry in ${byEmail.retryAfterSec}s.`,
+          `Too many login attempts for this email. Try again in ${formatWait(byEmail.retryAfterSec)}.`,
           429,
           "rate_limited",
         );

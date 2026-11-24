@@ -136,7 +136,7 @@ export function NavSlider() {
         aria-label={t("menu.closeMenu")}
         onClick={closeNavSlider}
         className={cn(
-          "absolute inset-0 border-0 bg-black/40 transition-opacity duration-200 motion-reduce:transition-none",
+          "absolute inset-0 border-0 bg-black/20 transition-opacity duration-200 motion-reduce:transition-none",
           shown ? "opacity-100" : "opacity-0",
         )}
       />
@@ -147,7 +147,7 @@ export function NavSlider() {
         aria-modal="true"
         aria-labelledby="nav-slider-title"
         className={cn(
-          "absolute bottom-0 left-0 top-0 flex w-[84%] max-w-[420px] flex-col overflow-y-auto bg-ona-surface pb-6 shadow-xl outline-none transition-transform duration-200 ease-out motion-reduce:transition-none",
+          "absolute bottom-0 left-0 top-0 flex w-[70%] max-w-[420px] flex-col overflow-y-auto bg-ona-surface pb-6 shadow-xl outline-none transition-transform duration-200 ease-out motion-reduce:transition-none",
           shown ? "translate-x-0" : "-translate-x-full",
         )}
       >

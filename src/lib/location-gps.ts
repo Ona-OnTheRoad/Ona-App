@@ -35,3 +35,10 @@ export function shouldSurfaceLocationError(opts: {
   if (!opts.silentRequest) return true; // explicit user action → always surface
   return !opts.hasUsableLocation;
 }
+
+/**
+ * How long the home map waits for the first fix before it renders anyway.
+ * Only applies when the user has no cached fix; the map never blocks past this.
+ * (Not a GPS request timeout; the GPS_*_TIMEOUT_MS values above still govern those.)
+ */
+export const MAP_GATE_WAIT_MS = 4_000;

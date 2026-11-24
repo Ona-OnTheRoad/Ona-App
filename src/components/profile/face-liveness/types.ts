@@ -27,6 +27,12 @@ export type FaceLandmarkerInstance = {
   close?: () => void;
 };
 
-export type LivenessPhase = "boot" | "run" | "success" | "locked" | "fail";
+export type LivenessPhase =
+  | "boot"
+  | "run"
+  | "verifying"
+  | "success"
+  | "locked"
+  | "fail";
 
 export type LivenessLm = { x: number; y: number; z?: number }[];

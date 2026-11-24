@@ -14,6 +14,7 @@ import { bankChangeKey } from "@/lib/server/otp/bank-change-otp";
 import { consumeOtpByKey, normalizeContactTarget } from "@/lib/server/otp/change-contact-otp";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { createServiceSupabase } from "@/lib/supabase/server";
+import { formatWait } from "@/lib/format-wait";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
         windowMs: 60 * 60_000,
       });
       if (!perIp.ok) {
-        return apiFail(`Too many attempts. Retry in ${perIp.retryAfterSec}s.`, 429, "rate_limited");
+        return apiFail(`Too many attempts. Try again in ${formatWait(perIp.retryAfterSec)}.`, 429, "rate_limited");
       }
     }
     const perUser = await rateLimitAsync({
@@ -58,7 +59,7 @@ export async function POST(req: Request) {
       windowMs: 60 * 60_000,
     });
     if (!perUser.ok) {
-      return apiFail(`Too many attempts. Retry in ${perUser.retryAfterSec}s.`, 429, "rate_limited");
+      return apiFail(`Too many attempts. Try again in ${formatWait(perUser.retryAfterSec)}.`, 429, "rate_limited");
     }
 
     const supabase = createServiceSupabase();

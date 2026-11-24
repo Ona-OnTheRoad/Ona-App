@@ -18,6 +18,16 @@ describe("switched identity projection failure semantics", () => {
     expect(sb.calls.every(c => c.steps[1].args[1] === "user-1")).toBe(true);
   });
 
+  it("carries the server's Tier 3 liveness pass, and false when not passed", async () => {
+    const live = { ...pro, face_liveness_verified: true, liveness_passed_at: "2026-11-23T19:01:02.126Z" };
+    const sb = scriptedDb({ motorist_profiles: [{ data: null }, { data: null }], repair_pro_profiles: [{ data: live }, { data: live }] });
+    const result = await loadSwitchedIdentityProfile(sb as never, "user-1", "repair_pro", profile);
+    expect(result.userProfile).toMatchObject({ faceLivenessVerified: true, faceLivenessAt: "2026-11-23T19:01:02.126Z" });
+    const sb2 = scriptedDb({ motorist_profiles: [{ data: null }, { data: null }], repair_pro_profiles: [{ data: pro }, { data: pro }] });
+    const result2 = await loadSwitchedIdentityProfile(sb2 as never, "user-1", "repair_pro", profile);
+    expect(result2.userProfile.faceLivenessVerified).toBe(false);
+  });
+
   it("preserves empty services arrays rather than replacing them with fallback", async () => {
     const sb = scriptedDb({ motorist_profiles: [{ data: motorist }, { data: motorist }], repair_pro_profiles: [{ data: { ...pro, services: [] } }, { data: pro }] });
     const result = await loadSwitchedIdentityProfile(sb as never, "user-1", "repair_pro", profile);

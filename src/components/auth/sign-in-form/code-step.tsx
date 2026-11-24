@@ -7,6 +7,7 @@ import { OnaOtpInput } from "@/components/ui/ona-otp-input";
 import { OnaTitle } from "@/components/ui/ona-screen";
 import { useT } from "@/lib/i18n";
 import { formatCountdown, maskPhone } from "./phone-input";
+import { formatClock } from "@/lib/format-wait";
 
 /** Screen 2: OTP boxes, existing cooldown countdown / Resend, Verify. */
 export function CodeStep({
@@ -84,7 +85,7 @@ export function CodeStep({
             className="flex min-h-[44px] items-center border-0 bg-transparent text-[13px] font-medium text-ona-brand-ink underline underline-offset-2 disabled:text-ona-muted disabled:no-underline"
           >
             {resendIn > 0
-              ? `${t("auth.resendCode")} (${resendIn}s)`
+              ? `${t("auth.resendCode")} (${formatClock(resendIn)})`
               : t("auth.resendCode")}
           </button>
         </div>
