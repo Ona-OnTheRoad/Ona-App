@@ -2,7 +2,12 @@
 
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { enablePushNotifications, isPushDeliveryAllowed } from "@/lib/push/client";
+import {
+  enablePushNotifications,
+  getLastPushFailure,
+  isPushDeliveryAllowed,
+  type PushFailure,
+} from "@/lib/push/client";
 import {
   PUSH_PROMPT_SNOOZE_KEY,
   PUSH_PROMPT_SNOOZE_MS,
@@ -41,6 +46,20 @@ function snooze() {
  * - Not decided yet: a snackbar with a "Turn on" button (the tap is what lets
  *   iOS show the permission dialog). "Not now" snoozes it for a week.
  */
+/** Plain-language reason shown when turning notifications on fails. */
+function pushFailureMessage(reason: PushFailure | null): string {
+  switch (reason) {
+    case "server-not-configured":
+      return "Notifications aren't set up on our side yet. We're on it.";
+    case "unsupported":
+      return "This browser can't show notifications. On iPhone, add Ona to your Home Screen first.";
+    case "subscribe-failed":
+      return "Your phone wouldn't switch notifications on. On iPhone, open Ona from the Home Screen icon and try again.";
+    default:
+      return "Could not turn on notifications. Try again later.";
+  }
+}
+
 export function PushEnrollment() {
   const { isAuthenticated, authReady, backendUserId } = useApp();
 
@@ -83,7 +102,7 @@ export function PushEnrollment() {
                     "Notifications are blocked. Turn them on in your browser or phone settings.",
                   );
                 } else {
-                  toastError("Could not turn on notifications. Try again later.");
+                  toastError(pushFailureMessage(getLastPushFailure()));
                 }
               },
             );

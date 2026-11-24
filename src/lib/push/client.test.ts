@@ -28,8 +28,8 @@ beforeEach(async () => {
   subscribe.mockResolvedValue(sub);
   fetchMock.mockImplementation(async (url: string) =>
     String(url).includes("vapid-key")
-      ? { ok: true, json: async () => ({ publicKey: "pub" }) }
-      : { ok: true, json: async () => ({}) },
+      ? { ok: true, status: 200, json: async () => ({ ok: true, data: { publicKey: "pub" } }) }
+      : { ok: true, status: 200, json: async () => ({}) },
   );
   vi.stubGlobal("fetch", fetchMock);
   client = await import("./client");
@@ -71,6 +71,46 @@ describe("enablePushNotifications", () => {
     expect(await client.enablePushNotifications("u1")).toBe(false);
     install("denied");
     expect(await client.enablePushNotifications("u2", { interactive: true })).toBe(false);
+  });
+});
+
+describe("enablePushNotifications failure reasons", () => {
+  it("reads the public key from the server's { ok, data } envelope", async () => {
+    install("default");
+    requestPermission.mockResolvedValue("granted");
+    expect(await client.enablePushNotifications("u1", { interactive: true })).toBe(true);
+    expect(subscribe).toHaveBeenCalledWith(
+      expect.objectContaining({ applicationServerKey: "pub" }),
+    );
+    expect(client.getLastPushFailure()).toBeNull();
+  });
+
+  it("reports server-not-configured when the server has no VAPID keys (503)", async () => {
+    install("granted");
+    fetchMock.mockImplementation(async () => ({ ok: false, status: 503, json: async () => ({}) }));
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect(await client.enablePushNotifications("u1", { interactive: true })).toBe(false);
+    expect(client.getLastPushFailure()).toBe("server-not-configured");
+  });
+
+  it("reports subscribe-failed when the browser refuses to subscribe", async () => {
+    install("granted");
+    subscribe.mockRejectedValue(new Error("denied by browser"));
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect(await client.enablePushNotifications("u1", { interactive: true })).toBe(false);
+    expect(client.getLastPushFailure()).toBe("subscribe-failed");
+  });
+
+  it("reports save-failed when the server rejects the subscription", async () => {
+    install("granted");
+    fetchMock.mockImplementation(async (url: string) =>
+      String(url).includes("vapid-key")
+        ? { ok: true, status: 200, json: async () => ({ ok: true, data: { publicKey: "pub" } }) }
+        : { ok: false, status: 401, json: async () => ({}) },
+    );
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect(await client.enablePushNotifications("u1", { interactive: true })).toBe(false);
+    expect(client.getLastPushFailure()).toBe("save-failed");
   });
 });
 
