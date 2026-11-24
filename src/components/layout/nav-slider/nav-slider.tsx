@@ -136,7 +136,7 @@ export function NavSlider() {
         aria-label={t("menu.closeMenu")}
         onClick={closeNavSlider}
         className={cn(
-          "absolute inset-0 border-0 bg-black/40 transition-opacity duration-200 motion-reduce:transition-none",
+          "absolute inset-0 border-0 bg-black/20 transition-opacity duration-200 motion-reduce:transition-none",
           shown ? "opacity-100" : "opacity-0",
         )}
       />
