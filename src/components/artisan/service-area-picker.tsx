@@ -180,7 +180,7 @@ export function ServiceAreaPicker({ mode }: { mode: ServiceAreaPickerMode }) {
         <div
           className={cn(
             "flex h-10 items-center gap-2 rounded-md px-3",
-            isLight ? "bg-[#d4d5d9]" : "bg-[#1c1c1e]",
+            isLight ? "bg-[#d4d5d9]" : "bg-[#111113]",
           )}
         >
           <Search className={cn("h-4 w-4 shrink-0", muted)} strokeWidth={2.2} />
@@ -209,7 +209,7 @@ export function ServiceAreaPicker({ mode }: { mode: ServiceAreaPickerMode }) {
           <ul
             className={cn(
               "overflow-hidden rounded-md",
-              isLight ? "bg-[#d4d5d9]" : "bg-[#1c1c1e]",
+              isLight ? "bg-[#d4d5d9]" : "bg-[#111113]",
             )}
           >
             {filtered.map((name) => {

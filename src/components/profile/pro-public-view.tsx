@@ -158,7 +158,7 @@ export function ProPublicView({
         <div
           className={cn(
             "mt-2.5 rounded-xl px-2 py-2",
-            isLight ? "bg-black/[0.04]" : "bg-[#2c2c2e]",
+            isLight ? "bg-black/[0.04]" : "bg-[#1b1b1e]",
           )}
         >
           <div className="flex justify-center">
@@ -264,7 +264,7 @@ export function ProPublicView({
                 key={r.id}
                 className={cn(
                   "rounded-xl px-2.5 py-2",
-                  isLight ? "bg-black/[0.04]" : "bg-[#2c2c2e]",
+                  isLight ? "bg-black/[0.04]" : "bg-[#1b1b1e]",
                 )}
               >
                 <div className="flex items-center justify-between gap-2">

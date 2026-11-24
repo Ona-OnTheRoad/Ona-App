@@ -53,7 +53,7 @@ export function TierBadge({
             ? "bg-amber-500/20 text-amber-500"
             : isLight
               ? "bg-black/10 text-slate-700"
-              : "bg-[#2c2c2e] text-white/80",
+              : "bg-[#1b1b1e] text-white/80",
         className,
       )}
     >

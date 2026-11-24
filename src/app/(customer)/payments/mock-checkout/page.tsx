@@ -109,7 +109,7 @@ function MockInner() {
           <div
             className={cn(
               "w-full max-w-md overflow-hidden rounded-2xl",
-              isLight ? "bg-white" : "bg-[#1c1c1e]",
+              isLight ? "bg-white" : "bg-[#111113]",
             )}
           >
             <p

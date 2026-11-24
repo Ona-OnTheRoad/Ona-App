@@ -76,7 +76,7 @@ export function VehiclesSection({
               <span
                 className={cn(
                   "flex h-14 w-14 shrink-0 items-center justify-center rounded-xl",
-                  isLight ? "bg-black/8" : "bg-[#2c2c2e]",
+                  isLight ? "bg-black/8" : "bg-[#1b1b1e]",
                 )}
               >
                 <Camera className="h-5 w-5 text-brand" />
@@ -106,7 +106,7 @@ export function VehiclesSection({
                 "flex h-8 w-8 shrink-0 items-center justify-center rounded-md border-0",
                 isLight
                   ? "bg-black/8 text-slate-700"
-                  : "bg-[#2c2c2e] text-white/80",
+                  : "bg-[#1b1b1e] text-white/80",
               )}
             >
               <Trash2 className="h-3.5 w-3.5" />

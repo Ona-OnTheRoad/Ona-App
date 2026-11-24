@@ -41,7 +41,7 @@ export function CustomerModeShell({
             <button
               type="button"
               disabled={switchBusy}
-              className="mt-1 inline-flex h-11 items-center justify-center rounded-md bg-[#2c2c2e] px-5 text-[14px] font-semibold text-white disabled:opacity-50"
+              className="mt-1 inline-flex h-11 items-center justify-center rounded-md bg-[#1b1b1e] px-5 text-[14px] font-semibold text-white disabled:opacity-50"
               onClick={() => {
                 setSwitchErr(null);
                 setSwitchBusy(true);
@@ -87,7 +87,7 @@ export function CustomerModeShell({
         ) : (
           <Link
             href="/signup/pro?from=profile&next=/dashboard"
-            className="mt-1 inline-flex h-11 items-center justify-center rounded-md bg-[#2c2c2e] px-5 text-[14px] font-semibold text-white"
+            className="mt-1 inline-flex h-11 items-center justify-center rounded-md bg-[#1b1b1e] px-5 text-[14px] font-semibold text-white"
           >
             Become a Repair Pro
           </Link>

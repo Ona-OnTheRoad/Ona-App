@@ -44,7 +44,7 @@ export function MotoristVehicleWizard({
 
   const field = isLight
     ? "h-11 w-full rounded-md border-0 bg-black/8 px-3 text-[14px] font-medium text-slate-900 outline-none placeholder:text-slate-500 placeholder:opacity-100"
-    : "h-11 w-full rounded-md border-0 bg-[#2c2c2e] px-3 text-[14px] font-medium text-white outline-none placeholder:text-white/50 placeholder:opacity-100";
+    : "h-11 w-full rounded-md border-0 bg-[#1b1b1e] px-3 text-[14px] font-medium text-white outline-none placeholder:text-white/50 placeholder:opacity-100";
 
   const ink = isLight ? "text-slate-900" : "text-white";
   const muted = isLight ? "text-slate-600" : "text-white/70";
@@ -140,7 +140,7 @@ export function MotoristVehicleWizard({
           <span
             className={cn(
               "flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl",
-              isLight ? "bg-black/10" : "bg-[#2c2c2e]",
+              isLight ? "bg-black/10" : "bg-[#1b1b1e]",
             )}
           >
             {photo ? (
@@ -193,7 +193,7 @@ export function MotoristVehicleWizard({
                     ? "bg-brand text-white"
                     : isLight
                       ? "bg-black/8 text-slate-700"
-                      : "bg-[#2c2c2e] text-white/75",
+                      : "bg-[#1b1b1e] text-white/75",
                 )}
               >
                 {issue}
@@ -209,7 +209,7 @@ export function MotoristVehicleWizard({
           onClick={goBack}
           className={cn(
             "inline-flex h-10 flex-1 items-center justify-center gap-1 rounded-md border-0 text-[13px] font-semibold",
-            isLight ? "bg-black/10 text-slate-900" : "bg-[#2c2c2e] text-white",
+            isLight ? "bg-black/10 text-slate-900" : "bg-[#1b1b1e] text-white",
           )}
         >
           <ChevronLeft className="h-4 w-4" />

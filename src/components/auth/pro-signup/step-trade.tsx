@@ -41,7 +41,7 @@ export function StepTrade({
                     <span
                       className={cn(
                         "block text-[16px] font-semibold",
-                        isLight ? "text-[#1c1c1e]" : "text-white",
+                        isLight ? "text-[#111113]" : "text-white",
                       )}
                     >
                       {label}

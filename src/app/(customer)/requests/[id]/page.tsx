@@ -74,7 +74,7 @@ export default function RequestProcessPage({
           <button
             type="button"
             onClick={() => router.push(isPro ? "/jobs" : "/")}
-            className="h-11 rounded-md border-0 bg-[#2c2c2e] px-5 text-[13px] font-semibold text-white"
+            className="h-11 rounded-md border-0 bg-[#1b1b1e] px-5 text-[13px] font-semibold text-white"
           >
             Back
           </button>

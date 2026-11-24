@@ -31,7 +31,7 @@ export function BioField({
           "w-full resize-none border-0 px-3 py-2.5 text-[13px] font-medium outline-none",
           isLight
             ? "rounded-none border-b border-black/15 bg-transparent text-slate-900 placeholder:text-slate-400"
-            : "rounded-xl bg-[#2c2c2e] text-white placeholder:text-white/35",
+            : "rounded-xl bg-[#1b1b1e] text-white placeholder:text-white/35",
         )}
       />
       <p

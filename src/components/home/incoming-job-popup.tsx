@@ -120,7 +120,7 @@ export function IncomingJobPopup() {
 
   if (accountType !== "professional") return null;
 
-  const solid = isLight ? "#ffffff" : "#1c1c1e";
+  const solid = isLight ? "#ffffff" : "#111113";
   const ink = isLight ? "#0f1419" : "#e7e9ea";
   const muted = isLight ? "#536471" : "#71767b";
   const hairline = isLight ? "rgba(0,0,0,0.08)" : "rgba(255,255,255,0.08)";

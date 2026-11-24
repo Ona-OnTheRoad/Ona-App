@@ -31,7 +31,7 @@ export function BookingView({
   const { isLight, ink, muted, rowCard } = theme;
   const inputCls = cn(
     "h-11 w-full rounded-md border-0 px-3 text-[14px] font-medium outline-none",
-    isLight ? "bg-black/8 text-slate-900" : "bg-[#2c2c2e] text-white",
+    isLight ? "bg-black/8 text-slate-900" : "bg-[#1b1b1e] text-white",
   );
   return (
     <div className="flex flex-col gap-2">

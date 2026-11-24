@@ -41,7 +41,7 @@ export function ServicePriceEditor({
 
   const field = isLight
     ? "h-10 w-full max-w-[140px] border-0 border-b border-black/15 bg-transparent px-0 text-right text-[13px] font-semibold text-slate-900 outline-none"
-    : "h-10 w-full max-w-[140px] rounded-xl border-0 bg-[#2c2c2e] px-3 text-right text-[13px] font-semibold text-white outline-none";
+    : "h-10 w-full max-w-[140px] rounded-xl border-0 bg-[#1b1b1e] px-3 text-right text-[13px] font-semibold text-white outline-none";
 
   if (skills.length === 0) {
     return (
@@ -80,7 +80,7 @@ export function ServicePriceEditor({
                   ? "bg-brand text-white"
                   : isLight
                     ? "bg-black/8 text-slate-700"
-                    : "bg-[#2c2c2e] text-white/75",
+                    : "bg-[#1b1b1e] text-white/75",
               )}
             >
               {c === "NGN" ? "₦ NGN" : "$ USD"}

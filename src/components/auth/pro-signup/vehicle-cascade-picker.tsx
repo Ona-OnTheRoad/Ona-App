@@ -38,7 +38,7 @@ export function VehicleCascadePicker({
             <ChevronLeft className="h-3.5 w-3.5" strokeWidth={2.25} />
             Back
           </button>
-          <h1 className="text-[15px] font-bold tracking-tight text-[#1c1c1e]">
+          <h1 className="text-[15px] font-bold tracking-tight text-[#111113]">
             {TITLE_MAP[pickerKey]}
           </h1>
         </div>

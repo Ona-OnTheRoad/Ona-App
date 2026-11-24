@@ -195,7 +195,7 @@ export function GoogleTrackMap({
             "absolute inset-x-3 top-3 rounded-sm px-3 py-2 text-center text-[12px] font-bold",
             isLight
               ? "bg-[#e8e9ed] text-slate-800 shadow-md"
-              : "bg-[#1c1c1e] text-white shadow-md",
+              : "bg-[#111113] text-white shadow-md",
           )}
         >
           Waiting for Repair Pro live location…
@@ -207,7 +207,7 @@ export function GoogleTrackMap({
             "absolute inset-x-3 top-3 rounded-sm px-3 py-2 text-center text-[12px] font-bold",
             isLight
               ? "bg-[#e8e9ed] text-slate-800 shadow-md"
-              : "bg-[#1c1c1e] text-white shadow-md",
+              : "bg-[#111113] text-white shadow-md",
           )}
         >
           Enable GPS to show your live pin · motorist marked below

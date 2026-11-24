@@ -128,7 +128,7 @@ export function HomeVerifyPanel({
       role="status"
       className={cn(
         "flex min-h-[25%] flex-col justify-center rounded-2xl px-4 py-3",
-        isLight ? "bg-[#d4d5d9]" : "bg-[#1c1c1e]",
+        isLight ? "bg-[#d4d5d9]" : "bg-[#111113]",
       )}
     >
       <div className="flex gap-2.5">

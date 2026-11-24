@@ -15,7 +15,7 @@ export function proFieldStyles(isLight: boolean) {
     fieldStyle: {
       backgroundColor: "transparent",
       borderColor: "transparent",
-      color: isLight ? "#1c1c1e" : "#ffffff",
+      color: isLight ? "#111113" : "#ffffff",
       boxShadow: "none",
     } as const,
   };

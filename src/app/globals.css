@@ -151,26 +151,28 @@ select:focus-within,
 [data-theme="dark"] [data-theme="dark"] [data-sonner-toaster],
 .dark .ona2,
 .dark .dark [data-sonner-toaster] {
-  --o-bg: #111114;
-  --o-surface: #18171c;
-  --o-field: #1e1e24;
-  --o-field-strong: #27272a;
-  --o-border: #27272a;
+  /* True black (business request): page and sheets are #000, not grey.
+     Fields/tiles get only a faint lift so they stay visible, plus a hairline border. */
+  --o-bg: #000000;
+  --o-surface: #000000;
+  --o-field: #111113;
+  --o-field-strong: #1b1b1e;
+  --o-border: #26262a;
   --o-ink: #ffffff;
   --o-muted: #a1a1aa;
   --o-brand-ink: #e2654f;
   --o-brand-soft: rgba(226, 101, 79, 0.16);
   --o-brand-border: rgba(226, 101, 79, 0.38);
-  --o-disabled-bg: #27272a;
+  --o-disabled-bg: #1b1b1e;
   --o-disabled-ink: #71717a;
   --o-success: #4ade80;
   --o-success-soft: rgba(74, 222, 128, 0.14);
   --o-danger: #f87171;
-  --o-dark: #18171c;
-  --o-dark-2: #222128;
+  --o-dark: #000000;
+  --o-dark-2: #0b0b0c;
   --o-on-dark: #ffffff;
   --o-on-dark-muted: rgba(255, 255, 255, 0.7);
-  --o-map: #1e1e24;
+  --o-map: #000000;
   --o-overlay: rgba(0, 0, 0, 0.75);
 }
 
@@ -484,20 +486,20 @@ html[data-a11y-hc="1"] #ona-phone [class*="text-white/65"] {
 [data-theme="dark"] {
   --stage: #000000;
   --chrome: #000000;
-  --chrome-2: #101012;
-  --chrome-3: #18181b;
+  --chrome-2: #000000;
+  --chrome-3: #0b0b0c;
 
   --metal-deep: #000000;
-  --metal-base: #101012;
-  --metal-mid: #18181b;
+  --metal-base: #000000;
+  --metal-mid: #0b0b0c;
   --metal-lift: #27272a;
   --metal-face: #141416;
   --metal-inset: rgba(255, 255, 255, 0.06);
   --metal-shade: rgba(0, 0, 0, 0.55);
 
   --background: #000000;
-  --surface: #101012;
-  --surface-2: #18181b;
+  --surface: #000000;
+  --surface-2: #0b0b0c;
   --surface-3: #27272a;
   --elevated: #141416;
   --foreground: #ffffff;
@@ -519,8 +521,8 @@ html[data-a11y-hc="1"] #ona-phone [class*="text-white/65"] {
 
   --accent-blue: #60a5fa;
   --navy: #000000;
-  --navy-mid: #101012;
-  --navy-soft: #18181b;
+  --navy-mid: #000000;
+  --navy-soft: #0b0b0c;
 
   /* Dark map: pure black base */
   --map-bg: #000000;

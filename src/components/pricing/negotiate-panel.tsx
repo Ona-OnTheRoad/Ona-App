@@ -35,7 +35,7 @@ export function NegotiatePanel({
     <div
       className={cn(
         "space-y-2 rounded-2xl px-3 py-3",
-        isLight ? "bg-black/[0.04]" : "bg-[#1c1c1e]",
+        isLight ? "bg-black/[0.04]" : "bg-[#111113]",
       )}
     >
       <div className="flex items-start justify-between gap-2">
@@ -101,7 +101,7 @@ export function NegotiatePanel({
                 ? "bg-brand text-white"
                 : isLight
                   ? "bg-black/8 text-slate-700"
-                  : "bg-[#2c2c2e] text-white/75",
+                  : "bg-[#1b1b1e] text-white/75",
             )}
           >
             {p === 0 ? "Full price" : `−${p}%`}

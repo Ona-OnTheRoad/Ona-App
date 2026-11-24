@@ -55,7 +55,7 @@ export function AgreedFooter({
         className={cn(
           "inline-flex h-11 w-full items-center justify-center rounded-md border-0 text-[13px] font-semibold",
           "relative z-10",
-          isLight ? "bg-black/10 text-slate-900" : "bg-[#2c2c2e] text-white",
+          isLight ? "bg-black/10 text-slate-900" : "bg-[#1b1b1e] text-white",
         )}
       >
         Cancel

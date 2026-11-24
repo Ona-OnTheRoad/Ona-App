@@ -128,11 +128,11 @@ export function ShopProductCard({
           }
         }}
         className={cn(
-          "relative flex cursor-pointer items-center gap-3 rounded-ona-card border border-ona-border bg-ona-surface p-2.5 text-left text-ona-ink",
+          "relative flex cursor-pointer items-center gap-3 rounded-ona-card border-0 bg-ona-field p-2.5 text-left text-ona-ink",
           compact ? "w-[270px] shrink-0" : "w-full",
         )}
       >
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-ona-ctl bg-ona-field">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-ona-ctl bg-ona-field-strong">
           {product.primaryImageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -164,7 +164,7 @@ export function ShopProductCard({
               {product.vehicleTags.slice(0, 3).map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full bg-ona-field px-1.5 py-px text-[9px] font-semibold text-ona-muted"
+                  className="rounded-full bg-ona-field-strong px-1.5 py-px text-[9px] font-semibold text-ona-muted"
                 >
                   {tag}
                 </span>
@@ -184,7 +184,7 @@ export function ShopProductCard({
               variant="matched"
               className={cn(
                 "px-1.5 py-px text-[9px] normal-case",
-                !inStock && "bg-ona-field text-ona-muted",
+                !inStock && "bg-ona-field-strong text-ona-muted",
               )}
             >
               {stockLabel}

@@ -120,7 +120,7 @@ export default function AppError({
         <button
           type="button"
           onClick={() => reset()}
-          className="mt-2 h-11 rounded-md border-0 bg-[#2c2c2e] px-6 text-[14px] font-semibold text-white"
+          className="mt-2 h-11 rounded-md border-0 bg-[#1b1b1e] px-6 text-[14px] font-semibold text-white"
         >
           Try again
         </button>

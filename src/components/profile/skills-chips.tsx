@@ -33,7 +33,7 @@ export function SkillsChips({
                 ? "bg-brand text-white"
                 : isLight
                   ? "bg-black/8 text-slate-700"
-                  : "bg-[#2c2c2e] text-white/75",
+                  : "bg-[#1b1b1e] text-white/75",
               !editable && "cursor-default",
             )}
           >

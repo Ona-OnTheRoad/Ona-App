@@ -85,7 +85,7 @@ export function GoLiveSection({
         onClick={() => void toggleLive()}
         className={cn(
           "mt-3 inline-flex h-11 w-full items-center justify-center rounded-md border-0",
-          "bg-[#2c2c2e] text-[14px] font-semibold text-white transition active:scale-[0.99]",
+          "bg-[#1b1b1e] text-[14px] font-semibold text-white transition active:scale-[0.99]",
           "disabled:opacity-50",
         )}
       >

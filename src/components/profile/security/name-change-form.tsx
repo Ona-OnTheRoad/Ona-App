@@ -90,7 +90,7 @@ export function NameChangeForm({
 
   const field = isLight
     ? "h-10 w-full border-0 border-b border-black/15 bg-transparent px-0 text-[13px] font-medium text-slate-900 outline-none"
-    : "h-10 w-full rounded-xl border-0 bg-[#2c2c2e] px-3 text-[13px] font-medium text-white outline-none";
+    : "h-10 w-full rounded-xl border-0 bg-[#1b1b1e] px-3 text-[13px] font-medium text-white outline-none";
 
   return (
     <div className="space-y-3">
@@ -137,7 +137,7 @@ export function NameChangeForm({
               "h-10 w-full rounded-xl border-0 text-[12px] font-bold",
               isLight
                 ? "bg-black/10 text-slate-800"
-                : "bg-[#2c2c2e] text-white",
+                : "bg-[#1b1b1e] text-white",
             )}
           >
             Take selfie to verify identity
