@@ -166,7 +166,7 @@ export function BottomSheet({
   if (!present || !mount) return null;
 
   const sheetBg =
-    surface === "ona" ? "var(--o-surface)" : isLight ? "#d4d5d9" : "#1c1c1e";
+    surface === "ona" ? "var(--o-surface)" : isLight ? "#d4d5d9" : "#111113";
 
   return createPortal(
     <div

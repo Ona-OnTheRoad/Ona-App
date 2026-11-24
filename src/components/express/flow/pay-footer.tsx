@@ -43,7 +43,7 @@ export function PayFooter({
           />
 
           {/* Bottom Sheet */}
-          <div className="relative z-10 w-full max-w-md mx-auto rounded-t-[24px] bg-white px-5 pb-8 pt-3 shadow-2xl dark:bg-zinc-900 animate-[om-sheet-up_0.22s_ease-out]">
+          <div className="relative z-10 w-full max-w-md mx-auto rounded-t-[24px] bg-white px-5 pb-8 pt-3 shadow-2xl dark:bg-black animate-[om-sheet-up_0.22s_ease-out]">
             {/* Grab handle */}
             <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-gray-300 dark:bg-zinc-700" />
 
@@ -64,7 +64,7 @@ export function PayFooter({
                 type="button"
                 disabled={cancelBusy}
                 onClick={() => onCancel()}
-                className="flex h-12 w-full items-center justify-center rounded-[14px] bg-gray-100 text-[14px] font-semibold text-gray-900 transition-colors hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 cursor-pointer border-0 disabled:opacity-50"
+                className="flex h-12 w-full items-center justify-center rounded-[14px] bg-gray-100 text-[14px] font-semibold text-gray-900 transition-colors hover:bg-gray-200 dark:bg-[#1b1b1e] dark:text-zinc-100 dark:hover:bg-zinc-700 cursor-pointer border-0 disabled:opacity-50"
               >
                 {cancelBusy ? "Cancelling…" : "Cancel request"}
               </button>

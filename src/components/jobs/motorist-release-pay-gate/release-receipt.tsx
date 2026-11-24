@@ -15,7 +15,7 @@ export function ReleaseReceipt({
   onDone: () => void;
 }) {
   const ink = isLight ? "#1a1b1e" : "#ffffff";
-  const card = isLight ? "#d4d5d9" : "#1c1c1e";
+  const card = isLight ? "#d4d5d9" : "#111113";
   return (
     <div className="absolute inset-0 z-[98] flex flex-col" role="status">
       <div

@@ -35,7 +35,7 @@ export function ReleaseDialog({
 }) {
   const ink = isLight ? "#1a1b1e" : "#ffffff";
   const muted = isLight ? "#5c6370" : "rgba(255,255,255,0.65)";
-  const card = isLight ? "#d4d5d9" : "#1c1c1e";
+  const card = isLight ? "#d4d5d9" : "#111113";
   const currency = forceNairaCurrency(pending.currency);
   const endsAt = satisfiedReleaseEndsAtIso(pending);
   const friendly = friendlyReleaseError(err);

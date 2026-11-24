@@ -36,7 +36,7 @@ export function CallButton({
       className={cn(
         "inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border-0 text-[13px] font-bold disabled:opacity-40",
         variant === "solid"
-          ? "bg-[#2c2c2e] text-white"
+          ? "bg-[#1b1b1e] text-white"
           : "bg-transparent text-brand",
         className,
       )}

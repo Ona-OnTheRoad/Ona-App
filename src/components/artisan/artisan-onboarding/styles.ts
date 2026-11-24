@@ -15,12 +15,12 @@ export function buildOnboardingStyles(isLight: boolean): OnboardingStyles {
     fieldClass: cn(
       "h-11 w-full border-0 border-b bg-transparent px-0 text-[16px] font-medium outline-none",
       isLight
-        ? "border-black/15 text-[#1c1c1e] placeholder:text-slate-400"
+        ? "border-black/15 text-[#111113] placeholder:text-slate-400"
         : "border-white/20 text-white placeholder:text-white/35",
     ),
     selectClass: cn(
       "h-11 w-full border-0 border-b bg-transparent px-0 text-[16px] font-semibold outline-none",
-      isLight ? "border-black/15 text-[#1c1c1e]" : "border-white/20 text-white",
+      isLight ? "border-black/15 text-[#111113]" : "border-white/20 text-white",
     ),
     panelClass: "rounded-none border-0 bg-transparent p-0",
     chipOff: isLight

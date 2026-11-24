@@ -112,7 +112,7 @@ export function PasswordChangeFlow({
 
   const fieldClass = isLight
     ? "h-10 w-full border-0 border-b border-black/15 bg-transparent px-0 text-[13px] font-medium text-slate-900 outline-none"
-    : "h-10 w-full rounded-xl border-0 bg-[#2c2c2e] px-3 text-[13px] font-medium text-white outline-none";
+    : "h-10 w-full rounded-xl border-0 bg-[#1b1b1e] px-3 text-[13px] font-medium text-white outline-none";
 
   return (
     <div className="space-y-3">

@@ -39,7 +39,7 @@ export function OfflineBanner() {
         <p
           className={
             "m-0 px-3 py-2 text-center text-[12px] font-semibold leading-snug text-white " +
-            (online ? "bg-[#1f7a4d]" : "bg-[#1c1c1e]")
+            (online ? "bg-[#1f7a4d]" : "bg-[#111113]")
           }
         >
           {message}

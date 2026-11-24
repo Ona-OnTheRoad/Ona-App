@@ -12,7 +12,7 @@ export function QuoteSummary({ theme, quote }: Props) {
 
   return (
     <div className="flex flex-col gap-2 pt-1">
-      <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-black">
         <Row
           label={`Base fee . ${tradeName}`}
           value={naira(quote.baseChargeMajor)}

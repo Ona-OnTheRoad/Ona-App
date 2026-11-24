@@ -24,7 +24,7 @@ export function TripMapStatsBar({
       <div
         className={cn(
           "flex max-w-full items-stretch rounded-lg border-0 px-1 py-1",
-          isLight ? "bg-[#E8E8E8]" : "bg-[#2c2c2e]",
+          isLight ? "bg-[#E8E8E8]" : "bg-[#1b1b1e]",
         )}
         style={{ border: "none", boxShadow: "none" }}
       >

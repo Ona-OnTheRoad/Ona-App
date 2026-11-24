@@ -35,7 +35,7 @@ export function FaceLivenessView({
 }: Props) {
   const ink = isLight ? "text-slate-900" : "text-white";
   const muted = isLight ? "text-slate-600" : "text-white/60";
-  const panel = isLight ? "bg-[#d4d5d9]" : "bg-[#1c1c1e]";
+  const panel = isLight ? "bg-[#d4d5d9]" : "bg-[#111113]";
 
   return (
     <div className={cn("flex flex-col gap-3 rounded-md p-3", panel)}>
@@ -163,7 +163,7 @@ export function FaceLivenessView({
               "h-11 flex-1 rounded-md border-0 text-[12px] font-bold",
               isLight
                 ? "bg-black/10 text-slate-800"
-                : "bg-[#2c2c2e] text-white",
+                : "bg-[#1b1b1e] text-white",
             )}
           >
             Cancel

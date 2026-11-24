@@ -2,7 +2,7 @@
 
 /**
  * Apple-premium Pro onboarding system (initial signup + Tap-to-switch setup).
- * One surface only: white light / #111114 dark. No nested gray cards.
+ * One surface only: white light / #000000 dark. No nested gray cards.
  * Hairline list rows + large title + bottom primary CTA.
  */
 
@@ -77,7 +77,7 @@ export function AppleProTitle({
       <h1
         className={cn(
           "text-[28px] font-bold leading-tight tracking-tight",
-          isLight ? "text-[#1c1c1e]" : "text-white",
+          isLight ? "text-[#111113]" : "text-white",
         )}
       >
         {title}

@@ -84,7 +84,7 @@ export function AddressSearchInput({
           role="listbox"
           className={cn(
             "absolute left-0 right-0 top-[calc(100%+4px)] z-40 max-h-56 overflow-y-auto rounded-md shadow-lg",
-            isLight ? "bg-[#D8DCE4]" : "bg-[#1c1c1e]",
+            isLight ? "bg-[#D8DCE4]" : "bg-[#111113]",
           )}
         >
           {knownHits.map((p) => (

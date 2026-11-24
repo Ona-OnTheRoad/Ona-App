@@ -38,7 +38,7 @@ export function VerificationCard({
         "rounded-md px-3 py-3",
         isLight
           ? "ona2 border border-ona-border bg-ona-field shadow-[0_1px_0_rgba(0,0,0,0.06)]"
-          : "bg-[#1c1c1e] ring-1 ring-white/15",
+          : "bg-[#111113] ring-1 ring-white/15",
       )}
     >
       {(() => {

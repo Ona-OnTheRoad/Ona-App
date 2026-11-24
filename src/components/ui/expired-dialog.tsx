@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 /**
  * Popup when user taps a finished chat/job.
  * Portals into #ona-phone so it stays inside the device frame.
- * Ona UI v2 surface (ona2 scope: white light / #111114 dark) with a hairline border.
+ * Ona UI v2 surface (ona2 scope: white light / #000000 dark) with a hairline border.
  * View → read-only / summary; OK → dismiss.
  */
 export function ExpiredDialog({

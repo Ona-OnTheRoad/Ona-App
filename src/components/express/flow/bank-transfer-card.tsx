@@ -32,7 +32,7 @@ export function BankTransferCard({ theme, bankPay, onCopyNumber }: Props) {
 
   return (
     <div className="mt-3">
-      <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-xs dark:border-zinc-800 dark:bg-black">
         <div className="mb-3.5 flex items-center justify-between">
           <span
             className={cn(

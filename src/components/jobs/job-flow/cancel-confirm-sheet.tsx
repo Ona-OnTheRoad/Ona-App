@@ -21,7 +21,7 @@ export function CancelConfirmSheet({
       <div
         className={cn(
           "w-full max-w-md overflow-hidden rounded-2xl shadow-2xl",
-          isLight ? "bg-white" : "bg-[#1c1c1e]",
+          isLight ? "bg-white" : "bg-[#111113]",
         )}
         role="dialog"
         aria-modal

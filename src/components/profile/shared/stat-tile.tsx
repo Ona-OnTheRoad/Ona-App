@@ -19,7 +19,7 @@ export function StatTile({
     <div
       className={cn(
         "rounded-xl py-2",
-        isLight ? "bg-black/[0.04]" : "bg-[#2c2c2e]",
+        isLight ? "bg-black/[0.04]" : "bg-[#1b1b1e]",
       )}
     >
       <p className={cn(valueClass, "font-black tabular-nums", t.ink)}>

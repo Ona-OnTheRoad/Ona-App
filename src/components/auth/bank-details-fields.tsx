@@ -54,7 +54,7 @@ export function BankDetailsFields({
 
   const field = isLight
     ? "bg-[#e2e3e7] text-slate-900"
-    : "bg-[#1c1c1e] text-white";
+    : "bg-[#111113] text-white";
   const muted = isLight ? "text-slate-600" : "text-white/65";
   const ink = isLight ? "text-slate-900" : "text-white";
 

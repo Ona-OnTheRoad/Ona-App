@@ -29,7 +29,7 @@ export function StepSpecialty({
         <span
           className={cn(
             "font-semibold",
-            isLight ? "text-[#1c1c1e]" : "text-white",
+            isLight ? "text-[#111113]" : "text-white",
           )}
         >
           {PRO_SERVICE_LABELS[skill]}
@@ -49,7 +49,7 @@ export function StepSpecialty({
                 <span
                   className={cn(
                     "text-[16px] font-semibold",
-                    isLight ? "text-[#1c1c1e]" : "text-white",
+                    isLight ? "text-[#111113]" : "text-white",
                   )}
                 >
                   {s}

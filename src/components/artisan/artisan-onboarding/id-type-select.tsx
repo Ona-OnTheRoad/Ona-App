@@ -91,7 +91,7 @@ export function IdTypeSelect({
           role="listbox"
           className={cn(
             "absolute left-0 right-0 top-full z-50 mt-1 max-h-52 overflow-y-auto overscroll-contain rounded-lg border-0 py-1 shadow-lg",
-            isLight ? "bg-white" : "bg-[#1c1c1e]",
+            isLight ? "bg-white" : "bg-[#111113]",
           )}
         >
           {ID_TYPE_OPTIONS.map((opt) => {

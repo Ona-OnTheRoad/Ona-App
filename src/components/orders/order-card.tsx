@@ -151,7 +151,7 @@ export function OrderCard({
             }}
             className={cn(
               "h-9 flex-none rounded-lg px-3 text-[11px]",
-              "bg-black/8 text-slate-800 dark:bg-[#2c2c2e] dark:text-white",
+              "bg-black/8 text-slate-800 dark:bg-[#1b1b1e] dark:text-white",
             )}
           />
         </div>

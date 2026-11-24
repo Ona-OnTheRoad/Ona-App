@@ -3,8 +3,8 @@ import { SITE_DESCRIPTION, absoluteUrl } from "@/lib/site";
 
 /**
  * Web app manifest: makes the phone-shell experience installable (Add to Home Screen / PWA).
- * Colours follow docs/UI.md: light chrome #c8c9cd for the title bar, brand copper for the
- * launch splash (the same copper as the in-app welcome screen).
+ * Colours follow docs/UI.md: light chrome #c8c9cd for the title bar, white for the launch
+ * splash so it matches the new Ona. icon.
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -18,7 +18,7 @@ export default function manifest(): MetadataRoute.Manifest {
     dir: "ltr",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#af6533",
+    background_color: "#ffffff",
     theme_color: "#c8c9cd",
     categories: ["automotive", "utilities"],
     // Lets Chrome (Android) report an existing install via getInstalledRelatedApps(),

@@ -16,7 +16,7 @@ export function ProductMedia({
       <div
         className={cn(
           "flex h-44 items-center justify-center overflow-hidden rounded-2xl",
-          isLight ? "bg-white/90" : "bg-[#1c1c1e]",
+          isLight ? "bg-white/90" : "bg-[#111113]",
         )}
       >
         {images[0]?.url || product.primary_image_url ? (
@@ -44,7 +44,7 @@ export function ProductMedia({
               alt=""
               className={cn(
                 "h-14 w-14 shrink-0 rounded-lg object-cover",
-                isLight ? "bg-white" : "bg-[#1c1c1e]",
+                isLight ? "bg-white" : "bg-[#111113]",
               )}
             />
           ))}

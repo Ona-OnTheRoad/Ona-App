@@ -75,7 +75,7 @@ function SearchSelect({
         ? "om-auth-field h-10 w-full rounded-md border !border-[#9A9EA6] !bg-[#E2E3E7] px-3 text-[13px] font-medium !text-[#0f172a]"
         : isLight
           ? "h-11 w-full rounded-md border-0 bg-black/8 px-3 text-[14px] font-medium text-slate-900"
-          : "h-11 w-full rounded-md border-0 bg-[#2c2c2e] px-3 text-[14px] font-medium text-white";
+          : "h-11 w-full rounded-md border-0 bg-[#1b1b1e] px-3 text-[14px] font-medium text-white";
 
   const labelClass =
     variant === "ona"

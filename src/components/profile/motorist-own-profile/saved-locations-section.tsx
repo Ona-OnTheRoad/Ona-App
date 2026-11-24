@@ -48,7 +48,7 @@ export function SavedLocationsSection({
               key={loc.id}
               className={cn(
                 "flex items-start gap-2 rounded-xl px-2 py-2",
-                isLight ? "bg-black/[0.04]" : "bg-[#2c2c2e]",
+                isLight ? "bg-black/[0.04]" : "bg-[#1b1b1e]",
               )}
             >
               <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />

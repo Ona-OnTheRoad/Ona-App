@@ -16,7 +16,7 @@ export function QuantitySelector({
     <div
       className={cn(
         "mt-3 flex items-center justify-between rounded-xl p-2.5",
-        isLight ? "bg-white/90" : "bg-[#1c1c1e]",
+        isLight ? "bg-white/90" : "bg-[#111113]",
       )}
     >
       <span className="text-[12px] font-bold">Quantity</span>
