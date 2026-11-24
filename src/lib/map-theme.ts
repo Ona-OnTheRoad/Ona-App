@@ -1,7 +1,7 @@
 /**
- * Map look: satellite imagery with labels (Google "hybrid"; Esri World Imagery on the
- * Leaflet fallback). Custom road styles do not apply to satellite types, so the old
- * dark green / dark red style sheets are no longer used for the live maps.
+ * Ona map look (from the Figma designs): a flat, light map in light mode and a deep
+ * green-black map in dark mode, styled through Google's roadmap type. The Leaflet
+ * fallback uses CARTO Positron / Dark Matter tiles to match.
  *
  * IMPORTANT: Export plain helpers first. Avoid evaluating anything that can
  * throw at module load (that made mapContainerStyle look "not a function"
@@ -14,14 +14,15 @@ import {
   MAP_BG_DARK,
   MAP_BG_LIGHT,
   MAP_ROUTE_STROKE,
-  OSM_SATELLITE_TILE_URL,
-  OSM_SATELLITE_ATTRIBUTION,
+  OSM_ATTRIBUTION,
+  OSM_TILE_URL_DARK,
+  OSM_TILE_URL_LIGHT,
   type OnaMapStyle,
 } from "./map-theme/palette";
 import { MAP_STYLES_DARK } from "./map-theme/styles-dark";
 import { MAP_STYLES_LIGHT } from "./map-theme/styles-light";
 
-export { OSM_SATELLITE_ATTRIBUTION };
+export { OSM_ATTRIBUTION };
 
 export {
   MAP_BG_DARK,
@@ -36,7 +37,8 @@ export {
   MAP_ROAD_LIGHT_HI,
   MAP_ROUTE_STROKE,
   MAP_STYLE_REVISION,
-  OSM_SATELLITE_TILE_URL,
+  OSM_TILE_URL_DARK,
+  OSM_TILE_URL_LIGHT,
 } from "./map-theme/palette";
 export type { OnaMapStyle } from "./map-theme/palette";
 export { MAP_STYLES_DARK } from "./map-theme/styles-dark";
@@ -85,7 +87,7 @@ export function mapThemeForApp(isLight: boolean): {
   return {
     styles: isLight ? MAP_STYLES_LIGHT : MAP_STYLES_DARK,
     backgroundColor: isLight ? MAP_BG_LIGHT : MAP_BG_DARK,
-    osmTileUrl: OSM_SATELLITE_TILE_URL,
+    osmTileUrl: isLight ? OSM_TILE_URL_LIGHT : OSM_TILE_URL_DARK,
     osmFilter: "none",
   };
 }
@@ -101,30 +103,34 @@ export function mapRenderOptions(isLight: boolean): {
   return {
     styles: theme.styles as google.maps.MapTypeStyle[],
     backgroundColor: theme.backgroundColor,
-    mapTypeId: "hybrid",
+    mapTypeId: "roadmap",
     clickableIcons: false,
   };
 }
 
 /**
- * Put a live Google map in satellite ("hybrid") mode. Never touches renderingType.
+ * Put a live Google map on the styled roadmap type and set its background.
  * Kept under the old name so every map surface keeps calling it on theme changes.
+ * Never touches renderingType.
  */
 export function applyOnaMapTheme(map: unknown, isLight: boolean): void {
   if (!map || typeof google === "undefined" || !google.maps) return;
   const gmap = map as google.maps.Map;
-  const bg = mapThemeForApp(isLight).backgroundColor;
+  const theme = mapThemeForApp(isLight);
   try {
     const div = gmap.getDiv?.();
     if (div) {
       div.style.setProperty("filter", "none", "important");
       div.style.setProperty("opacity", "1", "important");
-      div.style.backgroundColor = bg;
+      div.style.backgroundColor = theme.backgroundColor;
     }
-    gmap.setOptions({ backgroundColor: bg });
-    gmap.setMapTypeId(google.maps.MapTypeId.HYBRID);
+    gmap.setOptions({
+      backgroundColor: theme.backgroundColor,
+      styles: theme.styles as google.maps.MapTypeStyle[],
+    });
+    gmap.setMapTypeId(google.maps.MapTypeId.ROADMAP);
   } catch {
-    /* the map keeps its current type */
+    /* the map keeps its current look */
   }
 }
 

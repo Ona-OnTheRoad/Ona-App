@@ -15,7 +15,7 @@ import { MAX_TECHNICIANS } from "@/lib/matching";
 import { cn } from "@/lib/utils";
 
 /**
- * Customer home: the satellite map shows as soon as the screen opens (no tap needed) and
+ * Customer home: the map shows as soon as the screen opens (no tap needed) and
  * the trade sheet sits over its lower part. On 2G / Data Saver / offline the map waits for
  * a tap so poor connections are not burdened with imagery. Nearby pros refresh lives in
  * AppProvider (slow poll), not on every open.

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import {
   MAP_STYLE_REVISION,
-  OSM_SATELLITE_ATTRIBUTION,
+  OSM_ATTRIBUTION,
   mapThemeForApp,
 } from "@/lib/map-theme";
 import L from "leaflet";
@@ -179,7 +179,7 @@ export function OsmServiceMap({
       >
         <TileLayer
           url={mapTheme.osmTileUrl}
-          attribution={OSM_SATELLITE_ATTRIBUTION}
+          attribution={OSM_ATTRIBUTION}
         />
         <MapSync
           center={center}
