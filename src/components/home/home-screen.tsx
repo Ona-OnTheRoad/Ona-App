@@ -114,6 +114,13 @@ export function HomeScreen() {
   /** Customer, no trade open, sheet down: sheet shrinks to title + search. */
   const shortSheet =
     !sheetExpanded && accountType !== "professional" && category === "none";
+  /**
+   * Customers get a taller help sheet (about 70% of the screen, map 30%) so the
+   * troubleshooting questions have room. Repair Pros keep the 40/60 split.
+   */
+  const customerSplit = accountType !== "professional";
+  const mapBasis = customerSplit ? "flex-[0_0_30%]" : "flex-[0_0_40%]";
+  const sheetBasis = customerSplit ? "flex-[0_0_70%]" : "flex-[0_0_60%]";
   // Cap map pins hard tiles + markers are the main data cost
   const mapTechs = visibleTechnicians
     .filter((t) => t.status !== "offline")
@@ -136,10 +143,10 @@ export function HomeScreen() {
             "om-sheet-spring relative min-h-0 overflow-hidden",
             // Sheet fully open: the map shrinks to a peek, it is never hidden.
             sheetExpanded
-              ? "flex-[0_0_40%] opacity-100"
+              ? `${mapBasis} opacity-100`
               : shortSheet
                 ? "flex-1 opacity-100"
-                : "flex-[0_0_40%] opacity-100",
+                : `${mapBasis} opacity-100`,
           )}
         >
           {!deferMap || mapRequested ? (
@@ -176,7 +183,7 @@ export function HomeScreen() {
               ? "flex-1"
               : shortSheet
                 ? "flex-[0_0_auto]"
-                : "flex-[0_0_60%]",
+                : sheetBasis,
             "rounded-t-ona-sheet shadow-[0_-6px_24px_rgba(17,24,39,0.12)]",
           )}
           style={{ touchAction: "pan-y" }}
