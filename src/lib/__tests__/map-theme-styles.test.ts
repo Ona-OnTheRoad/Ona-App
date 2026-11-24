@@ -72,3 +72,51 @@ describe.each([
     expect(bad).toEqual([]);
   });
 });
+
+describe.each([
+  ["light", MAP_STYLES_LIGHT],
+  ["dark", MAP_STYLES_DARK],
+])("%s map neighbourhood detail", (_name, styles) => {
+  const find = (featureType: string, elementType?: string) =>
+    styles.filter(
+      (s) =>
+        s.featureType === featureType &&
+        (elementType === undefined || s.elementType === elementType),
+    );
+
+  it("shows neighbourhood names", () => {
+    const rules = find("administrative.neighborhood", "labels.text");
+    expect(rules.length).toBeGreaterThan(0);
+    expect(rules.at(-1)?.stylers).toContainEqual({ visibility: "on" });
+  });
+
+  it("gives side streets their own visible fill and name colour", () => {
+    expect(find("road.local", "geometry.fill").length).toBeGreaterThan(0);
+    expect(find("road.local", "labels.text.fill").length).toBeGreaterThan(0);
+  });
+
+  it("names a few landmark types as text only, and keeps shops hidden", () => {
+    for (const type of ["poi.school", "poi.place_of_worship", "poi.medical"]) {
+      expect(find(type).some((s) => s.stylers.some((x) => x.visibility === "on"))).toBe(true);
+      expect(
+        find(type, "labels.icon").every((s) =>
+          s.stylers.some((x) => x.visibility === "off"),
+        ),
+      ).toBe(true);
+    }
+    expect(find("poi.business")).toEqual([]);
+    // all POIs are still hidden by default, so only the listed landmarks come back
+    expect(find("poi").some((s) => s.elementType === undefined && s.stylers.some((x) => x.visibility === "off"))).toBe(true);
+  });
+
+  it("applies the neighbourhood rules after the base rules so they win", () => {
+    const poiOff = styles.findIndex(
+      (s) => s.featureType === "poi" && s.elementType === undefined,
+    );
+    const schoolOn = styles.findIndex(
+      (s) => s.featureType === "poi.school" && s.elementType === undefined,
+    );
+    expect(poiOff).toBeGreaterThanOrEqual(0);
+    expect(schoolOn).toBeGreaterThan(poiOff);
+  });
+});

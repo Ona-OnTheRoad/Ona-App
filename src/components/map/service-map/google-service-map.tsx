@@ -134,8 +134,9 @@ export function GoogleServiceMap({
 
     if (livePros.length === 0) {
       map.panTo(center);
-      // Street names need ~16+ zoom (Uber/inDrive density)
-      map.setZoom(Math.max(MAP_NEAR_ZOOM + 1, 16));
+      // One step wider than street level: at 15 Google still names streets AND the
+      // surrounding neighbourhoods, so people see which area they are in.
+      map.setZoom(MAP_NEAR_ZOOM);
       return;
     }
     const bounds = new google.maps.LatLngBounds();
@@ -193,7 +194,7 @@ export function GoogleServiceMap({
         mapContainerStyle={safeMapContainerStyle(isLight)}
         mapContainerClassName="ona-home-map-visible"
         center={center}
-        zoom={16}
+        zoom={MAP_NEAR_ZOOM}
         onLoad={onLoad}
         onUnmount={onUnmount}
         options={mapOptions}

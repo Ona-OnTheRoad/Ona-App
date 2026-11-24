@@ -17,7 +17,23 @@ export const MAP_LABEL_DARK = "#d9dfdc";
 export const MAP_PARK_DARK = "#17231f";
 export const MAP_WATER_DARK = "#08110f";
 
-export const MAP_STYLE_REVISION = "map-theme-figma-v9";
+/**
+ * Richer neighbourhood detail (same flat look, more context):
+ * side streets, area names and a few landmark names are visible, not only main roads.
+ */
+export const MAP_ROAD_LOCAL_DARK = "#1c2b26";
+export const MAP_ROAD_ARTERIAL_DARK = "#263832";
+export const MAP_ROAD_HIGHWAY_DARK = "#31463f";
+export const MAP_AREA_LABEL_DARK = "#ffffff";
+export const MAP_SIDE_STREET_LABEL_DARK = "#9fb0a9";
+export const MAP_LANDMARK_LABEL_DARK = "#8fa39b";
+
+export const MAP_ROAD_LOCAL_LIGHT = "#fbfbfb";
+export const MAP_AREA_LABEL_LIGHT = "#000000";
+export const MAP_SIDE_STREET_LABEL_LIGHT = "#4b5563";
+export const MAP_LANDMARK_LABEL_LIGHT = "#5b6472";
+
+export const MAP_STYLE_REVISION = "map-theme-figma-v10";
 
 /**
  * Leaflet fallback tiles: CARTO Positron / Dark Matter (OpenStreetMap data), the

@@ -1,4 +1,11 @@
+import { neighbourhoodStyles } from "./neighbourhood";
 import {
+  MAP_AREA_LABEL_DARK,
+  MAP_LANDMARK_LABEL_DARK,
+  MAP_ROAD_ARTERIAL_DARK,
+  MAP_ROAD_HIGHWAY_DARK,
+  MAP_ROAD_LOCAL_DARK,
+  MAP_SIDE_STREET_LABEL_DARK,
   MAP_LABEL_DARK,
   MAP_LAND_DARK,
   MAP_PARK_DARK,
@@ -9,7 +16,8 @@ import {
 
 /**
  * Dark map (Figma): flat land, near-black roads with no outline,
- * soft parks, street names only. POIs and transit are hidden so the pros stand out.
+ * soft parks. Shops/transit stay hidden so the pros stand out; area names, side streets
+ * and a few landmark names are shown for neighbourhood context.
  */
 export const MAP_STYLES_DARK: OnaMapStyle[] = [
   { elementType: "geometry", stylers: [{ color: MAP_LAND_DARK }] },
@@ -51,4 +59,12 @@ export const MAP_STYLES_DARK: OnaMapStyle[] = [
     elementType: "geometry",
     stylers: [{ color: MAP_WATER_DARK }],
   },
+  ...neighbourhoodStyles({
+    areaLabel: MAP_AREA_LABEL_DARK,
+    sideStreetLabel: MAP_SIDE_STREET_LABEL_DARK,
+    landmarkLabel: MAP_LANDMARK_LABEL_DARK,
+    localRoad: MAP_ROAD_LOCAL_DARK,
+    arterialRoad: MAP_ROAD_ARTERIAL_DARK,
+    highwayRoad: MAP_ROAD_HIGHWAY_DARK,
+  }),
 ];
