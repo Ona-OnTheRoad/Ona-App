@@ -25,7 +25,7 @@ export default function MessagesPage() {
     <div
       className={cn(
         "flex h-full min-h-0 flex-col overflow-hidden",
-        isLight ? "bg-[#c8c9cd]" : "bg-black",
+        "ona2 bg-ona-bg",
       )}
     >
       <PageHeader title="Chat" backHref={home} />

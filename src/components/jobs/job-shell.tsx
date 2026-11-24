@@ -5,8 +5,8 @@ import { ArrowLeft, Minimize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Job flow chrome same solid stage as the rest of the app
- * (light #c8c9cd / dark black). No glass, no double panels.
+ * Job flow chrome: the same solid white stage as the redesigned screens
+ * (Ona UI v2 tokens, dark theme handled by `.ona2`). No glass, no double panels.
  */
 export function JobShell({
   isLight,
@@ -37,7 +37,8 @@ export function JobShell({
   backIcon?: ReactNode;
   rightSlot?: ReactNode;
 }) {
-  const stage = isLight ? "bg-[#c8c9cd]" : "bg-black";
+  // `ona2` scopes the v2 colour tokens (white light / #111114 dark) to this screen.
+  const stage = "ona2 bg-ona-bg";
   const ink = isLight ? "text-slate-900" : "text-white";
   const muted = isLight ? "text-slate-600" : "text-white/60";
 
@@ -51,11 +52,8 @@ export function JobShell({
             className={cn(
               "flex shrink-0 items-center justify-center rounded-lg border-0",
               compactHeader ? "h-8 w-8" : "h-9 w-9",
-              isLight ? "bg-[#c8c9cd] text-slate-900" : "bg-black text-white",
+              "bg-transparent text-ona-ink",
             )}
-            style={{
-              backgroundColor: isLight ? "#c8c9cd" : "#000000",
-            }}
             aria-label="Back"
           >
             {backIcon ?? (
@@ -174,12 +172,12 @@ export function CopperButton({
 export function GhostButton({
   children,
   onClick,
-  isLight,
   className,
 }: {
   children: ReactNode;
   onClick?: () => void;
-  isLight: boolean;
+  /** Kept for callers; colours now come from the v2 tokens (light and dark). */
+  isLight?: boolean;
   className?: string;
 }) {
   return (
@@ -188,7 +186,7 @@ export function GhostButton({
       onClick={onClick}
       className={cn(
         "inline-flex h-12 w-full items-center justify-center rounded-md border-0 text-[14px] font-bold transition",
-        isLight ? "bg-black/10 text-slate-900" : "bg-white/10 text-white",
+        "border border-ona-border bg-ona-field text-ona-ink",
         className,
       )}
     >
@@ -202,14 +200,14 @@ export function StageButton({
   children,
   onClick,
   disabled,
-  isLight,
   className,
   type = "button",
 }: {
   children: ReactNode;
   onClick?: () => void;
   disabled?: boolean;
-  isLight: boolean;
+  /** Kept for callers; colours now come from the v2 tokens (light and dark). */
+  isLight?: boolean;
   className?: string;
   type?: "button" | "submit";
 }) {
@@ -220,9 +218,7 @@ export function StageButton({
       onClick={onClick}
       className={cn(
         "inline-flex h-12 w-full items-center justify-center rounded-md border-0 text-[14px] font-bold transition active:scale-[0.99] disabled:opacity-50",
-        isLight
-          ? "bg-[#c8c9cd] text-slate-900 ring-1 ring-black/10"
-          : "bg-[#2c2c2e] text-white",
+        "border border-ona-border bg-ona-field text-ona-ink",
         className,
       )}
     >

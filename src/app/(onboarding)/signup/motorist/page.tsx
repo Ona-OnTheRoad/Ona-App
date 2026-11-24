@@ -7,7 +7,7 @@ export default function MotoristSignupPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-dvh items-center justify-center bg-[#c8c9cd] text-sm font-semibold text-slate-700">
+        <div className="flex min-h-dvh items-center justify-center ona2 bg-ona-bg text-sm font-semibold text-ona-ink">
           Loading Customer signup…
         </div>
       }

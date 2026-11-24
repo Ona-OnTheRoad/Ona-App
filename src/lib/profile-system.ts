@@ -274,8 +274,8 @@ export type ProfileThemeTokens = {
 export function profileTheme(isLight: boolean): ProfileThemeTokens {
   return {
     isLight,
-    sheet: isLight ? "bg-[#c8c9cd]" : "bg-black",
-    sheetBg: isLight ? "#c8c9cd" : "#000000",
+    sheet: "ona2 bg-ona-bg",
+    sheetBg: isLight ? "#ffffff" : "#111114",
     // Flat profile: no elevated cards (X-style). Inputs use transparent stage.
     card: "rounded-none border-0 bg-transparent",
     cardBg: "transparent",

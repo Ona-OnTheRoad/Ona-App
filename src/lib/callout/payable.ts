@@ -113,13 +113,20 @@ export function jobChargeParts(input: JobChargeInput): JobChargeParts | null {
   if (labourRaw == null || !Number.isFinite(Number(labourRaw))) return null;
   const labour = Math.max(0, Number(labourRaw));
   const q = input.quote ?? input.fallbackQuote ?? null;
-  const callout = quoteCalloutFeeMajor(q) || payableCalloutMajor(q);
-  const computed = Math.round((labour + callout) * 100) / 100;
+  let callout = quoteCalloutFeeMajor(q) || payableCalloutMajor(q);
   const escrow = input.amountMinor;
   const escrowMajor =
     escrow != null && Number.isFinite(Number(escrow)) && Number(escrow) > 0
       ? Math.round(Number(escrow)) / 100
       : null;
+  // The money actually held is the source of truth. After payment the quote may
+  // not be loaded (reload, slow fetch, payload without it); the call-out is then
+  // whatever was charged above the labour, so the three lines can never
+  // contradict the total (e.g. "Call Out ₦0" under a total that includes it).
+  if (callout <= 0 && escrowMajor != null && escrowMajor - labour > 0.005) {
+    callout = Math.round((escrowMajor - labour) * 100) / 100;
+  }
+  const computed = Math.round((labour + callout) * 100) / 100;
   let total = computed;
   if (escrowMajor != null && callout <= 0) {
     total = escrowMajor;

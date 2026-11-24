@@ -73,7 +73,7 @@ export default function ProOrdersPage() {
       <div
         className={cn(
           "flex h-full flex-col",
-          isLight ? "bg-[#c8c9cd]" : "bg-black",
+          "ona2 bg-ona-bg",
         )}
       >
         <PageHeader title="Orders" subtitle="Repair Pro only" backHref="/" />
@@ -88,7 +88,7 @@ export default function ProOrdersPage() {
     <div
       className={cn(
         "flex h-full flex-col",
-        isLight ? "bg-[#c8c9cd]" : "bg-black",
+        "ona2 bg-ona-bg",
       )}
     >
       <PageHeader
@@ -141,7 +141,7 @@ export default function ProOrdersPage() {
           <div
             className={cn(
               "rounded-xl p-6 text-center",
-              isLight ? "bg-[#c8c9cd]" : "bg-white/5",
+              isLight ? "bg-ona-field border border-ona-border" : "bg-white/5",
             )}
           >
             <Clock3

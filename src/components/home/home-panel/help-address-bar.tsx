@@ -130,7 +130,7 @@ export function HelpAddressBar({
             <ul
               className={cn(
                 "absolute left-0 right-0 top-[calc(100%+4px)] z-40 max-h-44 overflow-y-auto rounded-md border-0",
-                isLight ? "bg-[#c8c9cd]" : "bg-black",
+                "ona2 border border-ona-border bg-ona-surface",
               )}
               role="listbox"
             >
@@ -140,7 +140,7 @@ export function HelpAddressBar({
                     type="button"
                     className={cn(
                       "flex w-full flex-col items-start border-0 bg-transparent px-2.5 py-2 text-left",
-                      isLight ? "hover:bg-[#d4d5db]" : "hover:bg-white/10",
+                      "hover:bg-ona-field",
                     )}
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => {

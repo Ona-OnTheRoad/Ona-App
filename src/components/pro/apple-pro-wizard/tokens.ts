@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
-export const PRO_SHEET_LIGHT = "#c8c9cd";
-export const PRO_SHEET_DARK = "#000000";
+export const PRO_SHEET_LIGHT = "#ffffff";
+export const PRO_SHEET_DARK = "#111114";
 export const PRO_CTA = "#323231";
 export const PRO_ACCENT = "#FF6B35";
 

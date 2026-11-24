@@ -3,7 +3,10 @@ import type { JobTrigger } from "@/lib/jobs/diagnostics/types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiListJobs, apiPairingSweep } from "@/lib/jobs/client";
 import { windowStillOpen } from "@/lib/jobs/deadline";
-import { isPayoutPendingSettlement } from "@/lib/jobs/constants";
+import {
+  isPayoutOnHold,
+  isPayoutPendingSettlement,
+} from "@/lib/jobs/constants";
 import { backendSubscribeJobs } from "@/lib/supabase/app-api";
 import type { JobRecord } from "@/lib/jobs/types";
 import {
@@ -77,7 +80,9 @@ export function useDashboardJobs(backendUserId: string | null | undefined) {
 
       const payoutPending = mine
         .filter(
-          (j) => RECENT_STATUSES.has(j.status) && isPayoutPendingSettlement(j),
+          (j) =>
+            RECENT_STATUSES.has(j.status) &&
+            (isPayoutPendingSettlement(j) || isPayoutOnHold(j)),
         )
         .sort(
           (a, b) =>
@@ -87,7 +92,10 @@ export function useDashboardJobs(backendUserId: string | null | undefined) {
 
       const finished = mine
         .filter(
-          (j) => RECENT_STATUSES.has(j.status) && !isPayoutPendingSettlement(j),
+          (j) =>
+            RECENT_STATUSES.has(j.status) &&
+            !isPayoutPendingSettlement(j) &&
+            !isPayoutOnHold(j),
         )
         .sort(
           (a, b) =>

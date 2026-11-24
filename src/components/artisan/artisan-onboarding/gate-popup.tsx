@@ -28,7 +28,7 @@ export function GatePopup({
           "flex-col items-center justify-center rounded-[0.65rem] px-5 py-6 text-center",
           "border-0 shadow-none",
           // Match phone shell grey exactly
-          isLight ? "bg-[#c8c9cd] text-slate-900" : "bg-black text-[#f2f2f7]",
+          "ona2 border border-ona-border bg-ona-surface text-ona-ink",
         )}
       >
         <p className="text-[14px] font-bold leading-snug">{message}</p>

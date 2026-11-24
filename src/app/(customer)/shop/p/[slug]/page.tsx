@@ -17,7 +17,7 @@ export default function ShopProductPage() {
   const p = useProductPage();
   const { product, selectedVariant, outOfStock, priceOnRequest } = p;
 
-  const bg = isLight ? "bg-[#c8c9cd]" : "bg-black";
+  const bg = "ona2 bg-ona-bg";
   const muted = isLight ? "text-slate-600" : "text-white/55";
   const border = isLight ? "border-black/10" : "border-white/10";
 

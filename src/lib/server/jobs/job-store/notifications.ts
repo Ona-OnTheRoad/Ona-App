@@ -74,23 +74,10 @@ export async function notifyPayoutPendingSettlement(job: JobRecord) {
         `job-complete-${job.id}`,
       );
     }
+    // Only the Repair Pro is told: the payout queue is between Ona and the Pro.
+    // The customer's money is already released from their side.
     const body =
       "Payout processing auto-retry every 10 minutes for up to 24 hours. You'll be notified when payment is released.";
-    if (job.motoristId) {
-      await insertNotification({
-        userId: job.motoristId,
-        category: "payments",
-        priority: "high",
-        title: "Payout processing",
-        body,
-        href: `/jobs/${job.id}`,
-        actionType: "open_job",
-        actionPayload: { jobId: job.id },
-        jobId: job.id,
-        jobStatus: "satisfied",
-        groupKey: `payout-pending-${job.id}`,
-      });
-    }
     if (job.repairProId) {
       await insertNotification({
         userId: job.repairProId,

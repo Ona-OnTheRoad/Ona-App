@@ -61,7 +61,7 @@ function MockInner() {
     <div
       className={cn(
         "relative flex h-full flex-col justify-center gap-4 px-5",
-        isLight ? "bg-[#c8c9cd]" : "bg-black",
+        "ona2 bg-ona-bg",
       )}
     >
       <h1

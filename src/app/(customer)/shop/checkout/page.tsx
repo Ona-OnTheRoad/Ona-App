@@ -15,9 +15,9 @@ export default function ShopCheckoutPage() {
   const c = useCheckout();
   const { cart, addressId, total } = c;
 
-  const bg = isLight ? "bg-[#c8c9cd]" : "bg-black";
+  const bg = "ona2 bg-ona-bg";
   const card = isLight
-    ? "bg-white/90 text-slate-900"
+    ? "bg-ona-field border border-ona-border text-slate-900"
     : "bg-[#1c1c1e] text-white";
   const muted = isLight ? "text-slate-600" : "text-white/55";
   const border = isLight ? "border-black/10" : "border-white/10";

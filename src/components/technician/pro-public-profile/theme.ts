@@ -1,10 +1,10 @@
 /** Light: flat sheet, no solid card bars. Dark: solid cards. */
 export function publicProfileTheme(isLight: boolean) {
   return {
-    pageBg: isLight ? "#c8c9cd" : "#000000",
+    pageBg: isLight ? "#ffffff" : "#111114",
     cardBg: isLight ? "transparent" : "#1c1c1e",
     insetBg: isLight ? "transparent" : "#2c2c2e",
-    page: isLight ? "bg-[#c8c9cd]" : "bg-black",
+    page: "ona2 bg-ona-bg",
     card: isLight ? "mb-1.5 rounded-2xl bg-black/[0.04]" : "bg-[#1c1c1e]",
     inset: isLight ? "bg-transparent" : "bg-[#2c2c2e]",
     ink: isLight ? "text-slate-900" : "text-white",

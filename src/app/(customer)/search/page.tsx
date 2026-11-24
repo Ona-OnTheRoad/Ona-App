@@ -39,7 +39,7 @@ function SearchResultsBody() {
     <div
       className={cn(
         "flex h-full flex-col",
-        isLight ? "bg-[#c8c9cd]" : "bg-black",
+        "ona2 bg-ona-bg",
       )}
     >
       <PageHeader title={t("search.title")} subtitle={t("search.subtitle")} />
@@ -149,7 +149,7 @@ export default function SearchPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-full items-center justify-center bg-[#c8c9cd] text-sm text-slate-600">
+        <div className="flex h-full items-center justify-center ona2 bg-ona-bg text-sm text-ona-muted">
           Loading search…
         </div>
       }
