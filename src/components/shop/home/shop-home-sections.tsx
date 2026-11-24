@@ -39,7 +39,7 @@ export function ShopHomeSections({
               key={opt.id}
               type="button"
               onClick={() => onEnterTrade(opt.id)}
-              className="flex min-h-[72px] min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl border-0 bg-ona-field px-1 py-3 text-ona-ink transition-colors active:bg-ona-field-strong"
+              className="flex min-h-[64px] min-w-0 flex-col items-center justify-center gap-1 rounded-full border-0 bg-ona-field px-2 py-2.5 text-ona-ink transition-colors active:bg-ona-field-strong"
             >
               <Icon className="h-5 w-5 shrink-0" strokeWidth={1.8} />
               <span className="max-w-full truncate text-[12px] font-medium leading-none">

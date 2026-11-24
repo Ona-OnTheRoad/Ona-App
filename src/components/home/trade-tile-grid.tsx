@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import type { TradeTile } from "@/components/home/trade-tiles";
 
 /**
- * Trade picker. Full mode: 4-column grid of separate rounded tiles (icon over label),
+ * Trade picker. Full mode: 4-column grid of separate capsule-shaped tiles (icon over label),
  * no divider lines.
  * Compact mode (a trade is open): one scrolling row of chips so the flow keeps
  * the room. Plain buttons with aria-pressed (the active trade is a toggle).
@@ -68,7 +68,7 @@ export function TradeTileGrid({
             aria-pressed={id === "all" ? undefined : on}
             onClick={() => onPick(id)}
             className={cn(
-              "flex min-h-[72px] min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl border-0 px-1 py-3 text-[12px] font-medium transition-colors active:bg-ona-field-strong",
+              "flex min-h-[64px] min-w-0 flex-col items-center justify-center gap-1 rounded-full border-0 px-2 py-2.5 text-[12px] font-medium transition-colors active:bg-ona-field-strong",
               on
                 ? "bg-ona-brand-soft text-ona-brand-ink"
                 : "bg-ona-field text-ona-ink",
