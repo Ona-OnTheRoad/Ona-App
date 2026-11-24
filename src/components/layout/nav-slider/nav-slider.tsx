@@ -129,14 +129,14 @@ export function NavSlider() {
   const switchLabel = isPro ? "Switch to Customer" : "Switch to Repair Pro";
 
   return (
-    <div className="ona2 absolute inset-0 z-[100] overflow-hidden">
+    <div className="ona2 absolute inset-0 z-[100] overflow-hidden bg-transparent">
       <button
         type="button"
         tabIndex={-1}
         aria-label={t("menu.closeMenu")}
         onClick={closeNavSlider}
         className={cn(
-          "absolute inset-0 border-0 bg-black/20 transition-opacity duration-200 motion-reduce:transition-none",
+          "absolute inset-0 border-0 bg-black/60 transition-opacity duration-200 motion-reduce:transition-none",
           shown ? "opacity-100" : "opacity-0",
         )}
       />
