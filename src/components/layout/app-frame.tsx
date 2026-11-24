@@ -9,6 +9,7 @@ import { InAppCallProvider } from "@/components/call/in-app-call";
 import { RoleBootstrap } from "@/components/home/role-bootstrap";
 import { InboundBanner } from "@/components/layout/inbound-banner";
 import { NavSlider } from "@/components/layout/nav-slider/nav-slider";
+import { useNavSliderOpen } from "@/components/layout/nav-slider/nav-slider-store";
 import { isNavRoute } from "@/components/layout/nav-slider/slider-nav";
 import { PhoneShell } from "@/components/layout/phone-shell";
 import { Toaster } from "@/components/ui/sonner";
@@ -28,6 +29,7 @@ export function AppFrame({ children }: { children: ReactNode }) {
   const pathname = usePathname() || "";
   const isAdmin = pathname.startsWith("/admin");
   const { switchingRole, theme } = useApp();
+  const navOpen = useNavSliderOpen();
   const isLight = theme === "light";
   const navRoute = isNavRoute(pathname);
   useSignupDraftCleanup();
@@ -75,12 +77,22 @@ export function AppFrame({ children }: { children: ReactNode }) {
               {!switchingRole ? <InboundBanner /> : null}
               {!switchingRole ? <NotificationToasts /> : null}
               {/* No key={pathname}: remounting every route re-fired auth/GPS and felt like a loop */}
+              {/* Outer wrapper carries the menu "push": the page slides right with the side
+                  menu so its left edge stays visible beside it. (Not on the .om-page-enter
+                  element: that animation would override this transform.) */}
               <div
-                className={cn(
-                  "om-page-enter relative flex h-full min-h-0 flex-1 flex-col overflow-hidden",
-                )}
+                className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden transition-transform duration-200 ease-out motion-reduce:transition-none"
+                style={{
+                  transform: navOpen ? "translateX(min(70%, 420px))" : "none",
+                }}
               >
-                {children}
+                <div
+                  className={cn(
+                    "om-page-enter relative flex h-full min-h-0 flex-1 flex-col overflow-hidden",
+                  )}
+                >
+                  {children}
+                </div>
               </div>
               {switchingRole ? (
                 <div
