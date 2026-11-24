@@ -28,7 +28,7 @@ export function ShopHomeSections({
       <div
         role="group"
         aria-label="Enter shop"
-        className="mt-4 grid grid-cols-4 gap-px overflow-hidden rounded-ona-card border border-ona-border bg-ona-border"
+        className="mt-4 grid grid-cols-4 gap-2"
       >
         {PRO_TRADE_OPTIONS.filter(
           (t) => !allowedTradeKeys || allowedTradeKeys.includes(t.id),
@@ -39,10 +39,10 @@ export function ShopHomeSections({
               key={opt.id}
               type="button"
               onClick={() => onEnterTrade(opt.id)}
-              className="flex min-h-[64px] min-w-0 flex-col items-center justify-center gap-1.5 border-0 bg-ona-surface px-1 py-2.5 text-ona-ink active:bg-ona-field-strong"
+              className="flex min-h-[72px] min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl border-0 bg-ona-field px-1 py-3 text-ona-ink transition-colors active:bg-ona-field-strong"
             >
-              <Icon className="h-[18px] w-[18px]" strokeWidth={1.8} />
-              <span className="max-w-full truncate text-[10px] font-medium leading-none">
+              <Icon className="h-5 w-5 shrink-0" strokeWidth={1.8} />
+              <span className="max-w-full truncate text-[12px] font-medium leading-none">
                 {opt.homeLabel}
               </span>
             </button>
