@@ -1,6 +1,7 @@
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { requireUser } from "@/lib/server/auth-utils";
 import { mapNotificationRow } from "@/lib/server/notifications";
+import { parseAudience } from "@/lib/notifications/audience";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 
@@ -32,13 +33,19 @@ export async function GET(req: Request) {
     return apiFail("Forbidden", 403, "forbidden");
   }
 
+  // Active side of the app: a dual-role user only sees that side's rows
+  // (rows with no audience, e.g. security/system, show in both).
+  const role = parseAudience(searchParams.get("role"));
+
   const sb = createServiceSupabase();
-  const { data, error } = await sb
+  let query = sb
     .from("notifications")
     .select(
-      "id,user_id,category,priority,title,body,href,action_type,group_key,job_id,job_status,message_text,read_at,created_at",
+      "id,user_id,category,priority,title,body,href,action_type,group_key,job_id,job_status,message_text,read_at,created_at,audience",
     )
-    .eq("user_id", auth.userId)
+    .eq("user_id", auth.userId);
+  if (role) query = query.or(`audience.is.null,audience.eq.${role}`);
+  const { data, error } = await query
     .order("created_at", { ascending: false })
     .limit(50);
 
