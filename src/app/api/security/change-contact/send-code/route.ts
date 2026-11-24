@@ -21,6 +21,7 @@ import { findPhoneOwners, phoneTail } from "@/lib/server/otp/phone-owners";
 import { DEMO_OTP_CODE, isDemoFallbackAllowed } from "@/lib/auth/demo-otp";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { createServiceSupabase } from "@/lib/supabase/server";
+import { formatWait } from "@/lib/format-wait";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -123,7 +124,7 @@ export async function POST(req: Request) {
         windowMs: 60 * 60_000,
       });
       if (!perIp.ok) {
-        return apiFail(`Too many code requests. Retry in ${perIp.retryAfterSec}s.`, 429, "rate_limited", {
+        return apiFail(`Too many code requests. Try again in ${formatWait(perIp.retryAfterSec)}.`, 429, "rate_limited", {
           retryAfterSec: perIp.retryAfterSec,
         });
       }
@@ -195,7 +196,7 @@ export async function POST(req: Request) {
       const age = Date.now() - new Date(last.created_at).getTime();
       if (age < CHANGE_CONTACT_RESEND_SEC * 1000) {
         const wait = Math.ceil((CHANGE_CONTACT_RESEND_SEC * 1000 - age) / 1000);
-        return apiFail(`Please wait ${wait}s before requesting another code.`, 429, "resend_wait", {
+        return apiFail(`Please wait ${formatWait(wait)} before requesting another code.`, 429, "resend_wait", {
           retryAfterSec: wait,
         });
       }

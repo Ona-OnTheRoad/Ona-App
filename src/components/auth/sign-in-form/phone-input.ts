@@ -3,6 +3,7 @@ import {
   getPhoneCodeOptions,
   splitStoredPhone,
 } from "@/lib/phone-codes";
+import { formatClock } from "@/lib/format-wait";
 
 /** Min national digits before a number that already starts with the dial code is treated as full. */
 const MIN_NATIONAL_DIGITS = 10;
@@ -51,8 +52,7 @@ export function maskPhone(phone: string): string {
 }
 
 /** 45 -> "00:45" */
+/** Countdown label: seconds under a minute ("45s"), then "1m 15s". */
 export function formatCountdown(sec: number): string {
-  const s = Math.max(0, Math.floor(sec));
-  const m = Math.floor(s / 60);
-  return `${String(m).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+  return formatClock(sec);
 }

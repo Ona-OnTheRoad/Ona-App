@@ -2,6 +2,7 @@
 
 import { CheckCircle2, Phone } from "lucide-react";
 import { OnaOtpInput } from "@/components/ui/ona-otp-input";
+import { formatClock } from "@/lib/format-wait";
 
 interface Tier1PhoneCardProps {
   isLight?: boolean;
@@ -85,7 +86,7 @@ export function Tier1PhoneCard({
               className="font-bold text-brand hover:underline disabled:text-ona-muted disabled:no-underline"
             >
               {resendIn > 0
-                ? `Resend in ${resendIn}s`
+                ? `Resend in ${formatClock(resendIn)}`
                 : otpSent
                   ? "Resend code"
                   : "Send code"}

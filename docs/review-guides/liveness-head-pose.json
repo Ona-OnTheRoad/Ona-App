@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "id": "liveness-head-pose",
+  "title": "Liveness: detect nod, turn and look up/down challenges",
+  "plan": "docs/review-guides/liveness-head-pose.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "R1",
+      "stage": "code",
+      "expectation": "headPose returns yaw for a left/right turn and pitch for a nod, ignores roll, separates combined rotations, and gives the same magnitudes for a row-major layout or a flipped forward axis.",
+      "verification": "Unit tests with constructed rotation matrices.",
+      "status": "pass",
+      "evidence": [
+        "code: src/components/profile/face-liveness/__tests__/head-pose.test.ts (7 headPose cases). Under the previous formulas the turn, nod and roll cases would fail: turn gave yaw 0, nod gave pitch 0, roll was read as yaw."
+      ]
+    },
+    {
+      "id": "R2",
+      "stage": "code",
+      "expectation": "Yaw and pitch ranges are measured over the last 1.5 s of frames, not the last 18, so a slow nod on a 15 fps phone still registers.",
+      "verification": "Unit tests of pushTimed/timedRange; code inspection of detection-tick.ts.",
+      "status": "pass",
+      "evidence": [
+        "code: head-pose.test.ts 'keeps a slow nod inside the window' and 'drops samples older than the window'. detection-tick.ts uses pushTimed/timedRange for yaw and pitch."
+      ]
+    },
+    {
+      "id": "R4",
+      "stage": "code",
+      "expectation": "turn_left passes only when the person turns to their own left (nose toward the image's right in the raw frame) and turn_right only to their right, each needing |yaw| > 0.18.",
+      "verification": "Unit tests of headTurnSide; code inspection of detection-tick.ts.",
+      "status": "pass",
+      "evidence": [
+        "code: head-pose.test.ts 'headTurnSide' (left positive, right negative, edge order independent, missing landmarks)."
+      ]
+    },
+    {
+      "id": "R5",
+      "stage": "code",
+      "expectation": "look_up and look_down are measured from the person's own recent position with landmarks (not against the camera's level), so a slight tilt up from a head already tilted down passes. Nod also accepts the landmark tilt range. The prompts read 'Tilt your head up/down'.",
+      "verification": "Unit tests of headTiltRatio/timedExtent; code inspection.",
+      "status": "pass",
+      "evidence": [
+        "code: head-pose.test.ts 'headTiltRatio' including 'counts a small tilt up from a head already tilted down (phone held low)'."
+      ]
+    },
+    {
+      "id": "R3",
+      "stage": "code",
+      "expectation": "lint has 0 errors; typecheck and the full test suite pass; files stay at or under 300 lines.",
+      "verification": "npm run lint && npm run typecheck && npm run test.",
+      "status": "pass",
+      "evidence": [
+        "code: 2026-11-23, uncommitted tree. lint: 0 errors, 141 warnings (none new). typecheck clean. test: 289 files, 2885 tests passed (16 in head-pose.test.ts). helpers.ts 152, detection-tick.ts 273, use-face-liveness.ts 282 lines."
+      ]
+    },
+    {
+      "id": "H1",
+      "stage": "hosted",
+      "expectation": "On a phone, each challenge registers in one natural movement in the right direction only (turn left/right, tilt up/down, nod), and a three-challenge session completes without lockout.",
+      "verification": "Manual device check on the dev deployment.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent review of the reviewed commit.",
+      "Tune TURN_SIDE_MIN / TILT_MIN from device results."
+    ],
+    "external": [
+      "Device check on dev (H1)."
+    ]
+  }
+}

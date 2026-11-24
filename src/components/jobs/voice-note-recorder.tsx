@@ -9,6 +9,7 @@ import type { JobMedia } from "@/lib/jobs/types";
 import { RecorderControls } from "./voice-note-recorder/recorder-controls";
 import type { Phase } from "./voice-note-recorder/types";
 import { useVoiceRecorder } from "./voice-note-recorder/use-voice-recorder";
+import { formatClock } from "@/lib/format-wait";
 
 /**
  * Browser MediaRecorder voice note record, listen back, re-record.
@@ -57,9 +58,9 @@ export function VoiceNoteRecorder({
               : phase === "saving"
                 ? "Saving"
                 : recording
-                  ? `${elapsed}s`
+                  ? formatClock(elapsed)
                   : value?.durationSec
-                    ? `${value.durationSec}s`
+                    ? formatClock(value.durationSec)
                     : ""}
           </span>
         )}

@@ -18,6 +18,7 @@ import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { runIdempotent } from "@/lib/server/idempotency";
 import { authOtpSendBodySchema as bodySchema } from "@/lib/server/openapi/schemas/auth";
+import { formatWait } from "@/lib/format-wait";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -155,7 +156,7 @@ export async function POST(req: Request) {
           key: `otp-send:${ip}:${channel}:${dest}`, limit: 8, windowMs: 10 * 60_000,
         });
         if (!budget.ok) {
-          throw Object.assign(new Error(`Too many code requests. Retry in ${budget.retryAfterSec}s.`),
+          throw Object.assign(new Error(`Too many code requests. Try again in ${formatWait(budget.retryAfterSec)}.`),
             { status: 429, code: "rate_limited" });
         }
         // Real SMS costs money: cap per number per day and per IP per hour.
@@ -171,7 +172,7 @@ export async function POST(req: Request) {
             key: `otp-send-ip:${ip}`, limit: HOURLY_CAP_PER_IP, windowMs: 60 * 60_000,
           });
           if (!perIp.ok) {
-            throw Object.assign(new Error(`Too many code requests. Retry in ${perIp.retryAfterSec}s.`),
+            throw Object.assign(new Error(`Too many code requests. Try again in ${formatWait(perIp.retryAfterSec)}.`),
               { status: 429, code: "rate_limited" });
           }
         }
@@ -204,7 +205,7 @@ export async function POST(req: Request) {
             const wait = Math.ceil((RESEND_COOLDOWN_SEC * 1000 - age) / 1000);
             return {
               ok: false as const,
-              error: `Please wait ${wait}s before requesting another code.`,
+              error: `Please wait ${formatWait(wait)} before requesting another code.`,
             };
           }
         }
@@ -216,7 +217,7 @@ export async function POST(req: Request) {
             const wait = Math.ceil((COOLDOWN_MS - age) / 1000);
             return {
               ok: false as const,
-              error: `Please wait ${wait}s before requesting another code.`,
+              error: `Please wait ${formatWait(wait)} before requesting another code.`,
             };
           }
         }

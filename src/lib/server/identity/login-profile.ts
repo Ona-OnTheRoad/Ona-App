@@ -85,7 +85,7 @@ export async function loadOrRepairLoginProfile(
     admin
       .from("repair_pro_profiles")
       .select(
-        "user_id, business_name, primary_service, services, years_experience, bio, service_radius_km, nin_verified, bvn_verified, docs_status, docs_rating_boost_applied, certification_file_name, certification_file_url, skills, rating_avg, jobs_completed, labour_prices, pricing_currency, vehicle_focus, created_at, bank_name, bank_account_name, bank_account_number, bank_code",
+        "user_id, business_name, primary_service, services, years_experience, bio, service_radius_km, nin_verified, bvn_verified, face_liveness_verified, face_liveness_at, liveness_passed_at, docs_status, docs_rating_boost_applied, certification_file_name, certification_file_url, skills, rating_avg, jobs_completed, labour_prices, pricing_currency, vehicle_focus, created_at, bank_name, bank_account_name, bank_account_number, bank_code",
       )
       .eq("user_id", userId)
       .maybeSingle(),
@@ -162,6 +162,8 @@ export async function loadOrRepairLoginProfile(
         serviceRadiusKm: pr?.service_radius_km,
         ninVerified: pr?.nin_verified,
         bvnVerified: pr?.bvn_verified,
+        faceLivenessVerified: Boolean(pr?.face_liveness_verified),
+        faceLivenessAt: pr?.face_liveness_at || pr?.liveness_passed_at || undefined,
         docsStatus:
           (pr?.docs_status as UserProfile["docsStatus"]) || "approved",
         docsRatingBoostApplied: Boolean(pr?.docs_rating_boost_applied),

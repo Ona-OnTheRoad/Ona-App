@@ -47,7 +47,9 @@ export function FaceLivenessView({
             <p className={cn("text-[11px] font-medium", muted)}>
               {phase === "success"
                 ? "Verified"
-                : phase === "locked"
+                : phase === "verifying"
+                  ? "Verifying"
+                  : phase === "locked"
                   ? "Temporarily locked"
                   : `Step ${Math.min(step + 1, SESSION_LEN)} of ${SESSION_LEN}`}
             </p>
@@ -112,6 +114,14 @@ export function FaceLivenessView({
             </p>
           </div>
         )}
+        {phase === "verifying" && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/50">
+            <Loader2 className="h-6 w-6 animate-spin text-[#FF6B35]" />
+            <p className="text-[11px] font-semibold text-white/90">
+              {feedback}
+            </p>
+          </div>
+        )}
         {phase === "success" && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/45">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#FF6B35]">
@@ -134,7 +144,7 @@ export function FaceLivenessView({
 
       {phase === "run" && (
         <p className={cn("text-center text-[10px] font-medium", muted)}>
-          Follow the prompts · no video is saved
+          Follow the prompts · no video is saved, one photo is checked
         </p>
       )}
 
@@ -145,7 +155,7 @@ export function FaceLivenessView({
       )}
 
       <div className="flex gap-2">
-        {phase !== "success" && phase !== "locked" && (
+        {phase !== "success" && phase !== "locked" && phase !== "verifying" && (
           <button
             type="button"
             onClick={onClose}

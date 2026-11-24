@@ -108,6 +108,9 @@ export interface RepairProRow {
   bvn_last4: string | null;
   nin_verified: boolean;
   bvn_verified: boolean;
+  face_liveness_verified?: boolean | null;
+  face_liveness_at?: string | null;
+  liveness_passed_at?: string | null;
   skills: unknown;
   vehicle_focus: unknown;
   docs_status?: DocsStatus;

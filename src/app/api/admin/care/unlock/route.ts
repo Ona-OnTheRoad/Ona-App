@@ -16,6 +16,7 @@ import {
 } from "@/lib/server/modules/sensitive-unlock";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { SENSITIVE_UNLOCK_TTL_MS } from "@/lib/server/modules/security";
+import { formatWait } from "@/lib/format-wait";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,7 +44,7 @@ export async function POST(req: Request) {
     });
     if (!rl.ok) {
       return apiFail(
-        `Too many unlock attempts. Wait ${rl.retryAfterSec}s`,
+        `Too many unlock attempts. Wait ${formatWait(rl.retryAfterSec)}`,
         429,
         "rate_limited",
       );

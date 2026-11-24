@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "liveness-status-reload",
+  "title": "Liveness: Verified survives reload; wait time in minutes",
+  "plan": "docs/review-guides/liveness-status-reload.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "R1",
+      "stage": "code",
+      "expectation": "GET /api/profile, login and role-switch profiles carry faceLivenessVerified (and faceLivenessAt) from repair_pro_profiles, false when not passed.",
+      "verification": "Route and builder tests.",
+      "status": "pass",
+      "evidence": [
+        "code: profile route.test.ts 'returns the server-recorded Tier 3 liveness so a reload keeps Verified'; login-profile.test.ts and switch-profile.test.ts liveness cases. All four fail without the fix (checked locally by stashing the source changes)."
+      ]
+    },
+    {
+      "id": "R2",
+      "stage": "code",
+      "expectation": "A spent liveness budget returns 429 with Retry-After in seconds and a message in plain minutes or hours (1502 s -> 'about 26 minutes').",
+      "verification": "Unit test of formatWait; liveness route test asserts the message.",
+      "status": "pass",
+      "evidence": [
+        "code: src/lib/__tests__/format-wait.test.ts; liveness route.test.ts 429 case asserts 'Try again in about 26 minutes.'"
+      ]
+    },
+    {
+      "id": "R3",
+      "stage": "code",
+      "expectation": "lint has 0 errors; typecheck and the full test suite pass.",
+      "verification": "npm run lint && npm run typecheck && npm run test.",
+      "status": "pass",
+      "evidence": [
+        "code: 2026-11-23, uncommitted tree. lint: 0 errors, 141 warnings (none new). typecheck clean. test: 290 files, 2892 tests passed."
+      ]
+    },
+    {
+      "id": "H1",
+      "stage": "hosted",
+      "expectation": "On dev, after a liveness pass, reloading /verify still shows Verified on the Tier 3 card.",
+      "verification": "Manual browser check.",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "id": "H2",
+      "stage": "hosted",
+      "expectation": "On dev, exceeding the attempt budget shows the wait in minutes.",
+      "verification": "Manual browser check.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent review of the reviewed commit.",
+      "Optional: use formatWait in the other rate-limited routes."
+    ],
+    "external": [
+      "Browser checks on dev (H1, H2)."
+    ]
+  }
+}

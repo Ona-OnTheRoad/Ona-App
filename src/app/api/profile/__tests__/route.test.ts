@@ -169,6 +169,32 @@ describe("GET /api/profile", () => {
     });
   });
 
+  it("returns the server-recorded Tier 3 liveness so a reload keeps Verified", async () => {
+    requireUserMock.mockResolvedValue(authOk("pro-1"));
+    const shared = {
+      id: "pro-1", role: "repair_pro", full_name: "Jane Pro", phone: "+2340000001",
+      email: "jane@example.com", avatar_url: null, city: "Lagos", area: "Lekki",
+      created_at: "2026-01-01T00:00:00.000Z",
+    };
+    makeSb({
+      profile: { data: shared },
+      pro: { data: { primary_service: "mechanic", created_at: "2026-01-01T00:00:00.000Z", face_liveness_verified: true, face_liveness_at: "2026-11-23T19:01:02.126Z" } },
+      mot: { data: null },
+      guarantor: { data: null },
+    });
+    const json = await (await GET(req())).json();
+    expect(json.data.profile).toMatchObject({ faceLivenessVerified: true, faceLivenessAt: "2026-11-23T19:01:02.126Z" });
+
+    makeSb({
+      profile: { data: shared },
+      pro: { data: { primary_service: "mechanic", created_at: "2026-01-01T00:00:00.000Z" } },
+      mot: { data: null },
+      guarantor: { data: null },
+    });
+    const json2 = await (await GET(req())).json();
+    expect(json2.data.profile.faceLivenessVerified).toBe(false);
+  });
+
   it("returns 401 when the caller is not authenticated", async () => {
     requireUserMock.mockResolvedValue({
       ok: false,

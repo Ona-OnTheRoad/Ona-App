@@ -164,7 +164,7 @@ describe("POST /api/auth/otp/send, live SMS", () => {
     dbCfg.recent = [{ id: "o1", created_at: new Date(Date.now() - 5_000).toISOString(), attempts: 0, consumed_at: null }];
     const res = await call(phoneBody);
     expect(res.status).toBe(400);
-    expect((await res.json()).error.message).toMatch(/wait \d+s/i);
+    expect((await res.json()).error.message).toMatch(/wait \d+ seconds/i);
     expect(sms.send).not.toHaveBeenCalled();
     expect(dbCfg.inserts).toHaveLength(0);
   });

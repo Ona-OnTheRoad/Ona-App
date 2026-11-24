@@ -144,6 +144,8 @@ export async function loadOwnIdentityProfile(userId: string): Promise<{ profile:
       serviceRadiusKm: pr?.service_radius_km,
       ninVerified: pr?.nin_verified || mot?.nin_verified,
       bvnVerified: pr?.bvn_verified || mot?.bvn_verified,
+      faceLivenessVerified: Boolean(pr?.face_liveness_verified),
+      faceLivenessAt: pr?.face_liveness_at || pr?.liveness_passed_at || undefined,
       govIdVerified: proT2Approved,
       identityReviewStatus: proIdentityStatus,
       identityVerifiedAt:

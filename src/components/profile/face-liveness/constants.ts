@@ -14,8 +14,8 @@ export const CHALLENGE_POOL: Challenge[] = [
     feedbackOk: "Right turn OK",
   },
   { id: "nod", label: "Nod your head once", feedbackOk: "Nod detected" },
-  { id: "look_up", label: "Look slightly up", feedbackOk: "Look up OK" },
-  { id: "look_down", label: "Look slightly down", feedbackOk: "Look down OK" },
+  { id: "look_up", label: "Tilt your head up", feedbackOk: "Look up OK" },
+  { id: "look_down", label: "Tilt your head down", feedbackOk: "Look down OK" },
 ];
 
 /** Challenges per session short session, low data */

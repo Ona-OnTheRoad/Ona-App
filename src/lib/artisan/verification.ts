@@ -9,6 +9,7 @@ import {
   isDemoOtpAllowed,
 } from "@/lib/auth/demo-otp";
 import { verifyBvnApi, verifyNinApi } from "@/lib/ng-id-verify-client";
+import { formatWait } from "@/lib/format-wait";
 
 export type VerifyStatus =
   "idle" | "pending" | "checking" | "verified" | "failed";
@@ -108,7 +109,7 @@ export function sendArtisanOtp(phone: string):
       const wait = Math.ceil((OTP_RESEND_MS - age) / 1000);
       return {
         ok: false,
-        error: `Please wait ${wait}s before requesting another code.`,
+        error: `Please wait ${formatWait(wait)} before requesting another code.`,
         waitSec: wait,
       };
     }

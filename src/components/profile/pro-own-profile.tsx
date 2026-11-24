@@ -199,6 +199,7 @@ export function ProOwnProfile({ isLight }: { isLight: boolean }) {
         userProfile={userProfile}
         showLiveness={p.showLiveness}
         setShowLiveness={p.setShowLiveness}
+        userId={p.backendUserId || undefined}
         onVerify={() => router.push("/verify")}
         onLivenessPassed={() => {
           updateUserProfile({
