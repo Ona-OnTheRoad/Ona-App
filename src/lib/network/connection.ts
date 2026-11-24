@@ -65,7 +65,7 @@ export function networkStateKey(s: NetworkState): string {
 }
 
 /**
- * Whether heavy content (satellite map tiles) should wait for a tap: on 2G / Data Saver
+ * Whether heavy content (map tiles) should wait for a tap: on 2G / Data Saver
  * ("slow") or with no connection at all. 3G and better load straight away.
  */
 export function shouldDeferHeavyContent(

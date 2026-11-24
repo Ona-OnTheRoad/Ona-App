@@ -15,8 +15,13 @@ export function useLocationAndRadius(
   market: MarketStateResult,
 ) {
   const { isAuthenticated } = session;
-  const { setLocation, setRadiusKmState, setLocationError, setIsLocating } =
-    market;
+  const {
+    setLocation,
+    setRadiusKmState,
+    setLocationError,
+    setIsLocating,
+    setHasLiveFix,
+  } = market;
 
   /** User manually pinned a place don't overwrite with GPS until Retry */
   const manualPinRef = useRef(false);
@@ -90,6 +95,7 @@ export function useLocationAndRadius(
         };
       });
       setLocationError(null);
+      setHasLiveFix(true);
       if (!silent) setIsLocating(false);
 
       // Resolve FULL Google formatted address (never area-only like "Lekki")
@@ -139,7 +145,7 @@ export function useLocationAndRadius(
         }),
       );
     },
-    [setIsLocating, setLocation, setLocationError],
+    [setHasLiveFix, setIsLocating, setLocation, setLocationError],
   );
 
   const retryLocation = useCallback(() => {
@@ -302,6 +308,7 @@ export function useLocationAndRadius(
         return;
       }
       manualPinRef.current = true;
+      setHasLiveFix(true);
       setLocation({
         label: label || "Pinned location",
         city: label || "Pinned",
@@ -322,7 +329,7 @@ export function useLocationAndRadius(
         /* */
       }
     },
-    [setLocation, setLocationError],
+    [setHasLiveFix, setLocation, setLocationError],
   );
 
   const setRadiusKm = useCallback(

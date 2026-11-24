@@ -1,23 +1,33 @@
-/* ─── Palette ─── */
-export const MAP_BG_LIGHT = "#0a1610";
-export const MAP_LAND_LIGHT = "#0f1f16";
-export const MAP_ROAD_LIGHT = "#2d5540";
-export const MAP_ROAD_LIGHT_HI = "#3d7054";
-export const MAP_LABEL_LIGHT = "#f0f7f3";
+/* ─── Palette (from the Figma map designs) ─── */
+/** Light theme: soft grey land, white roads, pale green parks. */
+export const MAP_BG_LIGHT = "#ededed";
+export const MAP_LAND_LIGHT = "#ededed";
+export const MAP_ROAD_LIGHT = "#ffffff";
+export const MAP_ROAD_LIGHT_HI = "#ffffff";
+export const MAP_LABEL_LIGHT = "#111111";
+export const MAP_PARK_LIGHT = "#bfe6cc";
+export const MAP_WATER_LIGHT = "#cfe0ec";
 
-export const MAP_BG_DARK = "#0a0000";
-export const MAP_LAND_DARK = "#1a0808";
-export const MAP_ROAD_DARK = "#4d2222";
-export const MAP_ROAD_DARK_HI = "#6e3030";
-export const MAP_LABEL_DARK = "#fff0f0";
+/** Dark theme: deep green-black land, near-black roads. */
+export const MAP_BG_DARK = "#0c1815";
+export const MAP_LAND_DARK = "#0c1815";
+export const MAP_ROAD_DARK = "#060808";
+export const MAP_ROAD_DARK_HI = "#060808";
+export const MAP_LABEL_DARK = "#d9dfdc";
+export const MAP_PARK_DARK = "#17231f";
+export const MAP_WATER_DARK = "#08110f";
 
-export const MAP_STYLE_REVISION = "map-theme-labels-v8";
+export const MAP_STYLE_REVISION = "map-theme-figma-v9";
 
-/** Leaflet fallback tiles: Esri World Imagery (satellite). Attribution is required. */
-export const OSM_SATELLITE_TILE_URL =
-  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
-export const OSM_SATELLITE_ATTRIBUTION =
-  "Tiles © Esri, Maxar, Earthstar Geographics";
+/**
+ * Leaflet fallback tiles: CARTO Positron / Dark Matter (OpenStreetMap data), the
+ * closest raster match to the Google styles above. Attribution is required.
+ */
+export const OSM_TILE_URL_LIGHT =
+  "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+export const OSM_TILE_URL_DARK =
+  "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+export const OSM_ATTRIBUTION = "© OpenStreetMap contributors © CARTO";
 
 export const MAP_ROUTE_STROKE = "#FF6B35";
 

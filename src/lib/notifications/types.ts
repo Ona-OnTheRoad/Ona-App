@@ -3,6 +3,7 @@
  * Solid fills only; copper #FF6B35 accents; no borders/glows/gradients.
  */
 
+import type { NotificationAudience } from "./audience";
 import {
   CONVERSATION_ENDED_MESSAGE,
   JOB_CLOSED_MESSAGE,
@@ -47,6 +48,8 @@ export type AppNotification = {
   messageText?: string | null;
   readAt?: string | null;
   createdAt: string;
+  /** Recipient side (motorist / professional); null = shown in both modes */
+  audience?: NotificationAudience | null;
 };
 
 export type NotificationFilter =

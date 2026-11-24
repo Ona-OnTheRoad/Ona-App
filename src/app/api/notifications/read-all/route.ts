@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseAudience } from "@/lib/notifications/audience";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { requireUser } from "@/lib/server/auth-utils";
 import { createServiceSupabase } from "@/lib/supabase/server";
@@ -9,6 +10,8 @@ export const dynamic = "force-dynamic";
 
 const bodySchema = z.object({
   userId: z.string().min(1),
+  /** Only clear the active side of a dual-role account */
+  role: z.enum(["motorist", "professional"]).optional(),
 });
 
 /** POST /api/notifications/read-all */
@@ -34,11 +37,14 @@ export async function POST(req: Request) {
   }
   const sb = createServiceSupabase();
   const now = new Date().toISOString();
-  const { error } = await sb
+  const role = parseAudience(parsed.data.role);
+  let q = sb
     .from("notifications")
     .update({ read_at: now })
     .eq("user_id", auth.userId)
     .is("read_at", null);
+  if (role) q = q.or(`audience.is.null,audience.eq.${role}`);
+  const { error } = await q;
 
   if (error) {
     if (/Could not find the table|does not exist/i.test(error.message || "")) {

@@ -4,6 +4,7 @@ import "server-only";
  */
 
 import { createServiceSupabase } from "@/lib/supabase/server";
+import { parseAudience, type NotificationAudience } from "@/lib/notifications/audience";
 import type {
   NotificationCategory,
   NotificationPriority,
@@ -23,6 +24,11 @@ export type CreateNotificationInput = {
   jobId?: string | null;
   jobStatus?: string | null;
   messageText?: string | null;
+  /**
+   * Which side of the app this belongs to. Omit to derive it from `jobId`
+   * (the recipient's role on that job); no job and no audience = both modes.
+   */
+  audience?: NotificationAudience | null;
   /**
    * Also deliver as an OS push (reaches the phone with the app closed).
    * Default: on for "high" and "critical" priority. Pass false when the caller
@@ -72,6 +78,27 @@ async function pushForNotification(input: CreateNotificationInput) {
   }
 }
 
+/** The recipient's role on a job, or null if unknown / not a party. Never throws. */
+async function audienceFromJob(
+  sb: ReturnType<typeof createServiceSupabase>,
+  userId: string,
+  jobId: string,
+): Promise<NotificationAudience | null> {
+  try {
+    const { data } = await sb
+      .from("service_requests")
+      .select("motorist_id,repair_pro_id")
+      .eq("id", jobId)
+      .maybeSingle();
+    if (!data) return null;
+    if (String(data.motorist_id || "") === userId) return "motorist";
+    if (String(data.repair_pro_id || "") === userId) return "professional";
+  } catch {
+    /* audience is best-effort: null shows in both modes */
+  }
+  return null;
+}
+
 export async function insertNotification(
   input: CreateNotificationInput,
 ): Promise<{ id: string } | { error: string; skipped?: boolean }> {
@@ -92,10 +119,18 @@ export async function insertNotification(
       }
     }
 
+    const audience =
+      input.audience !== undefined
+        ? input.audience
+        : input.jobId
+          ? await audienceFromJob(sb, input.userId, input.jobId)
+          : null;
+
     const { data, error } = await sb
       .from("notifications")
       .insert({
         user_id: input.userId,
+        audience,
         category: input.category,
         priority: input.priority || "normal",
         title: input.title,
@@ -160,5 +195,6 @@ export function mapNotificationRow(row: Record<string, unknown>) {
     messageText: (row.message_text as string) || null,
     readAt: (row.read_at as string) || null,
     createdAt: String(row.created_at || new Date().toISOString()),
+    audience: parseAudience(row.audience),
   };
 }

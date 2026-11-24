@@ -1,5 +1,8 @@
 import "server-only";
-import { NEGOTIATE_WINDOW_MS } from "@/lib/jobs/constants";
+import {
+  CONFIRM_RELEASE_NOTIFICATION_BODY,
+  NEGOTIATE_WINDOW_MS,
+} from "@/lib/jobs/constants";
 import {
   assertTransition,
   type TransitionActor,
@@ -205,7 +208,7 @@ export async function applyEvent(
         category: "payments",
         priority: "critical",
         title: "Confirm Job & Release Payment",
-        body: "Tap Release to pay the pro (87.5% · 5% Ona · 7.5% VAT on FLW).",
+        body: CONFIRM_RELEASE_NOTIFICATION_BODY,
         href: `/jobs/${job.id}`,
         actionType: "open_job",
         actionPayload: { jobId: job.id },
