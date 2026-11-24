@@ -26,7 +26,7 @@ export function ProProfileCard({
   const validAvatarUrl = avatarUrl?.trim() || undefined;
 
   return (
-    <div className="flex items-center justify-between py-1 dark:rounded-2xl dark:bg-ona-surface dark:px-3.5 dark:py-3 transition-colors">
+    <div className="flex items-center justify-between rounded-2xl bg-ona-field dark:bg-ona-surface px-3.5 py-3 transition-colors">
       <div className="flex items-center gap-3 min-w-0">
         <div className="relative h-11 w-11 shrink-0">
           <Avatar className="h-full w-full overflow-hidden rounded-full border border-slate-200 dark:border-ona-border shadow-sm">
