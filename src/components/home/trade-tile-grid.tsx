@@ -68,7 +68,7 @@ export function TradeTileGrid({
             aria-pressed={id === "all" ? undefined : on}
             onClick={() => onPick(id)}
             className={cn(
-              "flex min-h-[64px] min-w-0 flex-col items-center justify-center gap-1 rounded-full border-0 px-2 py-2.5 text-[10px] font-medium transition-colors active:bg-ona-field-strong",
+              "flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-full border-0 px-1.5 py-2 text-[10px] font-medium transition-colors active:bg-ona-field-strong",
               on
                 ? "bg-ona-brand-soft text-ona-brand-ink"
                 : "bg-ona-field text-ona-ink",
