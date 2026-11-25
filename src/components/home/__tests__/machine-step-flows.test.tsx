@@ -1,8 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { GeneratorHelpFlow } from "@/components/home/generator-help-flow";
 import { SolarHelpFlow } from "@/components/home/solar-help-flow";
+import { FashionHelpFlow } from "@/components/home/fashion-help-flow";
+import { PlumberHelpFlow } from "@/components/home/plumber-help-flow";
+import { CarpenterHelpFlow } from "@/components/home/carpenter-help-flow";
+import { PainterHelpFlow } from "@/components/home/painter-help-flow";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
@@ -48,5 +52,23 @@ describe("trades that open on the machine picker", () => {
     expect(screen.getByText("Type")).toBeTruthy();
     expect(screen.getByText("Brand")).toBeTruthy();
     expect(screen.getByText("Model")).toBeTruthy();
+  });
+});
+
+// Regression: trades without a vehicle step (Fashion, Plumber, Carpenter, Painter, Solar,
+// Generator) open straight on a question and showed no Back arrow, so the user was stuck.
+describe("Back on the first screen of every trade", () => {
+  it.each([
+    ["Fashion", FashionHelpFlow],
+    ["Plumber", PlumberHelpFlow],
+    ["Carpenter", CarpenterHelpFlow],
+    ["Painter", PainterHelpFlow],
+    ["Generator", GeneratorHelpFlow],
+    ["Solar", SolarHelpFlow],
+  ])("%s leaves the flow", (_name, Flow) => {
+    const onExit = vi.fn();
+    render(<Flow isLight={false} onExit={onExit} />);
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(onExit).toHaveBeenCalledTimes(1);
   });
 });

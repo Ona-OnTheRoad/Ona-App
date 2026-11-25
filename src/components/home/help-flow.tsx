@@ -275,6 +275,7 @@ export function HelpFlow({
                 tag={tag}
                 title={config.screen("machine")?.question ?? ""}
                 subtitle="A few quick answers help us match you with the right professional."
+                onBack={() => (stack.length > 1 ? goBack() : handleExit())}
               />
               <div
                 key={`${step}-${dir}`}
@@ -306,6 +307,7 @@ export function HelpFlow({
               acceptRoute={acceptRoute}
               stackLength={stack.length}
               goBack={goBack}
+              onExit={handleExit}
             />
           )}
         </div>
