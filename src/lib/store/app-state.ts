@@ -14,6 +14,16 @@ import type {
 } from "@/lib/types";
 import type { AppTheme, ServiceActionResult } from "./types";
 
+/** Options for a role switch. */
+export type SwitchAccountOptions = {
+  /**
+   * Runs after the new role is applied and BEFORE the "Switching account…" cover is removed.
+   * Navigate here and wait for the destination to be on screen, so the cover never drops onto
+   * the old route rendered with the new role (a flash of the wrong screen).
+   */
+  afterSwitch?: () => Promise<void>;
+};
+
 export interface AppState {
   theme: AppTheme;
   toggleTheme: () => void;
@@ -72,6 +82,7 @@ export interface AppState {
    */
   switchAccount: (
     type: AccountType,
+    opts?: SwitchAccountOptions,
   ) => Promise<null | "needs_signup" | "needs_login" | string>;
   /** True while a role switch is in flight UI must not flash a wrong-role page. */
   switchingRole: boolean;
