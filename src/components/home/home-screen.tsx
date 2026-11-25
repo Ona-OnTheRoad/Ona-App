@@ -116,10 +116,10 @@ export function HomeScreen() {
     !sheetExpanded && accountType !== "professional" && category === "none";
   /**
    * Customer opened a trade (Mechanic, Plumber…): the question flow gets the whole screen so it
-   * never scrolls inside a small box. The map stays mounted (no reload on Back) but collapses to 0.
+   * never scrolls inside a small box (also when the trade was picked from the opened grid, which
+   * leaves the sheet "expanded"). The map stays mounted (no reload on Back) but collapses to 0.
    */
-  const tradeFlowFull =
-    !sheetExpanded && accountType !== "professional" && category !== "none";
+  const tradeFlowFull = accountType !== "professional" && category !== "none";
   // Cap map pins hard tiles + markers are the main data cost
   const mapTechs = visibleTechnicians
     .filter((t) => t.status !== "offline")
