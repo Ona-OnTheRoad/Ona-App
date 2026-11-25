@@ -5,6 +5,17 @@ import { Toaster as Sonner, type ToasterProps } from "sonner";
 import { useApp } from "@/lib/store";
 
 /**
+ * Sonner is `position: fixed`, so it ignores the phone shell's own safe-area padding. Without the
+ * inset a toast sits under the status bar / notch / Dynamic Island on an installed (standalone) app.
+ */
+const TOAST_OFFSET = {
+  top: "calc(env(safe-area-inset-top, 0px) + 12px)",
+  left: 16,
+  right: 16,
+  bottom: 16,
+};
+
+/**
  * shadcn-style Sonner toaster: the app's one snackbar for success / error /
  * info feedback (see src/lib/toast.ts). Mount once inside the phone shell so
  * `position: fixed` resolves to #ona-phone. Colours come from the Ona tokens.
@@ -15,8 +26,8 @@ export function Toaster(props: ToasterProps) {
     <Sonner
       theme={theme === "light" ? "light" : "dark"}
       position="top-center"
-      offset={16}
-      mobileOffset={16}
+      offset={TOAST_OFFSET}
+      mobileOffset={TOAST_OFFSET}
       visibleToasts={3}
       icons={{
         success: (

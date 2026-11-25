@@ -131,7 +131,7 @@ export function NotificationToasts() {
   return (
     <>
       <div
-        className="pointer-events-none absolute inset-x-0 top-2 z-[90] flex flex-col items-center px-4"
+        className="pointer-events-none absolute inset-x-0 top-3 z-[90] flex flex-col items-center px-4"
         aria-live="polite"
       >
         <div className="flex w-full max-w-[460px] flex-col gap-2">
