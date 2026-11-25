@@ -81,7 +81,7 @@ export type CalloutStatus = (typeof CALLOUT_STATUSES)[number];
 
 /**
  * Seed Base Fees (₦, major units).
- * fashion = existing 12th-style wash trade (renamed; spec Car Wash ₦1,500).
+ * fashion = tailoring / fashion design seed fee (review with ops; admin-configurable).
  * diagnostics = the 14th existing Ona trade (spec Scan ₦3,000) admin-configurable seed.
  */
 export const DEFAULT_TRADE_BASE_FEES: Record<ProService, number> = {

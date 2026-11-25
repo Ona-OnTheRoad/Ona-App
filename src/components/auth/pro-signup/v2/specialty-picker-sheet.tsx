@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { ProService } from "@/lib/types";
+import { tradeFocusQuestion } from "@/lib/artisan/trade-copy";
 import { ARTISAN_TRADE_CATALOG } from "@/lib/artisan/catalog/trades";
 
 interface SpecialtyPickerSheetProps {
@@ -54,7 +55,7 @@ export function SpecialtyPickerSheet({
         {/* Header */}
         <div className="px-5 pt-1 pb-3 border-b border-ona-border">
           <h2 className="text-base font-bold text-ona-ink">
-            Where do you mainly work?
+            {tradeFocusQuestion(trade)}
           </h2>
         </div>
 

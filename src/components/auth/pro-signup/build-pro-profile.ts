@@ -67,7 +67,12 @@ export function buildProProfile({
     // Vehicles only for auto trades (or AC/Electric vehicle focus)
     ...(needsVehiclesSignupStep(skill, specialty)
       ? {
-          servedVehicleType: fixList[0]?.vehicleType || vehicleType || undefined,
+          // The picker default ("Passenger Car") only counts when brands were
+          // actually chosen; "Any type" must not be saved as a passenger car.
+          servedVehicleType:
+            fixList[0]?.vehicleType ||
+            (vehicleBrands.length > 0 ? vehicleType : undefined) ||
+            undefined,
           servedBrand: fixList[0]?.make || vehicleBrands[0] || undefined,
           servedMake: fixList[0]?.make || vehicleBrands[0] || undefined,
           servedModel:

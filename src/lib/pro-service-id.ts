@@ -57,5 +57,5 @@ export function formatProSkill(
       .join(" ");
     if (pretty) return pretty;
   }
-  return "Mechanic";
+  return "Repair Pro";
 }

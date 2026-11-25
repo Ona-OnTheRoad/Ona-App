@@ -31,12 +31,17 @@ export function bank(
       required: true,
       options: YES_NO,
     },
-    {
-      id: "own_transport",
-      label: "Do you have your own transport to jobs?",
-      type: "select",
-      required: true,
-      options: YES_NO,
-    },
+    // Shop / fitting trades work from their studio, not on the road
+    ...(service === "fashion"
+      ? []
+      : [
+          {
+            id: "own_transport",
+            label: "Do you have your own transport to jobs?",
+            type: "select" as const,
+            required: true,
+            options: YES_NO,
+          },
+        ]),
   ];
 }

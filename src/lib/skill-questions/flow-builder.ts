@@ -1,3 +1,4 @@
+import { coreFocusLabel } from "@/lib/artisan/trade-copy";
 import { SPECIALTIES_BY_SKILL, specialtyMaxForSkill } from "./specialties";
 import type { SkillFlow, SkillQuestion } from "./types";
 
@@ -26,7 +27,7 @@ export function withCertAndSpecialties(
   const questions: SkillQuestion[] = [
     {
       id: "specialties",
-      label: "My Repair Core Focus",
+      label: coreFocusLabel(flow.skill),
       hint: `Your strongholds within ${skillShort} (up to ${maxSelect}). By proceeding you accept to being able to do all work in this profession.`,
       type: "multiselect",
       required: true,

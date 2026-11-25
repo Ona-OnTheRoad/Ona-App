@@ -87,7 +87,7 @@ export default function TechnicianDashboardPage() {
     if (raw && isProService(raw)) {
       return PRO_SERVICE_LABELS[raw];
     }
-    return "Mechanic";
+    return "Repair Pro";
   }, [artisan?.trade?.service, userProfile?.services, proServices]);
 
   useEffect(() => subscribeIncomingPanelOpen(setIncomingPanelOpen), []);

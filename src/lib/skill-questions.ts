@@ -1,3 +1,4 @@
+import { coreFocusLabel } from "@/lib/artisan/trade-copy";
 import type { ProService } from "@/lib/types";
 import { TRADE_SKILL_FLOWS } from "./skill-questions/flows-trades";
 import { VEHICLE_SKILL_FLOWS } from "./skill-questions/flows-vehicle";
@@ -82,7 +83,7 @@ export function publicSkillRows(
     }
     if (Array.isArray(v)) {
       // Use stable public label for core focus
-      const label = q.id === "specialties" ? "My Repair Core Focus" : q.label;
+      const label = q.id === "specialties" ? coreFocusLabel(skill) : q.label;
       if (v.length) rows.push({ label, value: v.join(", ") });
       continue;
     }

@@ -5,6 +5,10 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import type { ProService } from "@/lib/types";
 import { PRO_TRADE_OPTIONS } from "@/lib/services";
+import {
+  businessNameCopy,
+  tradeFocusQuestion,
+} from "@/lib/artisan/trade-copy";
 import { EXP_YEARS, experienceLabel } from "../constants";
 import { TradePickerSheet } from "./trade-picker-sheet";
 import { SpecialtyPickerSheet } from "./specialty-picker-sheet";
@@ -102,7 +106,7 @@ export function Step2RepairService({
                   : "text-ona-muted"
               }`}
             >
-              {specialty || "Where do you mainly work?"}
+              {specialty || tradeFocusQuestion(skill)}
             </span>
             <ChevronDown className="w-4 h-4 text-ona-muted shrink-0" />
           </button>
@@ -111,13 +115,13 @@ export function Step2RepairService({
         {/* Workshop / Business Name */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-ona-ink">
-            Workshop / Business Name
+            {businessNameCopy(skill).label}
           </label>
           <input
             type="text"
             value={businessName}
             onChange={(e) => setBusinessName(e.target.value)}
-            placeholder="e.g. Yaba, Lekki"
+            placeholder={businessNameCopy(skill).placeholder}
             className="w-full bg-ona-field border border-ona-border rounded-xl px-3.5 py-3 text-sm text-ona-ink placeholder:text-ona-muted outline-none focus:outline-none"
           />
         </div>

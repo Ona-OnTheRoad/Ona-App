@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthNavigate } from "@/components/auth/auth-transition";
 import { RegistrationComplete } from "@/components/auth/registration-complete";
+import { needsVehiclesSignupStep } from "@/lib/artisan/catalog";
 import { useApp } from "@/lib/store";
 import { verifyAccountPassword } from "@/lib/verify-account-password";
 import { loadSignupDraft } from "@/lib/signup-draft";
@@ -55,6 +56,14 @@ export function ProSignupV2() {
   });
   const focus = useVehicleFocus();
   const fix = useVehiclesCanFix();
+  // Vehicles step only for automotive trades (or AC / electrical with a vehicle focus)
+  const showVehicles = needsVehiclesSignupStep(skill, specialty);
+  const { setVehiclesCanFix } = fix;
+  // Leave no stale vehicle answers behind when the trade or focus changes
+  const resetVehicles = () => {
+    setVehiclesCanFix([]);
+    setAnyVehicles(true);
+  };
 
   const { finish } = useProSignupSubmit({
     form,
@@ -90,6 +99,10 @@ export function ProSignupV2() {
       setStep(afterIdentity === 5 ? 5 : 0);
       return;
     }
+    if (step === 4 && !showVehicles) {
+      setStep(2);
+      return;
+    }
     setStep((prev) => (prev - 1) as 0 | 1 | 2 | 3 | 4 | 5);
   };
 
@@ -123,8 +136,8 @@ export function ProSignupV2() {
     <div className="ona2 flex flex-col h-full w-full max-w-md mx-auto bg-ona-bg text-ona-ink overflow-hidden">
       {/* Header with back button, Ona. logo and progress bar on wizard steps */}
       <ProWizardHeader
-        currentStep={step}
-        totalSteps={5}
+        currentStep={!showVehicles && step > 3 && step < 6 ? step - 1 : step}
+        totalSteps={showVehicles ? 5 : 4}
         onBack={handleBack}
         showBack={true}
         showProgress={step > 0 && step < 6}
@@ -174,20 +187,26 @@ export function ProSignupV2() {
         {step === 2 && (
           <Step2RepairService
             skill={skill}
-            onSelectSkill={(s) => skillSel.selectSkill(s)}
+            onSelectSkill={(s) => {
+              resetVehicles();
+              skillSel.selectSkill(s);
+            }}
             specialty={specialty || ""}
-            onSelectSpecialty={(spec) => skillSel.setSpecialty(spec)}
+            onSelectSpecialty={(spec) => {
+              resetVehicles();
+              skillSel.setSpecialty(spec);
+            }}
             businessName={form.businessName}
             setBusinessName={form.setBusinessName}
             yearsExperience={form.yearsExperience}
             setYearsExperience={form.setYearsExperience}
             bio={form.bio}
             setBio={form.setBio}
-            onContinue={() => setStep(3)}
+            onContinue={() => setStep(showVehicles ? 3 : 4)}
           />
         )}
 
-        {step === 3 && (
+        {step === 3 && showVehicles && (
           <Step3Vehicles
             vehicles={fix.vehiclesCanFix}
             setVehicles={fix.setVehiclesCanFix}

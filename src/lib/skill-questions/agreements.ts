@@ -13,10 +13,10 @@ export const SKILL_AGREEMENTS: Record<ProService, string> = {
     "By completing this process, you agree you can provide full tow and recovery for the selected motor brand(s).",
   battery:
     "By completing this process, you agree you can handle all battery and jump-start works of the selected motor brand(s).",
-  ac: "By completing this process, you agree you can fix all air-conditioning works of the selected motor brand(s).",
+  ac: "By completing this process, you agree you can fix all air-conditioning works for the jobs you accept.",
   body: "By completing this process, you agree you can fix all body and paint works of the selected motor brand(s).",
   electrical:
-    "By completing this process, you agree you can fix all electrical and wiring works of the selected motor brand(s).",
+    "By completing this process, you agree you can fix all electrical and wiring works for the jobs you accept.",
   diagnostics:
     "By completing this process, you agree you can run full diagnostics and scan works of the selected motor brand(s).",
   fashion:

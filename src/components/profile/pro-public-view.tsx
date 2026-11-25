@@ -68,7 +68,6 @@ export function ProPublicView({
             electrical: "electrical",
             scan: "diagnostics",
             diagnostics: "diagnostics",
-            wash: "fashion",
             fashion: "fashion",
             tailor: "fashion",
             sewing: "fashion",

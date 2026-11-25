@@ -101,10 +101,12 @@ export function labourFeeDisclaimerForTrade(
     s === "towing" ||
     s === "battery" ||
     s === "body" ||
-    s === "diagnostics" ||
-    s === "fashion"
+    s === "diagnostics"
   ) {
     return "Labour / service fee only. Does not include spare parts, tyres, or motor parts.";
+  }
+  if (s === "fashion") {
+    return "Labour / service fee only. Does not include fabric, thread, buttons, or accessories.";
   }
   if (s === "ac") {
     return "Labour / service fee only. Does not include gas, filters, or replacement parts (vehicle or building A/C).";

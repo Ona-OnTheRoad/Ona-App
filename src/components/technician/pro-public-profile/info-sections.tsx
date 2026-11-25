@@ -4,7 +4,10 @@ import {
   SolidSection,
 } from "@/components/technician/pro-public-profile/parts";
 import type { PublicProfileTheme } from "@/components/technician/pro-public-profile/theme";
-import { isAutomotiveTrade } from "@/lib/artisan/catalog";
+import {
+  isAutomotiveTrade,
+  needsVehiclesSignupStep,
+} from "@/lib/artisan/catalog";
 import type { Technician } from "@/lib/types";
 import { cn, formatDistance } from "@/lib/utils";
 
@@ -98,7 +101,8 @@ export function PublicInfoSections({
         </SolidSection>
       ) : null}
 
-      {isAutomotiveTrade(tech.serviceType) ? (
+      {isAutomotiveTrade(tech.serviceType) ||
+      needsVehiclesSignupStep(tech.serviceType, null, tech.specialties) ? (
         <SolidSection
           title="Vehicles they serve"
           icon={Car}

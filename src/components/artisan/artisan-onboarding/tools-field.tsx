@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { toolSuggestionsFor } from "@/lib/artisan/trade-tools";
 import { cn } from "@/lib/utils";
 import { ReqStar } from "./req-star";
 import type { StepBaseProps } from "./types";
@@ -17,14 +18,20 @@ export function ToolsField({
   setToolDraft,
 }: Props) {
   const { soft, fieldClass } = styles;
-  const addTool = () => {
-    const t = toolDraft.trim();
+  const addToolValue = (value: string) => {
+    const t = value.trim();
     if (!t) return;
     if (!profile.toolsOwned.includes(t)) {
       patch({ toolsOwned: [...profile.toolsOwned, t] });
     }
+  };
+  const addTool = () => {
+    addToolValue(toolDraft);
     setToolDraft("");
   };
+  const suggestions = toolSuggestionsFor(profile.trade.service).filter(
+    (t) => !profile.toolsOwned.includes(t),
+  );
   return (
     <div>
       <p className={cn("mb-1.5 text-[11px] font-bold", soft)}>
@@ -52,6 +59,23 @@ export function ToolsField({
           Add
         </button>
       </div>
+      {suggestions.length ? (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {suggestions.map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => addToolValue(t)}
+              className={cn(
+                "rounded-md border border-current/20 px-2 py-1 text-[11px] font-semibold",
+                soft,
+              )}
+            >
+              + {t}
+            </button>
+          ))}
+        </div>
+      ) : null}
       {profile.toolsOwned.length ? (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {profile.toolsOwned.map((t) => (

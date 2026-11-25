@@ -24,7 +24,7 @@ export const PROFESSION_QUESTIONS: Record<ProService, ProfessionQuestion[]> = {
 export function professionQuestionsFor(
   service: ProService,
 ): ProfessionQuestion[] {
-  return PROFESSION_QUESTIONS[service] ?? PROFESSION_QUESTIONS.mechanic;
+  return PROFESSION_QUESTIONS[service] ?? [];
 }
 
 export function professionAnswersValid(

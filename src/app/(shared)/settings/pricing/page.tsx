@@ -113,7 +113,7 @@ export default function SettingsPricingPage() {
             {skills.length === 0 ? (
               <div>
                 <label className="block text-[13px] font-semibold text-ona-ink mb-1.5">
-                  Mechanic labour ({currency})
+                  Labour fee ({currency})
                 </label>
                 <input
                   type="text"
