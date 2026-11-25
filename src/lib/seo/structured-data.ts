@@ -7,7 +7,7 @@ export function organizationJsonLd() {
     "@type": "Organization",
     name: SITE_NAME,
     url: absoluteUrl("/"),
-    logo: absoluteUrl("/icons/icon-512.png"),
+    logo: absoluteUrl("/icons/icon-512-v2.png"),
     image: absoluteUrl(OG_IMAGE.url),
     areaServed: { "@type": "Country", name: "Nigeria" },
   };

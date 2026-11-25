@@ -1,4 +1,9 @@
 /**
+ * LEGACY: the tyre-ring/man artwork this script crops is NO LONGER the Ona brand. The live icons
+ * (public/icons/*-v2.png, src/app/favicon.ico) and public/brand/og-image-v2.png are the new "Ona." logo
+ * and are maintained by hand. Do not re-run this for icons or the share image; it would write the old
+ * artwork under the old (now unused) file names. Still used for the auth background avif/webp.
+ *
  * Generates PWA / touch icons and the social share image from the brand hero photo.
  *
  *   node scripts/generate-brand-icons.mjs

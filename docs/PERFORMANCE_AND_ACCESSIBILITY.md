@@ -33,8 +33,10 @@ Notes:
 - A client-rendered, login-gated shell can score 100 for SEO and accessibility without being crawlable.
   The real checks are `view-source` (is the text in the HTML?) and the axe scan in §4.
 - The legal pages are short summaries with a personal email contact. Get proper legal text before relying on them.
-- Brand icons and the share image are cropped from the hero photo by `scripts/generate-brand-icons.mjs`
-  (there is no logo mark yet). Swap the crop when one exists, then re-run the script and commit the output.
+- Brand icons (`public/icons/*-v2.png`, `src/app/favicon.ico`) and the share image (`public/brand/og-image-v2.png`)
+  are the new "Ona." logo, maintained by hand. They are cached by URL (iOS, the service worker, WhatsApp / X /
+  Facebook), so a changed image needs a new file name (`-v3`) and a bump of `SW_VERSION` in `public/sw.js`.
+  `scripts/generate-brand-icons.mjs` is legacy (old tyre-ring artwork); do not use it for these.
 
 ## 2. Slow, metered and offline networks
 
