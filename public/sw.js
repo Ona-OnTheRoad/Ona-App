@@ -17,7 +17,7 @@
  * Push payloads are { title, body, url, tag, icon, requireInteraction, unread }. The worker is registered at app start for
  * caching; the push client (src/lib/push/client.ts) registers the same /sw.js when push is enabled.
  */
-const SW_VERSION = "2026-10-05-1";
+const SW_VERSION = "2026-11-25-1";
 const STATIC_CACHE = "ona-static-" + SW_VERSION;
 const MEDIA_CACHE = "ona-media-" + SW_VERSION;
 const PAGE_CACHE = "ona-pages-" + SW_VERSION;
@@ -193,7 +193,7 @@ self.addEventListener("push", (event) => {
   const urgent = Boolean(data.requireInteraction);
   const options = {
     body: data.body || "",
-    icon: data.icon || "/icons/icon-192.png",
+    icon: data.icon || "/icons/icon-192-v2.png",
     // A repeated tag replaces the earlier notification; renotify makes it ring again.
     // (renotify without a tag throws, so both are set together.)
     ...(data.tag ? { tag: data.tag, renotify: true } : {}),

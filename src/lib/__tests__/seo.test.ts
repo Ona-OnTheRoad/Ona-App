@@ -100,8 +100,8 @@ describe("site URL on a hosting platform", () => {
     process.env.URL = "https://ona.example.ng";
     process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000";
     expect(siteUrl()).toBe("https://ona.example.ng");
-    expect(absoluteUrl("/brand/og-image.png")).toBe(
-      "https://ona.example.ng/brand/og-image.png",
+    expect(absoluteUrl("/brand/og-image-v2.png")).toBe(
+      "https://ona.example.ng/brand/og-image-v2.png",
     );
   });
 
