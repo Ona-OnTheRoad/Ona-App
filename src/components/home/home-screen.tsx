@@ -114,6 +114,12 @@ export function HomeScreen() {
   /** Customer, no trade open, sheet down: sheet shrinks to title + search. */
   const shortSheet =
     !sheetExpanded && accountType !== "professional" && category === "none";
+  /**
+   * Customer opened a trade (Mechanic, Plumber…): the question flow gets the whole screen so it
+   * never scrolls inside a small box. The map stays mounted (no reload on Back) but collapses to 0.
+   */
+  const tradeFlowFull =
+    !sheetExpanded && accountType !== "professional" && category !== "none";
   // Cap map pins hard tiles + markers are the main data cost
   const mapTechs = visibleTechnicians
     .filter((t) => t.status !== "offline")
@@ -125,7 +131,14 @@ export function HomeScreen() {
       className="ona2 relative flex min-h-0 flex-1 flex-col overflow-hidden"
     >
       {/* Always floats over the map, also with the sheet fully open (a slice of map stays visible) */}
-      <div className="absolute inset-x-0 top-0 z-40">
+      <div
+        className={cn(
+          "z-40",
+          tradeFlowFull
+            ? "relative shrink-0 bg-ona-bg"
+            : "absolute inset-x-0 top-0",
+        )}
+      >
         <AppHeader />
       </div>
 
@@ -135,11 +148,13 @@ export function HomeScreen() {
           className={cn(
             "om-sheet-spring relative min-h-0 overflow-hidden",
             // Sheet fully open: the map shrinks to a peek, it is never hidden.
-            sheetExpanded
-              ? "flex-[0_0_40%] opacity-100"
-              : shortSheet
-                ? "flex-1 opacity-100"
-                : "flex-[0_0_25%] opacity-100",
+            tradeFlowFull
+              ? "pointer-events-none flex-[0_0_0%] opacity-0"
+              : sheetExpanded
+                ? "flex-[0_0_40%] opacity-100"
+                : shortSheet
+                  ? "flex-1 opacity-100"
+                  : "flex-[0_0_25%] opacity-100",
           )}
         >
           {!deferMap || mapRequested ? (
@@ -172,12 +187,13 @@ export function HomeScreen() {
           data-theme-toggle-ok
           className={cn(
             "om-sheet-spring z-30 flex min-h-0 flex-col overflow-hidden bg-ona-surface",
-            sheetExpanded
+            sheetExpanded || tradeFlowFull
               ? "flex-1"
               : shortSheet
                 ? "flex-[0_0_auto]"
                 : "flex-[0_0_75%]",
-            "rounded-t-ona-sheet shadow-[0_-6px_24px_rgba(17,24,39,0.12)]",
+            !tradeFlowFull &&
+              "rounded-t-ona-sheet shadow-[0_-6px_24px_rgba(17,24,39,0.12)]",
           )}
           style={{ touchAction: "pan-y" }}
         >
