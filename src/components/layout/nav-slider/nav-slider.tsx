@@ -147,7 +147,7 @@ export function NavSlider() {
         aria-modal="true"
         aria-labelledby="nav-slider-title"
         className={cn(
-          "absolute bottom-0 left-0 top-0 flex w-[70%] max-w-[420px] flex-col overflow-y-auto rounded-r-ona-sheet bg-ona-surface pb-6 shadow-xl outline-none transition-transform duration-200 ease-out motion-reduce:transition-none",
+          "absolute bottom-0 left-0 top-0 flex w-[70%] max-w-[420px] flex-col overflow-y-auto rounded-r-ona-sheet bg-ona-surface pb-6 pt-[env(safe-area-inset-top,0px)] shadow-xl outline-none transition-transform duration-200 ease-out motion-reduce:transition-none",
           shown ? "translate-x-0" : "-translate-x-full",
         )}
       >
