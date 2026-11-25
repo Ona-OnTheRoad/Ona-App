@@ -26,6 +26,7 @@ export function FlowQuestionStep({
   acceptRoute,
   stackLength,
   goBack,
+  onExit,
 }: {
   config: HelpFlowConfig;
   styles: FlowStyles;
@@ -43,6 +44,8 @@ export function FlowQuestionStep({
   acceptRoute: (yes: boolean) => void;
   stackLength: number;
   goBack: () => void;
+  /** First screen of a flow: Back leaves the flow (back to the trade list). */
+  onExit: () => void;
 }) {
   const { field } = styles;
   const isConfirm = step === "confirm" && route && config.confirmQuestion;
@@ -62,7 +65,7 @@ export function FlowQuestionStep({
             ? "Based on your answers, a different trade may be the better fit."
             : "A few quick answers help us match you with the right professional."
         }
-        onBack={stackLength > 1 ? goBack : undefined}
+        onBack={stackLength > 1 ? goBack : onExit}
       />
       <div
         key={`${step}-${dir}`}
