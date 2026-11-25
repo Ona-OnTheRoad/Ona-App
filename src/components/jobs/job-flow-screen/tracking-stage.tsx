@@ -177,6 +177,7 @@ export function renderTrackingStage(
           footer={footerBlock}
           className="min-h-0"
           bodyClassName="flex flex-col overflow-hidden p-0"
+          edgeTop
         >
           <h1 className="sr-only">{trackTripTitle}</h1>
           <TripSwipeBody

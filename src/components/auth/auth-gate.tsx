@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { BRAND_COPPER } from "@/components/auth/brand-hero-motion";
 import { isPublicPath } from "@/lib/routes";
 import { useApp } from "@/lib/store";
+import { EdgeToEdgeTop } from "@/components/layout/edge-to-edge-top";
 import { cn } from "@/lib/utils";
 import { isWelcomeRoute } from "./auth-gate/boot-routes";
 import { SplashLayer, WelcomeLayer } from "./auth-gate/gate-layers";
@@ -31,6 +32,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     if (phase === "loading" || phase === "handoff") {
       return (
         <div className={cn(frame)} style={{ backgroundColor: BRAND_COPPER }}>
+          <EdgeToEdgeTop />
           {phase === "handoff" ? (
             <div className="absolute inset-0 z-10 overflow-hidden om-intro-welcome-layer">
               {welcomeUi(true)}
@@ -45,6 +47,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     if (phase === "entry" || isWelcomeRoute(pathname)) {
       return (
         <div className={cn(frame)} style={{ backgroundColor: BRAND_COPPER }}>
+          <EdgeToEdgeTop />
           {welcomeUi(true)}
         </div>
       );
@@ -52,18 +55,13 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
     // Auth forms (signin/role/signup) or other public paths
     if (isPublicPath(pathname)) {
-      return (
-        <div
-          className={cn(frame, "ona2 bg-ona-bg")}
-        >
-          {children}
-        </div>
-      );
+      return <div className={cn(frame, "ona2 bg-ona-bg")}>{children}</div>;
     }
 
     // Protected while guest welcome while redirecting
     return (
       <div className={cn(frame)} style={{ backgroundColor: BRAND_COPPER }}>
+        <EdgeToEdgeTop />
         {welcomeUi(false)}
       </div>
     );
@@ -73,17 +71,12 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   if (phase === "loading" || phase === "handoff") {
     return (
       <div className={cn(frame)} style={{ backgroundColor: BRAND_COPPER }}>
+        <EdgeToEdgeTop />
         {splashLayer}
       </div>
     );
   }
 
   // Bank force is a lower panel on dashboard/home (BankForcePanel) not a hard block
-  return (
-    <div
-      className={cn(frame, "ona2 bg-ona-bg")}
-    >
-      {children}
-    </div>
-  );
+  return <div className={cn(frame, "ona2 bg-ona-bg")}>{children}</div>;
 }

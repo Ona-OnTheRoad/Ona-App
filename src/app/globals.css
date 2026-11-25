@@ -1767,3 +1767,17 @@ html {
     font-size: max(16px, 1rem) !important;
   }
 }
+
+
+/*
+ * Phone shell top inset. By default the shell pads its content below the status bar / notch /
+ * Dynamic Island. A screen that wants its colour or map to run BEHIND the status bar (Snapchat
+ * style) calls useEdgeToEdgeTop(), which sets data-edge-top on #ona-phone: the shell stops padding
+ * and that screen pads its own content with env(safe-area-inset-top).
+ */
+#ona-phone {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+#ona-phone[data-edge-top] {
+  padding-top: 0;
+}

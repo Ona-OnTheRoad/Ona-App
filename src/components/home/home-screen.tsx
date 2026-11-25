@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { MapPin } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { EdgeToEdgeTop } from "@/components/layout/edge-to-edge-top";
 import { AppHeader } from "@/components/home/app-header";
 import { HomePanel } from "@/components/home/home-panel";
 import { useAppConfig } from "@/components/app-config-provider";
@@ -130,10 +131,12 @@ export function HomeScreen() {
       data-theme-toggle-ok
       className="ona2 relative flex min-h-0 flex-1 flex-col overflow-hidden"
     >
+      {/* The map runs behind the status bar / Dynamic Island; the header below pads itself. */}
+      <EdgeToEdgeTop />
       {/* Always floats over the map, also with the sheet fully open (a slice of map stays visible) */}
       <div
         className={cn(
-          "z-40",
+          "z-40 pt-[env(safe-area-inset-top,0px)]",
           tradeFlowFull
             ? "relative shrink-0 bg-ona-bg"
             : "absolute inset-x-0 top-0",
@@ -157,6 +160,12 @@ export function HomeScreen() {
                   : "flex-[0_0_25%] opacity-100",
           )}
         >
+          {/* Soft fade so the clock / signal icons stay readable over the map (zero height
+              when there is no inset, e.g. a desktop browser) */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 z-[35] h-[calc(env(safe-area-inset-top,0px)*1.6)] bg-gradient-to-b from-black/40 to-transparent"
+          />
           {!deferMap || mapRequested ? (
             <ServiceMap technicians={mapTechs} onSelect={setSelectedTechId} />
           ) : (
