@@ -96,10 +96,7 @@ export function AppFrame({ children }: { children: ReactNode }) {
               </div>
               {switchingRole ? (
                 <div
-                  className="absolute inset-0 z-[220] flex flex-col items-center justify-center gap-3"
-                  style={{
-                    backgroundColor: isLight ? "#ffffff" : "#1a1210",
-                  }}
+                  className="ona2 absolute inset-0 z-[220] flex flex-col items-center justify-center gap-3 bg-ona-bg"
                   role="status"
                   aria-live="polite"
                 >

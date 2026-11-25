@@ -14,6 +14,7 @@ import {
   inheritDonorBank,
   mergeSwitchedVerification,
 } from "./switch-account-helpers";
+import type { SwitchAccountOptions } from "./app-state";
 import type { SessionStateResult } from "./use-session-state";
 import type { ApplySessionResult } from "./use-apply-session";
 
@@ -43,6 +44,7 @@ export function useSwitchAccount(
   const switchAccount = useCallback(
     async (
       type: AccountType,
+      opts?: SwitchAccountOptions,
     ): Promise<null | "needs_signup" | "needs_login" | string> => {
       if (!backendUserId || !isAuthenticated) {
         return "needs_login";
@@ -158,6 +160,12 @@ export function useSwitchAccount(
         }
         // Fresh nav stack for this role only Back must not hop to the other role
         resetNavStack(type === "professional" ? "/dashboard" : "/");
+        // Hold the cover until the caller's navigation has landed (see SwitchAccountOptions).
+        try {
+          await opts?.afterSwitch?.();
+        } catch {
+          /* never leave the cover up because navigation failed */
+        }
         return null;
       } finally {
         setSwitchingRole(false);

@@ -1,13 +1,20 @@
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { useT } from "@/lib/i18n";
 import { resetNavStack } from "@/lib/navigation";
 import { useApp } from "@/lib/store";
 import type { AccountType } from "@/lib/types";
+import { afterPaint, waitUntil } from "@/lib/wait-for-route";
 import { homeForRole } from "./menu-nav";
 
 export function useAccountSwitch(open: boolean, onClose: () => void) {
   const router = useRouter();
+  const pathname = usePathname();
+  // Latest committed route, readable from the async switch below.
+  const pathRef = useRef(pathname);
+  useEffect(() => {
+    pathRef.current = pathname;
+  }, [pathname]);
   const t = useT();
   const { accountType, switchAccount, isAuthenticated } = useApp();
   const [warn, setWarn] = useState<string | null>(null);
@@ -44,7 +51,19 @@ export function useAccountSwitch(open: boolean, onClose: () => void) {
     setSignupTarget(null);
     setSwitching(true);
     try {
-      let result = await switchAccount(type);
+      // Navigate while the "Switching account…" cover is still up and keep it until the new home
+      // is actually on screen, so the user never sees the old route in the new role.
+      const target = homeForRole(type);
+      const goHome = async () => {
+        resetNavStack(target);
+        onClose();
+        if (pathRef.current !== target) {
+          router.replace(target);
+          await waitUntil(() => pathRef.current === target);
+        }
+        await afterPaint();
+      };
+      let result = await switchAccount(type, { afterSwitch: goHome });
       // Cold-start / navigation race: the very first tap can hit a session that
       // is still rehydrating (getSession empty) and fail; a manual re-tap then
       // succeeds. Absorb it here with ONE automatic retry so users never have
@@ -63,15 +82,10 @@ export function useAccountSwitch(open: boolean, onClose: () => void) {
         } catch {
           /* retry anyway */
         }
-        result = await switchAccount(type);
+        result = await switchAccount(type, { afterSwitch: goHome });
       }
-      if (result === null) {
-        // Only “Use as” switches roles reset stack so Back stays in this role
-        resetNavStack(homeForRole(type));
-        onClose();
-        router.replace(homeForRole(type));
-        return;
-      }
+      // On success the navigation already happened inside switchAccount (behind the cover).
+      if (result === null) return;
       if (result === "needs_login") {
         setWarn(t("menu.needLogin"));
         return;
