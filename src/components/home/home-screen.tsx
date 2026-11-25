@@ -48,7 +48,7 @@ export function HomeScreen() {
   const deferMap = shouldDeferHeavyContent(network);
   /** On a poor connection the person chose to load the map this visit. */
   const [mapRequested, setMapRequested] = useState(false);
-  /** Open with lower panel down (collapsed) map slot on top, sheet ~60% bottom */
+  /** Open with lower panel down (collapsed) map slot on top, sheet ~80% bottom (a trade flow needs the room) */
   const [sheetExpanded, setSheetExpanded] = useState(false);
 
   // Rerouted from /request: `/?trade=mechanic` opens the trade's new
@@ -139,7 +139,7 @@ export function HomeScreen() {
               ? "flex-[0_0_40%] opacity-100"
               : shortSheet
                 ? "flex-1 opacity-100"
-                : "flex-[0_0_40%] opacity-100",
+                : "flex-[0_0_20%] opacity-100",
           )}
         >
           {!deferMap || mapRequested ? (
@@ -176,7 +176,7 @@ export function HomeScreen() {
               ? "flex-1"
               : shortSheet
                 ? "flex-[0_0_auto]"
-                : "flex-[0_0_60%]",
+                : "flex-[0_0_80%]",
             "rounded-t-ona-sheet shadow-[0_-6px_24px_rgba(17,24,39,0.12)]",
           )}
           style={{ touchAction: "pan-y" }}
