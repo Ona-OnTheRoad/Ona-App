@@ -32,7 +32,7 @@ export function ProfileMenuCard({
   const proGatewayItem: ProfileMenuItem = hasProAccount
     ? {
         id: "switch-pro",
-        title: "Switch to Repair Pro",
+        title: "Switch to Service Pro",
         subtitle: "Open Pro dashboard & Go Live",
         iconSrc: "/icons/profile-pricing-and-services.png",
         href: "/dashboard",
@@ -50,7 +50,7 @@ export function ProfileMenuCard({
       }
     : {
         id: "become-pro",
-        title: "Become a Repair Pro",
+        title: "Become a Service Pro",
         subtitle: "Apply with your motorist details",
         iconSrc: "/icons/profile-pricing-and-services.png",
         href: "/signup/pro?from=profile&attach=1&next=/dashboard",

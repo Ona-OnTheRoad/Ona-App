@@ -22,7 +22,7 @@ export const PT_SETTINGS: Record<keyof typeof EN_SETTINGS, string> = {
   "settings.myLocationDetail": "Toque para definir no mapa",
   "settings.accountPrivacy": "Conta e privacidade",
   "settings.profileVerification": "Profile & verification",
-  "settings.profilePro": "Perfil Repair Pro, documentos, preços",
+  "settings.profilePro": "Perfil Service Pro, documentos, preços",
   "settings.profileMotorist": "Perfil de cliente, veículos, identidade",
   "settings.artisanTiers": "Verificação",
   "settings.artisanTiersDetail":
@@ -62,7 +62,7 @@ export const PT_SETTINGS: Record<keyof typeof EN_SETTINGS, string> = {
   "notif.jobsRequests": "Trabalhos e pedidos",
   "notif.jobsRequestsDetail": "Novos trabalhos, a caminho, chegou, concluído",
   "notif.messages": "Mensagens",
-  "notif.messagesDetail": "Chat de clientes e Repair Pros",
+  "notif.messagesDetail": "Chat de clientes e Service Pros",
   "notif.payments": "Pagamentos",
   "notif.paymentsDetail": "Depósito, libertação, reembolsos",
   "notif.system": "Sistema",

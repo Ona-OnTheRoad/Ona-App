@@ -1,5 +1,5 @@
 /**
- * Customer → Repair Pro (Tap to Switch) onboarding rules.
+ * Customer → Service Pro (Tap to Switch) onboarding rules.
  *
  * - Carry Customer T1 (phone) + T2 (gov ID Care-approved) so Pro is not re-asked.
  * - Force remaining Pro setup in bottom panel until full T1-T4 ladder done
@@ -177,16 +177,16 @@ export function proSetupSheetTitle(
   });
   switch (step) {
     case "phone":
-      return "Complete Tier 1 setup for Repair Pro";
+      return "Complete Tier 1 setup for Service Pro";
     case "gov_id":
-      return "Complete Tier 2 setup for Repair Pro";
+      return "Complete Tier 2 setup for Service Pro";
     case "liveness":
     case "bvn":
-      return "Complete Tier 3 setup for Repair Pro";
+      return "Complete Tier 3 setup for Service Pro";
     case "skill":
-      return "Complete Tier 4 setup for Repair Pro";
+      return "Complete Tier 4 setup for Service Pro";
     default:
-      return "Repair Pro verification complete";
+      return "Service Pro verification complete";
   }
 }
 

@@ -47,7 +47,7 @@ export function useCloudData(
    */
   const refreshCloudPros = useCallback(
     (opts?: { force?: boolean }) => {
-      // Client Marketplace: motorists see full feed; an active Repair Pro only
+      // Client Marketplace: motorists see full feed; an active Service Pro only
       // sees their own primary trade (scoped server-side in /api/pros).
       // Guests / login screens must not burn mobile data on map lists.
       if (!isAuthenticated) {
@@ -72,7 +72,7 @@ export function useCloudData(
             ? registeredAs
             : (proServices[0] ?? null)
           : null;
-      // /api/pros returns only Live Repair Pros (online + pro role + range); for
+      // /api/pros returns only Live Service Pros (online + pro role + range); for
       // pros that is further scoped to their own trade (server-side).
       void backendFetchPros({ lat: userLat, lng: userLng }, { trade })
         .then((list) => {

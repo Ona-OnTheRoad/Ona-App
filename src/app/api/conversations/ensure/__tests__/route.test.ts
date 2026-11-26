@@ -169,7 +169,7 @@ describe("POST /api/conversations/ensure", () => {
     expect(json.data).toEqual({ conversationId: "conv-winner" });
   });
 
-  it("rejects a caller who isn't the motorist or repair pro on the request", async () => {
+  it("rejects a caller who isn't the motorist or service pro on the request", async () => {
     requireUserMock.mockResolvedValue(authOk("someone-else"));
     makeSb({});
 
@@ -185,7 +185,7 @@ describe("POST /api/conversations/ensure", () => {
     expect(res.status).toBe(404);
   });
 
-  it("returns 400 when the request has no repair pro assigned yet", async () => {
+  it("returns 400 when the request has no service pro assigned yet", async () => {
     requireUserMock.mockResolvedValue(authOk("motorist-1"));
     makeSb({
       job: {

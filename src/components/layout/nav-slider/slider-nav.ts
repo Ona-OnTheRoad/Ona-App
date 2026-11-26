@@ -103,7 +103,7 @@ export const isHomeHref = (href: string, roleHome: string) =>
  * The slider's rows, in design order. `rows` is the output of
  * applyNavOverrides, so a destination the backend hid is skipped, never invented.
  *   Customer: Home, History, My Shop, Ona Express, Referral & Earn, Profile
- *   Repair Pro: Home, Jobs, Payouts, My Shop, Referral & Earn, Profile
+ *   Service Pro: Home, Jobs, Payouts, My Shop, Referral & Earn, Profile
  */
 export function buildSliderItems(
   rows: SliderNavRow[],

@@ -22,7 +22,7 @@ afterEach(() => {
 });
 
 describe("useCheckoutLiveStatus: stop asking for payment once the job is cancelled", () => {
-  it("tells the checkout when the Repair Pro cancels while the customer is on the payment screen", async () => {
+  it("tells the checkout when the Service Pro cancels while the customer is on the payment screen", async () => {
     const onCancelled = vi.fn();
     m.getJob.mockResolvedValue(ok("agreed"));
     renderHook(() => useCheckoutLiveStatus("summary", "job-1", onCancelled));

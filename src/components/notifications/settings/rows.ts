@@ -28,7 +28,7 @@ export const CATEGORY_ROWS: {
   {
     key: "messages",
     label: "Chat",
-    detail: "Messages between customers and Repair Pros",
+    detail: "Messages between customers and Service Pros",
     icon: MessageSquare,
   },
   {

@@ -3,7 +3,7 @@ import { publicPageMetadata } from "@/lib/seo/metadata";
 export const metadata = publicPageMetadata({
   title: "Terms of Service",
   description:
-    "The rules for using Ona: booking and providing repair services in Nigeria, escrow, verification and account safety.",
+    "The rules for using Ona: booking and providing services in Nigeria, escrow, verification and account safety.",
   path: "/settings/legal/terms",
 });
 

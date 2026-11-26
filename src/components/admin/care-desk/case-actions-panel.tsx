@@ -54,7 +54,7 @@ export function CaseActionsPanel({
               onClick={() =>
                 void runAction(
                   { type: "release_escrow", jobId: selectedJobId },
-                  "Enter password to release escrow to the Repair Pro.",
+                  "Enter password to release escrow to the Service Pro.",
                 )
               }
             >
@@ -156,7 +156,7 @@ export function CaseActionsPanel({
                       type: "freeze_user",
                       userId: String(job?.repairProId || job?.repair_pro_id),
                     },
-                    "Enter password to freeze this Repair Pro account.",
+                    "Enter password to freeze this Service Pro account.",
                   )
                 }
               >

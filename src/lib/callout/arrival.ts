@@ -1,6 +1,6 @@
 import { haversineMeters } from "@/lib/callout/integrity";
 
-/** Default: Repair Pro must be this close to the customer to tap Arrived. */
+/** Default: Service Pro must be this close to the customer to tap Arrived. */
 export const DEFAULT_ARRIVAL_PROXIMITY_M = 200;
 
 /** Client GPS vs server Live pin must agree within this to corroborate origin. */

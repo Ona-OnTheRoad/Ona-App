@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Tow "add another repair pro": the motorist was pinged at the 60-min mark to
+ * Tow "add another service pro": the motorist was pinged at the 60-min mark to
  * enter their current address. This dispatches the linked scheduled request:
  * it stamps the address + coordinates, moves to sequential_pairing, and
  * immediately books the first pro of the requested trade.

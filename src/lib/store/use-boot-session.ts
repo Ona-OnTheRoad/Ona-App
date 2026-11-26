@@ -233,7 +233,7 @@ export function useBootSession(session: SessionStateResult) {
         // Server role (profiles.role) is the single source of truth for the
         // active account. The local "ona-account-type" preference must NOT
         // override it: a stale value left behind by a different account or
-        // session made the Repair Pro boot as a Customer and even reverse-switch
+        // session made the Service Pro boot as a Customer and even reverse-switch
         // the server role. Role switches are persisted server-side by
         // /api/auth/switch-role, so a reload already restores the last role
         // without any local override.

@@ -39,7 +39,7 @@ export function renderReleasedStage(
     setReceiptOpen,
     setDisputeOpen,
   } = c;
-  // Only motorist rates the Repair Pro. Both sides can view the result.
+  // Only motorist rates the Service Pro. Both sides can view the result.
   const hasRating = job.rating != null && job.rating > 0;
   const alreadyLeft = reviewLeft || hasRating;
   const displayRating = hasRating ? Number(job.rating) : rating;

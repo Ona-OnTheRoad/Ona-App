@@ -75,7 +75,7 @@ export default function ShopCheckoutPage() {
               total={total}
             />
             <p className={cn("mt-3 text-[11px] leading-relaxed", muted)}>
-              Pay now to Ona Shop (retail). This is not job escrow no Repair Pro
+              Pay now to Ona Shop (retail). This is not job escrow no Service Pro
               hold/release. Stock is reserved after successful payment.
             </p>
           </>

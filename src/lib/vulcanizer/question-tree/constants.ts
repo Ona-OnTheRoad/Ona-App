@@ -12,7 +12,7 @@ export const VULCANIZER_FINAL_COPY = {
   photos: "Add clear photos of the affected tyre(s) and rim(s)",
   voice: "Record a short voice note describing the problem",
   location: "Current Location",
-  extra: "Any other detail you want the repair pro to know?",
+  extra: "Any other detail you want the service pro to know?",
   diagnosis: "Likely problem",
   tow: "Do you need the vehicle towed to a safer place or workshop?",
   towYes: "Yes I need a tow",

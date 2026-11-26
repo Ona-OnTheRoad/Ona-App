@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Customer → Repair Pro: mandatory onboarding bottom panel.
+ * Customer → Service Pro: mandatory onboarding bottom panel.
  * Swipe up/down like the customer home lower panel (grabber + body).
  * Collapses to a tiny fracture. One tier at a time. No dismiss until Care T2.
  * Mounted only after overlay-gates settle (auth + first paint).
@@ -242,7 +242,7 @@ export function ProOnboardingSheet() {
           tabIndex={0}
           aria-expanded={expanded}
           aria-label={
-            expanded ? "Collapse Repair Pro setup" : "Expand Repair Pro setup"
+            expanded ? "Collapse Service Pro setup" : "Expand Service Pro setup"
           }
           onClick={onPillClick}
           onKeyDown={(e) => {

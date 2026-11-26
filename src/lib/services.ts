@@ -177,5 +177,5 @@ export {
   isProService,
 } from "@/lib/pro-service-id";
 
-/** Repair Pros pick exactly one skill at signup */
+/** Service Pros pick exactly one skill at signup */
 export const MAX_PRO_SERVICES_ON_SIGNUP = 1;

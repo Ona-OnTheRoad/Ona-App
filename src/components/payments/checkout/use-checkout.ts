@@ -66,7 +66,7 @@ export function useCheckout() {
 
   usePayGateTelemetry(job, phase, authReady, isAuthenticated);
   useBankPayPoll(phase, jobId, router, reference);
-  // The Repair Pro can cancel while the customer is on a payment screen.
+  // The Service Pro can cancel while the customer is on a payment screen.
   const onJobCancelled = useCallback((j: JobRecord) => {
     setJob(j);
     setPayUrl(null);
@@ -153,7 +153,7 @@ export function useCheckout() {
       return;
     }
 
-    // Cancelled (e.g. by the Repair Pro) → never start a payment
+    // Cancelled (e.g. by the Service Pro) → never start a payment
     if (current.status === "cancelled") {
       onJobCancelled(current);
       return;

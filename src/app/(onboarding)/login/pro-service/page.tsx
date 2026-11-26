@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-/** Legacy route → full Repair Pro signup */
+/** Legacy route → full Service Pro signup */
 export default function ProServiceRedirectPage() {
   const router = useRouter();
   useEffect(() => {

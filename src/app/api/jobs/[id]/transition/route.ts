@@ -154,7 +154,7 @@ export async function POST(
       b.event === "DECLINE"
     ) {
       if (actor !== "repair_pro") {
-        return apiFail("Only the assigned Repair Pro can do that", 403);
+        return apiFail("Only the assigned Service Pro can do that", 403);
       }
       // Accepting a job means being paid for it. Without verified bank details
       // the customer's release would fail and the money would sit in escrow, so
@@ -259,7 +259,7 @@ export async function POST(
     // Pro declined → reroute to next nearest pro instead of cancelling
     if (b.event === "CANCEL" && b.reason === "pro_declined") {
       if (actor !== "repair_pro") {
-        return apiFail("Only the assigned Repair Pro can decline", 403);
+        return apiFail("Only the assigned Service Pro can decline", 403);
       }
       const res = await rerouteDeclinedJob(id, b.cancelReason || b.reason);
       if ("error" in res) return apiFail(res.error, 400);

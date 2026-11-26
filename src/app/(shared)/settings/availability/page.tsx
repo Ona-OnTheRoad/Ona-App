@@ -100,7 +100,7 @@ export default function SettingsAvailabilityPage() {
           </button>
           <h1 className="text-[20px] font-semibold tracking-tight">Hours & vacation</h1>
         </header>
-        <p className="px-4 text-[13px] text-ona-muted">Repair Pros only.</p>
+        <p className="px-4 text-[13px] text-ona-muted">Service Pros only.</p>
       </div>
     );
   }

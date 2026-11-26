@@ -5,7 +5,7 @@ import { createServiceSupabase } from "@/lib/supabase/server";
 export async function listAdminIdentityUsers(q: string, role: string | null) {
   const supabase = createServiceSupabase();
 
-  // Special: Repair Pros from side table (includes dual accounts)
+  // Special: Service Pros from side table (includes dual accounts)
   if (role === "repair_pro") {
     const { data: pros, error } = await supabase
       .from("repair_pro_profiles")

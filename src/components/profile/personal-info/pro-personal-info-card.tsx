@@ -27,7 +27,7 @@ export function ProPersonalInfoCard({
   const fileRef = useRef<HTMLInputElement>(null);
   const { proLive, setProLive, proServices } = useApp();
   const avatarUrl = userProfile.avatarUrl?.trim() || undefined;
-  const name = userProfile.fullName || "Repair Pro";
+  const name = userProfile.fullName || "Service Pro";
   const proTrade = formatProSkill(
     userProfile.services?.[0] || proServices?.[0],
   );
@@ -92,7 +92,7 @@ export function ProPersonalInfoCard({
               {name}
             </p>
             <p className="truncate text-xs text-ona-muted font-normal leading-tight mt-0.5">
-              Repair Pro · {memberSince}
+              Service Pro · {memberSince}
             </p>
           </div>
         </div>

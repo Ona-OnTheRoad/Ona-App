@@ -120,7 +120,7 @@ beforeEach(() => {
 });
 
 describe("POST /api/auth/signup service-client session isolation", () => {
-  it("lets a signed-in motorist attach the Repair Pro role and keeps the motorist side", async () => {
+  it("lets a signed-in motorist attach the Service Pro role and keeps the motorist side", async () => {
     const sb = setup(existingMotorist());
     const res = await post(proBody({ access_token: "valid-access-token" }));
     const body = await res.json();
@@ -318,7 +318,7 @@ describe("POST /api/auth/signup server-side NIN/BVN check", () => {
     expect(JSON.stringify(lookup)).not.toContain(BVN);
   });
 
-  it("does not mark a new Repair Pro verified from the digits", async () => {
+  it("does not mark a new Service Pro verified from the digits", async () => {
     const sb = setup({});
     mocks.verifyNin.mockResolvedValue(live("Ada User"));
     const res = await post(proBody({ nin: NIN }));

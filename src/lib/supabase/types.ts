@@ -48,7 +48,7 @@ export interface ProfileRow {
    * motorist = Customer Role, repair_pro = Professional Role.
    */
   primary_role?: UserRole | null;
-  /** Last successful Motorist ↔ Repair Pro switch */
+  /** Last successful Motorist ↔ Service Pro switch */
   last_role_switch_at?: string | null;
   /** Number of successful role switches */
   role_switch_count?: number | null;

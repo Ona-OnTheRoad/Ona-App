@@ -5,7 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * Unified identity + role sync.
  *
  * One real person == one `profiles` row (shared identity). `user_roles`
- * records which roles that identity has attached (Customer / Repair Pro), and
+ * records which roles that identity has attached (Customer / Service Pro), and
  * `payout_methods` is the canonical bank record reused across roles. Role
  * data stays in the side tables (motorist_profiles / repair_pro_profiles);
  * `profiles.role` remains the *active* role pointer.

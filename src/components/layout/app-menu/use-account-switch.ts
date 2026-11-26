@@ -46,7 +46,7 @@ export function useAccountSwitch(open: boolean, onClose: () => void) {
     }
 
     // Do not block on client-only dual flags here switchAccount refreshes
-    // from the server (vault alone was falsely saying "no Repair Pro account").
+    // from the server (vault alone was falsely saying "no Service Pro account").
     setWarn(null);
     setSignupTarget(null);
     setSwitching(true);

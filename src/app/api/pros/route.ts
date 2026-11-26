@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * Public marketplace feed for Motorists.
- * Only Repair Pros who are:
+ * Only Service Pros who are:
  * - approved / marketplace-ready tier
  * - signed-in active profile (prefer repair_pro role)
  * - Live: is_online = true + location_updated_at within 5 min
@@ -44,11 +44,11 @@ export async function GET(req: Request) {
   try {
     const supabase = createServiceSupabase();
     // Dual-role: never list the signed-in user as a pro for themselves
-    // (even when Live on the Repair Pro side).
+    // (even when Live on the Service Pro side).
     const viewer = await getUserFromRequest(req);
     const excludeSelfId = viewer?.id ? String(viewer.id) : null;
 
-    // Role-aware market: an ACTIVE Repair Pro only ever sees their own
+    // Role-aware market: an ACTIVE Service Pro only ever sees their own
     // primary trade's Live pros. Derived from the session not a client param.
     const marketViewer = await resolveMarketViewer(req, supabase);
     const viewerTrade = marketViewer.trade ?? null;
@@ -275,6 +275,6 @@ export async function GET(req: Request) {
     });
   } catch (e) {
     console.error(e);
-    return apiFail("Failed to load repair pros", 500);
+    return apiFail("Failed to load service pros", 500);
   }
 }

@@ -24,7 +24,7 @@ export function jobRowStatusLabel(s: JobFlowStatus, isPro: boolean): string {
       return isPro ? "Service Request" : "Finding a pro";
     case "waiting_for_pro":
     case "reserved":
-      return isPro ? "Service Request" : "Repair Pro reviewing";
+      return isPro ? "Service Request" : "Service Pro reviewing";
     case "negotiating":
       return isPro ? "Service Request" : "Negotiating";
     case "agreed":

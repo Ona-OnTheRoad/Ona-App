@@ -61,7 +61,7 @@ export function DuplicateIdentitiesTab({
             No duplicate identities found.
           </h3>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-sm leading-relaxed">
-            Run a scan to check for duplicate accounts matched by NIN or BVN across Customer and Repair Pro records.
+            Run a scan to check for duplicate accounts matched by NIN or BVN across Customer and Service Pro records.
           </p>
         </div>
       ) : (

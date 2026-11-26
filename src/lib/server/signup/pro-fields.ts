@@ -4,7 +4,7 @@ import { capCertDataUrl, slimSkillAnswers } from "@/lib/server/signup/helpers";
 import type { SignupInput } from "@/lib/server/signup/schema";
 import type { ProService } from "@/lib/types";
 
-/** Repair Pro values worked out from the signup body before the row is written. */
+/** Service Pro values worked out from the signup body before the row is written. */
 export async function deriveProFields(input: SignupInput) {
   const svc = (
     input.primaryService && isProService(input.primaryService)

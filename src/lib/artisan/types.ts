@@ -5,7 +5,7 @@
 
 import type { ProService } from "@/lib/types";
 
-/** Backend/profile lifecycle for artisans (Repair Pros) */
+/** Backend/profile lifecycle for artisans (Service Pros) */
 export type ArtisanProfileStatus =
   "draft" | "pending_review" | "approved" | "rejected" | "suspended";
 

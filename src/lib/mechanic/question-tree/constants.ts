@@ -11,7 +11,7 @@ export const MECHANIC_FINAL_COPY = {
   photos: "Add clear photos (at most 4)",
   voice: "Record a short voice note describing the problem",
   location: "Current Location",
-  extra: "Any other detail you want the repair pro to know?",
+  extra: "Any other detail you want the service pro to know?",
   diagnosis: "Likely problem",
 } as const;
 

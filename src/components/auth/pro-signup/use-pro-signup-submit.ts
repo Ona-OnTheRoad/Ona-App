@@ -128,7 +128,7 @@ export function useProSignupSubmit({
       profile.bankAccountNumber = bankOverride.bankAccountNumber;
     }
 
-    // Dual-role: carry Customer bank into Repair Pro so payout bank is ready
+    // Dual-role: carry Customer bank into Service Pro so payout bank is ready
     // and the "Add bank" panel does not ask again after signup.
     if (dualSignup && !profile.bankCode) {
       try {

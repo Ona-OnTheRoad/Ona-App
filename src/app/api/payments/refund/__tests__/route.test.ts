@@ -91,7 +91,7 @@ describe("POST /api/payments/refund", () => {
     );
   });
 
-  it("rejects a caller who isn't the motorist or repair pro on the payment", async () => {
+  it("rejects a caller who isn't the motorist or service pro on the payment", async () => {
     requireUserMock.mockResolvedValue(authOk("someone-else"));
 
     const res = await POST(req({ requestId: "req-1", userId: "someone-else" }));

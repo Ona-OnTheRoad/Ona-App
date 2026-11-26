@@ -31,7 +31,7 @@ function Avatar({ src, name }: { src?: string | null; name: string }) {
   );
 }
 
-/** Avatar, greeting and name; Repair Pros also get their trade and online status. */
+/** Avatar, greeting and name; Service Pros also get their trade and online status. */
 export function SliderHeader() {
   const t = useT();
   const { accountType, userProfile, displayName, proServices, proLive } =

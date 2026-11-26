@@ -14,7 +14,7 @@ import { isPublicPath } from "@/lib/routes";
  * Overlays only mount after the page has loaded and settled (see useOverlayGatesReady), and most
  * apply to one role or state, so they are loaded on demand instead of being part of every page's
  * first-load JavaScript. This keeps the shared bundle small on slow connections (the onboarding
- * sheet alone pulls in the whole Repair Pro onboarding wizard and the Nigerian places data).
+ * sheet alone pulls in the whole Service Pro onboarding wizard and the Nigerian places data).
  */
 
 const PostSwitchPhoneOtpGate = dynamic(

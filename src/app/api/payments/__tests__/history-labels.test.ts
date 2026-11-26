@@ -30,7 +30,7 @@ describe("payment history status labels", () => {
     expect((await labelFor("motorist", { escrowStatus: "release_pending" })).label).toBe("Released");
   });
 
-  it("the Repair Pro still sees the payout is processing", async () => {
+  it("the Service Pro still sees the payout is processing", async () => {
     expect((await labelFor("professional", { escrowStatus: "pending_settlement" })).label).toBe("Payout processing");
   });
 
@@ -70,7 +70,7 @@ describe("payment history totals", () => {
     expect(s.releasedMinor).toBe(2127000);
   });
 
-  it("a Repair Pro's queued or on-hold payout is still money owed (held)", async () => {
+  it("a Service Pro's queued or on-hold payout is still money owed (held)", async () => {
     const s = await summaryFor("professional", [
       { id: "a", escrowStatus: "pending_settlement", proPayoutMinor: 1877000 },
       { id: "b", escrowStatus: "held", proPayoutMinor: 500000, meta: { payoutSuspended: true } },

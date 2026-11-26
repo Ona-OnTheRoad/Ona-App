@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: { absolute: "Ona Control Centre" },
   robots: { index: false, follow: false },
   description:
-    "Super Admin full control of Customer, Repair Pro, jobs, payments, content & features",
+    "Super Admin full control of Customer, Service Pro, jobs, payments, content & features",
 };
 
 /**

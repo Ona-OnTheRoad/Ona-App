@@ -168,7 +168,7 @@ export async function POST(req: Request) {
       .maybeSingle();
     if (!mot) {
       return apiFail(
-        "This login has no Customer account. Choose Repair Pro, or sign up as Customer.",
+        "This login has no Customer account. Choose Service Pro, or sign up as Customer.",
         403,
       );
     }
@@ -184,7 +184,7 @@ export async function POST(req: Request) {
       .maybeSingle();
     if (!pro) {
       return apiFail(
-        "This login has no Repair Pro account. Choose Customer, or sign up as Repair Pro.",
+        "This login has no Service Pro account. Choose Customer, or sign up as Service Pro.",
         403,
       );
     }

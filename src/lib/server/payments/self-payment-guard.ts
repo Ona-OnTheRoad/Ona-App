@@ -1,8 +1,8 @@
 import "server-only";
 /**
  * Anti self-payment guard.
- * A Repair Pro can never be paid for their own job if the payer (motorist)
- * and the payout recipient (repair pro) share the identity name *and*
+ * A Service Pro can never be paid for their own job if the payer (motorist)
+ * and the payout recipient (service pro) share the identity name *and*
  * matching BVN/NIN, the payment must be rejected before any session is created.
  */
 

@@ -8,7 +8,7 @@ import type { HelpSomeone } from "@/components/home/home-panel/use-help-someone"
  Default: trade strip only.
  Help mode: quiet “Where are they?” on top.
  After confirm: address stays + trade strip below (no chip).
- Repair Pro mode: no trade strip the market is pinned to their
+ Service Pro mode: no trade strip the market is pinned to their
  own trade (server-enforced), so there is nothing to switch between.
  */
 export function HomeTopStrip({

@@ -60,7 +60,7 @@ export const SW_SETTINGS: Record<keyof typeof EN_SETTINGS, string> = {
   "notif.jobsRequests": "Jobs & requests",
   "notif.jobsRequestsDetail": "New jobs, en route, arrived, completed",
   "notif.messages": "Messages",
-  "notif.messagesDetail": "Chat from mtejas and Repair Pros",
+  "notif.messagesDetail": "Chat from mtejas and Service Pros",
   "notif.payments": "Payments",
   "notif.paymentsDetail": "Escrow held, released, refunds",
   "notif.system": "System",

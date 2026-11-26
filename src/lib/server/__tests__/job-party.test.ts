@@ -19,7 +19,7 @@ describe("isJobParty: only the people on a job may read or act on it", () => {
     expect(isJobParty("pro-1", job(status))).toBe(true);
   });
 
-  it.each(ALL_STATUSES)("%s: an uninvolved Repair Pro is NOT a party", (status) => {
+  it.each(ALL_STATUSES)("%s: an uninvolved Service Pro is NOT a party", (status) => {
     expect(isJobParty("pro-2", job(status))).toBe(false);
   });
 

@@ -105,7 +105,7 @@ export function renderCompletedStage(
     />
   );
 
-  const proName = (job.repairProName || "").trim() || "Your Repair Pro";
+  const proName = (job.repairProName || "").trim() || "Your Service Pro";
   const proFirst = proName.split(/\s+/)[0];
   // One friendly banner (in the footer); the raw server text is never shown.
   const releaseError = friendlyReleaseError(releaseBanner, proFirst);
@@ -159,7 +159,7 @@ export function renderCompletedStage(
                   {proName}
                 </p>
                 <p className="truncate text-[11px] text-ona-muted">
-                  {PRO_SERVICE_LABELS[job.serviceType] || "Repair Pro"}
+                  {PRO_SERVICE_LABELS[job.serviceType] || "Service Pro"}
                 </p>
               </div>
               <Badge variant="matched">
@@ -174,7 +174,7 @@ export function renderCompletedStage(
               aria-hidden
             />
           ) : null}
-          {/* Split breakdown Repair Pro only (customers never see 95/5) */}
+          {/* Split breakdown Service Pro only (customers never see 95/5) */}
           {viewer === "repair_pro" &&
           releaseProMajor != null &&
           releasePlatformMajor != null ? (

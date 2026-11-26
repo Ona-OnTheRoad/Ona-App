@@ -1,5 +1,5 @@
 /**
- * Repair Pro service-request popup timing.
+ * Service Pro service-request popup timing.
  * - Stay visible 144s (progress line only no second display)
  * - Always surface each new open request (C1 no 10-minute throttle)
  * - New requests during the 144s window pile (stack count)
@@ -213,7 +213,7 @@ export function isIncomingJobOpen(
 
 const SHOWN_KEY = "om-job-request-shown";
 
-/** Shown-set is scoped per Repair Pro so a job rerouted to a different pro
+/** Shown-set is scoped per Service Pro so a job rerouted to a different pro
  * can surface again for them (the previous pro's "shown" must not block it). */
 function shownKeyFor(proId?: string): string {
   return proId ? `${SHOWN_KEY}:${proId}` : SHOWN_KEY;

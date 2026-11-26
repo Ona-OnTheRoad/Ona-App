@@ -58,7 +58,7 @@ function fillNewBank() {
   type(field("Bank code / sort code"), "044");
 }
 
-describe("BankChangeFlow (Settings, Repair Pro payout)", () => {
+describe("BankChangeFlow (Settings, Service Pro payout)", () => {
   it("sends the code via the server (no client-chosen phone), then changes the bank with the proof", async () => {
     renderFlow();
     await verifyIt();

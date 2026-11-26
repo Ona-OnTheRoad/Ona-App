@@ -1,5 +1,5 @@
 /**
- * Repair Pro search-visibility ladder (automatic only care never sets Vis manually).
+ * Service Pro search-visibility ladder (automatic only care never sets Vis manually).
  *
  * Product lock:
  * T1 registered; hidden from search; no Go Live

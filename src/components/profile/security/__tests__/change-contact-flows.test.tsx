@@ -136,7 +136,7 @@ describe("PhoneChangeFlow", () => {
     expect(placeholder("Enter your password").value).toBe("");
   });
 
-  it("a Repair Pro with a guarantor on file must enter the name and it is sent", async () => {
+  it("a Service Pro with a guarantor on file must enter the name and it is sent", async () => {
     renderFlow("Bola Guarantor");
     click("Change");
     click("Send code to email");

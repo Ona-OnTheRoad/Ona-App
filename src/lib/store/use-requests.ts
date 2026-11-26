@@ -223,7 +223,7 @@ export function useRequests(
           ok: false,
           code: "invalid",
           message:
-            "This Repair Pro has no labour price set. Quote on request they must set a price on their profile first.",
+            "This Service Pro has no labour price set. Quote on request they must set a price on their profile first.",
           actionCount: count,
         };
       }

@@ -24,6 +24,7 @@ import {
   rulesForTier,
 } from "@/lib/artisan/visibility-tiers";
 import { MAX_RADIUS_KM } from "@/lib/matching";
+import { isProPlaceholderName } from "@/lib/pro-label";
 
 export function haversineKm(
   a: { lat: number; lng: number },
@@ -153,9 +154,9 @@ export function mapProToTechnician(
   const displayName =
     (profile?.full_name || "").trim() ||
     (pro.business_name || "").trim() ||
-    "Repair Pro";
+    "Service Pro";
   const short =
-    displayName === "Repair Pro"
+    isProPlaceholderName(displayName)
       ? "Pro"
       : displayName.split(/\s+/)[0]?.slice(0, 12) || "Pro";
   return {
@@ -164,7 +165,7 @@ export function mapProToTechnician(
     shortName: short,
     serviceType,
     roleLabel: PRO_SERVICE_LABELS[serviceType] ?? serviceType,
-    // Empty photo → map/UI uses DEFAULT_VENDOR_PHOTO (Repair Pro brand icon)
+    // Empty photo → map/UI uses DEFAULT_VENDOR_PHOTO (Service Pro brand icon)
     photo: (profile?.avatar_url || "").trim(),
     // Real ratings only start at 0 (no mock 4.5 seed)
     rating: Number(pro.rating_avg) > 0 ? Number(pro.rating_avg) : 0,
@@ -297,7 +298,7 @@ export function mapRequestRow(
     id: row.id,
     jobVersion: row.job_version,
     technicianId: row.repair_pro_id || "",
-    technicianName: proName || "Repair Pro",
+    technicianName: proName || "Service Pro",
     motoristId: row.motorist_id,
     serviceType: row.service_type as ProService,
     problem: row.description || "Roadside assistance",

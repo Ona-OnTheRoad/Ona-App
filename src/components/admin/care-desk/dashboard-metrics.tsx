@@ -14,7 +14,7 @@ export function DashboardMetrics({ dash, board }: DashboardMetricsProps) {
     const skeletonLabels = [
       "USERS",
       "CUSTOMERS",
-      "REPAIR PROS",
+      "SERVICE PROS",
       "PENDING PROS",
       "OPEN JOBS",
       "COMPLETED",
@@ -69,7 +69,7 @@ export function DashboardMetrics({ dash, board }: DashboardMetricsProps) {
       href: "/admin/motorists",
     },
     {
-      label: "REPAIR PROS",
+      label: "SERVICE PROS",
       value: formatValue(dash.repairPros),
       href: "/admin/pros",
     },

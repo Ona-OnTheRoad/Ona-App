@@ -29,7 +29,7 @@ export const PCM_HOME: Record<keyof typeof EN_HOME, string> = {
   "home.collapsePanel": "Scroll down to close panel small",
   "home.noProsAvailable": "No Pro dey available",
   "home.noProsMatch": "No pro match these filters",
-  "home.noRepairPros": "No Repair Pro near you",
+  "home.noRepairPros": "No Service Pro near you",
   "home.refresh": "Refresh",
   "home.refreshing": "E dey refresh…",
   "home.nearbyCount": "{total} near you",

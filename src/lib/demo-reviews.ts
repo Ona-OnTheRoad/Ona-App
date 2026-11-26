@@ -1,5 +1,5 @@
 /**
- * Stable demo reviews for a Repair Pro (until live reviews API is wired).
+ * Stable demo reviews for a Service Pro (until live reviews API is wired).
  * Same tech always gets the same comments.
  */
 

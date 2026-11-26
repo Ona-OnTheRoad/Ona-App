@@ -56,10 +56,10 @@ export function Step2RepairService({
       {/* Title & Subtitle */}
       <div className="mb-5">
         <h1 className="text-xl font-bold text-ona-ink tracking-tight">
-          Your Repair Service
+          What you do
         </h1>
         <p className="mt-1 text-xs text-ona-muted">
-          Tell us what you do so nearby customers can find you.
+          Pick your trade so nearby customers can find you.
         </p>
       </div>
 

@@ -148,7 +148,7 @@ async function run(req: Request) {
     `Action: add ${ip} to Flutterwave → Settings → API → IP Whitelisting, then verify:`,
     `${appUrl}/api/cron/egress-ip`,
     ``,
-    `Until this is done, NEW payout transfers to Repair Pros will be rejected with`,
+    `Until this is done, NEW payout transfers to Service Pros will be rejected with`,
     `the "account administrator" 400 error.`,
     ``,
     `Ona ops`,
@@ -158,7 +158,7 @@ async function run(req: Request) {
  <h1 style="font-size:16px;margin:0 0 12px">Flutterwave payout egress IP changed</h1>
  <p style="font-size:14px;line-height:1.5;margin:0 0 16px">
  The payout proxy now egresses from <strong style="color:#dc2626">${ip}</strong>, which is
- not whitelisted on Flutterwave. Transfers to Repair Pros will be rejected until it is added.
+ not whitelisted on Flutterwave. Transfers to Service Pros will be rejected until it is added.
  </p>
  <p style="font-size:14px;line-height:1.5;margin:0 0 16px">
  Expected (whitelisted): <code>${expected.join(", ")}</code>

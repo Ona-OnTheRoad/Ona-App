@@ -118,7 +118,7 @@ export function SummaryView({
           ) : (
             <dl className="mt-2 space-y-2 text-[13px]">
               <div className="flex justify-between gap-3">
-                <dt className={muted}>Repair Pro</dt>
+                <dt className={muted}>Service Pro</dt>
                 <dd className={cn("truncate font-semibold", ink)}>
                   {job.repairProName}
                 </dd>

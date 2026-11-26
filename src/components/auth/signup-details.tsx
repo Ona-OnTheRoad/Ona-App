@@ -24,7 +24,7 @@ import { StepDetails } from "./motorist-signup/step-details";
 import { useMotoristFields } from "./motorist-signup/use-motorist-fields";
 
 /**
- * "Create account": the details shared by Customer and Repair Pro. Saves a
+ * "Create account": the details shared by Customer and Service Pro. Saves a
  * sessionStorage draft (never a password) and continues to /signup/verify.
  * Menu/profile dual-signup (already signed in) skips straight to the Customer
  * wizard with the same query.

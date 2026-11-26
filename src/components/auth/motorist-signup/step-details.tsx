@@ -18,7 +18,7 @@ export function StepDetails({
     <div className="flex flex-col gap-4">
       {f.dualSignup ? (
         <p className="rounded-ona-ctl bg-ona-brand-soft px-3 py-2.5 text-[12px] font-medium leading-snug text-ona-ink">
-          Continue from your Repair Pro account
+          Continue from your Service Pro account
         </p>
       ) : null}
       <AccountIdentityFields f={f} />

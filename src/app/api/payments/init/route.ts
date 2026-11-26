@@ -75,7 +75,7 @@ export async function POST(req: Request) {
     });
     if (!snap) {
       return apiFail(
-        "This Repair Pro has no labour price set. Quote on request they must set a price first.",
+        "This Service Pro has no labour price set. Quote on request they must set a price first.",
         400,
         "price_required",
       );
@@ -99,7 +99,7 @@ export async function POST(req: Request) {
       ]);
     }
 
-    // Anti self-payment a Repair Pro must never pay escrow to themselves.
+    // Anti self-payment a Service Pro must never pay escrow to themselves.
     // Same name AND same BVN/NIN means both accounts belong to one person.
     if (isSupabaseAdminConfigured()) {
       const [payerIdentity, recieverIdentity] = await Promise.all([
@@ -109,7 +109,7 @@ export async function POST(req: Request) {
 
       if (isSamePerson(payerIdentity, recieverIdentity)) {
         return apiFail(
-          "You cannot send money to yourself. Pick a different Repair Pro.",
+          "You cannot send money to yourself. Pick a different Service Pro.",
           403,
           "self_payment_blocked",
         );

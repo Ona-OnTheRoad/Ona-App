@@ -35,7 +35,7 @@ export const fashionConfig: HelpFlowConfig = {
     home: FASHION_FINAL_COPY.home,
   },
   progressDefaultTotal: 11,
-  sendLabel: "Find a Repair Pro",
+  sendLabel: "Find a Service Pro",
   busyLabel: "Finding help",
   buildPayload: (ctx) => {
     const homeChoice = (ctx.extraState.homeChoice as "home" | "visit" | null) ?? null;

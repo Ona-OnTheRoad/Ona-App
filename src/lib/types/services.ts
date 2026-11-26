@@ -1,6 +1,6 @@
 /**
  * Browse categories on home.
- * Real trades match Repair Pro signup (exclude "all").
+ * Real trades match Service Pro signup (exclude "all").
  */
 export type ServiceCategory =
   | "mechanic"

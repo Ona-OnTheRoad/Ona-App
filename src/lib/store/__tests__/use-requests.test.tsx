@@ -149,7 +149,7 @@ describe("createRequest: situations that must not change", () => {
     expect(onFailure).not.toHaveBeenCalled();
   });
 
-  it("a Repair Pro account never creates a job through this path", async () => {
+  it("a Service Pro account never creates a job through this path", async () => {
     const { result } = mount({ accountType: "professional" });
     act(() => { result.current.createRequest(TECH, "x", PRICING); });
     await flush();

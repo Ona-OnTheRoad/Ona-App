@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { useApp } from "@/lib/store";
 import { cn, firstNameOnly } from "@/lib/utils";
 import type { JobViewer } from "./types";
+import { isProPlaceholderName } from "@/lib/pro-label";
 
 interface Props {
   job: JobRecord;
@@ -36,8 +37,8 @@ export function NegotiationSummary({
   const ink = "text-ona-ink";
   const muted = "text-ona-muted";
   const proKnown =
-    !!job.repairProName && job.repairProName.trim() !== "Repair Pro";
-  const proName = proKnown ? job.repairProName.trim() : "Repair Pro";
+    !!job.repairProName && !isProPlaceholderName(job.repairProName);
+  const proName = proKnown ? job.repairProName.trim() : "Service Pro";
   const { technicians } = useApp();
   const tech = technicians.find((t) => t.id === job.repairProId);
   const done = tech?.jobsCompleted ?? 0;
@@ -51,7 +52,7 @@ export function NegotiationSummary({
     .join(" \u2022 ");
   const offerLabel =
     theirOffer?.side === "repair_pro"
-      ? `${firstNameOnly(proName, "Repair Pro")}\u2019s labour offer`
+      ? `${firstNameOnly(proName, "Service Pro")}\u2019s labour offer`
       : "Customer\u2019s offer";
 
   return (
@@ -146,7 +147,7 @@ export function NegotiationSummary({
               >
                 <span className={cn("text-[12px] font-medium", muted)}>
                   #{o.offerIndex}{" "}
-                  {o.side === "repair_pro" ? "Repair Pro" : "Customer"}
+                  {o.side === "repair_pro" ? "Service Pro" : "Customer"}
                 </span>
                 <span
                   className={cn("text-[15px] font-semibold tabular-nums", ink)}

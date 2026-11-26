@@ -87,7 +87,7 @@ describe("useSignInForm email login", () => {
     expect(mocks.replace).toHaveBeenCalledWith("/");
   });
 
-  it("sends Repair Pros to the dashboard", async () => {
+  it("sends Service Pros to the dashboard", async () => {
     mocks.signInWithPassword.mockResolvedValue(null);
     const { result } = renderHook(() => useSignInForm());
     act(() => {

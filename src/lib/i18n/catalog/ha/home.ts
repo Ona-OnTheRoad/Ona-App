@@ -29,7 +29,7 @@ export const HA_HOME: Record<keyof typeof EN_HOME, string> = {
   "home.collapsePanel": "Ja ƙasa don rufe",
   "home.noProsAvailable": "Babu Pro",
   "home.noProsMatch": "Babu pro da ya dace",
-  "home.noRepairPros": "Babu Repair Pro kusa",
+  "home.noRepairPros": "Babu Service Pro kusa",
   "home.refresh": "Sake",
   "home.refreshing": "Ana sake…",
   "home.nearbyCount": "{total} kusa",

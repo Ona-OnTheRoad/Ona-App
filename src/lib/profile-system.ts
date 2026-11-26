@@ -45,7 +45,7 @@ export function isExperienceUnset(years?: string | null): boolean {
 }
 
 /**
- * Service radius options in km for Repair Pro My Profile.
+ * Service radius options in km for Service Pro My Profile.
  * Hard max is MAX_RADIUS_KM (10 km) for every pro, same as marketplace discovery.
  */
 export const PRO_MAX_SERVICE_RADIUS_KM = MAX_RADIUS_KM;
@@ -101,7 +101,7 @@ export function verificationTierLabel(tier: VerificationTier): string {
 
 /**
  * Blue tick / verification mark:
- * - Repair Pros: Tier 4 only (skill docs approved)
+ * - Service Pros: Tier 4 only (skill docs approved)
  * - Customers: in-person / high identity tier (unchanged ladder)
  */
 export function hasVerificationMark(
@@ -291,7 +291,7 @@ export function profileTheme(isLight: boolean): ProfileThemeTokens {
 export function canViewMotoristProfile(
   viewer: AccountType | null | undefined,
 ): boolean {
-  // Repair Pros must never see Motorist profiles
+  // Service Pros must never see Motorist profiles
   return viewer !== "professional";
 }
 

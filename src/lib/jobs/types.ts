@@ -215,7 +215,7 @@ export type JobRecord = {
   /** Snake_case alias from DB */
   callout_quote?: CalloutQuote | null;
   /**
-   * Tow "add another repair pro": id of the primary (tow) request that arms
+   * Tow "add another service pro": id of the primary (tow) request that arms
    * this scheduled second request. Non-null only on the linked request.
    */
   linkedRequestId?: string | null;
@@ -263,7 +263,7 @@ export type CreateJobInput = {
   /** Call-out fee only: normal 1x, emergency 1.25x, remote 1.35x, night 1.5x */
   calloutUrgency?: "normal" | "emergency" | "remote" | "night";
   /**
-   * Tow "add another repair pro": also create a scheduled linked request for
+   * Tow "add another service pro": also create a scheduled linked request for
    * this trade (dispatched 60 min after the primary request's pro accepts).
    */
   meetProTrade?: ProService | null;

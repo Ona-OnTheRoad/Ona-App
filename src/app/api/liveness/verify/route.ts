@@ -71,7 +71,7 @@ export async function POST(req: Request) {
     .select("user_id, nin_encrypted")
     .eq("user_id", userId)
     .maybeSingle();
-  if (!pro) return apiFail("No Repair Pro profile for this account.", 404, "not_pro");
+  if (!pro) return apiFail("No Service Pro profile for this account.", 404, "not_pro");
 
   const nin = faceCheckMode() === "nin_face" ? ninOnFile(pro) : null;
   if (faceCheckMode() === "nin_face" && !nin) {

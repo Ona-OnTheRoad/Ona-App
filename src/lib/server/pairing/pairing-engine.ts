@@ -441,7 +441,7 @@ async function dispatchCandidate(
     expectedVersion: Number(row.job_version ?? 0),
     expectedStage: row.pairing_stage,
     proId: candidate.user_id,
-    proName: candidate.full_name || candidate.business_name || "Repair Pro",
+    proName: candidate.full_name || candidate.business_name || "Service Pro",
     proPhoto: candidate.avatar_url || null,
     remaining,
   });
@@ -1032,7 +1032,7 @@ export async function confirmRequest(
   // them via its own fetches seconds later. Awaiting these here added ~2s to
   // every "I can fix this" tap.
   void (async () => {
-    // "Add another repair pro": a linked scheduled second request (Tow) becomes
+    // "Add another service pro": a linked scheduled second request (Tow) becomes
     // dispatchable 60 min after this acceptance. Armed once the sweep only
     // touches requests whose scheduled_dispatch_at is still NULL.
     try {
@@ -1322,7 +1322,7 @@ export async function timeoutRequest(jobId: string): Promise<PairingResult> {
 }
 
 /**
- * "Add another repair pro": arm a linked scheduled second request so it becomes
+ * "Add another service pro": arm a linked scheduled second request so it becomes
  * dispatchable now + SECOND_PRO_DELAY_MS (60 min after the primary's pro accepts).
  * CAS on `flow_status = 'scheduled' AND scheduled_dispatch_at IS NULL` never
  * re-arms and never touches an already-dispatched/cancelled linked request.
@@ -1361,7 +1361,7 @@ const SCHEDULED_CANCELLED_STATUSES = [
 ] as const;
 
 /**
- * Scheduled-dispatch sweep for "add another repair pro" (runs ~1/min alongside
+ * Scheduled-dispatch sweep for "add another service pro" (runs ~1/min alongside
  * sweepPairing). For each linked request still `scheduled`:
  * - primary cancelled/expired first → cancel the second silently (no ping);
  * - dispatch time reached and motorist not yet pinged → notify ONCE (in-app +

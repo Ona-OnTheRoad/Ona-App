@@ -1,5 +1,5 @@
 /**
- * Sequential verification gates for Repair Pros:
+ * Sequential verification gates for Service Pros:
  * T2 Gov ID → T3 (face liveness + BVN) → T4 Proof of skill
  * “Complete” for ID/BVN = submitted OR approved (admin).
  * Liveness = device pass + backend report.

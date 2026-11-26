@@ -36,7 +36,7 @@ export const plumberConfig: HelpFlowConfig = {
     property: PLUMBER_FINAL_COPY.property,
   },
   progressDefaultTotal: 11,
-  sendLabel: "Find a Repair Pro",
+  sendLabel: "Find a Service Pro",
   busyLabel: "Finding help",
   buildPayload: (ctx) => {
     const propertyChoice = (ctx.extraState.propertyChoice as string) ?? null;

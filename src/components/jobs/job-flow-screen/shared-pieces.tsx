@@ -80,7 +80,7 @@ export function RerouteAlertOverlay({
         )}
       >
         <h2 className={cn("mb-2 text-[18px] font-bold", ink)}>
-          Repair Pro Unavailable
+          Service Pro Unavailable
         </h2>
         <p
           className={cn("mb-6 text-[14px] font-medium leading-relaxed", muted)}

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * Guards the Call Out Fee line on the Repair Pro incoming panel card:
+ * Guards the Call Out Fee line on the Service Pro incoming panel card:
  * - once a CALCULATED quote loads, "Call Out Fee" + amount render above the
  * action buttons;
  * - a network blip (thrown fetch) must not kill the quote poll the fee must

@@ -30,7 +30,7 @@ export function LocationErrorBanner({
   );
 }
 
-/** Empty state Repair Pro market only */
+/** Empty state Service Pro market only */
 export function ProEmptyState({
   refreshing,
   onRefresh,

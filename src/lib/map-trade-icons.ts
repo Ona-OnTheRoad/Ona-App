@@ -1,7 +1,7 @@
 import type { ProService } from "@/lib/types";
 
 /**
- * Map Repair Pro trade icons same solid orange as the Message button.
+ * Map Service Pro trade icons same solid orange as the Message button.
  * Clean glyph only: no dual-tone rim, glow, drop-shadow, or disc plate.
  */
 export const MESSAGE_ORANGE = "#FF6B35";

@@ -1,6 +1,6 @@
 import "server-only";
 /**
- * Live motorist → Repair Pro reviews (Postgres `reviews` + pro rating_avg).
+ * Live motorist → Service Pro reviews (Postgres `reviews` + pro rating_avg).
  */
 
 import type { ProfileReview } from "@/lib/profile-system";
@@ -128,7 +128,7 @@ export async function publishProReview(input: {
   }
 }
 
-/** Public list of reviews for a Repair Pro (motorists browse before offer). */
+/** Public list of reviews for a Service Pro (motorists browse before offer). */
 export async function listProReviews(
   repairProId: string,
   limit = 30,

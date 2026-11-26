@@ -43,7 +43,7 @@ export const diagnosticsConfig: HelpFlowConfig = {
     tow: SCAN_FINAL_COPY.tow,
   },
   progressDefaultTotal: 11,
-  sendLabel: "Find a Repair Pro",
+  sendLabel: "Find a Service Pro",
   busyLabel: "Finding help",
   buildPayload: (ctx) => {
     const towChoice = (ctx.extraState.towChoice as "tow" | "diagnostics" | null) ?? null;

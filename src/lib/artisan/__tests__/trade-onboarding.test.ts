@@ -4,6 +4,7 @@ import { toolSuggestionsFor } from "@/lib/artisan/trade-tools";
 import { coreFocusLabel, tradeFocusQuestion } from "@/lib/artisan/trade-copy";
 import { labourFeeDisclaimerForTrade } from "@/lib/pricing";
 import { professionQuestionsFor } from "@/lib/artisan/profession-questions";
+import { PRO_ROLE_LABEL, isProPlaceholderName } from "@/lib/pro-label";
 import { formatProSkill } from "@/lib/pro-service-id";
 
 describe("trade-aware onboarding", () => {
@@ -38,7 +39,15 @@ describe("trade-aware onboarding", () => {
   });
 
   it("missing trade does not fall back to mechanic", () => {
-    expect(formatProSkill(null)).toBe("Repair Pro");
+    expect(formatProSkill(null)).toBe("Service Pro");
     expect(professionQuestionsFor("nope" as never)).toEqual([]);
+  });
+
+  it("uses Service Pro and still recognises legacy placeholder names", () => {
+    expect(PRO_ROLE_LABEL).toBe("Service Pro");
+    expect(formatProSkill(null)).toBe("Service Pro");
+    expect(isProPlaceholderName("Repair Pro")).toBe(true);
+    expect(isProPlaceholderName(" Service Pro ")).toBe(true);
+    expect(isProPlaceholderName("Kola Fashion House")).toBe(false);
   });
 });

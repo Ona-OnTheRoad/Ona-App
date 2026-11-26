@@ -39,7 +39,7 @@ export function ConfirmFixDialog({
           You&apos;re confirming you can fix this job as a professional{" "}
           {PRO_SERVICE_LABELS[
             confirmFix.serviceType as keyof typeof PRO_SERVICE_LABELS
-          ] || "Repair Pro"}
+          ] || "Service Pro"}
           , and you won&apos;t get call out fee if you don&apos;t.
         </p>
         <div className="mt-4 grid grid-cols-2 gap-2">

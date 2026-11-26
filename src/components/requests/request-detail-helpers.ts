@@ -74,6 +74,6 @@ export function hasReached(job: JobRecord, status: JobFlowStatus): boolean {
 }
 
 export function offerSideLabel(side: JobOffer["side"], isPro: boolean): string {
-  if (side === "repair_pro") return isPro ? "You" : "Repair Pro";
+  if (side === "repair_pro") return isPro ? "You" : "Service Pro";
   return isPro ? "Customer" : "You";
 }

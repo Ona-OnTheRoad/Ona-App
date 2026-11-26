@@ -1,5 +1,5 @@
 /**
- * Service-focus options for Repair Pro signup.
+ * Service-focus options for Service Pro signup.
  * Vehicle type → Brand → Model are synchronized.
  * Country → State / Region (all world countries; Nigeria first).
  *

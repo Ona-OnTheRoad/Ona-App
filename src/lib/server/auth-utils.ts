@@ -163,7 +163,7 @@ export async function requireUser(
 }
 
 /**
- * True only for the two people on the job: the customer and the Repair Pro currently
+ * True only for the two people on the job: the customer and the Service Pro currently
  * assigned to it. Nobody else, in any status.
  *
  * This used to return true for EVERY signed-in user while a job was "searching" or

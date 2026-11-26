@@ -15,7 +15,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Repair Pro multi-level review from DB:
+ * Service Pro multi-level review from DB:
  * T1 phone · T2 ID/BVN (+ images) · T3 liveness · T4 skill docs · visibility
  */
 export async function GET(req: Request) {

@@ -66,12 +66,12 @@ export default function AdminProsHubPage() {
         setPros([]);
         if (!usersRes.ok) {
           setLoadFailed(true);
-          toastError(usersRes.message || "Failed to load repair pros");
+          toastError(usersRes.message || "Failed to load service pros");
         }
       }
     } catch {
       setLoadFailed(true);
-      toastError("Failed to load repair pros from network");
+      toastError("Failed to load service pros from network");
       setPros([]);
     } finally {
       setLoading(false);
@@ -99,7 +99,7 @@ export default function AdminProsHubPage() {
     <AdminShell
       adminName={adminName}
       adminRole={adminRole}
-      title="Repair Pros"
+      title="Service Pros"
       subtitle="Artisans, mechanics, and trade specialties."
       guideKey="pros"
     >
@@ -111,7 +111,7 @@ export default function AdminProsHubPage() {
         t4Pending={counts.t4Pending}
       />
 
-      {/* Repair Pros Table */}
+      {/* Service Pros Table */}
       <ProsTable
         pros={paginatedPros}
         totalCount={counts.totalPros}

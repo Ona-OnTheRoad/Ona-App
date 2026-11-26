@@ -1,5 +1,5 @@
 /**
- * Full Repair Pro bank details L3+ Operations/Finance only.
+ * Full Service Pro bank details L3+ Operations/Finance only.
  * Lower levels receive masked account numbers only.
  */
 
@@ -46,7 +46,7 @@ export async function GET(
       .eq("user_id", id)
       .maybeSingle();
     if (error) return apiFail(error.message, 500);
-    if (!data) return apiFail("Repair Pro not found", 404);
+    if (!data) return apiFail("Service Pro not found", 404);
 
     const account = String(data.bank_account_number || "");
     if (canFull) {

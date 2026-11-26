@@ -28,7 +28,7 @@ export type TransitionEvent =
   | { type: "MARK_COMPLETED" }
   | { type: "SATISFIED" } // motorist → release path
   | { type: "RELEASE" } // system after satisfied
-  /** Repair Pro tapped “I can fix this” starts 20 min negotiate clock */
+  /** Service Pro tapped “I can fix this” starts 20 min negotiate clock */
   | { type: "START_NEGOTIATION" }
   | { type: "OPEN_DISPUTE"; by: "motorist" | "repair_pro" }
   | { type: "RESOLVE_DISPUTE"; outcome: "release" | "refund" | "split" }
@@ -278,7 +278,7 @@ export function canPlaceOffer(input: {
   if (input.offerCount === 0 && input.side !== "repair_pro") {
     return {
       ok: false,
-      reason: "Repair Pro must set the labour price first.",
+      reason: "Service Pro must set the labour price first.",
     };
   }
   return { ok: true };
@@ -317,13 +317,13 @@ export function validateOfferAmount(input: {
   if (input.side === "motorist") {
     const base = input.lastProOfferMajor ?? input.proBaseMajor;
     if (base == null || base <= 0) {
-      return { ok: false, reason: "Wait for the Repair Pro to set a price." };
+      return { ok: false, reason: "Wait for the Service Pro to set a price." };
     }
     const minAllowed = base * (1 - MAX_DISCOUNT_PERCENT / 100);
     if (input.amountMajor < minAllowed - 0.001) {
       return {
         ok: false,
-        reason: `Counter cannot be more than ${MAX_DISCOUNT_PERCENT}% below the Repair Pro price.`,
+        reason: `Counter cannot be more than ${MAX_DISCOUNT_PERCENT}% below the Service Pro price.`,
       };
     }
   }

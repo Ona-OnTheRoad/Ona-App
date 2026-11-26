@@ -5,7 +5,7 @@
  * are translated here. The raw text is never shown to the customer.
  */
 export type ReleaseErrorKind =
-  /** The Repair Pro has not finished their bank details: not the customer's to fix. */
+  /** The Service Pro has not finished their bank details: not the customer's to fix. */
   | "pro_bank"
   /** The payout provider could not complete the transfer right now. */
   | "transfer"
@@ -25,7 +25,7 @@ const TRANSFER =
 
 export function friendlyReleaseError(
   raw: string | null | undefined,
-  proFirstName = "your Repair Pro",
+  proFirstName = "your Service Pro",
 ): FriendlyReleaseError | null {
   const text = String(raw ?? "").trim();
   if (!text) return null;

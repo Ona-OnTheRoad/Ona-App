@@ -178,7 +178,7 @@ export const towConfig: HelpFlowConfig = {
           {meetPro === "yes" ? (
             <div className="pt-1">
               <p className={cn("pb-1 text-[12px] font-bold", ink)}>
-                Select the repair pro to meet you
+                Select the service pro to meet you
               </p>
               <div className="flex flex-col gap-1">
                 {MEET_PRO_OPTIONS.map((t) => (

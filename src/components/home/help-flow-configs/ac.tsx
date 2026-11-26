@@ -33,7 +33,7 @@ export const acConfig: HelpFlowConfig = {
     location: AC_FINAL_COPY.location,
   },
   progressDefaultTotal: 11,
-  sendLabel: "Find a Repair Pro",
+  sendLabel: "Find a Service Pro",
   busyLabel: "Finding help",
   buildPayload: (ctx) => defaultBuildPayload("ac", composeAcProblem as ComposeProblemFn, ctx),
 };

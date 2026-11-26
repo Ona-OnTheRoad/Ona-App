@@ -27,7 +27,7 @@ function humanStatus(
       tone: "ok",
     };
   }
-  // The payout queue is between Ona and the Repair Pro: once the customer has
+  // The payout queue is between Ona and the Service Pro: once the customer has
   // released, their payment is simply "Released".
   const onHold =
     meta.payoutSuspended === true ||

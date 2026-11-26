@@ -16,7 +16,7 @@ export type MotoristVehicle = {
   commonIssues?: string[];
 };
 
-/** Full profile after Motorist or Repair Pro signup */
+/** Full profile after Motorist or Service Pro signup */
 export interface Guarantor {
   fullName: string;
   phone: string;
@@ -30,11 +30,11 @@ export interface UserProfile {
   accountType: AccountType;
   /**
    * Role the user originally signed up as (main / primary account).
-   * Stays fixed when they switch Motorist ↔ Repair Pro.
+   * Stays fixed when they switch Motorist ↔ Service Pro.
    * motorist = Customer Role, professional = Professional Role.
    */
   primaryAccountType?: AccountType;
-  /** Both Customer + Repair Pro side profiles exist */
+  /** Both Customer + Service Pro side profiles exist */
   dualRole?: boolean;
   /** Last Tap-to-Switch time (ISO) from profiles.last_role_switch_at */
   lastRoleSwitchAt?: string;
@@ -78,7 +78,7 @@ export interface UserProfile {
   averageRatingGiven?: number;
   avgResponseMinutes?: number;
   completionRate?: number;
-  /** Repair Pro */
+  /** Service Pro */
   businessName?: string;
   services?: ProService[];
   /**
@@ -99,7 +99,7 @@ export interface UserProfile {
   bankCode?: string;
   cacDocumentName?: string;
   cacDocumentDataUrl?: string;
-  /** Repair Pro guarantor (compulsory) */
+  /** Service Pro guarantor (compulsory) */
   guarantor?: Guarantor;
   /** National / primary ID number (country-specific) */
   idNumber?: string;
@@ -122,7 +122,7 @@ export interface UserProfile {
   ninVerified?: boolean;
   bvnVerified?: boolean;
   /**
-   * Repair pro only, computed by the server: Tier 2 is care-approved and the
+   * Service pro only, computed by the server: Tier 2 is care-approved and the
    * account is not suspended or rejected. Gates all job fetching and polling.
    */
   proJobsEligible?: boolean;

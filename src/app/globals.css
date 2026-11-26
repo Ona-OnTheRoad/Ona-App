@@ -1077,7 +1077,7 @@ body {
 
 /**
  * Auth text boxes — Motorist “Your account” style (screenshot reference).
- * Soft light-gray wells on sheet #C8C9CD. Used for Log In + all Repair Pro signup.
+ * Soft light-gray wells on sheet #C8C9CD. Used for Log In + all Service Pro signup.
  */
 .om-auth-field,
 input.om-auth-field,
@@ -1160,7 +1160,7 @@ select.om-auth-field::placeholder,
   -webkit-text-fill-color: #64748b !important;
 }
 
-/* Repair Pro signup shell — same sheet gray as Motorist Your account */
+/* Service Pro signup shell — same sheet gray as Motorist Your account */
 .om-pro-signup-fields
   input:not([type="file"]):not([type="range"]):not(.sr-only),
 .om-pro-signup-fields select,
@@ -1338,7 +1338,7 @@ button.om-cta-dark-gray:disabled,
   box-shadow: none !important;
 }
 
-/* Live Repair Pro map pin — solid Message-orange glyph + gentle pulse when Live */
+/* Live Service Pro map pin — solid Message-orange glyph + gentle pulse when Live */
 @keyframes om-live-glyph-pulse {
   0%,
   100% {

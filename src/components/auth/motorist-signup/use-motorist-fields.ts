@@ -13,7 +13,7 @@ import { loadSignupDraft } from "@/lib/signup-draft";
 import { useApp } from "@/lib/store";
 import { composeFullName } from "./name-utils";
 
-/** Account + service-area form state, including the Repair Pro prefill/lock effect. */
+/** Account + service-area form state, including the Service Pro prefill/lock effect. */
 export function useMotoristFields() {
   const { userProfile, isAuthenticated } = useApp();
   const phoneCodes = useMemo(() => getPhoneCodeOptions(), []);
@@ -53,7 +53,7 @@ export function useMotoristFields() {
   const [city, setCity] = useState("Lagos");
   const [area, setArea] = useState("");
   /**
-   * Dual-role signup: prefill from Repair Pro, but only dim/lock fields
+   * Dual-role signup: prefill from Service Pro, but only dim/lock fields
    * that already have values. Empty NIN/BVN stay fully editable (not dimmed).
    */
   const [dualSignup, setDualSignup] = useState(false);
@@ -82,7 +82,7 @@ export function useMotoristFields() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Prefill from existing Repair Pro lock only fields that already have values
+  // Prefill from existing Service Pro lock only fields that already have values
   useEffect(() => {
     const dualRole = fromMenu || fromProfile;
     if (!dualRole || !isAuthenticated) {
@@ -138,7 +138,7 @@ export function useMotoristFields() {
     } else {
       setGenderLocked(false);
     }
-    // Customer DOB: never pre-fill from Repair Pro / vault (initial state is "").
+    // Customer DOB: never pre-fill from Service Pro / vault (initial state is "").
     // Intentionally do not call setDateOfBirth re-runs must not wipe user input.
     if (em) {
       setEmail(em);

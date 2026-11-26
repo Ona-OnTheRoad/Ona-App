@@ -27,7 +27,7 @@ export function useTechnicians(
   /** Live marketplace pros only (no demo seed keeps first paint light). */
   const technicians = useMemo(() => {
     // Marketplace: only server Live pros (is_online + repair_pro role).
-    // /api/pros is role-aware: an active Repair Pro only ever receives their
+    // /api/pros is role-aware: an active Service Pro only ever receives their
     // own trade's Live pros (server-side), so pros use the same feed too.
     const base = cloudTechs !== null ? cloudTechs : [];
 
@@ -62,7 +62,7 @@ export function useTechnicians(
       };
     });
 
-    // Motorist home: never inject the signed-in Repair Pro into discovery
+    // Motorist home: never inject the signed-in Service Pro into discovery
     // (they look for other pros). Pro self-card stays for pro dashboard only.
     if (accountType === "motorist" || accountType == null) {
       return withDistance.filter(
@@ -127,12 +127,12 @@ export function useTechnicians(
   }, [backendUserId, accountType]);
 
   const visibleTechnicians = useMemo(() => {
-    // Dual-role: never show own Repair Pro pin when browsing as Customer
+    // Dual-role: never show own Service Pro pin when browsing as Customer
     const exclude = new Set(
       Array.from(discoveryExcludeProIds || []).map((id) => String(id)),
     );
     if (backendUserId) exclude.add(String(backendUserId));
-    // An active Repair Pro's market is pinned to their own primary trade
+    // An active Service Pro's market is pinned to their own primary trade
     // (server-enforced). Pin the client category too so search / filters stay
     // inside that trade and the category tab cannot widen the feed.
     const effectiveCategory: ServiceCategory =

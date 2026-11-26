@@ -1,6 +1,6 @@
 /**
  * Which side of the app a notification belongs to. A user can be both a customer
- * (motorist) and a Repair Pro on one account, so rows tied to a job carry the
+ * (motorist) and a Service Pro on one account, so rows tied to a job carry the
  * recipient's role on that job. No audience = shown in both modes.
  */
 export type NotificationAudience = "motorist" | "professional";

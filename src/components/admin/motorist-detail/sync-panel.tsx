@@ -37,7 +37,7 @@ export function SyncPanel({
                     ? " + "
                     : ""}
                   {data.identity.roles.includes("repair_pro")
-                    ? "Repair Pro"
+                    ? "Service Pro"
                     : ""}
                 </span>
               ) : (

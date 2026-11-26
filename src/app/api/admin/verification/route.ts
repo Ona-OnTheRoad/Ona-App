@@ -142,7 +142,7 @@ async function buildVerificationResponse(
       full_name: p?.full_name ?? "",
       email: p?.email ?? null,
       phone: p?.phone ?? null,
-      label: pr.business_name || pr.primary_service || "Repair Pro",
+      label: pr.business_name || pr.primary_service || "Service Pro",
       status: pr.status,
       t1_status: "auto" as const,
       t1_label: "Phone (automatic)",
@@ -344,7 +344,7 @@ export async function PATCH(req: Request) {
           subject,
           action,
           message:
-            "Customer Tier 2 approved dual Repair Pro T2 auto-approved when both accounts exist.",
+            "Customer Tier 2 approved dual Service Pro T2 auto-approved when both accounts exist.",
         });
       }
       if (action === "customer_t2_reject") {
@@ -448,7 +448,7 @@ export async function PATCH(req: Request) {
         .eq("user_id", userId)
         .maybeSingle();
       if (fetchErr) return apiFail(fetchErr.message, 500);
-      if (!pro) return apiFail("Repair Pro not found", 404);
+      if (!pro) return apiFail("Service Pro not found", 404);
 
       if (!approve) {
         const { error } = await supabase

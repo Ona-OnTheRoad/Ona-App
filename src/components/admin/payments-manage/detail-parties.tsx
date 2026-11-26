@@ -44,7 +44,7 @@ export function DetailParties({ detail }: { detail: Detail }) {
             margin: "0 0 4px",
           }}
         >
-          Repair Pro (payee)
+          Service Pro (payee)
         </p>
         <p style={{ margin: 0, fontWeight: 700 }}>
           {detail.parties?.pro?.name || ""}

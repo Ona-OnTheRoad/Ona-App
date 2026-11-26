@@ -13,7 +13,7 @@ export function tripProTechnicians(
           name: job.repairProName,
           shortName: job.repairProName.split(" ")[0] || "Pro",
           serviceType: job.serviceType,
-          roleLabel: "Repair Pro",
+          roleLabel: "Service Pro",
           photo: job.repairProPhoto || "",
           rating: 5,
           reviewCount: 0,

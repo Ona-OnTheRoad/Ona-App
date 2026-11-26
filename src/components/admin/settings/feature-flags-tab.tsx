@@ -11,7 +11,7 @@ const FLAGS: { key: keyof FeaturesSection; label: string; help: string }[] = [
   },
   {
     key: "signupPro",
-    label: "Repair Pro signup",
+    label: "Service Pro signup",
     help: "Allow new professional accounts",
   },
   {

@@ -26,7 +26,7 @@ export function isPaidOrLiveStatus(st: string | undefined): boolean {
 /**
  * agreed, or expired because the customer ran out of time to pay (the server
  * re-opens it to agreed + a new pay link, and decides precisely). A CANCELLED
- * job is never payable: if the Repair Pro cancels, the customer must not be
+ * job is never payable: if the Service Pro cancels, the customer must not be
  * offered "Finish payment".
  */
 export function isJobPayable(

@@ -111,7 +111,7 @@ export function rowToJob(row: Record<string, unknown>): JobRecord {
         ? String(row.vehicle_label).trim() || null
         : null,
     repairProId: String(row.repair_pro_id || ""),
-    repairProName: String(row.repair_pro_name || "Repair Pro"),
+    repairProName: String(row.repair_pro_name || "Service Pro"),
     repairProPhoto: row.repair_pro_photo
       ? String(row.repair_pro_photo)
       : undefined,

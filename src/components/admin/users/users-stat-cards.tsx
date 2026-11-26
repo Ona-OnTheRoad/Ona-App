@@ -29,7 +29,7 @@ export function UsersStatCards({
       sub: "t2 kyc queue",
     },
     {
-      label: "REPAIR PROS",
+      label: "SERVICE PROS",
       value: prosCount,
       sub: "pro accounts",
     },

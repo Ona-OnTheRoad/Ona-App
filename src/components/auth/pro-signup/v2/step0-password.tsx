@@ -57,7 +57,7 @@ export function Step0Password({
             Confirm your password
           </h1>
           <p className="mt-1.5 text-xs text-ona-muted leading-relaxed">
-            Enter your existing Customer account password to add the Repair Pro role.
+            Enter your existing Customer account password to add the Service Pro role.
           </p>
         </div>
 

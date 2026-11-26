@@ -10,7 +10,7 @@ import { JOB_CLOSED_MESSAGE } from "@/lib/chat-expired";
 import { ProPastJobRow } from "./pro-past-job-row";
 import { useProPastJobs } from "./use-pro-past-jobs";
 
-/** Menu → Jobs for Repair Pro: past jobs with full detail links */
+/** Menu → Jobs for Service Pro: past jobs with full detail links */
 export function ProJobsPage({
   isLight,
   backendUserId,

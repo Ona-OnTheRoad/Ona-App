@@ -1,5 +1,5 @@
 /**
- * Repair Pro pipeline + profile Supabase-backed (Phase B).
+ * Service Pro pipeline + profile Supabase-backed (Phase B).
  * Client may still mirror local draft; DB is source of truth when configured.
  */
 

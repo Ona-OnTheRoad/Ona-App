@@ -105,7 +105,7 @@ export async function findNearestExpressPro(opts: {
 
   const nameById = new Map<string, string>();
   for (const p of profileRows ?? []) {
-    nameById.set(String(p.id), String(p.full_name || "Repair Pro"));
+    nameById.set(String(p.id), String(p.full_name || "Service Pro"));
   }
 
   let best: {
@@ -134,7 +134,7 @@ export async function findNearestExpressPro(opts: {
     if (!best || km < best.distanceKm) {
       best = {
         proId: row.user_id,
-        proName: nameById.get(row.user_id) || "Repair Pro",
+        proName: nameById.get(row.user_id) || "Service Pro",
         lat: plat,
         lng: plng,
         distanceKm: km,

@@ -144,7 +144,7 @@ export function DeleteAccountScreen() {
                       Customer account only
                     </p>
                     <p className="text-[12px] font-normal text-ona-muted mt-0.5">
-                      Keep your Repair Pro account active
+                      Keep your Service Pro account active
                     </p>
                   </div>
                   <input
@@ -160,7 +160,7 @@ export function DeleteAccountScreen() {
                 <label className="flex items-center justify-between p-4 cursor-pointer hover:bg-ona-field/50 transition-colors">
                   <div className="min-w-0 pr-3">
                     <p className="text-[14px] font-bold text-ona-ink">
-                      Repair Pro account only
+                      Service Pro account only
                     </p>
                     <p className="text-[12px] font-normal text-ona-muted mt-0.5">
                       Keep your Customer account active

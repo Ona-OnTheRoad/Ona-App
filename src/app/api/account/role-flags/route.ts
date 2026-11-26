@@ -6,7 +6,7 @@ import { loadIdentityRoleFlags } from "@/lib/server/identity/role-flags";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** Caller's own dual-role flags (motorist + repair pro side tables). */
+/** Caller's own dual-role flags (motorist + service pro side tables). */
 export async function GET(req: Request) {
   if (!isSupabaseAdminConfigured()) {
     return apiFail("Server not configured", 503);

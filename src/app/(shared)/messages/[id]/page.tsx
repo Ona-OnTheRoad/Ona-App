@@ -34,7 +34,7 @@ import { unlockAudio } from "@/lib/sound-tone";
 import type { ChatMessage } from "@/lib/types";
 
 /**
- * Single job chat: Motorist ↔ Repair Pro.
+ * Single job chat: Motorist ↔ Service Pro.
  * Polls + Realtime so both parties see each other's messages.
  * Ended jobs: popup → View (read-only) or OK (leave list).
  */

@@ -55,7 +55,7 @@ export function useProSignupForm({
   const [idNumber, setIdNumber] = useState("");
   const [bvn, setBvn] = useState("");
 
-  // Guarantor (compulsory for Repair Pro)
+  // Guarantor (compulsory for Service Pro)
   const [guarantorName, setGuarantorName] = useState("");
   const [guarantorPhone, setGuarantorPhone] = useState("");
   const [guarantorAddress, setGuarantorAddress] = useState("");

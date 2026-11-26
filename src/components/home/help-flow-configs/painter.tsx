@@ -37,7 +37,7 @@ export const painterConfig: HelpFlowConfig = {
     material: PAINTER_FINAL_COPY.supply,
   },
   progressDefaultTotal: 11,
-  sendLabel: "Find a Repair Pro",
+  sendLabel: "Find a Service Pro",
   busyLabel: "Finding help",
   buildPayload: (ctx) => {
     const supplyChoice = (ctx.extraState.supplyChoice as string) ?? null;

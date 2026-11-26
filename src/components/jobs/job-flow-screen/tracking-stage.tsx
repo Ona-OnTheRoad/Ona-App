@@ -62,9 +62,9 @@ export function renderTrackingStage(
     };
   /** Short catalog trade Mechanic, Vulcanizer, Tow, etc. */
   const tradeLabel =
-    PRO_SERVICE_LABELS[job.serviceType] || job.serviceType || "Repair Pro";
+    PRO_SERVICE_LABELS[job.serviceType] || job.serviceType || "Service Pro";
   /**
-   * Customer track-trip header: trade name, not generic "Repair Pro".
+   * Customer track-trip header: trade name, not generic "Service Pro".
    * e.g. "Mechanic is OnTheRoad"
    */
   const trackTripTitle =

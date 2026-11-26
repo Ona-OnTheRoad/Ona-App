@@ -80,7 +80,7 @@ export function VerificationScreen({ isLight: propIsLight }: VerificationScreenP
             isPro={isPro}
           />
 
-          {/* Tier 3 & Tier 4 rendered ONLY for Repair Pro (Image 2 Screen 1) */}
+          {/* Tier 3 & Tier 4 rendered ONLY for Service Pro (Image 2 Screen 1) */}
           {isPro && (
             <>
               {/* Card 3: Tier 3 Face Liveness Verification */}

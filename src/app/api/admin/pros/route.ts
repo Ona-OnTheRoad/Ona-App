@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * List ALL Repair Pros from repair_pro_profiles (source of truth),
+ * List ALL Service Pros from repair_pro_profiles (source of truth),
  * joined to profiles not filtered by profiles.role alone.
  * Dual-account users who signed up customer-first still appear here.
  */
@@ -157,6 +157,6 @@ export async function GET(req: Request) {
     if (e instanceof AdminAuthError) {
       return apiFail(e.message, e.status, "auth");
     }
-    return apiFail("Failed to list Repair Pros", 500);
+    return apiFail("Failed to list Service Pros", 500);
   }
 }

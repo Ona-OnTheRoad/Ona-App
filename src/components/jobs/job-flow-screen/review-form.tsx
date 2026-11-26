@@ -33,7 +33,7 @@ export function ReviewForm({
     <div className="space-y-4 pt-3">
       <OnaTitle
         title="How was the job?"
-        subtitle={`Rate your ${PRO_SERVICE_LABELS[job.serviceType] || "Repair Pro"} and leave a short review`}
+        subtitle={`Rate your ${PRO_SERVICE_LABELS[job.serviceType] || "Service Pro"} and leave a short review`}
       />
       {payoutPending ? (
         <p className="inline-block rounded-full bg-ona-brand-soft px-3 py-1.5 text-[11px] font-semibold text-ona-brand-ink">

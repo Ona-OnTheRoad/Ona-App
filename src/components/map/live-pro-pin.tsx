@@ -14,7 +14,7 @@ const ICON_SIZE = 24;
 const BOX = 32;
 
 /**
- * Live Repair Pro map pin: solid Message-orange trade icon.
+ * Live Service Pro map pin: solid Message-orange trade icon.
  * Name above + labour below (stacked, never overlapping).
  */
 export function LiveProPin({
@@ -66,7 +66,7 @@ export function LiveProPin({
           justifyContent: "center",
         }}
         title={`${tech.name} · ${tech.roleLabel} · Live${priceLabel ? ` · ${priceLabel}` : ""}`}
-        aria-label={`${tech.name}, live repair pro${priceLabel ? `, labour ${priceLabel}` : ""}`}
+        aria-label={`${tech.name}, live service pro${priceLabel ? `, labour ${priceLabel}` : ""}`}
         onClick={(e) => {
           e.stopPropagation();
           onSelect?.(tech.id);

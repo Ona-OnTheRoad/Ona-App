@@ -80,7 +80,7 @@ const STAFF_ROLES = new Set([
 ]);
 
 /**
- * Permanently remove a customer / repair pro.
+ * Permanently remove a customer / service pro.
  *
  * Never deletes history. Jobs, bookings, payments and reviews are protected by
  * foreign keys, so a user with any history cannot be hard-deleted; in that case

@@ -8,9 +8,9 @@ describe("one-account role-switch copy", () => {
     );
   });
 
-  it("keeps the exact Repair Pro-missing message", () => {
+  it("keeps the exact Service Pro-missing message", () => {
     expect(EN["menu.noPro"]).toBe(
-      "You don't have a Repair Pro account yet. Finish signup to go Live and receive jobs.",
+      "You don't have a Service Pro account yet. Finish signup to go Live and receive jobs.",
     );
   });
 });

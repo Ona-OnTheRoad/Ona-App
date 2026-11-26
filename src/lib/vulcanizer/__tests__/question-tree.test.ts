@@ -263,7 +263,7 @@ describe("vulcanizer question tree", () => {
     expect(text).toContain("lekki phase 1");
   });
 
-  it("allows Find a Repair Pro with zero to four photos", () => {
+  it("allows Find a Service Pro with zero to four photos", () => {
     expect(canFindVulcanizerPro(0)).toBe(true);
     expect(canFindVulcanizerPro(4)).toBe(true);
     expect(canAdvanceText("ok")).toBe(true);

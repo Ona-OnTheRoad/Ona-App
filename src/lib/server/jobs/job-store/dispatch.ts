@@ -303,7 +303,7 @@ async function findNextPro(
 
   return {
     id: best.user_id,
-    name: profile?.full_name || best.business_name || "Repair Pro",
+    name: profile?.full_name || best.business_name || "Service Pro",
     photo: profile?.avatar_url || undefined,
   };
 }
@@ -699,7 +699,7 @@ export async function rerouteDeclinedJob(
       userId: job.motoristId,
       category: "requests",
       priority: "high",
-      title: "Repair Pro not available",
+      title: "Service Pro not available",
       body: `${cancelledProName} could not take this request. Finding another pro…`,
       href: `/jobs/${job.id}`,
       actionType: "open_job",
@@ -1003,7 +1003,7 @@ export async function armSurfacePairingDeadline(
 }
 
 /**
- * Tow "add another repair pro": the motorist was pinged at the 60-min mark
+ * Tow "add another service pro": the motorist was pinged at the 60-min mark
  * to enter their current address. Dispatches the linked scheduled request --
  * stamps the address + coordinates and moves it to sequential_pairing.
  * Caller is responsible for immediately booking the first pro via

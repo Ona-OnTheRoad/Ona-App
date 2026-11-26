@@ -215,7 +215,7 @@ describe("happy paths", () => {
     expect(rows("profiles")[0].email).toBe(NEW_EMAIL);
   });
 
-  it("Repair Pro with a guarantor on file must give the matching name", async () => {
+  it("Service Pro with a guarantor on file must give the matching name", async () => {
     newDb({ repair_pro_guarantors: [{ user_id: "user-1", full_name: "Bola Guarantor" }] });
     // wrong name
     await call(loginSend, "/api/auth/otp/send", { channel: "email", target: EMAIL }, null);

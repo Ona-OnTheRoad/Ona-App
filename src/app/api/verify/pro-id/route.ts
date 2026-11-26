@@ -18,7 +18,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Repair Pro submits government ID / NIN / skill docs for admin review.
+ * Service Pro submits government ID / NIN / skill docs for admin review.
  * Writes to repair_pro_profiles so care queues see media + numbers instantly.
  *
  * IMPORTANT: Care-approved T2 / account status is sticky re-submit cannot demote.

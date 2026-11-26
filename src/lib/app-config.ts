@@ -133,7 +133,7 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
       "Other roadside help",
     ],
     homeBanner: "",
-    loginSubtitle: "Car owner and Repair Pro",
+    loginSubtitle: "Car owner and Service Pro",
     appTitle: "Ona",
     mainMenuOverrides: {},
     proMenuOverrides: {},

@@ -9,7 +9,7 @@ const POLL_MS = 4000;
 const WATCHED: ReadonlySet<Phase> = new Set(["summary", "paying", "bank_pay", "mock_embed"]);
 
 /**
- * While any payment screen is open, watch the job. If the Repair Pro (or anyone)
+ * While any payment screen is open, watch the job. If the Service Pro (or anyone)
  * cancels it, tell the checkout so it can stop asking the customer to pay. Without
  * this the "Finish payment" screen, including the bank-transfer account number,
  * stayed up on a job that was already cancelled.

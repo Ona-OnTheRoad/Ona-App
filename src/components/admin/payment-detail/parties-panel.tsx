@@ -40,7 +40,7 @@ export function PartiesPanel({
       </div>
       <div>
         <h2 className="om-admin-h2" style={{ marginTop: 0 }}>
-          Repair Pro (payee)
+          Service Pro (payee)
         </h2>
         <p style={{ margin: "4px 0", fontWeight: 700 }}>
           {data?.parties?.pro?.name || ""}

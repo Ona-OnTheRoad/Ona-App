@@ -29,7 +29,7 @@ export const IG_HOME: Record<keyof typeof EN_HOME, string> = {
   "home.collapsePanel": "Pịa ala iji mechie",
   "home.noProsAvailable": "Enweghị Pro",
   "home.noProsMatch": "Enweghị pro dabara",
-  "home.noRepairPros": "Enweghị Repair Pro nso",
+  "home.noRepairPros": "Enweghị Service Pro nso",
   "home.refresh": "Megharịa",
   "home.refreshing": "Na-emegharị…",
   "home.nearbyCount": "{total} nso",

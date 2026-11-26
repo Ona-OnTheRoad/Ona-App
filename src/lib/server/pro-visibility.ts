@@ -1,6 +1,6 @@
 import "server-only";
 /**
- * Apply automatic Repair Pro search-visibility ladder after verification events.
+ * Apply automatic Service Pro search-visibility ladder after verification events.
  * Care never sets visibility_tier manually only approve T2 / T4 (and pro completes liveness + BVN).
  */
 

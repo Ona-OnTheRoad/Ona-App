@@ -54,7 +54,7 @@ export function useAccountActions(
     async (live: boolean): Promise<string | null> => {
       // Pro stays Live until they turn it off (or leave pro mode / log out)
       if (live && accountType !== "professional") {
-        return "Switch to Repair Pro mode first.";
+        return "Switch to Service Pro mode first.";
       }
       if (!backendUserId || !isAppBackendOnline()) {
         // Never flip local Away while server stays Live require server for both

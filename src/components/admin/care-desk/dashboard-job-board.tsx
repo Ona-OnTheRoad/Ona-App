@@ -91,7 +91,7 @@ export function DashboardJobBoard({
                         {j.motorist_name || "Motorist"}
                       </div>
                       <div className="text-gray-400 dark:text-gray-500 text-[11px]">
-                        {j.repair_pro_name || "Repair Pro"}
+                        {j.repair_pro_name || "Service Pro"}
                       </div>
                     </td>
                     <td className="py-2.5 font-semibold text-gray-900 dark:text-gray-100">

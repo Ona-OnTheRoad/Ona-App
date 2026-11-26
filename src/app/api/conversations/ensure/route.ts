@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       return apiFail("Forbidden", 403, "forbidden");
     }
     if (!repairProId) {
-      return apiFail("Request has no repair pro assigned yet", 400);
+      return apiFail("Request has no service pro assigned yet", 400);
     }
 
     const { data: existing, error: existingError } = await sb

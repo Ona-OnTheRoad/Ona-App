@@ -41,7 +41,7 @@ export const mechanicConfig: HelpFlowConfig = {
     location: MECHANIC_FINAL_COPY.location,
   },
   progressDefaultTotal: 10,
-  sendLabel: "Find a Repair Pro",
+  sendLabel: "Find a Service Pro",
   busyLabel: "Finding help",
   buildPayload: (ctx) => defaultBuildPayload("mechanic", composeMechanicProblem as ComposeProblemFn, ctx),
 };

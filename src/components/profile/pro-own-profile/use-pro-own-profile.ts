@@ -12,7 +12,7 @@ import { useApp } from "@/lib/store";
 import { useFeedbackToast } from "@/lib/use-feedback-toast";
 import type { UserProfile } from "@/lib/types";
 
-/** State, sync, save and live toggle for the Repair Pro own profile. */
+/** State, sync, save and live toggle for the Service Pro own profile. */
 export function useProOwnProfile() {
   const {
     userProfile,

@@ -5,14 +5,14 @@ import { formatMoney } from "@/lib/pricing";
 
 interface Props {
   job: JobRecord;
-  /** Repair Pro only: the 87.5 / 5 / 7.5 rows. Omit for the customer total-only card. */
+  /** Service Pro only: the 87.5 / 5 / 7.5 rows. Omit for the customer total-only card. */
   releaseProMajor?: number;
   releasePlatformMajor?: number;
   releaseVatMajor?: number | null;
   releaseTotalMajor?: number | null;
 }
 
-/** Escrow release breakdown card (split rows are Repair Pro only; customers never see 95/5). */
+/** Escrow release breakdown card (split rows are Service Pro only; customers never see 95/5). */
 export function ReleaseSplitCard({
   job,
   releaseProMajor,

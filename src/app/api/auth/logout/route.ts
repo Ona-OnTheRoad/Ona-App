@@ -22,7 +22,7 @@ const bodySchema = z
 
 /**
  * Server-side logout: force Go Live OFF before session ends.
- * Prevents ghost "online" Repair Pros after logout or account switch.
+ * Prevents ghost "online" Service Pros after logout or account switch.
  * Requires a valid access_token bare userId is ignored (DoS / force-offline).
  */
 export async function POST(req: Request) {

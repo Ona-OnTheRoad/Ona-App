@@ -40,7 +40,7 @@ export async function applyEvent(
   }
   const nextRaw = assertTransition(job.status, event);
   // Customer (or admin/system) cancelling during negotiation/search fully
-  // cancels the job only a Repair Pro decline enters the "searching"
+  // cancels the job only a Service Pro decline enters the "searching"
   // (find-another-pro) phase, and that path is handled by rerouteDeclinedJob.
   const next =
     event.type === "CANCEL" && nextRaw === "searching" ? "cancelled" : nextRaw;
@@ -295,7 +295,7 @@ export async function applyEvent(
       // Hard fail (bad bank, etc.) stay completed so customer can retry or open dispute
       throw new Error(
         payout.message ||
-          "Could not pay the Repair Pro (87.5%). Funds stay held. Fix pro bank details or contact support.",
+          "Could not pay the Service Pro (87.5%). Funds stay held. Fix pro bank details or contact support.",
       );
     };
 
@@ -385,7 +385,7 @@ export async function applyEvent(
     } else {
       throw new Error(
         payout.message ||
-          "Could not release payout to Repair Pro. Funds still held.",
+          "Could not release payout to Service Pro. Funds still held.",
       );
     }
   }

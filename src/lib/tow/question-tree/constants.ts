@@ -13,8 +13,8 @@ export const TOW_FINAL_COPY = {
   destination: "Preferred destination (workshop name or area)?",
   colour: "Vehicle colour",
   extra: "Any other detail you want the tow operator to know?",
-  meetPro: "Do you also need a repair pro to meet you at the destination?",
-  meetProYes: "Yes, also send a repair pro",
+  meetPro: "Do you also need a service pro to meet you at the destination?",
+  meetProYes: "Yes, also send a service pro",
   meetProNo: "No, proceed with Tow only",
 } as const;
 

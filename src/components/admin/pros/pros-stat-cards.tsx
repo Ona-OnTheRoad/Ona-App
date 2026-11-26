@@ -14,7 +14,7 @@ export function ProsStatCards({
   t4Pending,
 }: ProsStatCardsProps) {
   const cards = [
-    { label: "REPAIR PROS", value: totalPros },
+    { label: "SERVICE PROS", value: totalPros },
     { label: "PRO NEEDS ACTION", value: needsAction },
     { label: "PRO T2 PENDING", value: t2Pending },
     { label: "PRO T4 PENDING", value: t4Pending },

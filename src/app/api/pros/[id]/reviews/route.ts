@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/pros/[id]/reviews live motorist reviews for a Repair Pro profile.
+ * GET /api/pros/[id]/reviews live motorist reviews for a Service Pro profile.
  * Public so motorists can read before requesting / offering.
  */
 export async function GET(

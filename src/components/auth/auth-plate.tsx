@@ -46,7 +46,7 @@ export function AuthPlate({
 }
 
 /**
- * Login text-box standard same for Motorist, Repair Pro, Log In, Admin.
+ * Login text-box standard same for Motorist, Service Pro, Log In, Admin.
  * `!` Tailwind + `om-auth-field` CSS force the gray well (no white override).
  * #E2E3E7 fill · #9A9EA6 border · h-10 · rounded-md · 13px
  */
@@ -74,7 +74,7 @@ export const authFieldStyle: CSSProperties = {
 };
 
 /**
- * Locked identity fields when adding a second role (Motorist ↔ Repair Pro).
+ * Locked identity fields when adding a second role (Motorist ↔ Service Pro).
  * Prefilled from the first account dimmed (not blurred), non-editable.
  */
 export const authLockedFieldStyle: CSSProperties = {

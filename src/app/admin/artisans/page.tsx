@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-/** Merged into /admin/pros (Repair Pros hub · Review tab) */
+/** Merged into /admin/pros (Service Pros hub · Review tab) */
 export default function ArtisansRedirect() {
   const router = useRouter();
   useEffect(() => {
@@ -11,7 +11,7 @@ export default function ArtisansRedirect() {
   }, [router]);
   return (
     <p style={{ padding: 24, fontFamily: "system-ui" }}>
-      Redirecting to Repair Pros · Review…
+      Redirecting to Service Pros · Review…
     </p>
   );
 }

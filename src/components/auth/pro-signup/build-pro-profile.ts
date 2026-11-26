@@ -16,7 +16,7 @@ type BuildInput = {
   refCode: string | undefined;
 };
 
-/** Assemble the Repair Pro UserProfile submitted by signup. */
+/** Assemble the Service Pro UserProfile submitted by signup. */
 export function buildProProfile({
   form,
   focus,

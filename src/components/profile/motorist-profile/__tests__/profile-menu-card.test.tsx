@@ -47,9 +47,9 @@ vi.mock("@/lib/i18n", () => ({
         "settings.hub.supportDetail": "Help, legal & about",
         "settings.hub.addresses": "Addresses & location",
         "settings.hub.addressesDetail": "Home, Work, service area & pin",
-        "settings.hub.becomePro": "Become a Repair Pro",
+        "settings.hub.becomePro": "Become a Service Pro",
         "settings.hub.becomeProDetail": "Apply with your motorist details",
-        "settings.hub.switchPro": "Switch to Repair Pro",
+        "settings.hub.switchPro": "Switch to Service Pro",
         "settings.hub.switchProDetail": "Open Pro dashboard & Go Live",
       };
       return dict[key] || key;
@@ -82,14 +82,14 @@ describe("ProfileMenuCard", () => {
     ]);
   });
 
-  it("renders 'Become a Repair Pro' gateway item for pure motorist (!hasProAccount)", () => {
+  it("renders 'Become a Service Pro' gateway item for pure motorist (!hasProAccount)", () => {
     mockHasProAccount = false;
     render(<ProfileMenuCard />);
 
     expect(screen.queryByText("Availability & Scheduling")).toBeNull();
     expect(screen.queryByText("Pricing & Services")).toBeNull();
 
-    const becomePro = screen.getByText("Become a Repair Pro");
+    const becomePro = screen.getByText("Become a Service Pro");
     expect(becomePro).toBeTruthy();
     expect(screen.getByText("Apply with your motorist details")).toBeTruthy();
 
@@ -99,15 +99,15 @@ describe("ProfileMenuCard", () => {
     );
   });
 
-  it("renders 'Switch to Repair Pro' gateway item for dual-role user (hasProAccount)", async () => {
+  it("renders 'Switch to Service Pro' gateway item for dual-role user (hasProAccount)", async () => {
     mockHasProAccount = true;
     render(<ProfileMenuCard />);
 
     expect(screen.queryByText("Availability & Scheduling")).toBeNull();
     expect(screen.queryByText("Pricing & Services")).toBeNull();
-    expect(screen.queryByText("Become a Repair Pro")).toBeNull();
+    expect(screen.queryByText("Become a Service Pro")).toBeNull();
 
-    const switchPro = screen.getByText("Switch to Repair Pro");
+    const switchPro = screen.getByText("Switch to Service Pro");
     expect(switchPro).toBeTruthy();
     expect(screen.getByText("Open Pro dashboard & Go Live")).toBeTruthy();
 

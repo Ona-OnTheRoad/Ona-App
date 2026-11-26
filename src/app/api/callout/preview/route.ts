@@ -86,7 +86,7 @@ export async function POST(req: Request) {
     if (!origin) {
       return apiOk({
         eligible: true,
-        reason: "Waiting for Repair Pro location",
+        reason: "Waiting for Service Pro location",
         classification,
         quote: null,
       });

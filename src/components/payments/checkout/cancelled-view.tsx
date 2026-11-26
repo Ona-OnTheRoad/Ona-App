@@ -19,7 +19,7 @@ export function CancelledView({
   const by = job ? cancelledByLabel(job) : "other";
   const who =
     by === "pro"
-      ? "The Repair Pro cancelled this request."
+      ? "The Service Pro cancelled this request."
       : by === "customer"
         ? "This request was cancelled."
         : "This request was cancelled.";

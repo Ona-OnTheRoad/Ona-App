@@ -14,7 +14,7 @@ export function TotalsCards({
         [
           ["Users", dash?.users, "/admin/users"],
           ["Customers", dash?.motorists, "/admin/motorists"],
-          ["Repair Pros", dash?.repairPros, "/admin/pros"],
+          ["Service Pros", dash?.repairPros, "/admin/pros"],
           ["Pending Pros", dash?.pendingPros, "/admin/pros"],
           ["Open jobs", dash?.openJobs ?? board?.jobs.length, "/admin/jobs"],
           ["Completed", dash?.completedJobs, "/admin/jobs"],

@@ -64,7 +64,7 @@ export function DashboardCaseActions({
               </span>
             </div>
             <div>
-              <span className="text-gray-500 dark:text-gray-400">Repair Pro: </span>
+              <span className="text-gray-500 dark:text-gray-400">Service Pro: </span>
               <span className="font-medium text-gray-900 dark:text-white">
                 {String(job?.repairProName || job?.repair_pro_name || "—")}
               </span>
@@ -78,7 +78,7 @@ export function DashboardCaseActions({
               onClick={() =>
                 void runAction(
                   { type: "release_escrow", jobId: selectedJobId },
-                  "Enter password to release escrow to the Repair Pro.",
+                  "Enter password to release escrow to the Service Pro.",
                 )
               }
               className="bg-ona-brand-btn hover:bg-ona-brand-press text-white px-3.5 py-2 rounded-xl text-xs font-semibold shadow-xs disabled:opacity-50 cursor-pointer transition-colors"

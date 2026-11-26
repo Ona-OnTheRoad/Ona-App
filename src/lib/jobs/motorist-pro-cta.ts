@@ -1,5 +1,5 @@
 /**
- * Customer CTA for a Repair Pro row / profile:
+ * Customer CTA for a Service Pro row / profile:
  *
  * - **Open** → customer already has a live pipeline job with this pro
  * (negotiate, pay, booked, en route, working, confirm release, dispute…)

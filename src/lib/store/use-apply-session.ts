@@ -188,7 +188,7 @@ export function useApplySession(
 
       // Dual-role flags: never replace server truth with vault alone.
       // Vault is device-local and often only holds the last active side (e.g. motorist),
-      // which incorrectly showed "no Repair Pro account" for dual-role users.
+      // which incorrectly showed "no Service Pro account" for dual-role users.
       setHasMotoristAccount((prev) =>
         Boolean(
           prev ||
