@@ -1,3 +1,4 @@
+import "server-only";
 import type { UserProfile } from "@/lib/types";
 
 type RawGuarantor = {
