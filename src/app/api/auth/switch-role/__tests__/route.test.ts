@@ -31,6 +31,7 @@ function db(opts: {
     profiles: [{ data: existing }, ...(opts.updateReplies ?? [{ data: opts.updated ?? { ...existing, role, primary_role: existing.primary_role || existing.role, role_switch_count: existing.role === role ? 0 : 1 } }])],
     motorist_profiles: [...(role === "motorist" ? [{ data: mot }] : []), { data: mot }, { data: mot }],
     repair_pro_profiles: [...(role === "repair_pro" ? [{ data: professional }] : []), { data: null }, { data: professional }, { data: professional }],
+    repair_pro_guarantors: role === "repair_pro" ? [{ data: null }] : [],
   });
   mocks.service.mockReturnValue(sb);
   return sb;
@@ -61,8 +62,8 @@ describe("POST /api/auth/switch-role characterization", () => {
     });
     expect(sb.calls[2].steps[0]).toEqual({ method: "update", args: [{ role: "repair_pro", primary_role: "motorist", role_switch_count: 1, last_role_switch_at: expect.any(String) }] });
     expect(mocks.ensureRole).toHaveBeenCalledWith(sb, "user-1", "repair_pro", { userId: "user-1", source: "switch_role" });
-    expect(sb.calls.slice(4).map(c => c.table)).toEqual(["repair_pro_profiles", "motorist_profiles", "motorist_profiles", "repair_pro_profiles"]);
-    expect(sb.calls[6].steps[0].args).toEqual(["user_id, created_at"]);
+    expect(sb.calls.slice(4).map(c => c.table)).toEqual(["repair_pro_profiles", "motorist_profiles", "repair_pro_guarantors", "motorist_profiles", "repair_pro_profiles"]);
+    expect(sb.calls[7].steps[0].args).toEqual(["user_id, created_at"]);
   });
 
   it("switches to customer with customer-first bank and keeps the pro Away", async () => {

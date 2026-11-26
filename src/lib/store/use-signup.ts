@@ -196,6 +196,7 @@ export function useSignup(
         vehicleMake: res.profile.vehicleMake ?? normalized.vehicleMake,
         vehicleModel: res.profile.vehicleModel ?? normalized.vehicleModel,
         vehicleYear: res.profile.vehicleYear ?? normalized.vehicleYear,
+        guarantor: res.profile.guarantor ?? normalized.guarantor,
       };
       if (!existingPrimary) {
         writeStoredPrimaryAccount(res.profile.accountType);

@@ -1,4 +1,5 @@
 import "server-only";
+import { normalizeGuarantor } from "@/lib/server/identity/guarantor";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { profileToUserProfile, resolvePrimaryAccountType } from "@/lib/supabase/mappers";
@@ -85,7 +86,7 @@ export async function loadOrRepairLoginProfile(
     admin
       .from("repair_pro_profiles")
       .select(
-        "user_id, business_name, primary_service, services, years_experience, bio, service_radius_km, nin_verified, bvn_verified, face_liveness_verified, face_liveness_at, liveness_passed_at, docs_status, docs_rating_boost_applied, certification_file_name, certification_file_url, skills, rating_avg, jobs_completed, labour_prices, pricing_currency, vehicle_focus, created_at, bank_name, bank_account_name, bank_account_number, bank_code",
+        "user_id, business_name, primary_service, services, years_experience, bio, service_radius_km, nin_verified, bvn_verified, face_liveness_verified, face_liveness_at, liveness_passed_at, docs_status, docs_rating_boost_applied, certification_file_name, certification_file_url, skills, rating_avg, jobs_completed, labour_prices, pricing_currency, vehicle_focus, guarantor, created_at, bank_name, bank_account_name, bank_account_number, bank_code",
       )
       .eq("user_id", userId)
       .maybeSingle(),
@@ -137,12 +138,24 @@ export async function loadOrRepairLoginProfile(
   const hasPro = Boolean(pr) || accountType === "professional";
 
   if (accountType === "professional") {
+    let guarantorRow: unknown = null;
+    try {
+      const { data: gData } = await admin
+        .from("repair_pro_guarantors")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
+      guarantorRow = gData ?? null;
+    } catch {
+      guarantorRow = null;
+    }
     const proExtra = pr as
       | (RepairProRow & {
           labour_prices?: UserProfile["servicePrices"];
           pricing_currency?: import("@/lib/pricing").AppCurrency;
           jobs_completed?: number;
           vehicle_focus?: Record<string, string | undefined>;
+          guarantor?: unknown;
         })
       | null;
     const vf = (proExtra?.vehicle_focus || {}) as Record<
@@ -183,6 +196,9 @@ export async function loadOrRepairLoginProfile(
         bankAccountName: bankAccountName || undefined,
         bankAccountNumber: bankAccountNumber || undefined,
         bankCode: bankCode || undefined,
+        guarantor:
+          normalizeGuarantor(guarantorRow) ??
+          normalizeGuarantor(proExtra?.guarantor),
       }),
       hasMotorist,
       hasPro,

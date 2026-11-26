@@ -496,7 +496,7 @@ export async function POST(req: Request) {
   // Persist guarantor for Service Pro
   if (b.guarantor) {
     try {
-      await admin.from("repair_pro_guarantors").upsert(
+      const { error: gErr } = await admin.from("repair_pro_guarantors").upsert(
         {
           user_id: userId,
           full_name: b.guarantor.fullName,
@@ -507,6 +507,25 @@ export async function POST(req: Request) {
         },
         { onConflict: "user_id" },
       );
+      if (gErr) {
+        console.warn("profile guarantor upsert failed:", gErr.message);
+      }
+    } catch {
+      /* non-fatal */
+    }
+    try {
+      await admin
+        .from("repair_pro_profiles")
+        .update({
+          guarantor: {
+            fullName: b.guarantor.fullName,
+            phone: b.guarantor.phone,
+            address: b.guarantor.address || null,
+            occupation: b.guarantor.occupation || null,
+            relationship: b.guarantor.relationship,
+          },
+        })
+        .eq("user_id", userId);
     } catch {
       /* non-fatal */
     }

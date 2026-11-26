@@ -11,6 +11,7 @@ import {
   type ProPipelineStatus,
 } from "@/lib/server/modules/pros/pipeline";
 import { writePlatformAudit } from "@/lib/server/modules/platform-audit";
+import { normalizeGuarantor } from "@/lib/server/identity/guarantor";
 import { getUserFromRequest, requireUser } from "@/lib/server/auth-utils";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
@@ -196,6 +197,27 @@ export async function PATCH(req: Request) {
     .single();
 
   if (error) return apiFail(error.message, 500);
+
+  if (b.guarantor !== undefined) {
+    const normalizedGuarantor = normalizeGuarantor(b.guarantor);
+    if (normalizedGuarantor?.fullName && normalizedGuarantor.phone) {
+      try {
+        await supabase.from("repair_pro_guarantors").upsert(
+          {
+            user_id: b.userId,
+            full_name: normalizedGuarantor.fullName,
+            phone: normalizedGuarantor.phone,
+            address: normalizedGuarantor.address || null,
+            occupation: normalizedGuarantor.occupation || null,
+            relationship: normalizedGuarantor.relationship || "Guarantor",
+          },
+          { onConflict: "user_id" },
+        );
+      } catch {
+        /* non-fatal */
+      }
+    }
+  }
 
   const { data: refreshed } = await supabase
     .from("repair_pro_profiles")

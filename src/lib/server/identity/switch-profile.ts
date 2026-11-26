@@ -5,6 +5,7 @@ import { dbRoleToAccountType } from "@/lib/dual-role";
 import type { ProfileRow, RepairProRow } from "@/lib/supabase/types";
 import type { AccountType, ProService, UserProfile } from "@/lib/types";
 import { isProService } from "@/lib/services";
+import { normalizeGuarantor } from "./guarantor";
 import { listUserRoles, type RoleType } from "./identity-sync";
 
 /** Internal projection: keep switch-specific selects, precedence and output fields. */
@@ -42,6 +43,7 @@ export async function loadSwitchedIdentityProfile(
     bankAccountName?: string;
     bankAccountNumber?: string;
     bankCode?: string;
+    guarantor?: UserProfile["guarantor"];
   } = {};
 
   // Load both side tables so bank can be merged either way on switch
@@ -122,6 +124,17 @@ export async function loadSwitchedIdentityProfile(
   };
 
   if (accountType === "professional") {
+    let guarantorRow: unknown = null;
+    try {
+      const { data: gData } = await admin
+        .from("repair_pro_guarantors")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
+      guarantorRow = gData ?? null;
+    } catch {
+      guarantorRow = null;
+    }
     const ds = proBank?.docs_status;
     const proT2Approved =
       pr?.gov_id_review_status === "approved" ||
@@ -185,6 +198,9 @@ export async function loadSwitchedIdentityProfile(
         motRow?.bank_account_number ||
         undefined,
       bankCode: proBank?.bank_code || motRow?.bank_code || undefined,
+      guarantor:
+        normalizeGuarantor(guarantorRow) ??
+        normalizeGuarantor((pr as { guarantor?: unknown } | null)?.guarantor),
     };
   } else {
     extras = {

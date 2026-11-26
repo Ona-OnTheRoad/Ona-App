@@ -36,6 +36,15 @@ const bodySchema = z.object({
   skillProofUrl: z.string().max(6_000_000).optional(),
   primaryService: z.string().max(40).optional(),
   businessName: z.string().max(120).optional(),
+  guarantor: z
+    .object({
+      fullName: z.string().min(1).max(120),
+      phone: z.string().min(4).max(32),
+      address: z.string().max(240).optional(),
+      occupation: z.string().max(120).optional(),
+      relationship: z.string().max(80).optional(),
+    })
+    .optional(),
 });
 
 function last4(raw: string): string | null {
@@ -212,6 +221,15 @@ export async function POST(req: Request) {
       if (parsed.data.primaryService) {
         patch.primary_service = parsed.data.primaryService;
       }
+      if (parsed.data.guarantor) {
+        patch.guarantor = {
+          fullName: parsed.data.guarantor.fullName.trim(),
+          phone: parsed.data.guarantor.phone.trim(),
+          address: parsed.data.guarantor.address?.trim() || null,
+          occupation: parsed.data.guarantor.occupation?.trim() || null,
+          relationship: parsed.data.guarantor.relationship?.trim() || "Guarantor",
+        };
+      }
     }
 
     const protectedApply = protectProClientPatch(existing, patch);
@@ -256,6 +274,25 @@ export async function POST(req: Request) {
       .from("profiles")
       .update({ role: "repair_pro", updated_at: now })
       .eq("id", userId);
+
+    if (kind === "profile_submit" && parsed.data.guarantor) {
+      const g = parsed.data.guarantor;
+      try {
+        await admin.from("repair_pro_guarantors").upsert(
+          {
+            user_id: userId,
+            full_name: g.fullName.trim(),
+            phone: g.phone.trim(),
+            address: g.address?.trim() || null,
+            occupation: g.occupation?.trim() || null,
+            relationship: g.relationship?.trim() || "Guarantor",
+          },
+          { onConflict: "user_id" },
+        );
+      } catch {
+        /* non-fatal */
+      }
+    }
 
     if (kind === "gov_id" || kind === "nin") {
       try {

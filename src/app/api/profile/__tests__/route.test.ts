@@ -276,6 +276,18 @@ describe("GET /api/profile", () => {
     expect((await response.json()).data.profile).toMatchObject({ accountType: "professional", bankName: "Customer Bank", services: [], docsStatus: "approved", dualRole: false });
   });
 
+  it("falls back to repair_pro_profiles.guarantor when repair_pro_guarantors is null", async () => {
+    requireUserMock.mockResolvedValue(authOk("user-1"));
+    makeSb({
+      profile: { data: { ...sharedProfile, role: "repair_pro" } },
+      mot: { data: motorist },
+      pro: { data: { ...pro, guarantor: { fullName: "Bola Fallback", phone: "08012345678", relationship: "Uncle" } } },
+      guarantor: { data: null },
+    });
+    const body = await (await GET(req())).json();
+    expect(body.data.profile.guarantor).toMatchObject({ fullName: "Bola Fallback", phone: "08012345678", relationship: "Uncle" });
+  });
+
   it.each([[new Error("read failed"), "read failed"], ["non-error failure", "Could not load profile"]])("keeps thrown read errors mapped to 500", async (failure, message) => {
     requireUserMock.mockResolvedValue(authOk("user-1"));
     createServiceSupabaseMock.mockImplementationOnce(() => { throw failure; });

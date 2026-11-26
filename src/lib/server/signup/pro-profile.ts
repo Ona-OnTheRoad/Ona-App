@@ -144,6 +144,17 @@ export async function writeProProfile(
       bank_account_resolved_at: ctx.bankResolvedAt ?? null,
       bank_account_number: input.bankAccountNumber || null,
       bank_code: input.bankCode || null,
+      ...(input.guarantor
+        ? {
+            guarantor: {
+              fullName: input.guarantor.fullName,
+              phone: input.guarantor.phone,
+              address: input.guarantor.address || null,
+              occupation: input.guarantor.occupation || null,
+              relationship: input.guarantor.relationship,
+            },
+          }
+        : {}),
       docs_status: docsWasApproved ? "approved" : docsStatus,
       docs_rating_boost_applied: docsWasApproved
         ? existingPro?.docs_rating_boost_applied === true
@@ -182,17 +193,22 @@ export async function writeProProfile(
   // Insert guarantor for Service Pro (compulsory)
   if (input.guarantor) {
     try {
-      await supabase.from("repair_pro_guarantors").upsert(
-        {
-          user_id: userId,
-          full_name: input.guarantor.fullName,
-          phone: input.guarantor.phone,
-          address: input.guarantor.address || null,
-          occupation: input.guarantor.occupation || null,
-          relationship: input.guarantor.relationship,
-        },
-        { onConflict: "user_id" },
-      );
+      const { error: gErr } = await supabase
+        .from("repair_pro_guarantors")
+        .upsert(
+          {
+            user_id: userId,
+            full_name: input.guarantor.fullName,
+            phone: input.guarantor.phone,
+            address: input.guarantor.address || null,
+            occupation: input.guarantor.occupation || null,
+            relationship: input.guarantor.relationship,
+          },
+          { onConflict: "user_id" },
+        );
+      if (gErr) {
+        console.warn("signup guarantor upsert failed:", gErr.message);
+      }
     } catch {
       /* non-fatal - table may not exist yet */
     }

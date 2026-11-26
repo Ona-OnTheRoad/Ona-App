@@ -1,4 +1,5 @@
 import "server-only";
+import { normalizeGuarantor } from "@/lib/server/identity/guarantor";
 import { isProJobsEligible } from "@/lib/server/pro-readiness";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { profileToUserProfile, resolvePrimaryAccountType } from "@/lib/supabase/mappers";
@@ -178,26 +179,9 @@ export async function loadOwnIdentityProfile(userId: string): Promise<{ profile:
       bankAccountNumber:
         pr?.bank_account_number || mot?.bank_account_number || undefined,
       bankCode: pr?.bank_code || mot?.bank_code || undefined,
-      guarantor: guarantorRes.data
-        ? (() => {
-            const g = guarantorRes.data as {
-              full_name?: string | null;
-              phone?: string | null;
-              address?: string | null;
-              occupation?: string | null;
-              relationship?: string | null;
-              linked_user_id?: string | null;
-            };
-            return {
-              fullName: g.full_name || "",
-              phone: g.phone || "",
-              address: g.address || undefined,
-              occupation: g.occupation || undefined,
-              relationship: g.relationship || "",
-              linkedUserId: g.linked_user_id || undefined,
-            };
-          })()
-        : undefined,
+      guarantor:
+        normalizeGuarantor(guarantorRes.data) ??
+        normalizeGuarantor((pr as { guarantor?: unknown } | null)?.guarantor),
       phoneVerified:
         Boolean((p as { phone_verified?: boolean }).phone_verified) ||
         Boolean(mot?.phone_verified) ||

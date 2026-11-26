@@ -5,6 +5,7 @@ import {
   lockMessageForSection,
 } from "@/lib/artisan/verification-order";
 import type { ArtisanVerificationProfile } from "@/lib/artisan/types";
+import type { UserProfile } from "@/lib/types";
 import { govIdNeedsBack } from "./helpers";
 import type { OnboardingState } from "./use-onboarding-state";
 
@@ -17,6 +18,9 @@ type Params = {
   setMsg: OnboardingState["setMsg"];
   setErr: OnboardingState["setErr"];
   setGatePopup: OnboardingState["setGatePopup"];
+  updateUserProfile?: (
+    partial: Partial<Pick<UserProfile, "phoneVerified" | "guarantor">>,
+  ) => void;
 };
 
 const getAccessToken = async (): Promise<string | null> => {
@@ -65,6 +69,7 @@ export function useVerifyActions({
   setMsg,
   setErr,
   setGatePopup,
+  updateUserProfile,
 }: Params) {
   /** Government ID: type + number + photo → server queue for admin/care */
   const submitGovIdForReview = async () => {
@@ -185,15 +190,29 @@ export function useVerifyActions({
     }
     setBusy(true);
     setErr(null);
+    const gName = profile.guarantor?.fullName?.trim() || "";
+    const gPhone = profile.guarantor?.phone?.trim() || "";
+    const guarantorPayload =
+      gName && gPhone
+        ? {
+            fullName: gName,
+            phone: gPhone,
+            relationship: "Guarantor",
+          }
+        : undefined;
     const apiErr = await postProVerify({
       kind: "profile_submit",
       primaryService: profile.trade?.service,
       businessName: profile.fullName,
+      ...(guarantorPayload ? { guarantor: guarantorPayload } : {}),
     });
     if (apiErr) {
       setErr(apiErr);
       setBusy(false);
       return;
+    }
+    if (guarantorPayload) {
+      updateUserProfile?.({ guarantor: guarantorPayload });
     }
     const next: ArtisanVerificationProfile = {
       ...profile,
