@@ -19,7 +19,7 @@ export const HOME_UI_SESSION_KEY = "ona-session-home-ui";
 /** Device-level theme fallback when no account is active */
 export const DEVICE_THEME_KEY = "ona-theme";
 
-/** Public directory id for the signed-in Repair Pro (motorists can open this profile). */
+/** Public directory id for the signed-in Service Pro (motorists can open this profile). */
 export const SELF_PRO_TECH_ID = "pro-self";
 
 /** Refresh GPS every 20 minutes while the app tab is open/visible */

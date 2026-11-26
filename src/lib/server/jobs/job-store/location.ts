@@ -4,7 +4,7 @@ import { nowIso } from "./mappers";
 import { persist } from "./cache";
 import { getJob } from "./reads";
 
-/** Live GPS from Repair Pro or Motorist during active trip. */
+/** Live GPS from Service Pro or Motorist during active trip. */
 export async function updateTripPartyLocation(input: {
   jobId: string;
   actor: "motorist" | "repair_pro";

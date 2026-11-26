@@ -213,7 +213,7 @@ export function SignupsTable({
                           {isAdmin
                             ? "Admin"
                             : isPro
-                            ? "Repair pro"
+                            ? "Service pro"
                             : "Motorist"}
                         </span>
                       </span>

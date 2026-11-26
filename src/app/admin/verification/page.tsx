@@ -69,7 +69,7 @@ function AdminVerificationContent() {
           Verification Board
         </h1>
         <p className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-          Review customer identity documents, verify repair pro credentials, and manage vetting queues.
+          Review customer identity documents, verify service pro credentials, and manage vetting queues.
         </p>
       </div>
 

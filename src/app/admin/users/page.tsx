@@ -70,7 +70,7 @@ export default function AdminUsersPage() {
               .join(" ");
             extra = vehicle || pro?.primary_service || "Customer";
           } else if (u.role === "repair_pro") {
-            extra = pro?.primary_service || "Repair Pro";
+            extra = pro?.primary_service || "Service Pro";
           } else {
             extra = "Admin";
           }

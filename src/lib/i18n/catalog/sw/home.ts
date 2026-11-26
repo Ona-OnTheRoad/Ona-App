@@ -29,7 +29,7 @@ export const SW_HOME: Record<keyof typeof EN_HOME, string> = {
   "home.collapsePanel": "Telezesha chini kufunga",
   "home.noProsAvailable": "Hakuna Pro",
   "home.noProsMatch": "Hakuna pro anayelingana",
-  "home.noRepairPros": "Hakuna Repair Pro karibu",
+  "home.noRepairPros": "Hakuna Service Pro karibu",
   "home.refresh": "Onyesha upya",
   "home.refreshing": "Inaonyesha upya…",
   "home.nearbyCount": "{total} karibu",

@@ -28,7 +28,7 @@ export async function notifyPayoutReleased(job: JobRecord) {
         category: "payments",
         priority: "critical",
         title: "Payment released",
-        body: "Your payment has been released to your Repair Pro.",
+        body: "Your payment has been released to your Service Pro.",
         href: `/jobs/${job.id}`,
         actionType: "view_payment",
         actionPayload: { jobId: job.id },
@@ -74,7 +74,7 @@ export async function notifyPayoutPendingSettlement(job: JobRecord) {
         `job-complete-${job.id}`,
       );
     }
-    // Only the Repair Pro is told: the payout queue is between Ona and the Pro.
+    // Only the Service Pro is told: the payout queue is between Ona and the Pro.
     // The customer's money is already released from their side.
     const body =
       "Payout processing auto-retry every 10 minutes for up to 24 hours. You'll be notified when payment is released.";

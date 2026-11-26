@@ -19,7 +19,7 @@ async function notifyOfferPlaced(job: JobRecord, offer: JobOffer) {
     const toUserId =
       offer.side === "repair_pro" ? job.motoristId : job.repairProId;
     if (!toUserId) return;
-    const who = offer.side === "repair_pro" ? "Repair Pro" : "Customer";
+    const who = offer.side === "repair_pro" ? "Service Pro" : "Customer";
     await insertNotification({
       userId: toUserId,
       category: "requests",

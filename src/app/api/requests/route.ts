@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Legacy `service_requests` list for a user (motorist or repair pro side).
+ * Legacy `service_requests` list for a user (motorist or service pro side).
  * Mirrors what the browser used to query directly, just with an explicit
  * ownership check instead of relying on RLS.
  */

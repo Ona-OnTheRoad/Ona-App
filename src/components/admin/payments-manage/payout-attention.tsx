@@ -35,7 +35,7 @@ export function PayoutAttention({
           {`₦${floatShort.availableNgn.toLocaleString("en-NG", { minimumFractionDigits: 2 })}`}{" "}
           is {`₦${floatShort.shortNgn.toLocaleString("en-NG", { minimumFractionDigits: 2 })}`}{" "}
           short of {naira(floatShort.owedMinor)} owed to {floatShort.pendingCount}{" "}
-          Repair Pro{floatShort.pendingCount === 1 ? "" : "s"}. Top up Available,
+          Service Pro{floatShort.pendingCount === 1 ? "" : "s"}. Top up Available,
           or wait for collected funds to settle; they retry every 10 minutes and
           are suspended after 24 hours.
         </div>

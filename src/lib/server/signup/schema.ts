@@ -77,7 +77,7 @@ export const bodySchema = z.object({
   bankCode: z.string().optional(),
   /** Dual signup: keep the other role's side table */
   keepOtherRole: z.boolean().optional().default(true),
-  /** Repair Pro guarantor */
+  /** Service Pro guarantor */
   guarantor: z
     .object({
       fullName: z.string().min(2),

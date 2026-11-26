@@ -124,7 +124,7 @@ export function registerJobsPaths(registry: OpenAPIRegistry) {
     method: "get",
     path: "/api/jobs/pro-incoming-status",
     tags: tag,
-    summary: "Repair pro incoming-request status",
+    summary: "Service pro incoming-request status",
     authenticated: true,
   });
 }

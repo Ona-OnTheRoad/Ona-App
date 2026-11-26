@@ -83,10 +83,10 @@ export function HomePanel({
 
   const isMotorist = isAuthenticated && accountType === "motorist";
 
-  /** Repair Pro: market shows ONLY their primary trade. */
+  /** Service Pro: market shows ONLY their primary trade. */
   const isProMode = accountType === "professional";
 
-  /** Talk box only after they tap a trade. Never for Repair Pro. */
+  /** Talk box only after they tap a trade. Never for Service Pro. */
   const tradeChosen = talkBoxAfterTradePick(category);
   const isFlow = hasHelpFlow(category, isProMode);
   /** Trade grid showing: its block scrolls inside the sheet on short phones. */
@@ -187,7 +187,7 @@ export function HomePanel({
             help={help}
           />
 
-          {/* Mechanic / Vulcanizer / Tow / Battery / A/C / Body / Electric / Scan / Fashion / Plumber / Carpenter / Painter / Solar / Generator: no radius Repair Pro is found by urgency. */}
+          {/* Mechanic / Vulcanizer / Tow / Battery / A/C / Body / Electric / Scan / Fashion / Plumber / Carpenter / Painter / Solar / Generator: no radius Service Pro is found by urgency. */}
           {isProMode || (tradeChosen && !isFlow) ? <RadiusSlider /> : null}
           {isProMode && specialtyPickerOpen ? <SpecialtyFilterBar /> : null}
           {isProMode ? <FilterChips /> : null}
@@ -212,7 +212,7 @@ export function HomePanel({
         />
       )}
 
-      {/* Talk box: no scroll. Repair Pro list may scroll. */}
+      {/* Talk box: no scroll. Service Pro list may scroll. */}
       {hasExtraContent ? (
         <div
           className={cn(

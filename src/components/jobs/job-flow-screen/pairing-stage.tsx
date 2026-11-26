@@ -11,12 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { SearchingScreen } from "../job-flow/searching-screen";
 import { CancelConfirmFromState } from "./shared-pieces";
 import type { JobFlowCtx } from "./use-job-flow-controller";
+import { isProPlaceholderName } from "@/lib/pro-label";
 
 /**
  * SSPE DISPATCH STATES: waiting_for_selected / selected_review /
  * sequential_pairing / waiting_for_pro / reserved. All countdowns render
  * pairing_deadline (display-only, D3), the server sweep owns timing.
- * Repair Pro: full-page UI deleted for these, panel only (see guards hook).
+ * Service Pro: full-page UI deleted for these, panel only (see guards hook).
  */
 export function renderPairingStage(
   c: JobFlowCtx,
@@ -80,17 +81,17 @@ export function renderPairingStage(
     job.status === "waiting_for_selected"
       ? `Waiting for ${proLabel}`
       : reviewing
-        ? "Repair Pro reviewing your request"
+        ? "Service Pro reviewing your request"
         : `Finding a ${proLabel} near you`;
 
   const subtitle =
     job.status === "waiting_for_selected"
       ? `${firstNameOnly(
-          job.repairProName === "Repair Pro" ? null : job.repairProName,
+          isProPlaceholderName(job.repairProName) ? null : job.repairProName,
           proLabel,
         )} has received your request and will respond shortly.`
       : reviewing
-        ? "The Repair Pro is reviewing your request and will respond shortly."
+        ? "The Service Pro is reviewing your request and will respond shortly."
         : finding
           ? "We’re finding another pro with the same skill."
           : "A pro is checking your request.";

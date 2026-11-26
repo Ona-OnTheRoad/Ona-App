@@ -15,17 +15,17 @@ export const GUIDES: Record<string, GuideEntry> = {
     use: "Look at the cards to see the big picture. Click a job on the board to act on it. Use the search bar to find a specific customer or job. The backup button at the bottom lets you save a copy of the database.",
   },
   jobs: {
-    what: "This page lists every service job that people have requested on Ona. A job is when a customer asks for help (like car repair or towing) and a repair pro accepts it.",
+    what: "This page lists every service job that people have requested on Ona. A job is when a customer asks for help (like car repair or towing) and a service pro accepts it.",
     how: "The page fetches all jobs from the database and shows them in a table. You can see who requested the job, which pro is working on it, and what stage it's in. Each row has a dropdown to change the job status.",
     use: "Scan the table to find a job. Use the dropdown in the 'Update' column to move a job to the next stage (e.g., from 'matched' to 'accepted'). Only change status when you know what you're doing it affects what both the customer and pro see.",
   },
   disputes: {
-    what: "This page shows jobs where the customer and the repair pro are arguing maybe the customer says the work wasn't done, or the pro says they weren't paid properly.",
+    what: "This page shows jobs where the customer and the service pro are arguing maybe the customer says the work wasn't done, or the pro says they weren't paid properly.",
     how: "Jobs in dispute or appeal appear here. Each row shows the job details and who is involved. You can decide what happens to the money by choosing: give it all to the pro, refund the customer fully, or split it between them.",
     use: "Read the job details carefully. Check messages and evidence. Pick an outcome (Full to Pro, Full refund, or Partial split) and enter the split percentages if needed. Click the action button to apply your decision. The money will move based on your choice.",
   },
   "payments-control": {
-    what: "This is the money control room. Every time someone pays for a service on Ona, the money sits in a special holding account (called escrow). This page lets you see all that money and decide when to release it to the repair pro.",
+    what: "This is the money control room. Every time someone pays for a service on Ona, the money sits in a special holding account (called escrow). This page lets you see all that money and decide when to release it to the service pro.",
     how: "The page has tabs: Payments (all transactions), Disputes, Audit (history of who did what), Failed payouts, and Commission report. You can filter payments by status Held, Pending, Paid, Failed, Refunded, etc.",
     use: "Start on the Payments tab. Find a payment and click it to see details. From there you can release money to the pro (after the job is done), refund the customer (if the job wasn't done), or retry a failed payout. Sensitive actions need a temporary access code. Always write a note explaining why.",
   },
@@ -46,7 +46,7 @@ export const GUIDES: Record<string, GuideEntry> = {
   },
   "payment-detail": {
     what: "This page shows you everything about one single payment. Think of it as a magnifying glass you can see who paid, who should receive the money, and exactly what state the money is in.",
-    how: "The page loads the full payment record, including who the customer is, which repair pro is getting paid, the job it's for, and every attempt that was made to transfer the money. It also checks if there's a risk of paying twice.",
+    how: "The page loads the full payment record, including who the customer is, which service pro is getting paid, the job it's for, and every attempt that was made to transfer the money. It also checks if there's a risk of paying twice.",
     use: "Review the details carefully. Use the buttons at the bottom to take action: 'Refund customer' to send money back, 'Force payout to pro' if the payment is stuck, or 'Stop processing' to pause things. Always write a note explaining why you're taking action.",
   },
   security: {
@@ -65,7 +65,7 @@ export const GUIDES: Record<string, GuideEntry> = {
     use: "Use the Directory tab to browse all customers. Use the search box to find someone specific. Click a customer to see their full profile, ID documents, bank info, and job history. From the detail drawer you can approve their ID or freeze their account.",
   },
   accounts: {
-    what: "This page manages account reconciliation, dual-role profiles (Customer + Repair Pro), and duplicate identity resolution across Ona.",
+    what: "This page manages account reconciliation, dual-role profiles (Customer + Service Pro), and duplicate identity resolution across Ona.",
     how: "The system monitors identity documents (NIN, BVN) and phone records. When duplicates or role registry mismatches occur, candidates appear here for merge or review.",
     use: "Review duplicate identity candidates and approve merges to combine histories into a single canonical identity. Check recent sync events to audit auth and payout synchronization.",
   },
@@ -75,12 +75,12 @@ export const GUIDES: Record<string, GuideEntry> = {
     use: "Use this to investigate a customer. Check if their ID is valid. See if their bank details look correct. Review their past jobs to see if there are any problems. You can approve their ID verification or freeze their account from here.",
   },
   pros: {
-    what: "This page lists every Repair Pro on Ona the mechanics, tow truck drivers, and other service people who fix cars and help customers. You can find any pro who has ever registered.",
+    what: "This page lists every Service Pro on Ona the mechanics, tow truck drivers, and other service people who fix cars and help customers. You can find any pro who has ever registered.",
     how: "The page has two tabs: Directory (all pros in a table) and Review (pros waiting for their documents to be checked). You can search by name, email, or phone. Click a pro row to open a detailed drawer with their full info, documents, and bank details.",
     use: "Use the Directory tab to see all pros. Use the search box to find a specific pro. Click a pro to see their full profile, ID documents, certifications, bank account, and job history. From the detail drawer you can approve their documents or suspend their account.",
   },
   users: {
-    what: "This page shows every single person on Ona customers, repair pros, and admin staff all in one list. It's like the master phonebook of everyone who uses the app.",
+    what: "This page shows every single person on Ona customers, service pros, and admin staff all in one list. It's like the master phonebook of everyone who uses the app.",
     how: "The page loads all users from the database. You can search by name, email, or phone, and filter by role (Customer, Pro, Admin). Each row shows their role with a colored badge, and you can change their role or toggle their account active/inactive.",
     use: "Use the search box to find someone. Check what role they have. If someone needs a different role (like promoting a pro to admin), use the dropdown to change it. If someone is causing problems, you can deactivate their account to block them from using the app.",
   },
@@ -90,12 +90,12 @@ export const GUIDES: Record<string, GuideEntry> = {
     use: "Look at the numbers. If any are not zero, click the link to go review those people. For example, click 'Customer T2 pending' to go verify those customers' IDs. This helps keep the platform safe by making sure everyone is who they say they are.",
   },
   messages: {
-    what: "This page shows all the conversations happening between customers and repair pros. It's like a big inbox where you can see what people are saying to each other about their jobs.",
+    what: "This page shows all the conversations happening between customers and service pros. It's like a big inbox where you can see what people are saying to each other about their jobs.",
     how: "The page has two columns: on the left, a list of conversations (each linked to a job); on the right, the messages for the selected conversation. You can read the full chat history for any job.",
     use: "Click a conversation on the left to read the messages on the right. This is useful when investigating disputes you can see exactly what the customer and pro agreed on, what the customer said was wrong, and what the pro said they fixed.",
   },
   reviews: {
-    what: "This page shows all the ratings and reviews that customers have left for repair pros after a job is done. It's like a report card for every pro.",
+    what: "This page shows all the ratings and reviews that customers have left for service pros after a job is done. It's like a report card for every pro.",
     how: "The page loads all reviews from the database and shows them in a table with the rating (stars), who wrote it, and what they said. You can scan through to spot anything unusual.",
     use: "Look through the reviews. If you see a suspicious review (maybe fake or abusive), you can investigate the customer and pro involved. This helps keep the marketplace fair and honest.",
   },
@@ -125,12 +125,12 @@ export const GUIDES: Record<string, GuideEntry> = {
     use: "If something is broken (like payments), you can turn it off temporarily while it gets fixed. If you're testing a new feature, you can turn it on for everyone. But be careful turning off a feature like 'signup' will stop new people from creating accounts.",
   },
   services: {
-    what: "This page shows the list of service types (trades) that repair pros can offer like engine repair, towing, AC repair, etc. You can turn each one on or off.",
+    what: "This page shows the list of service types (trades) that service pros can offer like engine repair, towing, AC repair, etc. You can turn each one on or off.",
     how: "The page loads the service catalog and shows each service with a toggle switch. Flip a switch to enable or disable that service type. You need to click Save for changes to take effect.",
     use: "If a certain service type is not available in your area, turn it off so customers don't request it. If you add a new service, make sure it's enabled here. Keep the names aligned with what customers see when signing up.",
   },
   matching: {
-    what: "This page controls how the app decides which repair pros to show to customers. It's like setting rules for a dating app how far away a pro can be, how many pros to show, and what qualifications they need.",
+    what: "This page controls how the app decides which service pros to show to customers. It's like setting rules for a dating app how far away a pro can be, how many pros to show, and what qualifications they need.",
     how: "The page has input fields for: search radius (how many kilometers around the customer), max technicians (how many pros to show), minimum rating (only show pros with at least this rating), and verification requirements.",
     use: "Increase the radius if customers in rural areas aren't finding pros. Decrease it in cities to keep results relevant. Raise the minimum rating if you want only top-rated pros. Don't change these without understanding how they affect customers finding help.",
   },

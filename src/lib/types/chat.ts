@@ -14,7 +14,7 @@ export interface ChatMessage {
 }
 
 /**
- * One job/booking conversation between a Customer and a Repair Pro.
+ * One job/booking conversation between a Customer and a Service Pro.
  * Threads never mix roles or jobs.
  */
 export interface MessageThread {

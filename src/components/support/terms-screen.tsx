@@ -31,7 +31,7 @@ export function TermsScreen() {
             </p>
 
             <p>
-              Customers request help; Repair Pros may accept jobs when Live and
+              Customers request help; Service Pros may accept jobs when Live and
               verified. Escrow holds agreed labour until work is confirmed. Spare
               parts are never part of Ona labour prices.
             </p>

@@ -144,7 +144,7 @@ export function ContentMenusTab({
             </label>
             <input
               type="text"
-              value={content.loginSubtitle || "Motorist & Repair Pro"}
+              value={content.loginSubtitle || "Motorist & Service Pro"}
               onChange={(e) =>
                 onContentChange({ ...content, loginSubtitle: e.target.value })
               }
@@ -306,11 +306,11 @@ export function ContentMenusTab({
         </div>
       </div>
 
-      {/* Repair Pro Menu Card */}
+      {/* Service Pro Menu Card */}
       <div className="rounded-2xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#141318] shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 dark:border-white/5">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-            Repair Pro menu
+            Service Pro menu
           </h3>
         </div>
 

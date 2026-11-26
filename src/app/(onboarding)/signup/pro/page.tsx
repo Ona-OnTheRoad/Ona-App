@@ -8,7 +8,7 @@ export default function ProSignupPage() {
     <Suspense
       fallback={
         <div className="flex min-h-dvh items-center justify-center bg-white dark:bg-[#121316] text-sm font-semibold text-slate-700 dark:text-slate-300">
-          Loading Repair Pro signup…
+          Loading Service Pro signup…
         </div>
       }
     >

@@ -24,7 +24,7 @@ export const PAIRING_WINDOW_MS = 144 * 1000;
 export const MAX_PAIRING_OFFERS_PER_WAVE = 6;
 
 /**
- * Tow "add another repair pro": the linked second request is armed this long
+ * Tow "add another service pro": the linked second request is armed this long
  * after the FIRST request's pro accepts (60 minutes). The scheduled-dispatch
  * sweep notifies the motorist once ASAP after this mark; if the first request
  * is cancelled or expires first, the second request is cancelled silently.
@@ -101,7 +101,7 @@ export const APPEAL_WINDOW_MS = 48 * 60 * 60 * 1000;
 export const BOOKED_COMPLETION_WINDOW_MS = 6 * 60 * 60 * 1000;
 
 /**
- * After Repair Pro marks job complete: if customer neither taps
+ * After Service Pro marks job complete: if customer neither taps
  * “I am Satisfied” nor opens a dispute within this window,
  * escrow auto-releases (pro 87.5% · Ona 5% · VAT 7.5% on FLW).
  * Timer starts at first `completed` status history entry.
@@ -474,7 +474,7 @@ export const PRO_PAYOUT_PERCENT = 87.5;
 
 /** Customer-facing release prompt. Never mention the pro / Ona / VAT split here. */
 export const CONFIRM_RELEASE_NOTIFICATION_BODY =
-  "Your job is marked complete. Tap Release to pay your Repair Pro.";
+  "Your job is marked complete. Tap Release to pay your Service Pro.";
 
 export const DISPUTE_REASONS: {
   id: DisputeReason;
@@ -493,14 +493,14 @@ export const TRIP_STATUS_COPY: Partial<
 > = {
   paid_booked: {
     title: "Booked",
-    subtitle: "Repair Pro will start the trip soon",
+    subtitle: "Service Pro will start the trip soon",
   },
   en_route: {
-    title: "Repair Pro is OnTheRoad",
+    title: "Service Pro is OnTheRoad",
     subtitle: "Heading to your location",
   },
   arrived: {
-    title: "Repair Pro has arrived",
+    title: "Service Pro has arrived",
     subtitle: "",
   },
   in_progress: {
@@ -514,11 +514,11 @@ export const TRIP_STATUS_COPY: Partial<
   },
   satisfied: {
     title: "Thank you",
-    subtitle: "Releasing funds to Repair Pro",
+    subtitle: "Releasing funds to Service Pro",
   },
   released: {
     title: "Payment released",
-    subtitle: "Your payment has gone to your Repair Pro",
+    subtitle: "Your payment has gone to your Service Pro",
   },
   disputed: {
     title: "Dispute active",
@@ -530,7 +530,7 @@ export const TRIP_STATUS_COPY: Partial<
   },
 };
 
-/** Repair Pro-facing titles (same statuses, clear action feedback) */
+/** Service Pro-facing titles (same statuses, clear action feedback) */
 export const PRO_TRIP_STATUS_COPY: Partial<
   Record<JobFlowStatus, { title: string; subtitle: string }>
 > = {

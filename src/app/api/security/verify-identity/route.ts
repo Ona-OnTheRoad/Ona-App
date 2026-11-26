@@ -163,7 +163,7 @@ export async function POST(req: Request) {
   }
 
   // 3. Guarantor name verification: only when a guarantor is on file. Customers
-  // (and Repair Pros who have none) have nothing to match, so it must not block them.
+  // (and Service Pros who have none) have nothing to match, so it must not block them.
   const { data: guarantor } = await admin
     .from("repair_pro_guarantors")
     .select("full_name")

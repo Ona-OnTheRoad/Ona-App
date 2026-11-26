@@ -158,7 +158,7 @@ function resolveTrialDays(opts?: VerificationThresholds) {
  * - the 30-day free window from the first request has ended.
  *
  * Hidden as soon as phone verification is complete (Tier 1).
- * Does not apply to Repair Pros. Other screens keep their own gates.
+ * Does not apply to Service Pros. Other screens keep their own gates.
  */
 export function shouldShowHomeVerifyPanel(
   profile: UserProfile | null | undefined,

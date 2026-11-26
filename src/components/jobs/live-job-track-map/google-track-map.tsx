@@ -57,7 +57,7 @@ export function GoogleTrackMap({
   });
 
   const motoristTitle = viewer === "motorist" ? "You" : "Customer";
-  const proLabel = viewer === "repair_pro" ? "You" : "Repair Pro";
+  const proLabel = viewer === "repair_pro" ? "You" : "Service Pro";
 
   const displayEtaMin = job.etaMinutes ?? routeEta?.minutes ?? null;
   const displayDist = job.distanceKm ?? routeEta?.distanceKm ?? null;
@@ -172,7 +172,7 @@ export function GoogleTrackMap({
           zIndex={500}
         />
 
-        {/* Repair Pro pin flat orange icon, no glow */}
+        {/* Service Pro pin flat orange icon, no glow */}
         {proPos && (
           <ProMapPin
             position={proPos}
@@ -198,7 +198,7 @@ export function GoogleTrackMap({
               : "bg-[#111113] text-white shadow-md",
           )}
         >
-          Waiting for Repair Pro live location…
+          Waiting for Service Pro live location…
         </div>
       )}
       {viewer === "repair_pro" && !proPos && (

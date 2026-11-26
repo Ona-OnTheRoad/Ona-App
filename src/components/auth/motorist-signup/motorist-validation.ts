@@ -76,7 +76,7 @@ export function validateStep1(v: AccountValues): string | null {
       optionalIdError(v);
     if (base) return base;
     if (!isDualPasswordOk(v.password)) {
-      return "Enter the same password you use for your Repair Pro account.";
+      return "Enter the same password you use for your Service Pro account.";
     }
     return null;
   }

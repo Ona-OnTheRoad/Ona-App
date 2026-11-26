@@ -25,7 +25,7 @@ export const EN_ACCOUNT = {
   "verify.canBook": "You can book help without limits.",
   "verify.checked": "Checked",
   "signup.motorist": "Customer signup",
-  "signup.pro": "Repair Pro signup",
+  "signup.pro": "Service Pro signup",
   "signup.account": "Your account",
   "signup.where": "Where are you?",
   "signup.vehicle": "Your vehicle",
@@ -54,7 +54,7 @@ export const EN_ACCOUNT = {
   "menu.help": "Help",
   "menu.switchRole": "Switch role",
   "menu.addMotorist": "Add Customer account",
-  "menu.addPro": "Add Repair Pro account",
+  "menu.addPro": "Add Service Pro account",
   "menu.logOut": "Log out",
   "menu.notifications": "Notifications",
   "menu.myService": "My Service",
@@ -68,15 +68,15 @@ export const EN_ACCOUNT = {
   "menu.closeMenu": "Close menu",
   "menu.signUpHere": "Sign Up here",
   "menu.logIn": "Log in",
-  "menu.needLogin": "Log in to switch between Customer and Repair Pro.",
+  "menu.needLogin": "Log in to switch between Customer and Service Pro.",
   "menu.noMotorist": "You don't have a Customer account yet.",
   "menu.noPro":
-    "You don't have a Repair Pro account yet. Finish signup to go Live and receive jobs.",
+    "You don't have a Service Pro account yet. Finish signup to go Live and receive jobs.",
   "menu.couldNotSwitch": "Could not switch.",
   "menu.tapToClose": "Tap to close",
   "menu.signedInAs": "Signed in as {name}",
   "menu.roleCustomer": "Customer",
-  "menu.rolePro": "Repair Pro",
+  "menu.rolePro": "Service Pro",
   "menu.guest": "Guest",
 
   // Settings hub (main menu categories)
@@ -132,6 +132,6 @@ export const EN_ACCOUNT = {
 
   // Common role labels already partially covered
   "common.customer": "Customer",
-  "common.repairPro": "Repair Pro",
+  "common.repairPro": "Service Pro",
   "common.codeSent": "Code sent. Enter it below.",
 } as const;

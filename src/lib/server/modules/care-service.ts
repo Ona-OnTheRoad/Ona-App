@@ -366,7 +366,7 @@ export async function executeCareAction(
       });
       return {
         ok: true,
-        message: "Escrow released to Repair Pro (87.5% · 5% Ona · VAT on FLW)",
+        message: "Escrow released to Service Pro (87.5% · 5% Ona · VAT on FLW)",
       };
     }
     case "refund_escrow": {

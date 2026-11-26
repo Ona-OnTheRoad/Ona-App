@@ -27,7 +27,7 @@ export const EN_HOME = {
   "home.collapsePanel": "Scroll down to collapse panel",
   "home.noProsAvailable": "No Pros Available",
   "home.noProsMatch": "No pros match these filters",
-  "home.noRepairPros": "No Repair Pros nearby",
+  "home.noRepairPros": "No Service Pros nearby",
   "home.refresh": "Refresh",
   "home.refreshing": "Refreshing…",
   "home.nearbyCount": "{total} nearby",

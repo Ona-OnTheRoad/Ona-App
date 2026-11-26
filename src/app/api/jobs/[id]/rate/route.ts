@@ -31,10 +31,10 @@ export async function POST(
       return apiFail("Review max 144 characters", 400);
     }
 
-    // Motorist rates Repair Pro only pros never rate
+    // Motorist rates Service Pro only pros never rate
     if (parsed.data.actor === "repair_pro") {
       return apiFail(
-        "Only the motorist can rate and review the Repair Pro",
+        "Only the motorist can rate and review the Service Pro",
         403,
       );
     }

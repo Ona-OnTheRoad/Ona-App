@@ -11,7 +11,7 @@ export type AppCurrency =
 
 /**
  * Settlement from the **service charge S** (customer pays S only):
- * - Repair pro: 87.5% = S − 5% Ona − 7.5% VAT (equiv. 95% of S − VAT)
+ * - Service pro: 87.5% = S − 5% Ona − 7.5% VAT (equiv. 95% of S − VAT)
  * - Ona platform: 5% of S (Flutterwave fees come out of this; Ona absorbs if fees > 5%)
  * - VAT: 7.5% of S stays on Flutterwave main balance (not paid to pro or Zenith)
  * - FLW collection + payout fees: deducted from Ona’s 5% only

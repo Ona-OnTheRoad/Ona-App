@@ -51,7 +51,7 @@ export function MergePanel({
                 <td colSpan={4} className="om-admin-muted">
                   No pending merge candidates. Run a scan to find duplicate
                   identities (matched by NIN/BVN last-4 across Customer and
-                  Repair Pro accounts).
+                  Service Pro accounts).
                 </td>
               </tr>
             ) : (

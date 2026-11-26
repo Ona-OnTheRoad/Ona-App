@@ -11,7 +11,7 @@ describe("canReopenForPayment: only an unpaid timeout can be paid again, never a
     expect(canReopenForPayment(job("expired", [{ status: "expired", by: PAY_HISTORY.UNPAID_BOOK_EXPIRE }]))).toBe(true);
   });
 
-  it("REFUSES a job the Repair Pro cancelled", () => {
+  it("REFUSES a job the Service Pro cancelled", () => {
     expect(canReopenForPayment(job("cancelled", [{ status: "agreed", by: "system" }, { status: "cancelled", by: "repair_pro" }]))).toBe(false);
   });
 

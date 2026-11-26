@@ -22,7 +22,7 @@ export function ProProfileCard({
     return "Good Evening";
   }, []);
 
-  const name = displayName?.trim() || "Repair Pro";
+  const name = displayName?.trim() || "Service Pro";
   const validAvatarUrl = avatarUrl?.trim() || undefined;
 
   return (

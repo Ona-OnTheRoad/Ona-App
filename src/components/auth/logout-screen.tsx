@@ -18,7 +18,7 @@ export function LogoutScreen() {
   const [busy, setBusy] = useState(false);
 
   const roleLabel =
-    accountType === "professional" ? "Repair Professional" : "Customer";
+    accountType === "professional" ? "Service Pro" : "Customer";
 
   useEffect(() => {
     if (!authReady || busy) return;
@@ -68,7 +68,7 @@ export function LogoutScreen() {
 
         <div className="om-apple-motion-panel w-full space-y-2.5 rounded-2xl bg-black/55 p-4 shadow-2xl ring-1 ring-white/10 backdrop-blur-xl">
           <p className="text-center text-[12px] text-white/70">
-            You can sign back in anytime as a Customer or Repair Professional.
+            You can sign back in anytime as a Customer or Service Pro.
           </p>
 
           <button

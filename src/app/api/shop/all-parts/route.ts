@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * ALL PARTS for active (or specified) garage vehicle.
- * Mechanic Shop rule: Browse ALL PARTS is Mechanic-only for Repair Pros;
+ * Mechanic Shop rule: Browse ALL PARTS is Mechanic-only for Service Pros;
  * customers may use fitment for any vehicle trade.
  * Guest: pass makeName/modelName/year query (session-style, no save).
  * Signed-in: uses garage default unless vehicleId set.
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     const scope = await resolveShopUiScope(req);
     if (scope.accountContext === "professional" && !scope.allowBrowseAllParts) {
       return apiFail(
-        "Browse ALL PARTS is only available for Mechanic Repair Pros",
+        "Browse ALL PARTS is only available for Mechanic Service Pros",
         403,
         "ALL_PARTS_FORBIDDEN",
       );

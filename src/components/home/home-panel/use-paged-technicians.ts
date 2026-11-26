@@ -6,7 +6,7 @@ import type { Technician } from "@/lib/types";
 
 export const PAGE_SIZE = 10;
 
-/** Repair Pro list paging: first page, "see more" and the hard cap. */
+/** Service Pro list paging: first page, "see more" and the hard cap. */
 export function usePagedTechnicians(
   visibleTechnicians: Technician[],
   radiusKm: number,

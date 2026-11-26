@@ -1,5 +1,5 @@
 /**
- * Dual-account vault: one Motorist + one Repair Pro profile per device.
+ * Dual-account vault: one Motorist + one Service Pro profile per device.
  * Each type has its own signup / login. Session activates one at a time.
  */
 

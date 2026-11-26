@@ -102,7 +102,7 @@ export function splitPlaceAndArea(label: string): {
   return { title: raw, subtitle: null };
 }
 
-/** e.g. Mechanic → "Mechanic Dashboard"; unknown → "Repair Pro Dashboard" */
+/** e.g. Mechanic → "Mechanic Dashboard"; unknown → "Service Pro Dashboard" */
 export function skillDashboardTitle(
   skill: ProService | string | null | undefined,
 ): string {

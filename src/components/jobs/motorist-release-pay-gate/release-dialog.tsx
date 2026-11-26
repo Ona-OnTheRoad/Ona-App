@@ -85,7 +85,7 @@ export function ReleaseDialog({
           className="mt-2 text-center text-[12px] font-medium leading-snug"
           style={{ color: muted }}
         >
-          Confirm the job is done to release payment to your Repair Pro
+          Confirm the job is done to release payment to your Service Pro
         </p>
         {pending != null && pending.agreedMajor != null ? (
           <div className="mt-3">

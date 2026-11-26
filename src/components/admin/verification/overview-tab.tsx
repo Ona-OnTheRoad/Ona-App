@@ -72,7 +72,7 @@ export function OverviewTab({ onSelectTab }: OverviewTabProps) {
             Verification Queue Status
           </h2>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            Real-time counts of customer identity submissions and repair pro vetting queues.
+            Real-time counts of customer identity submissions and service pro vetting queues.
           </p>
         </div>
         <button
@@ -223,7 +223,7 @@ export function OverviewTab({ onSelectTab }: OverviewTabProps) {
               href="/admin/pros"
               className="flex items-center justify-between p-2.5 rounded-lg border border-gray-100 dark:border-[#27272a] hover:bg-gray-50 dark:hover:bg-[#202023] text-xs font-medium text-gray-800 dark:text-gray-200"
             >
-              <span>Repair Pros Directory ({stats.pros} pros)</span>
+              <span>Service Pros Directory ({stats.pros} pros)</span>
               <ArrowRight className="w-3.5 h-3.5 text-gray-400" />
             </Link>
           </div>

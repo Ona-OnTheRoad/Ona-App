@@ -1,4 +1,4 @@
-/** +₦500 to the Repair Pro call-out for each full 500 m the customer moves. */
+/** +₦500 to the Service Pro call-out for each full 500 m the customer moves. */
 
 export const CUSTOMER_MOVE_STEP_M = 500;
 export const CUSTOMER_MOVE_FEE_NAIRA = 500;

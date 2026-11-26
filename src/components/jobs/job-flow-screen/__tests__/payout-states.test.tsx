@@ -28,7 +28,7 @@ const job = (over: Partial<JobRecord> = {}) =>
 beforeEach(() => { vi.clearAllMocks(); mocks.subscribe.mockReturnValue(mocks.unsub); });
 afterEach(() => cleanup());
 
-describe("Repair Pro payout screens", () => {
+describe("Service Pro payout screens", () => {
   it("on hold: says so plainly, shows the money, and nothing is spinning", () => {
     const { container } = render(<>{renderPayoutOnHoldStage(ctx, job())}</>);
     expect(screen.getAllByText("Payout on hold").length).toBeGreaterThan(0);
@@ -94,7 +94,7 @@ describe("customer confirmation never mentions the payout queue", () => {
   });
 });
 
-describe("Repair Pro dashboard", () => {
+describe("Service Pro dashboard", () => {
   const ok = (jobs: unknown[]) => ({ ok: true, data: { jobs } });
   const run = async (jobs: unknown[]) => {
     vi.useFakeTimers();

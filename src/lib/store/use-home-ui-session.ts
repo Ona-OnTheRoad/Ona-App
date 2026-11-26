@@ -38,7 +38,7 @@ export function useHomeUiSession(
   /** True once the home-screen session has been (or tried to be) re-applied. */
   const [homeUiHydrated, setHomeUiHydrated] = useState(false);
   // Keep the home screen exactly where the user was restore after auth boots
-  // so role-aware rendering (Motorist vs Repair Pro) decides what is shown.
+  // so role-aware rendering (Motorist vs Service Pro) decides what is shown.
   useEffect(() => {
     if (!authReady || homeUiHydrated) return;
     const snap = readSession<HomeUiSnapshot>(HOME_UI_SESSION_KEY);

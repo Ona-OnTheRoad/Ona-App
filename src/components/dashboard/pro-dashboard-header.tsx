@@ -12,7 +12,7 @@ interface ProDashboardHeaderProps {
 
 export function ProDashboardHeader({
   title = "Dashboard",
-  trade = "Repair Pro",
+  trade = "Service Pro",
 }: ProDashboardHeaderProps) {
   const { unreadCount } = useNotifications();
 

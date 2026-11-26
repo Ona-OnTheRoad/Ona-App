@@ -19,7 +19,7 @@ export async function POST(
     const proId: string | undefined = body.proId;
     if (!proId) return apiFail("Missing proId", 400);
     if (proId !== auth.userId) {
-      return apiFail("Only the assigned Repair Pro can defer", 403);
+      return apiFail("Only the assigned Service Pro can defer", 403);
     }
 
     const existing = await getJob(id);

@@ -8,6 +8,7 @@ import { snapshotCanReplace } from "@/lib/jobs/snapshot-reads";
 import { beginJobDiagnostic, recordJobDiagnostic } from "@/lib/jobs/diagnostics/collector";
 import { diagnosticFailure, type JobTrigger } from "@/lib/jobs/diagnostics/measure";
 import type { SessionStateResult } from "./use-session-state";
+import { isProPlaceholderName } from "@/lib/pro-label";
 
 type RequestsSetter = Dispatch<SetStateAction<ServiceRequest[]>>;
 
@@ -22,8 +23,8 @@ function mergeRequestRelatedFields(
   if (!samePro) return primary;
   const pName = (primary.technicianName || "").trim();
   const sName = (secondary.technicianName || "").trim();
-  const pPlaceholder = !pName || pName === "Repair Pro";
-  const sReal = Boolean(sName) && sName !== "Repair Pro";
+  const pPlaceholder = !pName || isProPlaceholderName(pName);
+  const sReal = Boolean(sName) && !isProPlaceholderName(sName);
   if (pPlaceholder && sReal) {
     return { ...primary, technicianName: sName };
   }

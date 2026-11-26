@@ -13,7 +13,7 @@ import type { ProService } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 /**
- * Repair Pro labour price book only for selected skills.
+ * Service Pro labour price book only for selected skills.
  * Spare parts never included.
  */
 export function ServicePriceEditor({

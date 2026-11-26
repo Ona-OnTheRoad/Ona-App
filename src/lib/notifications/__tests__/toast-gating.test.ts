@@ -1,6 +1,6 @@
 // @vitest-environment node
 /**
- * Toast gating for notifications. The Repair Pro must ALWAYS be told a live
+ * Toast gating for notifications. The Service Pro must ALWAYS be told a live
  * request was cancelled (top toast), even though ordinary open_job / requests
  * notifications never toast (they are handled by the incoming panel).
  */

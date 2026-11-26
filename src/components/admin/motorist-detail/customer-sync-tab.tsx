@@ -16,7 +16,7 @@ export function CustomerSyncTab({ data, busy, onReSync }: CustomerSyncTabProps) 
     roles.length > 0
       ? [
           roles.includes("motorist") ? "Customer" : null,
-          roles.includes("repair_pro") ? "Repair Pro" : null,
+          roles.includes("repair_pro") ? "Service Pro" : null,
         ]
           .filter(Boolean)
           .join(" + ")

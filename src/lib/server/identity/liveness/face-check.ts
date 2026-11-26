@@ -1,7 +1,7 @@
 import "server-only";
 /**
  * Server-side Prembly face check for Tier 3 liveness. The only thing that may
- * mark a Repair Pro face_liveness_verified (see /api/liveness/verify).
+ * mark a Service Pro face_liveness_verified (see /api/liveness/verify).
  *
  * Modes (PREMBLY_FACE_MODE):
  * - "nin_face" (default): selfie compared with the NIN holder's photo.

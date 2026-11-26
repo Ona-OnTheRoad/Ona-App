@@ -7,7 +7,7 @@ import {
 } from "@/lib/signup-validation";
 import type { MotoristFields } from "./use-motorist-fields";
 
-/** Dual signup reuses the Repair Pro password; otherwise password + rules + confirm. */
+/** Dual signup reuses the Service Pro password; otherwise password + rules + confirm. */
 export function AccountPasswordFields({
   f,
   dualPasswordOk,
@@ -28,7 +28,7 @@ export function AccountPasswordFields({
   if (dualSignup) {
     return (
       <OnaField
-        label="Same password as your Repair Pro account"
+        label="Same password as your Service Pro account"
         required
         error={fieldErrors.password}
         hint="No new password. Use the one you already signed up with."
@@ -49,7 +49,7 @@ export function AccountPasswordFields({
               if (!dualPasswordOk) {
                 setFieldError(
                   "password",
-                  "Enter the same password as your Repair Pro account.",
+                  "Enter the same password as your Service Pro account.",
                 );
               }
             }}

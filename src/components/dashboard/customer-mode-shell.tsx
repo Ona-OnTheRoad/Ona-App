@@ -33,8 +33,8 @@ export function CustomerModeShell({
         </p>
         <p className={cn("max-w-[280px] text-[12px] leading-relaxed", muted)}>
           {hasProAccount
-            ? "Switch to Repair Pro to open this dashboard and Go Live."
-            : "Create a Repair Pro account from the menu (Use as · Repair Pro) to use the professional dashboard."}
+            ? "Switch to Service Pro to open this dashboard and Go Live."
+            : "Create a Service Pro account from the menu (Use as · Service Pro) to use the professional dashboard."}
         </p>
         {hasProAccount ? (
           <>
@@ -69,7 +69,7 @@ export function CustomerModeShell({
                   }
                   if (result === "needs_signup") {
                     setSwitchErr(
-                      "You don't have a Repair Pro account yet. Finish signup to go Live and receive jobs.",
+                      "You don't have a Service Pro account yet. Finish signup to go Live and receive jobs.",
                     );
                   } else if (
                     typeof result === "string" &&
@@ -81,7 +81,7 @@ export function CustomerModeShell({
                 })();
               }}
             >
-              {switchBusy ? "Switching…" : "Use as Repair Pro"}
+              {switchBusy ? "Switching…" : "Use as Service Pro"}
             </button>
           </>
         ) : (
@@ -89,7 +89,7 @@ export function CustomerModeShell({
             href="/signup/pro?from=profile&next=/dashboard"
             className="mt-1 inline-flex h-11 items-center justify-center rounded-md bg-[#1b1b1e] px-5 text-[14px] font-semibold text-white"
           >
-            Become a Repair Pro
+            Become a Service Pro
           </Link>
         )}
         <Link

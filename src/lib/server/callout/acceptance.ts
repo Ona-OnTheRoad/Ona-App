@@ -1,6 +1,6 @@
 import "server-only";
 /**
- * Lock Call-Out at Repair Pro acceptance.
+ * Lock Call-Out at Service Pro acceptance.
  * Origin = verified GPS at that tap. Never driven kilometres.
  */
 

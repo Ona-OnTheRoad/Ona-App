@@ -23,7 +23,7 @@ import { NeedHelpActions } from "./need-help-dialogue/need-help-actions";
 import { NeedHelpStepBody } from "./need-help-dialogue/need-help-step-body";
 
 /**
- * One card at a time. SSPE finds the Repair Pro after they finish.
+ * One card at a time. SSPE finds the Service Pro after they finish.
  */
 export function NeedHelpDialogue({ isLight }: { isLight: boolean }) {
   const router = useRouter();

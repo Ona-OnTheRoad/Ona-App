@@ -3,7 +3,7 @@
 /**
  * Settings hub one row per category → opens that section page.
  * Danger Zone stays on this hub only (not nested).
- * Same layout for Customer and Repair Pro. Fully i18n-aware.
+ * Same layout for Customer and Service Pro. Fully i18n-aware.
  */
 
 import { useEffect, useRef } from "react";
@@ -190,7 +190,7 @@ export default function SettingsPage() {
               isLight={isLight}
               icon={BadgeCheck}
               label="Continue verification"
-              detail="Finish remaining Repair Pro tiers"
+              detail="Finish remaining Service Pro tiers"
               onClick={() => {
                 rememberScroll();
                 setProOnboardingSheetRequired(true);
@@ -214,7 +214,7 @@ export default function SettingsPage() {
           {HUB_SECTIONS.filter((item) => {
             // Pro: Payments & Payouts lives in the side bar, not Settings
             if (isPro && item.href === "/settings/payments") return false;
-            // Customer: Availability & Pricing are Repair Pro-only settings
+            // Customer: Availability & Pricing are Service Pro-only settings
             if (
               !isPro &&
               (item.href === "/settings/sections/availability" ||

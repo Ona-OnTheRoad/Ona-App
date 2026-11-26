@@ -241,7 +241,7 @@ export async function apiGetJob(id: string, context: DiagnosticContext = UNKNOWN
 }
 
 /**
- * Tow "add another repair pro": dispatch a linked scheduled request by sending
+ * Tow "add another service pro": dispatch a linked scheduled request by sending
  * the motorist's current address. Books the first pro of that trade.
  */
 export async function apiDispatchScheduled(input: {
@@ -651,7 +651,7 @@ export async function apiRetrySearch(
   return parse<{ job: JobRecord }>(res);
 }
 
-/** Live GPS ping (Repair Pro or Motorist) → ETA refresh */
+/** Live GPS ping (Service Pro or Motorist) → ETA refresh */
 export async function apiPushTripLocation(input: {
   jobId: string;
   lat: number;

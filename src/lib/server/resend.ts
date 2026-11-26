@@ -65,7 +65,7 @@ export async function sendSignupConfirmationEmail(input: {
   accountType: "motorist" | "professional";
 }): Promise<{ ok: true; id?: string } | { ok: false; error: string }> {
   const roleLabel =
-    input.accountType === "professional" ? "Repair Pro" : "Customer";
+    input.accountType === "professional" ? "Service Pro" : "Customer";
   const first = input.fullName.trim().split(/\s+/)[0] || "there";
   const appUrl =
     process.env.NEXT_PUBLIC_APP_URL?.trim() || "https://336699.vercel.app";

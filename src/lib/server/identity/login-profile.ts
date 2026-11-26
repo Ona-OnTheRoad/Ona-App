@@ -73,7 +73,7 @@ export async function loadOrRepairLoginProfile(
   const accountType: AccountType =
     p.role === "repair_pro" ? "professional" : "motorist";
 
-  // Slim selects + bank (shared across Customer / Repair Pro on one login)
+  // Slim selects + bank (shared across Customer / Service Pro on one login)
   const [motRes, proRes] = await Promise.all([
     admin
       .from("motorist_profiles")

@@ -22,7 +22,7 @@ export function AccountsStatCards({
       sub: "motorist side only",
     },
     {
-      label: "REPAIR PRO ONLY",
+      label: "SERVICE PRO ONLY",
       value: proOnly,
       sub: "pro side only",
     },

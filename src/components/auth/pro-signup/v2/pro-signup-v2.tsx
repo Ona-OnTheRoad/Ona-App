@@ -244,7 +244,7 @@ export function ProSignupV2() {
 
       <RegistrationComplete
         open={done}
-        accountLabel="Repair Pro"
+        accountLabel="Service Pro"
         onContinue={() => {
           router.replace("/dashboard");
         }}

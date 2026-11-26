@@ -77,7 +77,7 @@ export function ProReviewTab({
       setItems(res.data.pros || []);
       if (res.data.totals) setTotals(res.data.totals);
     } catch {
-      toastError("Network error loading repair pro review queue");
+      toastError("Network error loading service pro review queue");
     } finally {
       setLoading(false);
     }
@@ -101,11 +101,11 @@ export function ProReviewTab({
         }),
       });
       if (res.ok) {
-        toastSuccess(`Repair pro ${action === "approve" ? "approved" : "rejected"} successfully.`);
+        toastSuccess(`Service pro ${action === "approve" ? "approved" : "rejected"} successfully.`);
         await load();
         onRefreshParent?.();
       } else {
-        toastError(res.message || `Failed to ${action} repair pro`);
+        toastError(res.message || `Failed to ${action} service pro`);
       }
     } catch {
       toastError("Network error submitting action");
@@ -171,11 +171,11 @@ export function ProReviewTab({
         {loading && items.length === 0 ? (
           <div role="status" className="py-20 flex flex-col items-center justify-center text-gray-400 text-sm">
             <Loader2 className="w-5 h-5 animate-spin text-ona-brand mb-2" />
-            <span>Loading repair pro submissions…</span>
+            <span>Loading service pro submissions…</span>
           </div>
         ) : items.length === 0 ? (
           <div className="py-16 text-center text-gray-400 dark:text-gray-500 text-sm">
-            No repair pros requiring review under this filter.
+            No service pros requiring review under this filter.
           </div>
         ) : (
           <div className="overflow-x-auto">

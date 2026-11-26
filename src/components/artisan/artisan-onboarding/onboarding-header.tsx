@@ -39,7 +39,7 @@ export function OnboardingHeader({
               ? "View Verification"
               : mode === "settings"
                 ? "Verification"
-                : "Repair Pro Setup"
+                : "Service Pro Setup"
           }
           subtitle={
             viewOnly

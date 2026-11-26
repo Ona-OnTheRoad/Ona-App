@@ -14,6 +14,7 @@ import { NegotiationFooter } from "./negotiation-footer";
 import { NegotiationSummary } from "./negotiation-summary";
 import { CancelConfirmFromState, RerouteAlertOverlay } from "./shared-pieces";
 import type { JobFlowCtx } from "./use-job-flow-controller";
+import { isProPlaceholderName } from "@/lib/pro-label";
 
 /** NEGOTIATING / NEW REQUEST. */
 export function renderNegotiatingStage(
@@ -86,7 +87,7 @@ export function renderNegotiatingStage(
               title="Agree the labour fee"
               subtitle={
                 viewer === "motorist"
-                  ? `Your call-out is already fixed. Agree labour directly with ${firstNameOnly(job.repairProName === "Repair Pro" ? null : job.repairProName, "your pro")}, with every change recorded.`
+                  ? `Your call-out is already fixed. Agree labour directly with ${firstNameOnly(isProPlaceholderName(job.repairProName) ? null : job.repairProName, "your pro")}, with every change recorded.`
                   : "Agree labour directly with the customer, with every change recorded."
               }
             />
@@ -177,7 +178,7 @@ export function renderNegotiatingStage(
               <p className="text-center text-[13px] font-semibold text-ona-muted">
                 {viewer === "repair_pro"
                   ? "Accept the request to start the 20‑min negotiate timer"
-                  : "Waiting for Repair Pro to accept this request…"}
+                  : "Waiting for Service Pro to accept this request…"}
               </p>
             )}
           </div>

@@ -57,7 +57,7 @@ async function attachCalloutQuietly(
 }
 
 /**
- * Tow "add another repair pro": after the primary (tow) request is persisted,
+ * Tow "add another service pro": after the primary (tow) request is persisted,
  * also create a SCHEDULED second request for `input.meetProTrade` same
  * details, new trade, linked to the primary via `linked_request_id`.
  * It is NOT dispatched yet: the pairing engine arms `scheduled_dispatch_at`
@@ -164,7 +164,7 @@ async function createScheduledLinkedRequestIfNeeded(
 export async function createJob(input: CreateJobInput): Promise<JobRecord> {
   if (!isSupabaseAdminConfigured()) throw new JobPersistenceUnavailableError();
   const ts = nowIso();
-  // Negotiation clock does NOT start until Repair Pro taps "I can fix this".
+  // Negotiation clock does NOT start until Service Pro taps "I can fix this".
   // Far-future sentinel so expire logic / UI know the timer is unarmed.
   const ends = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
   const id = uid("job");
@@ -299,7 +299,7 @@ export async function createJob(input: CreateJobInput): Promise<JobRecord> {
         mapped.motoristPhoto = mapped.motoristPhoto || motoristPhoto;
         mapped.motoristVehicle =
           mapped.motoristVehicle || job.motoristVehicle || null;
-        // Instantly notify assigned repair pro
+        // Instantly notify assigned service pro
         if (input.repairProId) {
           try {
             const { insertNotification } =

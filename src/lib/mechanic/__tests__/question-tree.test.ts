@@ -419,7 +419,7 @@ describe("mechanic question tree", () => {
     ).toContain("brain box");
   });
 
-  it("allows Find a Repair Pro with zero to four photos", () => {
+  it("allows Find a Service Pro with zero to four photos", () => {
     expect(canFindMechanicPro(0)).toBe(true);
     expect(canFindMechanicPro(4)).toBe(true);
     expect(canFindMechanicPro(5)).toBe(true);

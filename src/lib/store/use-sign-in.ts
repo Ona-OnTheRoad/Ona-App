@@ -38,7 +38,7 @@ export function useSignIn(
         return "Server is unavailable. Log in requires a live Ona account.";
       }
       if (preferType !== "motorist" && preferType !== "professional") {
-        return "Pick Customer or Repair Pro.";
+        return "Pick Customer or Service Pro.";
       }
       const res = await backendSignIn(email.trim().toLowerCase(), password);
       if (res.error || !res.profile || !res.userId) {
@@ -65,11 +65,11 @@ export function useSignIn(
 
       if (preferType === "motorist" && !hasMotorist) {
         await backendSignOut().catch(() => undefined);
-        return "No Customer account for this login. Choose Repair Pro, or sign up as Customer.";
+        return "No Customer account for this login. Choose Service Pro, or sign up as Customer.";
       }
       if (preferType === "professional" && !hasPro) {
         await backendSignOut().catch(() => undefined);
-        return "No Repair Pro account for this login. Choose Customer, or sign up as Repair Pro.";
+        return "No Service Pro account for this login. Choose Customer, or sign up as Service Pro.";
       }
 
       let sessionProfile: UserProfile = {

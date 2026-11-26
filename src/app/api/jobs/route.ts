@@ -51,7 +51,7 @@ const createSchema = z.object({
   calloutEligible: z.boolean().optional(),
   calloutUrgency: z.enum(["normal", "emergency", "remote", "night"]).optional(),
   meetPro: z.boolean().optional(),
-  /** Tow "add another repair pro": create a linked scheduled second request. */
+  /** Tow "add another service pro": create a linked scheduled second request. */
   meetProTrade: z.string().optional().nullable(),
 });
 

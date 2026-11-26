@@ -17,7 +17,7 @@ const FAQ_ITEMS: { q: string; a: string }[] = [
   },
   {
     q: "Why am I asked to verify?",
-    a: "Customers: verify phone (Tier 1), then upload ID (Tier 2) after free requests so we can keep the marketplace safe. Repair Pros: complete verification tiers so you can Go Live and appear in search.",
+    a: "Customers: verify phone (Tier 1), then upload ID (Tier 2) after free requests so we can keep the marketplace safe. Service Pros: complete verification tiers so you can Go Live and appear in search.",
   },
   {
     q: "A request or job is stuck. What do I do?",
@@ -28,7 +28,7 @@ const FAQ_ITEMS: { q: string; a: string }[] = [
     a: "Agreed labour is held in escrow when a job is paid, then released when work is done and confirmed. Spare parts are never mixed into labour prices.",
   },
   {
-    q: "I can't Go Live as a Repair Pro",
+    q: "I can't Go Live as a Service Pro",
     a: "Finish required verification and wait for admin approval on ID / skill docs. Check Dashboard for your tier status, or write to care with your registered email.",
   },
 ];
@@ -46,7 +46,7 @@ export function SupportScreen() {
   const [sent, setSent] = useState(false);
 
   const roleLabel =
-    accountType === "professional" ? "Repair Pro" : "Customer";
+    accountType === "professional" ? "Service Pro" : "Customer";
 
   const prefilled = useMemo(() => {
     const lines = [

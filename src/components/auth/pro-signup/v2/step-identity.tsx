@@ -45,7 +45,7 @@ export function StepIdentity({
           A few details to finish your profile
         </h1>
         <p className="mt-1.5 text-xs text-ona-muted leading-relaxed">
-          We need these to set up your Repair Pro account.
+          We need these to set up your Service Pro account.
         </p>
       </div>
 

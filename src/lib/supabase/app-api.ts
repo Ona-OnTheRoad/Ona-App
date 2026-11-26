@@ -49,7 +49,7 @@ export async function backendSignUp(input: {
   dateOfBirth: string;
   city?: string;
   area?: string;
-  /** Repair pro */
+  /** Service pro */
   businessName?: string;
   primaryService?: ProService;
   services?: ProService[];
@@ -693,7 +693,7 @@ export async function backendSignIn(
   return { error: null, profile: loaded, userId };
 }
 
-/** Smooth Motorist ↔ Repair Pro switch (same user, updates role on server). */
+/** Smooth Motorist ↔ Service Pro switch (same user, updates role on server). */
 export async function backendSwitchRole(target: AccountType): Promise<{
   error: string | null;
   /** Present when error is needs_signup */
@@ -1056,7 +1056,7 @@ export async function backendCreateJob(input: {
       motoristName: input.motoristName || "Customer",
       motoristPhoto: input.motoristPhoto ?? null,
       repairProId: input.repairProId,
-      repairProName: input.repairProName || "Repair Pro",
+      repairProName: input.repairProName || "Service Pro",
       repairProPhoto: input.repairProPhoto,
       serviceType: input.serviceType,
       problem: input.description,

@@ -85,7 +85,7 @@ export async function POST(req: Request) {
   const submittedEmail = input.email.trim().toLowerCase();
   if (!submittedEmail || !submittedEmail.includes("@")) {
     return apiFail(
-      "Email is required for Customer and Repair Pro signup.",
+      "Email is required for Customer and Service Pro signup.",
       400,
       "validation",
     );
@@ -94,7 +94,7 @@ export async function POST(req: Request) {
   const phoneCanonical = canonicalPhone(input.phone);
   if (!phoneCanonical) {
     return apiFail(
-      "Phone number is required for Customer and Repair Pro signup (e.g. +234 801…).",
+      "Phone number is required for Customer and Service Pro signup (e.g. +234 801…).",
       400,
       "validation",
     );
@@ -164,7 +164,7 @@ export async function POST(req: Request) {
 
   // 3) Role-specific tables
   // Dual-role: NEVER delete the other role's side table when keepOtherRole is true
-  // (motorist adding Repair Pro must keep motorist_profiles).
+  // (motorist adding Service Pro must keep motorist_profiles).
   // Attach path always keeps the original role (anti-fraud merge on same identity).
   const keepOther = attachUserId ? true : input.keepOtherRole !== false;
   const flags =

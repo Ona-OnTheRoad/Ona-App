@@ -717,7 +717,7 @@ export function humanizeFlutterwaveTransferError(raw: string): string {
     (low.includes("invalid") || low.includes("not found"))
   ) {
     return (
-      "Flutterwave transfer failed: Repair Pro bank account could not be verified. " +
+      "Flutterwave transfer failed: Service Pro bank account could not be verified. " +
       "Escrow stays held until bank details are fixed."
     );
   }
@@ -746,7 +746,7 @@ export function humanizeFlutterwaveTransferError(raw: string): string {
     );
   }
   if (!m) {
-    return "Could not transfer pro share (87.5%) to Repair Pro. Funds remain in escrow.";
+    return "Could not transfer pro share (87.5%) to Service Pro. Funds remain in escrow.";
   }
   // Pass through real FLW message do not rewrite into IP-whitelist scare text
   return `${m} Funds remain in escrow until payout succeeds.`;
@@ -929,7 +929,7 @@ export async function releaseToPro(input: {
       ok: false,
       code: "hard_fail",
       message:
-        "Repair Pro must save bank details (bank code + account) before payout. Funds remain in escrow.",
+        "Service Pro must save bank details (bank code + account) before payout. Funds remain in escrow.",
     };
   }
 

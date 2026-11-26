@@ -567,7 +567,7 @@ export async function attemptProPayout(input: {
       ok: false,
       pendingSettlement: false,
       message:
-        "Repair Pro bank incomplete (bank code + 10-digit account + name). Funds stay in escrow.",
+        "Service Pro bank incomplete (bank code + 10-digit account + name). Funds stay in escrow.",
     };
   }
 
@@ -1032,7 +1032,7 @@ export async function attemptProPayout(input: {
     reference: idempotentRef,
     /** Pass stable ref so Flutterwave dedupes */
     transferReference: idempotentRef,
-    reason: `Ona pro payout · ${input.repairProName || "Repair Pro"} · ${input.jobId.slice(0, 8)}`,
+    reason: `Ona pro payout · ${input.repairProName || "Service Pro"} · ${input.jobId.slice(0, 8)}`,
     bankCode: bank.bankCode,
     accountNumber: bank.accountNumber,
     accountName: bank.accountName,
@@ -1374,7 +1374,7 @@ export async function finalizeJobReleasedAfterPayout(
         category: "payments",
         priority: "critical",
         title: "Payment released",
-        body: "Your payment has been released to your Repair Pro.",
+        body: "Your payment has been released to your Service Pro.",
         href: `/jobs/${jobId}`,
         actionType: "view_payment",
         actionPayload: { jobId },

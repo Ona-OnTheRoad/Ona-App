@@ -7,7 +7,7 @@ import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
  * Issued by /api/auth/otp/signup/verify, presented to /api/auth/signup. It does
  * NOT log anyone in: it only says "this exact number was verified recently".
  * Signed (HMAC-SHA256), bound to one number, tamper-evident. It must outlive
- * the longest signup wizard (Repair Pro: bank, documents), hence 2 hours.
+ * the longest signup wizard (Service Pro: bank, documents), hence 2 hours.
  */
 export const PHONE_PROOF_TTL_MS = 2 * 60 * 60 * 1000;
 

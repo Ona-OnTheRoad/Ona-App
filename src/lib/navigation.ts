@@ -18,7 +18,7 @@ type RouterLike = {
   replace?: (href: string) => void;
 };
 
-/** Role home: Repair Pro dashboard, Customer map home. */
+/** Role home: Service Pro dashboard, Customer map home. */
 export function defaultBackHref(
   accountType?: AccountType | null | undefined,
 ): string {

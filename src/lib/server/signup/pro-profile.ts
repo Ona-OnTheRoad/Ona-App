@@ -5,7 +5,7 @@ import { last4, logSignupEvent } from "@/lib/server/signup/helpers";
 import { deriveProFields } from "@/lib/server/signup/pro-fields";
 import { clampProServiceRadiusKm } from "@/lib/profile-system";
 
-/** Writes the Repair Pro side table and guarantor. Returns the stored flags, or the failure to send. */
+/** Writes the Service Pro side table and guarantor. Returns the stored flags, or the failure to send. */
 export async function writeProProfile(
   ctx: SignupContext,
   userId: string,
@@ -173,13 +173,13 @@ export async function writeProProfile(
       meta: { stage: "repair_pro_profiles" },
     });
     return apiFail(
-      `Repair Pro profile failed: ${proErr.message}`,
+      `Service Pro profile failed: ${proErr.message}`,
       500,
       "pro_profile_error",
     );
   }
 
-  // Insert guarantor for Repair Pro (compulsory)
+  // Insert guarantor for Service Pro (compulsory)
   if (input.guarantor) {
     try {
       await supabase.from("repair_pro_guarantors").upsert(

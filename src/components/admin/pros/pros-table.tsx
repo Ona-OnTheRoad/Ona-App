@@ -42,7 +42,7 @@ export function ProsTable({
       {/* Header toolbar */}
       <div className="px-6 pt-5 pb-4 flex items-center justify-between">
         <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white select-none flex items-center gap-2">
-          <span>All Repair Pros</span>
+          <span>All Service Pros</span>
           {totalCount > 0 ? (
             <span className="text-ona-brand font-bold">
               {totalCount.toLocaleString()}
@@ -76,7 +76,7 @@ export function ProsTable({
             No pros found.
           </h3>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-xs leading-relaxed">
-            Registered repair professional accounts will appear here.
+            Registered service pro accounts will appear here.
           </p>
         </div>
       ) : !failure && pros.length > 0 ? (

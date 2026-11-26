@@ -39,7 +39,7 @@ export const CLIENT_NAV: {
   { href: "/express", labelKey: "nav.onaExpress", icon: "express" },
 ];
 
-/** Repair Pro: dedicated Payments & Payouts in the side bar → full hub. */
+/** Service Pro: dedicated Payments & Payouts in the side bar → full hub. */
 export const PRO_NAV: {
   href: string;
   labelKey: MessageKey;

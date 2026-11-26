@@ -16,6 +16,7 @@ import type { JobRecord } from "@/lib/jobs/types";
 import { PRO_SERVICE_LABELS } from "@/lib/services";
 import { cn } from "@/lib/utils";
 import { SEARCH_REROUTE_WINDOW_MS } from "./job-utils";
+import { isProPlaceholderName } from "@/lib/pro-label";
 
 /** Display-only chip for the server pairing deadline (no per-second announcements). */
 function PairingChip({ endsAt }: { endsAt: string }) {
@@ -59,7 +60,7 @@ export function SearchingScreen({
       .replace(/\s*Pro$/i, "")
       .trim() || "Pro";
   const proKnown =
-    !!job.repairProName && job.repairProName.trim() !== "Repair Pro";
+    !!job.repairProName && !isProPlaceholderName(job.repairProName);
   const parts = (job.repairProName || "").trim().split(/\s+/);
   const proName = proKnown
     ? parts.length > 1

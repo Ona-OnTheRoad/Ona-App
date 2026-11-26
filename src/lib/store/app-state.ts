@@ -39,7 +39,7 @@ export interface AppState {
   accountType: AccountType | null;
   /**
    * Main account = role they originally signed up as.
-   * Stays fixed when switching Motorist ↔ Repair Pro.
+   * Stays fixed when switching Motorist ↔ Service Pro.
    */
   primaryAccountType: AccountType | null;
   /** Full signup profile (persisted) */
@@ -54,10 +54,10 @@ export interface AppState {
   setUserMode: (mode: UserMode) => void;
   /** Dual vault: true if this device has a signed-up Motorist profile */
   hasMotoristAccount: boolean;
-  /** Dual vault: true if this device has a signed-up Repair Pro profile */
+  /** Dual vault: true if this device has a signed-up Service Pro profile */
   hasProAccount: boolean;
   /**
-   * Repair Pro Live switch when true, motorists can find this pro.
+   * Service Pro Live switch when true, motorists can find this pro.
    * Synced to repair_pro_profiles.is_online.
    */
   proLive: boolean;
@@ -77,7 +77,7 @@ export interface AppState {
     },
   ) => void;
   /**
-   * Smooth switch Motorist ↔ Repair Pro for the signed-in user (server role flip).
+   * Smooth switch Motorist ↔ Service Pro for the signed-in user (server role flip).
    * Returns null on success, or an error / "needs_login" code.
    */
   switchAccount: (
@@ -142,7 +142,7 @@ export interface AppState {
   addProService: (service: ProService) => void;
   removeProService: (service: ProService) => void;
   /**
-   * Complete Motorist or Repair Pro registration and sign in.
+   * Complete Motorist or Service Pro registration and sign in.
    * Each type is a separate account; one person may register both.
    * Requires live Supabase fails if the database write does not succeed.
    */
@@ -212,7 +212,7 @@ export interface AppState {
   isLocating: boolean;
   /** True once a fresh GPS fix (or manual pin) replaced the cached/default location */
   hasLiveFix: boolean;
-  /** Re-fetch Live Repair Pros only (no location / filter changes) */
+  /** Re-fetch Live Service Pros only (no location / filter changes) */
   refreshNearbyPros: () => void;
   setRadiusKm: (n: number) => void;
   setCategory: (c: ServiceCategory) => void;

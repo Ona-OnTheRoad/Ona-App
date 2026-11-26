@@ -39,7 +39,7 @@ import {
 } from "@/lib/profile-system";
 
 /**
- * Repair Pro own profile.
+ * Service Pro own profile.
  * Locked after signup: full name, single skill; years only if already set.
  * Edit via header pencil. Labour prices not on My Profile.
  */
@@ -53,7 +53,7 @@ export function ProOwnProfile({ isLight }: { isLight: boolean }) {
       <ProfileShell
         isLight={isLight}
         title="My Profile"
-        error="Sign in as a Repair Pro to view this profile."
+        error="Sign in as a Service Pro to view this profile."
       />
     );
   }
@@ -108,7 +108,7 @@ export function ProOwnProfile({ isLight }: { isLight: boolean }) {
       <ProfileIdentityHeader
         isLight={isLight}
         name={userProfile.fullName}
-        roleLabel="Repair Pro"
+        roleLabel="Service Pro"
         meta={`Member since ${memberSinceLabel(userProfile.registeredAt)}`}
         badge={
           <NewAccountBadge

@@ -24,7 +24,7 @@ export function PaymentOverviewScreen() {
   };
 
   const title = isPro ? "Payout overview" : "Payment overview";
-  const eyebrowLabel = isPro ? "Repair Pro balance" : "Customer balance";
+  const eyebrowLabel = isPro ? "Service Pro balance" : "Customer balance";
   const currency = (rows[0]?.currency || "NGN") as AppCurrency;
 
   const heroLabel = isPro ? "Money held for you (NGN)" : "Money held now (NGN)";

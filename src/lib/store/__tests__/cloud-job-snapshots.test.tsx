@@ -90,7 +90,7 @@ describe("request projection reconciliation", () => {
   });
   it("preserves hydrated technicianName when an incoming row for the same pro uses the generic placeholder", () => {
     const hydrated = [row(2, "Kunle Auto")];
-    const unhydratedNext = [row(3, "Repair Pro")];
+    const unhydratedNext = [row(3, "Service Pro")];
     expect(reconcileRequests(hydrated, unhydratedNext, hydrated)[0].technicianName).toBe("Kunle Auto");
   });
 });

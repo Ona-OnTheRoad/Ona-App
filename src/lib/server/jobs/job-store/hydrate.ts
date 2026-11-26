@@ -2,6 +2,7 @@ import "server-only";
 import type { JobRecord } from "@/lib/jobs/types";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { createServiceSupabase } from "@/lib/supabase/server";
+import { isProPlaceholderName } from "@/lib/pro-label";
 
 export async function hydrateMotoristPhoto(job: JobRecord): Promise<JobRecord> {
   if (job.motoristPhoto?.trim()) return job;
@@ -104,9 +105,9 @@ export async function hydrateJobPhones(job: JobRecord): Promise<JobRecord> {
               next.repairProPhoto ||
               (row.avatar_url ? String(row.avatar_url) : undefined),
             repairProName:
-              next.repairProName && next.repairProName !== "Repair Pro"
+              next.repairProName && !isProPlaceholderName(next.repairProName)
                 ? next.repairProName
-                : String(row.full_name || next.repairProName || "Repair Pro"),
+                : String(row.full_name || next.repairProName || "Service Pro"),
           };
         }
       }
@@ -179,9 +180,9 @@ export async function hydrateJobContacts(job: JobRecord): Promise<JobRecord> {
               next.repairProPhoto ||
               (row.avatar_url ? String(row.avatar_url) : undefined),
             repairProName:
-              next.repairProName && next.repairProName !== "Repair Pro"
+              next.repairProName && !isProPlaceholderName(next.repairProName)
                 ? next.repairProName
-                : String(row.full_name || next.repairProName || "Repair Pro"),
+                : String(row.full_name || next.repairProName || "Service Pro"),
           };
         }
       }

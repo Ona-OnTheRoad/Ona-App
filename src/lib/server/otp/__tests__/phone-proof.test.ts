@@ -26,7 +26,7 @@ describe("phone proof", () => {
     expect(verifyPhoneProof(proof, "08031234567")).toBe(false);
   });
 
-  it("expires after 2 hours (long enough for the Repair Pro wizard)", () => {
+  it("expires after 2 hours (long enough for the Service Pro wizard)", () => {
     const now = 1_000_000;
     const { proof } = issuePhoneProof(PHONE, now);
     expect(verifyPhoneProof(proof, PHONE, now + PHONE_PROOF_TTL_MS - 1)).toBe(true);

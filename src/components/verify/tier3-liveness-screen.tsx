@@ -9,7 +9,7 @@ import { toastSuccess } from "@/lib/toast";
 import { isIdentityVerified } from "@/lib/verification-gate";
 
 /**
- * Tier 3 face liveness for Repair Pros, opened from the /verify hub.
+ * Tier 3 face liveness for Service Pros, opened from the /verify hub.
  * The pass is recorded by the server (/api/liveness/verify); this screen only
  * mirrors it locally and refreshes the cached profile.
  */
@@ -40,7 +40,7 @@ export function Tier3LivenessScreen() {
   if (!isPro) {
     body = (
       <Notice icon={<Lock className="h-4 w-4" />}>
-        Face liveness is part of Repair Pro verification.
+        Face liveness is part of Service Pro verification.
       </Notice>
     );
   } else if (done) {

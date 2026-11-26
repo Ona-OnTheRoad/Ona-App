@@ -29,7 +29,7 @@ describe("buildSliderItems", () => {
     ]);
   });
 
-  it("repair pro: Home, Jobs, Payouts, My Shop, Referral & Earn, Profile", () => {
+  it("service pro: Home, Jobs, Payouts, My Shop, Referral & Earn, Profile", () => {
     const rows = [
       row("/dashboard", "dashboard"),
       row("/jobs", "jobs"),

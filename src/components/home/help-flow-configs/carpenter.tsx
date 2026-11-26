@@ -36,7 +36,7 @@ export const carpenterConfig: HelpFlowConfig = {
     measurements: CARPENTER_FINAL_COPY.measurements,
   },
   progressDefaultTotal: 11,
-  sendLabel: "Find a Repair Pro",
+  sendLabel: "Find a Service Pro",
   busyLabel: "Finding help",
   buildPayload: (ctx) => {
     const measurementsChoice = (ctx.extraState.measurementsChoice as string) ?? null;

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Repair Pro: lower-panel Incoming Request only (no top toast).
+ * Service Pro: lower-panel Incoming Request only (no top toast).
  * - Instant surface: poll + Supabase realtime
  * - Up to 2 requests visible at once (full cards, panel expands no shrink/scroll)
  * - Further jobs queue; when a slot frees, next promotes instantly
@@ -191,7 +191,7 @@ export function IncomingJobPopup() {
         open={confirmCancelFix}
         isLight={isLight}
         title="Decline this job?"
-        message="You won't accept this job as a Repair Pro."
+        message="You won't accept this job as a Service Pro."
         confirmLabel="Yes, decline"
         keepLabel="Keep"
         onClose={() => setConfirmCancelFix(false)}

@@ -18,7 +18,7 @@ const bodySchema = z.object({
 
 /**
  * POST /api/auth/switch-role
- * Smooth Motorist ↔ Repair Pro switch for the same logged-in user.
+ * Smooth Motorist ↔ Service Pro switch for the same logged-in user.
  * Requires a completed side-profile, switches active role, returns full profile.
  */
 export async function POST(req: Request) {
@@ -68,7 +68,7 @@ export async function POST(req: Request) {
         return apiFail(
           role === "motorist"
             ? "You don't have a Customer account yet."
-            : "You don't have a Repair Pro account yet. Finish signup to go Live and receive jobs.",
+            : "You don't have a Service Pro account yet. Finish signup to go Live and receive jobs.",
           409,
           "needs_signup",
         );

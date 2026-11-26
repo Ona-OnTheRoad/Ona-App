@@ -5,9 +5,9 @@ import type { AccountType } from "@/lib/types";
  *
  * Phone, email, NIN, and BVN may each match:
  *   • one Motorist account, and
- *   • one Repair Pro account
+ *   • one Service Pro account
  * at the same time (same person can run both).
- * They cannot match two Motorist accounts or two Repair Pro accounts.
+ * They cannot match two Motorist accounts or two Service Pro accounts.
  */
 
 const REGISTRY_KEY = "ona-account-registry";
@@ -33,7 +33,7 @@ function digitsOnly(v: string): string {
 }
 
 function accountLabel(type: AccountType): string {
-  return type === "professional" ? "Repair Pro" : "Customer";
+  return type === "professional" ? "Service Pro" : "Customer";
 }
 
 /** Normalize NG phone for comparison (strip country code / leading 0). */
@@ -67,7 +67,7 @@ export function isValidBvnFormat(bvn: string): boolean {
 }
 
 export const IDENTITY_RULE_COPY =
-  "One person can hold Customer and Repair Pro with the same phone, email, NIN and BVN. You cannot open two Customer accounts or two Repair Pro accounts.";
+  "One person can hold Customer and Service Pro with the same phone, email, NIN and BVN. You cannot open two Customer accounts or two Service Pro accounts.";
 
 export function readRegistry(): IdentityClaim[] {
   if (typeof window === "undefined") return [];
@@ -91,7 +91,7 @@ function writeRegistry(list: IdentityClaim[]) {
 
 /**
  * Check whether identity fields are free for this account type.
- * Same phone/email/NIN/BVN may exist once as Customer and once as Repair Pro.
+ * Same phone/email/NIN/BVN may exist once as Customer and once as Service Pro.
  */
 export function checkIdentityAvailable(
   input: {

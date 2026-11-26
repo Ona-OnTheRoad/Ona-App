@@ -56,7 +56,7 @@ export const generatorConfig: HelpFlowConfig = {
     material: GEN_FINAL_COPY.size,
   },
   progressDefaultTotal: 12,
-  sendLabel: "Find a Repair Pro",
+  sendLabel: "Find a Service Pro",
   busyLabel: "Finding help",
   buildPayload: (ctx) => {
     const supplyChoice = (ctx.extraState.supplyChoice as string) ?? null;

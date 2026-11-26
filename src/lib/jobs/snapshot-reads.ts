@@ -203,7 +203,7 @@ export function mergeJobRelatedFields(
       primary.repairProPhoto
     : primary.repairProPhoto;
   const repairProName = samePro
-    ? pickPartyName(primary.repairProName, secondary.repairProName, "Repair Pro")
+    ? pickPartyName(primary.repairProName, secondary.repairProName, "Service Pro")
     : primary.repairProName;
 
   const unchanged =

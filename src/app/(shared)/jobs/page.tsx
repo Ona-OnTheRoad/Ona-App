@@ -2,7 +2,7 @@
 
 /**
  * Jobs inbox
- * - Repair Pro (menu → Jobs): past jobs with full detail links
+ * - Service Pro (menu → Jobs): past jobs with full detail links
  * Active/incoming stay on Dashboard + job flow; multi-request still
  * surfaces via popup. Mid-trip jobs still open at /jobs/[id].
  * - Motorist: the "My jobs" inbox was removed /jobs redirects to the

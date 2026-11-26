@@ -14,7 +14,7 @@ import type { RequestStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 /**
- * Repair Pro order desk incoming motorist requests,
+ * Service Pro order desk incoming motorist requests,
  * accept / en-route / complete flow.
  */
 export default function ProOrdersPage() {
@@ -76,7 +76,7 @@ export default function ProOrdersPage() {
           "ona2 bg-ona-bg",
         )}
       >
-        <PageHeader title="Orders" subtitle="Repair Pro only" backHref="/" />
+        <PageHeader title="Orders" subtitle="Service Pro only" backHref="/" />
         <p className="p-4 text-sm text-muted">
           Switch to Professional mode in the menu to manage job orders.
         </p>

@@ -62,7 +62,7 @@ export function useSwitchAccount(
       }
 
       // Check both sides BEFORE the full-screen overlay. That overlay used to
-      // unmount the menu, so "You don't have a Repair Pro account yet…" never
+      // unmount the menu, so "You don't have a Service Pro account yet…" never
       // appeared for a one-account tap.
       try {
         const flags = await backendDualRoleFlags(backendUserId);

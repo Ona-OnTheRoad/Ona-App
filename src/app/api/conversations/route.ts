@@ -13,7 +13,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Conversation list for a user (motorist or repair pro side). Mirrors what
+ * Conversation list for a user (motorist or service pro side). Mirrors what
  * the browser used to query directly, with an explicit ownership check
  * instead of relying on RLS.
  */
@@ -103,7 +103,7 @@ export async function GET(req: Request) {
         msgsByConv.get(c.id) || [],
         {
           motoristName: byId.get(c.motorist_id)?.full_name || "Customer",
-          technicianName: byId.get(c.repair_pro_id)?.full_name || "Repair Pro",
+          technicianName: byId.get(c.repair_pro_id)?.full_name || "Service Pro",
           serviceType:
             (c.request_id
               ? (jobById.get(c.request_id) as ProService | undefined)

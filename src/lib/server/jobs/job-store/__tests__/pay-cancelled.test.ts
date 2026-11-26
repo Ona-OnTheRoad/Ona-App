@@ -22,7 +22,7 @@ beforeEach(() => {
 });
 
 describe("paying for a job that was cancelled", () => {
-  it("is refused when the Repair Pro cancelled it, and the job is NOT revived", async () => {
+  it("is refused when the Service Pro cancelled it, and the job is NOT revived", async () => {
     m.job = job("cancelled", [{ status: "agreed", by: "system" }, { status: "cancelled", by: "repair_pro" }]);
     const res = await pay();
     expect("error" in res && res.error).toMatch(/cancelled.*no longer be paid/i);

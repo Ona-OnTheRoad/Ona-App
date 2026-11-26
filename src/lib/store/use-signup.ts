@@ -140,7 +140,7 @@ export function useSignup(
         // From the optional "Verify your number" step. The server only honours it
         // for exactly this phone and ignores anything stale or invalid.
         phoneProof: loadSignupDraft()?.phoneProof || undefined,
-        // Dual role: keep motorist when adding Repair Pro (and vice versa)
+        // Dual role: keep motorist when adding Service Pro (and vice versa)
         keepOtherRole: true,
         refCode: normalized.refCode,
       });

@@ -180,7 +180,7 @@ describe("detail snapshot integration", () => {
       motoristPhone: null,
       motoristVehicle: null,
       repairProId: "p1",
-      repairProName: "Repair Pro",
+      repairProName: "Service Pro",
       repairProPhone: null,
       calloutQuote: null,
     } as unknown as JobRecord;

@@ -40,7 +40,7 @@ export function renderExpiredStage(
 
   const tradeLabel =
     PRO_SERVICE_LABELS[job.serviceType as keyof typeof PRO_SERVICE_LABELS] ||
-    "Repair Pro";
+    "Service Pro";
   const isRerouteExhausted = job.statusHistory.some(
     (h) => h.by === "reroute_exhausted" || h.by === "pairing_exhausted",
   );

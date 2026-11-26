@@ -11,7 +11,7 @@ import { PRO_SERVICE_LABELS } from "@/lib/services";
 import { cn } from "@/lib/utils";
 
 /**
- * "Add another repair pro" (Tow): a linked second request was created at
+ * "Add another service pro" (Tow): a linked second request was created at
  * booking time and armed 60 min after the first pro accepts. The motorist was
  * pinged to enter their current address; this panel collects it and dispatches
  * the trade pro there (books the first pro immediately).

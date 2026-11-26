@@ -29,7 +29,7 @@ import type { Technician } from "@/lib/types";
 import { cn, formatDistance, formatEta } from "@/lib/utils";
 
 /**
- * 1. Motorist viewing Repair Pro 100% read-only.
+ * 1. Motorist viewing Service Pro 100% read-only.
  */
 export function ProPublicView({
   tech,
@@ -79,7 +79,7 @@ export function ProPublicView({
   );
   const photo = tech.photo?.trim() || undefined;
   const skillLabel =
-    tech.roleLabel || skills[0] || tech.serviceType || "Repair Pro";
+    tech.roleLabel || skills[0] || tech.serviceType || "Service Pro";
   const statusText =
     tech.status === "available"
       ? null
@@ -97,7 +97,7 @@ export function ProPublicView({
   return (
     <ProfileShell
       isLight={isLight}
-      title="Repair Pro Profile"
+      title="Service Pro Profile"
       footer={
         <Button
           size="lg"

@@ -18,7 +18,7 @@ import type { Technician } from "@/lib/types";
 import { cn, formatEta } from "@/lib/utils";
 
 /**
- * Motorist-facing Repair Pro profile solid sheets on both toggles
+ * Motorist-facing Service Pro profile solid sheets on both toggles
  * (no transparent / glass panels).
  */
 export function ProPublicProfile({
@@ -37,7 +37,7 @@ export function ProPublicProfile({
 }) {
   const router = useRouter();
   const skillLabel =
-    PRO_SERVICE_LABELS[tech.serviceType] ?? tech.roleLabel ?? "Repair Pro";
+    PRO_SERVICE_LABELS[tech.serviceType] ?? tech.roleLabel ?? "Service Pro";
   const skillRows = publicSkillRows(tech.serviceType, tech.skillAnswers);
   const photoSrc = tech.photo?.trim() || undefined;
 

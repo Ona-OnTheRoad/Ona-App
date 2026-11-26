@@ -38,7 +38,7 @@ function JobPageInner() {
 
   /**
    * Prefer job membership over current “Use as” role so dual-role users
-   * who are still on Repair Pro still see Customer “I am satisfied”.
+   * who are still on Service Pro still see Customer “I am satisfied”.
    */
   const [viewer, setViewer] = useState<"motorist" | "repair_pro">(
     accountType === "professional" ? "repair_pro" : "motorist",

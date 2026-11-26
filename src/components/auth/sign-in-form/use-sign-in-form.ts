@@ -25,7 +25,7 @@ export function useSignInForm() {
   const t = useT();
   const { sendLoginOtp, signInWithLoginOtp, signInWithPassword } = useApp();
 
-  // Customer is preselected; a returning Repair Pro gets their last role back.
+  // Customer is preselected; a returning Service Pro gets their last role back.
   const [preferType, setPreferType] = useState<AccountType | "">("motorist");
   // Email login is the default primary method; phone login is the second option.
   const [method, setMethod] = useState<LoginMethod>("email");

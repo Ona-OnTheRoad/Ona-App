@@ -1,6 +1,6 @@
 /**
  * Shared "Create account" details collected once at /signup and reused by the
- * Customer and Repair Pro wizards. Lives in sessionStorage only; NEVER holds a
+ * Customer and Service Pro wizards. Lives in sessionStorage only; NEVER holds a
  * password. Every access is try/catch'd and SSR-safe.
  */
 import type { SignupGender } from "@/lib/signup-validation";

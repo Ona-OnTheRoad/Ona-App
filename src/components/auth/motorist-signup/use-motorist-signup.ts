@@ -26,7 +26,7 @@ import { useMotoristVehicles } from "./use-motorist-vehicles";
 
 /**
  * Full Customer signup polished account step + reduced corner radius.
- * Menu dual-signup: locks identity from Repair Pro, lands on Motorist home.
+ * Menu dual-signup: locks identity from Service Pro, lands on Motorist home.
  */
 export function useMotoristSignup() {
   const router = useRouter();

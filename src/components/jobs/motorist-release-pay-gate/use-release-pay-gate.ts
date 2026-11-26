@@ -218,7 +218,7 @@ export function useReleasePayGate() {
     playAppSound("payment_success");
     setReceipt({
       amount: formatMoney(total, currency),
-      note: "Payment confirmed releasing your Repair Pro's pay.",
+      note: "Payment confirmed releasing your Service Pro's pay.",
     });
     setSuccess(true);
     setPending(null);

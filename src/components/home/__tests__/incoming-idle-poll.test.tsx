@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * Idle poll cadence of the Repair Pro incoming-request popup follows realtime
+ * Idle poll cadence of the Service Pro incoming-request popup follows realtime
  * health. Open broadcast jobs are never pushed by realtime (no assigned pro yet),
  * so the idle poll stays at 3s whether or not the channel is connected.
  * A card on screen keeps the fast cadence (covered in incoming-job-popup-close).

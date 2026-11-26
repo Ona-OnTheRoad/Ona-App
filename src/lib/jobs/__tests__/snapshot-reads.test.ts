@@ -156,7 +156,7 @@ describe("snapshot revision guards", () => {
       motoristPhoto: null,
       motoristVehicle: null,
       repairProId: "p1",
-      repairProName: "Repair Pro",
+      repairProName: "Service Pro",
       repairProPhone: null,
       repairProPhoto: undefined,
       calloutQuote: null,
@@ -180,14 +180,14 @@ describe("snapshot revision guards", () => {
       jobVersion: 6,
       status: "waiting_for_pro",
       repairProId: "p2",
-      repairProName: "Repair Pro",
+      repairProName: "Service Pro",
       repairProPhone: null,
       repairProPhoto: undefined,
     } as JobRecord;
     const afterReassign = mergeJobRelatedFields(reassigned, merged);
     expect(afterReassign.motoristPhone).toBe("+2348011111111");
     expect(afterReassign.repairProId).toBe("p2");
-    expect(afterReassign.repairProName).toBe("Repair Pro");
+    expect(afterReassign.repairProName).toBe("Service Pro");
     expect(afterReassign.repairProPhone).toBeNull();
     expect(afterReassign.repairProPhoto).toBeUndefined();
     expect(afterReassign.calloutQuote).toBeNull();
@@ -202,7 +202,7 @@ describe("snapshot revision guards", () => {
       motoristId: "m1",
       motoristName: "Customer",
       repairProId: "p1",
-      repairProName: "Repair Pro",
+      repairProName: "Service Pro",
     } as JobRecord;
     // Optimistic or intervening commit at version 4
     const current = {

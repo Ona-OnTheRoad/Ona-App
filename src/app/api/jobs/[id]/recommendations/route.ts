@@ -51,7 +51,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     if ("error" in loaded && loaded.error) return loaded.error;
     if (loaded.job.repairProId !== loaded.auth.userId) {
       return apiFail(
-        "Only the Repair Pro on this job can recommend parts",
+        "Only the Service Pro on this job can recommend parts",
         403,
       );
     }
@@ -76,7 +76,7 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
     const loaded = await loadParty(req, id);
     if ("error" in loaded && loaded.error) return loaded.error;
     if (loaded.job.repairProId !== loaded.auth.userId) {
-      return apiFail("Only the Repair Pro on this job can remove parts", 403);
+      return apiFail("Only the Service Pro on this job can remove parts", 403);
     }
     const recId = req.nextUrl.searchParams.get("recommendationId");
     if (!recId) return apiFail("recommendationId required", 400);

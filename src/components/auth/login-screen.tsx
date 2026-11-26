@@ -31,7 +31,7 @@ export function LoginScreen() {
     else router.replace(signupHref("/signup", { ref }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  /** No default: user must pick Car Owner or Repair Pro */
+  /** No default: user must pick Car Owner or Service Pro */
   const [accountType, setAccountType] = useState<AccountType | null>(null);
 
   const onSubmit = (e: React.FormEvent) => {

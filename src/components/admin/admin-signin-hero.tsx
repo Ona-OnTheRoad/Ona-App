@@ -10,7 +10,7 @@ interface AdminSigninHeroProps extends React.HTMLAttributes<HTMLDivElement> {
  * AdminSigninHero
  *
  * Hero visual component for the Admin login page.
- * Displays the dark Ona Nigeria repair pro network map, evening skyline,
+ * Displays the dark Ona Nigeria service pro network map, evening skyline,
  * and Ona technician holding a phone.
  *
  * ViewBox / Aspect Ratio: 700 x 984 (aspect-[700/984])
@@ -27,7 +27,7 @@ export function AdminSigninHero({
     >
       <Image
         src="/images/admin-signin-hero.png"
-        alt="Ona Control Centre - Repair Pro network across Nigeria"
+        alt="Ona Control Centre - Service Pro network across Nigeria"
         fill
         priority={priority}
         unoptimized

@@ -103,7 +103,7 @@ async function run(req: Request) {
       }
     }
 
-    // "Add another repair pro": notify the motorist when a linked scheduled
+    // "Add another service pro": notify the motorist when a linked scheduled
     // request's 60-min dispatch mark is reached; silently cancel it if the
     // primary tow request was cancelled/expired first.
     let scheduledDispatchResult: {

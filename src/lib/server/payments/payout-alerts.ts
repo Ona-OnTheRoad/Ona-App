@@ -67,7 +67,7 @@ export async function markJobPayoutOnHold(jobId: string): Promise<boolean> {
   }
 }
 
-/** What we owe a Repair Pro for one escrow row, in kobo. */
+/** What we owe a Service Pro for one escrow row, in kobo. */
 export function owedPayoutMinor(e: {
   proPayoutMinor?: number | null;
   amountMinor?: number | null;
@@ -136,7 +136,7 @@ export async function checkPayoutFloatAndAlert(): Promise<{
     }
     const day = new Date().toISOString().slice(0, 10);
     const subject = "Payouts are waiting on Flutterwave balance";
-    const text = `Flutterwave Available is ${money(balances.available)} (Ledger ${money(balances.ledger)}), but ${pending.length} Repair Pro payout${pending.length === 1 ? "" : "s"} totalling ${money(status.owedNgn)} ${pending.length === 1 ? "is" : "are"} waiting. Short by ${money(status.shortfallNgn)}.\n\nTop up the Available balance, or wait for collected funds to settle. Payouts retry every 10 minutes and are suspended for manual release after 24 hours. Open Admin > Payments to see them.`;
+    const text = `Flutterwave Available is ${money(balances.available)} (Ledger ${money(balances.ledger)}), but ${pending.length} Service Pro payout${pending.length === 1 ? "" : "s"} totalling ${money(status.owedNgn)} ${pending.length === 1 ? "is" : "are"} waiting. Short by ${money(status.shortfallNgn)}.\n\nTop up the Available balance, or wait for collected funds to settle. Payouts retry every 10 minutes and are suspended for manual release after 24 hours. Open Admin > Payments to see them.`;
     let emailed = 0;
     for (const row of (staff.data || []) as Array<{ id: string; email: string | null }>) {
       if (!row.email) continue;

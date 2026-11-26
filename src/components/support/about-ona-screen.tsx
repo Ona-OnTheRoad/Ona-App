@@ -68,7 +68,7 @@ export function AboutOnaScreen() {
           <div className="flex items-center justify-between p-4">
             <p className="text-[12px] font-medium text-ona-ink">Roles</p>
             <p className="text-[11px] font-normal text-ona-muted">
-              Customers & Repair Pros
+              Customers & Service Pros
             </p>
           </div>
 

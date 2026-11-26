@@ -73,7 +73,7 @@ export function nextTowScreen(
 
 /**
  * Pick the trade from the filled answers. Most branches stay with Tow and let
- * the final "meet a repair pro at the destination" question handle follow-up
+ * the final "meet a service pro at the destination" question handle follow-up
  * pros (Mechanic / Vulcanizer / Body / etc.). Branch D prefers Vulcanizer for
  * a single safe tyre; Branch G offers the related trade for odd requests.
  */

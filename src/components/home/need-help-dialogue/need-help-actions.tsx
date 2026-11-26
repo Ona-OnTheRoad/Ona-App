@@ -62,7 +62,7 @@ export function NeedHelpActions({
           onClick={() => void send()}
           className="flex-1"
         >
-          {busy ? "Finding help…" : "Find a Repair Pro"}
+          {busy ? "Finding help…" : "Find a Service Pro"}
         </Button>
       ) : null}
     </div>

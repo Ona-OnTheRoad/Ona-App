@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/pros/[id] single Live Repair Pro for motorist deep-links.
+ * GET /api/pros/[id] single Live Service Pro for motorist deep-links.
  * Only when: approved + is_online + profiles.role = repair_pro.
  * Includes live reviews so motorists can read before offering.
  */
@@ -47,7 +47,7 @@ export async function GET(
     if (error) return apiFail(error.message, 500);
     if (!pro) {
       return apiFail(
-        "This Repair Pro is Away or not available right now.",
+        "This Service Pro is Away or not available right now.",
         404,
         "pro_offline",
       );
@@ -59,7 +59,7 @@ export async function GET(
       !hasRecentLiveHeartbeat(proRow.location_updated_at)
     ) {
       return apiFail(
-        "This Repair Pro is Away or not available right now.",
+        "This Service Pro is Away or not available right now.",
         404,
         "pro_offline",
       );
@@ -75,7 +75,7 @@ export async function GET(
 
     if (!profile) {
       return apiFail(
-        "This Repair Pro is Away or not available right now.",
+        "This Service Pro is Away or not available right now.",
         404,
         "pro_offline",
       );
@@ -90,7 +90,7 @@ export async function GET(
       })
     ) {
       return apiFail(
-        "This Repair Pro is Away or not available right now.",
+        "This Service Pro is Away or not available right now.",
         404,
         "pro_offline",
       );

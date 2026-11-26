@@ -1,5 +1,5 @@
 /**
- * Shared signup field security checks (Motorist + Repair Pro).
+ * Shared signup field security checks (Motorist + Service Pro).
  * Field errors are meant to show on blur (when leaving a field), not only on Next.
  */
 

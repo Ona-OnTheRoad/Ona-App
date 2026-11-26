@@ -59,7 +59,7 @@ export async function createOrAttachUser(
       return apiFail(
         role === "motorist"
           ? "This account already has a Customer role. Log in instead."
-          : "This account already has a Repair Pro role. Log in instead.",
+          : "This account already has a Service Pro role. Log in instead.",
         409,
         "role_exists",
       );

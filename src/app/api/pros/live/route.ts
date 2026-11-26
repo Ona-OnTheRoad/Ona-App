@@ -27,7 +27,7 @@ const PRO_SELECT_FULL =
 const PRO_SELECT_BASE = "user_id, lat, lng, docs_status, status, is_online";
 
 /**
- * Repair Pro Live / Away.
+ * Service Pro Live / Away.
  * When online: forces profiles.role = repair_pro + is_online + GPS pin
  * so customers can discover them within 5 km (2 km if docs pending).
  *
@@ -112,7 +112,7 @@ export async function POST(req: Request) {
 
     if (!proRow) {
       return apiFail(
-        "No Repair Pro profile. Complete pro signup first.",
+        "No Service Pro profile. Complete pro signup first.",
         400,
         "no_pro_profile",
       );
@@ -222,7 +222,7 @@ export async function POST(req: Request) {
     // --- Going Live ---
     if (proRow.status === "suspended" || proRow.status === "rejected") {
       return apiFail(
-        "Your Repair Pro account is suspended or rejected.",
+        "Your Service Pro account is suspended or rejected.",
         403,
         "not_approved",
       );

@@ -97,8 +97,8 @@ export async function switchIdentityRole(userId: string, role: RoleType): Promis
     }
   }
 
-  // Switching away from Repair Pro → go Away so motorists cannot find them.
-  // Switching into Repair Pro → stay Away until they tap Live on the dashboard.
+  // Switching away from Service Pro → go Away so motorists cannot find them.
+  // Switching into Service Pro → stay Away until they tap Live on the dashboard.
   if (role === "motorist") {
     await admin
       .from("repair_pro_profiles")

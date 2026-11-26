@@ -284,7 +284,7 @@ describe("customer problem is a symptom, not a diagnosis", () => {
 
   it("already at the workshop → not call-out eligible", () => {
     const c = classifyRequest({
-      problem: "Vehicle is already at the Repair Pro workshop.",
+      problem: "Vehicle is already at the Service Pro workshop.",
     });
     expect(c.serviceIntent).toBe("WORKSHOP");
     expect(c.physicalAttendanceRequired).toBe(false);

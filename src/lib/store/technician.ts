@@ -4,17 +4,17 @@ import { isProService, PRO_SERVICE_LABELS } from "@/lib/pro-service-id";
 import type { Technician, UserProfile } from "@/lib/types";
 import { SELF_PRO_TECH_ID } from "./constants";
 
-/** Map a Repair Pro UserProfile into a directory Technician card. */
+/** Map a Service Pro UserProfile into a directory Technician card. */
 export function profileToTechnician(profile: UserProfile): Technician | null {
   if (profile.accountType !== "professional") return null;
   const services = (profile.services ?? []).filter(isProService);
   const primary = services[0] ?? "mechanic";
-  const name = profile.fullName.trim() || "Repair Professional";
+  const name = profile.fullName.trim() || "Service Pro";
   const short =
     name.split(/\s+/).length >= 2
       ? `${name.split(/\s+/)[0]} ${name.split(/\s+/).at(-1)?.[0] ?? ""}.`
       : name;
-  const label = PRO_SERVICE_LABELS[primary] ?? "Repair Pro";
+  const label = PRO_SERVICE_LABELS[primary] ?? "Service Pro";
   const brand = profile.servedBrand || profile.servedMake;
   const focusBits = [
     profile.servedVehicleType,
@@ -29,7 +29,7 @@ export function profileToTechnician(profile: UserProfile): Technician | null {
   const focusLine =
     focusBits.length > 0
       ? `Serves ${focusBits.join(" · ")}.`
-      : "Roadside repair professional.";
+      : "Roadside service pro.";
   const skillAns = (profile.skillAnswers || {}) as Record<string, unknown>;
   const specialtyAns = skillAns.specialties;
   const specialtyOne = skillAns.specialty;

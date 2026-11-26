@@ -2,7 +2,7 @@
 
 /**
  * Live trip map: dual pins + copper route.
- * Motorist sees Repair Pro movement; pro sees motorist location.
+ * Motorist sees Service Pro movement; pro sees motorist location.
  * Colors match customer dashboard map in both themes
  * (light → green-black, dark → red-black) with street/POI labels forced on.
  */

@@ -35,7 +35,7 @@ export const NAV_SCHEMA: NavSchemaRow[] = [
   { id: "settings", href: "/settings", role: "client", label: "Settings" },
   { id: "shop", href: "/shop", role: "client", label: "My Shop" },
   { id: "express", href: "/express", role: "client", label: "Ona Express" },
-  // Repair Pros
+  // Service Pros
   { id: "dashboard", href: "/dashboard", role: "pro", label: "Dashboard" },
   { id: "jobs", href: "/jobs", role: "pro", label: "Jobs" },
   { id: "profile", href: "/profile", role: "pro", label: "Profile" },

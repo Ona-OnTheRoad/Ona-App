@@ -29,7 +29,7 @@ export const YO_HOME: Record<keyof typeof EN_HOME, string> = {
   "home.collapsePanel": "Yí sísàlẹ̀ láti pa pẹpẹ",
   "home.noProsAvailable": "Kò sí Pro",
   "home.noProsMatch": "Kò sí pro tó bá àlẹ̀mọ́",
-  "home.noRepairPros": "Kò sí Repair Pro nítòsí",
+  "home.noRepairPros": "Kò sí Service Pro nítòsí",
   "home.refresh": "Tún ṣe",
   "home.refreshing": "Ń tún ṣe…",
   "home.nearbyCount": "{total} nítòsí",

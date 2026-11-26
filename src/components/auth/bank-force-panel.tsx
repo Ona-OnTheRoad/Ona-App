@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Lower panel forced bank setup (Customer + Repair Pro).
+ * Lower panel forced bank setup (Customer + Service Pro).
  * Same fields as Settings → Payments (bank list, code, resolve name, unique).
  */
 
@@ -37,7 +37,7 @@ export function BankForcePanel({
   const isLight = theme === "light";
   const isPro = surface === "dashboard" || accountType === "professional";
 
-  // Both Customer and Repair Pro need bank (refunds vs payouts)
+  // Both Customer and Service Pro need bank (refunds vs payouts)
   // Wait for full page settle so reload never flashes bank over half-loaded UI
   const need =
     Boolean(gatesReady && authReady && isAuthenticated && userProfile) &&

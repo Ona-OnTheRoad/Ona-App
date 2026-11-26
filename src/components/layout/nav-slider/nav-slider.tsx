@@ -126,7 +126,7 @@ export function NavSlider() {
   if (!mounted || !isAuthenticated) return null;
 
   const otherRole = isPro ? "motorist" : "professional";
-  const switchLabel = isPro ? "Switch to Customer" : "Switch to Repair Pro";
+  const switchLabel = isPro ? "Switch to Customer" : "Switch to Service Pro";
 
   return (
     <div className="ona2 absolute inset-0 z-[100] overflow-hidden bg-transparent">

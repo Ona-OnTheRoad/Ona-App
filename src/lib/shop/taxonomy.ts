@@ -1,5 +1,5 @@
 /**
- * ONA Shop taxonomy single source of truth for the 14 Repair Pro trades.
+ * ONA Shop taxonomy single source of truth for the 14 Service Pro trades.
  *
  * Shared server + client module (no "use client"). Each trade maps to its own
  * category tree. Vehicle fitment is only for vehicle-based trades.

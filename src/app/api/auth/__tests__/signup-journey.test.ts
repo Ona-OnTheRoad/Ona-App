@@ -211,7 +211,7 @@ describe("happy path: verify the number, then sign up", () => {
     }
   });
 
-  it("Repair Pro: same journey, pro tables stamped verified", async () => {
+  it("Service Pro: same journey, pro tables stamped verified", async () => {
     const proof = await getProof();
     const res = await createAccount(pro({ phoneProof: proof }));
     expect(res.status).toBe(200);

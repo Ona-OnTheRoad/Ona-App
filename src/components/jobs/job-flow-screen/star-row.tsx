@@ -25,7 +25,7 @@ export function StarRow({
       role={interactive ? "radiogroup" : "img"}
       aria-label={
         interactive
-          ? "Rate the Repair Pro"
+          ? "Rate the Service Pro"
           : value > 0
             ? `Rated ${value} out of 5`
             : "No rating yet"

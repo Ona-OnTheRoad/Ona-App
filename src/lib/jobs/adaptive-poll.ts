@@ -77,7 +77,7 @@ export const INCOMING_IDLE_POLL_DEGRADED_MS = 3_000;
 export const INCOMING_IDLE_POLL_HEALTHY_MS = 3_000;
 
 /**
- * Idle poll delay for the Repair Pro incoming-request popup. Slows only while
+ * Idle poll delay for the Service Pro incoming-request popup. Slows only while
  * realtime is confirmed healthy; `adaptiveEnabled === false` is the rollback
  * switch that restores the fixed degraded cadence.
  */

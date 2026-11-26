@@ -7,7 +7,7 @@ import { PAGE_SIZE } from "@/components/home/home-panel/use-paged-technicians";
 
 type ActiveJob = React.ComponentProps<typeof TechCard>["activeJob"];
 
-/** Repair Pro market list (paged, scrolls inside the sheet). */
+/** Service Pro market list (paged, scrolls inside the sheet). */
 export function ProTechList({
   list,
   total,

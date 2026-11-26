@@ -30,7 +30,7 @@ export const PT_HOME: Record<keyof typeof EN_HOME, string> = {
   "home.collapsePanel": "Deslize para baixo para recolher",
   "home.noProsAvailable": "Sem pros disponíveis",
   "home.noProsMatch": "Nenhum pro corresponde",
-  "home.noRepairPros": "Sem Repair Pros por perto",
+  "home.noRepairPros": "Sem Service Pros por perto",
   "home.refresh": "Atualizar",
   "home.refreshing": "A atualizar…",
   "home.nearbyCount": "{total} por perto",

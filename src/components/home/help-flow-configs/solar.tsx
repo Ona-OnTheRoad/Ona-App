@@ -56,7 +56,7 @@ export const solarConfig: HelpFlowConfig = {
     material: SOLAR_FINAL_COPY.load,
   },
   progressDefaultTotal: 11,
-  sendLabel: "Find a Repair Pro",
+  sendLabel: "Find a Service Pro",
   busyLabel: "Finding help",
   buildPayload: (ctx) => {
     const supplyChoice = (ctx.extraState.supplyChoice as string) ?? null;

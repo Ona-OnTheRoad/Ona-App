@@ -22,7 +22,7 @@ const STATUS_COLUMNS = [
 const MAX_IDS = 8;
 
 /**
- * Ultra-light status snapshot for the Repair Pro incoming popup's visible
+ * Ultra-light status snapshot for the Service Pro incoming popup's visible
  * cards. One tiny query (no media / offers / status_history payload) so a
  * customer cancellation is detected within ~1s on the pro's phone even when
  * the realtime push is missed. Scope is always "this pro's own requests".

@@ -7,13 +7,13 @@ import { useApp } from "@/lib/store";
 const SESSION_KEY = "ona-first-open-done";
 
 /**
- * Land a Repair Pro on the pro dashboard instead of the customer home.
+ * Land a Service Pro on the pro dashboard instead of the customer home.
  *
  * Waits for the AUTHORITATIVE role (`accountType`). Redirects:
- *  - first open of this tab as a Repair Pro
- *  - when the role switches Customer → Repair Pro while still on "/"
+ *  - first open of this tab as a Service Pro
+ *  - when the role switches Customer → Service Pro while still on "/"
  *
- * A Repair Pro who later opens "/" on purpose (map) is not bounced again
+ * A Service Pro who later opens "/" on purpose (map) is not bounced again
  * unless they just switched into that role.
  */
 export function RoleBootstrap() {

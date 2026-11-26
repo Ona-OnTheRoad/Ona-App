@@ -2,7 +2,7 @@ import { Field, RequiredMark } from "./field-parts";
 import type { ProFieldStyles } from "./field-styles";
 import type { ProSignupForm } from "./use-pro-signup-form";
 
-/** Step 4, part 3: Guarantor compulsory for Repair Pro. */
+/** Step 4, part 3: Guarantor compulsory for Service Pro. */
 export function AboutGuarantorSection({
   form,
   styles,

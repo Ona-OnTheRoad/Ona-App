@@ -33,7 +33,7 @@ export function InAppCallProvider({ children }: { children: ReactNode }) {
   const isLight = theme === "light";
   const myName = userProfile?.fullName?.trim() || displayName || "Ona user";
   const myPhoto = userProfile?.avatarUrl || "";
-  const myRole = accountType === "professional" ? "Repair Pro" : "Customer";
+  const myRole = accountType === "professional" ? "Service Pro" : "Customer";
 
   const [target, setTarget] = useState<CallTarget | null>(null);
   const [phase, setPhase] = useState<CallPhase>("idle");

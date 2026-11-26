@@ -161,7 +161,7 @@ describe("POST /api/liveness/verify: provider gate", () => {
     expect(mocks.face).toHaveBeenCalledWith({ imageBase64: expect.any(String), nin: null });
   });
 
-  it("returns 404 for an account with no Repair Pro profile", async () => {
+  it("returns 404 for an account with no Service Pro profile", async () => {
     setup(null);
     expect((await post({ selfie: SELFIE })).status).toBe(404);
     expect(mocks.face).not.toHaveBeenCalled();

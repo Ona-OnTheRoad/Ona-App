@@ -1,6 +1,6 @@
 /**
  * Sample notifications for local/demo when API table empty.
- * Motorist vs Repair Pro sets differ.
+ * Motorist vs Service Pro sets differ.
  */
 
 import type { AppNotification } from "@/lib/notifications/types";

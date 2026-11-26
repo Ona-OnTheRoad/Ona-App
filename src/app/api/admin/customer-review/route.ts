@@ -800,7 +800,7 @@ export async function PATCH(req: Request) {
     if (error) return apiFail(error.message, 500);
 
     if (approve) {
-      // Dual-role: auto-approve Repair Pro T2 + share ID media if empty
+      // Dual-role: auto-approve Service Pro T2 + share ID media if empty
       const { mirrorDualRoleT2Approved } =
         await import("@/lib/server/identity/dual-t2-mirror");
       await mirrorDualRoleT2Approved(supabase, userId, {
@@ -832,7 +832,7 @@ export async function PATCH(req: Request) {
       userId,
       action: approve ? "approve" : "reject",
       message: approve
-        ? "Tier 2 approved on Customer dual Repair Pro T2 auto-approved when both accounts exist."
+        ? "Tier 2 approved on Customer dual Service Pro T2 auto-approved when both accounts exist."
         : "Tier 2 rejected customer must re-submit their government ID.",
     });
   } catch (e) {

@@ -42,7 +42,7 @@ export const vulcanizerConfig: HelpFlowConfig = {
     tow: VULCANIZER_FINAL_COPY.tow,
   },
   progressDefaultTotal: 11,
-  sendLabel: "Find a Repair Pro",
+  sendLabel: "Find a Service Pro",
   busyLabel: "Finding help",
   buildPayload: (ctx) => {
     const towNeeded = (ctx.extraState.towNeeded as boolean) ?? false;

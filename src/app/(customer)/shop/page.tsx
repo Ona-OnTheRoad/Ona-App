@@ -2,7 +2,7 @@
 
 /**
  * ONA Shop home repair commerce catalog browser.
- * Customer: trade bar "Shop". Repair Pro: hamburger Shop.
+ * Customer: trade bar "Shop". Service Pro: hamburger Shop.
  */
 
 import { NavMenuButton } from "@/components/layout/nav-slider/nav-menu-button";

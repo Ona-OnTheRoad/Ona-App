@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * Guards the fast-close mechanism of the Repair Pro incoming panel:
+ * Guards the fast-close mechanism of the Service Pro incoming panel:
  * - while a card is visible, `poll()` calls the ultra-light
  * `/api/jobs/pro-incoming-status` endpoint (via `apiProIncomingStatus`) with
  * the visible card ids, instead of the full list;

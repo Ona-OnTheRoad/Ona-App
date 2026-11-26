@@ -281,7 +281,7 @@ export async function claimBroadcastOffer(sb: Sb, jobId: string, proId: string):
   const { data, error } = await sb.rpc("claim_broadcast_offer", {
     p_request_id: jobId,
     p_pro_id: proId,
-    p_pro_name: prof?.full_name || proRow?.business_name || "Repair Pro",
+    p_pro_name: prof?.full_name || proRow?.business_name || "Service Pro",
     p_pro_photo: prof?.avatar_url || null,
     p_window_ms: BROADCAST_WINDOW_MS,
   });

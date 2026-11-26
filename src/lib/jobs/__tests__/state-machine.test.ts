@@ -351,7 +351,7 @@ describe("state-machine", () => {
     it("rejects first offer from motorist", () => {
       expect(canPlaceOffer({ ...base, side: "motorist" })).toEqual({
         ok: false,
-        reason: "Repair Pro must set the labour price first.",
+        reason: "Service Pro must set the labour price first.",
       });
     });
 
@@ -487,7 +487,7 @@ describe("state-machine", () => {
         }),
       ).toEqual({
         ok: false,
-        reason: "Wait for the Repair Pro to set a price.",
+        reason: "Wait for the Service Pro to set a price.",
       });
     });
   });

@@ -13,7 +13,7 @@ import { useApp } from "@/lib/store";
 import type { Technician } from "@/lib/types";
 
 /**
- * Motorist opens a Repair Pro from home / map (read-only).
+ * Motorist opens a Service Pro from home / map (read-only).
  * Own pro card (`pro-self`) → pro own profile editor.
  * Live reviews poll so new ratings appear before offering.
  */
@@ -201,7 +201,7 @@ export default function TechnicianPage({
               : "max-w-xs text-center text-[12px] text-white/60"
           }
         >
-          This Repair Pro is Away, switched to Customer, unapproved, or the link
+          This Service Pro is Away, switched to Customer, unapproved, or the link
           is outdated. Only Live pros are available.
         </p>
         <Button asChild>

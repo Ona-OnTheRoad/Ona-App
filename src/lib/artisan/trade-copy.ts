@@ -15,8 +15,8 @@ export function tradeFocusQuestion(service: ProService | null | undefined) {
 }
 
 /** Public-profile heading for the multi-select of a pro's strongest work. */
-export function coreFocusLabel(service: ProService | null | undefined) {
-  return service === "fashion" ? "My Specialties" : "My Repair Core Focus";
+export function coreFocusLabel(_service?: ProService | null) {
+  return "My Specialties";
 }
 
 export function businessNameCopy(service: ProService | null | undefined) {

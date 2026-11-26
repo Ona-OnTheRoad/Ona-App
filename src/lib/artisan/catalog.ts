@@ -1,5 +1,5 @@
 /**
- * Repair Pro / artisan trade catalog for Ona.
+ * Service Pro / artisan trade catalog for Ona.
  * Motorist filter uses `service`; specialty is artisan self-description.
  */
 

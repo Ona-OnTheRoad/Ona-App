@@ -493,7 +493,7 @@ export async function POST(req: Request) {
     }
   }
 
-  // Persist guarantor for Repair Pro
+  // Persist guarantor for Service Pro
   if (b.guarantor) {
     try {
       await admin.from("repair_pro_guarantors").upsert(

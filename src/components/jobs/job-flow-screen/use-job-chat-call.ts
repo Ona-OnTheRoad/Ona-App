@@ -117,7 +117,7 @@ export function useJobChatCall({
           name: j.repairProName,
           phone,
           photo: j.repairProPhoto || tech?.photo,
-          roleLabel: PRO_SERVICE_LABELS[j.serviceType] || "Repair Pro",
+          roleLabel: PRO_SERVICE_LABELS[j.serviceType] || "Service Pro",
           userId: peerId || undefined,
           jobId: j.id,
         });

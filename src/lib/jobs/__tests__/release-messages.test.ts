@@ -3,7 +3,7 @@ import { friendlyReleaseError } from "../release-messages";
 
 describe("friendlyReleaseError", () => {
   it("turns the developer bank message into plain words that blame nobody and name the next step", () => {
-    const raw = "Repair Pro bank incomplete (bank code + 10-digit account + name). Funds stay in escrow.";
+    const raw = "Service Pro bank incomplete (bank code + 10-digit account + name). Funds stay in escrow.";
     const r = friendlyReleaseError(raw, "Eva")!;
     expect(r.kind).toBe("pro_bank");
     expect(r.blocksRelease).toBe(true);

@@ -41,8 +41,8 @@ const PRO_SERVICES: {
 ];
 
 /**
- * Dedicated page: choose primary Repair Professional service.
- * Reached from login after selecting Repair Pro not an inline menu.
+ * Dedicated page: choose primary Service Pro service.
+ * Reached from login after selecting Service Pro not an inline menu.
  */
 export function ProServiceScreen() {
   const router = useRouter();
@@ -76,7 +76,7 @@ export function ProServiceScreen() {
 
         <div className="om-apple-motion-delay text-center">
           <p className="text-[11px] font-bold tracking-[0.28em] text-white/80">
-            REPAIR PROFESSIONAL
+            SERVICE PRO
           </p>
           <h1 className="mt-1 text-[22px] font-black tracking-tight text-white drop-shadow-md">
             What service do you offer?

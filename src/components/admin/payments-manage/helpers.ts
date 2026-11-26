@@ -20,7 +20,7 @@ export function effectiveOf(p: Payment): string {
   return esc || "unknown";
 }
 
-/** What we owe the Repair Pro for one payment, in kobo (their net share when known). */
+/** What we owe the Service Pro for one payment, in kobo (their net share when known). */
 function owedKobo(p: Payment): number {
   const net = Number(p.pro_payout_kobo);
   if (Number.isFinite(net) && net > 0) return Math.round(net);

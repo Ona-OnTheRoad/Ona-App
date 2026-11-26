@@ -308,7 +308,7 @@ export async function refundJobEscrow(job: JobRecord) {
 }
 
 /**
- * Pay Repair Pro 87.5% of service via Flutterwave Transfer from merchant balance.
+ * Pay Service Pro 87.5% of service via Flutterwave Transfer from merchant balance.
  * Ona keeps 5%. Collections (Ledger) ≠ Available for payout settlement delays
  * become PENDING_SETTLEMENT with auto-retry (never double-pay).
  */
@@ -567,7 +567,7 @@ export async function startJobEscrowPayment(input: {
 
   if (job.status !== "agreed") {
     // Only an unpaid-booking timeout can be paid again. A job someone
-    // CANCELLED (the Repair Pro included) must never come back to life because
+    // CANCELLED (the Service Pro included) must never come back to life because
     // the customer still had a payment screen open.
     const { canReopenForPayment } = await import("@/lib/jobs/pay-reopen");
     if (!canReopenForPayment(job)) {
@@ -711,7 +711,7 @@ export async function startJobEscrowPayment(input: {
         await import("@/lib/server/payments/providers");
       // Full pro name for customer note only NOT the bank account name.
       // Money is paid into Ona escrow (FLW VA), not the pro's personal bank.
-      const proLabel = (job.repairProName || "").trim() || "your Repair Pro";
+      const proLabel = (job.repairProName || "").trim() || "your Service Pro";
       const shortNarration = `Ona escrow · ${proLabel}`.slice(0, 80);
       const customerNote = `For ${proLabel}. Pay into Ona escrow (account below). Funds are released after the job is confirmed. Transfer the exact amount only.`;
       const va = await createFlutterwaveBankTransfer({
