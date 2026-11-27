@@ -1,3 +1,4 @@
+import type { UserProfile } from "@/lib/types";
 import { STEPS } from "./constants";
 import { stepGateError } from "./step-gate";
 import type { OnboardingState } from "./use-onboarding-state";
@@ -7,7 +8,10 @@ import { useVerifyActions } from "./use-verify-actions";
 /** Wizard navigation + OTP + submit-for-review actions over the shared state */
 export function useOnboardingActions(
   state: OnboardingState,
-  updateUserProfile: (partial: { phoneVerified: boolean }) => void,
+  updateUserProfile: (
+    partial: Partial<Pick<UserProfile, "phoneVerified" | "guarantor">>,
+  ) => void,
+  userProfile?: UserProfile | null,
 ) {
   const { step, setStep, profile, setErr } = state;
   const stepIndex = STEPS.findIndex((s) => s.id === step);
@@ -43,6 +47,8 @@ export function useOnboardingActions(
     setMsg: state.setMsg,
     setErr,
     setGatePopup: state.setGatePopup,
+    updateUserProfile,
+    userProfile,
   });
 
   return { stepIndex, goNext, goBack, ...otpActions, ...verifyActions };

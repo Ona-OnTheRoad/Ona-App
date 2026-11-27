@@ -2,6 +2,10 @@ import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { mergeIdLookup } from "@/lib/server/identity/id-lookup";
+import {
+  partialGuarantorInputSchema,
+  persistGuarantor,
+} from "@/lib/server/identity/guarantor";
 import { protectProClientPatch } from "@/lib/server/identity/protect-approval";
 import {
   idKindForGovId,
@@ -36,6 +40,7 @@ const bodySchema = z.object({
   skillProofUrl: z.string().max(6_000_000).optional(),
   primaryService: z.string().max(40).optional(),
   businessName: z.string().max(120).optional(),
+  guarantor: partialGuarantorInputSchema.optional(),
 });
 
 function last4(raw: string): string | null {
@@ -256,6 +261,13 @@ export async function POST(req: Request) {
       .from("profiles")
       .update({ role: "repair_pro", updated_at: now })
       .eq("id", userId);
+
+    if (kind === "profile_submit" && parsed.data.guarantor) {
+      const gRes = await persistGuarantor(admin, userId, parsed.data.guarantor, {
+        mergeExisting: true,
+      });
+      if (!gRes.ok) return apiFail(gRes.error, 500);
+    }
 
     if (kind === "gov_id" || kind === "nin") {
       try {

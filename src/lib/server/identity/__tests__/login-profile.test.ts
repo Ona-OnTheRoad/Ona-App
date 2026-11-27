@@ -13,19 +13,41 @@ describe("login profile persistence failure semantics", () => {
     vi.mocked(createServiceSupabase).mockReturnValue(sb as never);
     const result = await loadOrRepairLoginProfile("user-1", "ada@example.com", {});
     expect(result).toMatchObject({ hasMotorist: true, hasPro: true, profile: { bankName: "Pro Bank" } });
-    expect(sb.calls[2].steps[0].args).toEqual(["user_id, business_name, primary_service, services, years_experience, bio, service_radius_km, nin_verified, bvn_verified, face_liveness_verified, face_liveness_at, liveness_passed_at, docs_status, docs_rating_boost_applied, certification_file_name, certification_file_url, skills, rating_avg, jobs_completed, labour_prices, pricing_currency, vehicle_focus, created_at, bank_name, bank_account_name, bank_account_number, bank_code"]);
+    expect(sb.calls[2].steps[0].args).toEqual(["user_id, business_name, primary_service, services, years_experience, bio, service_radius_km, nin_verified, bvn_verified, face_liveness_verified, face_liveness_at, liveness_passed_at, docs_status, docs_rating_boost_applied, certification_file_name, certification_file_url, skills, rating_avg, jobs_completed, labour_prices, pricing_currency, vehicle_focus, guarantor, created_at, bank_name, bank_account_name, bank_account_number, bank_code"]);
   });
 
   it("carries the server's Tier 3 liveness pass into the profile (survives reload)", async () => {
     const live = { ...pro, face_liveness_verified: true, face_liveness_at: "2026-11-23T19:01:02.126Z" };
-    const sb = scriptedDb({ profiles: [{ data: { ...sharedProfile, role: "repair_pro" } }], motorist_profiles: [{ data: null }], repair_pro_profiles: [{ data: live }] });
+    const sb = scriptedDb({ profiles: [{ data: { ...sharedProfile, role: "repair_pro" } }], motorist_profiles: [{ data: null }], repair_pro_profiles: [{ data: live }], repair_pro_guarantors: [{ data: null }] });
     vi.mocked(createServiceSupabase).mockReturnValue(sb as never);
     const result = await loadOrRepairLoginProfile("user-1", "ada@example.com", {});
     expect(result).toMatchObject({ profile: { faceLivenessVerified: true, faceLivenessAt: "2026-11-23T19:01:02.126Z" } });
   });
 
+  it("loads guarantor from repair_pro_guarantors and falls back to repair_pro_profiles.guarantor", async () => {
+    const sb = scriptedDb({
+      profiles: [{ data: { ...sharedProfile, role: "repair_pro" } }],
+      motorist_profiles: [{ data: null }],
+      repair_pro_profiles: [{ data: { ...pro, guarantor: { fullName: "Fallback Guarantor", phone: "08011112222", relationship: "Brother" } } }],
+      repair_pro_guarantors: [{ data: { full_name: "Grace Guarantor", phone: "08099998888", relationship: "Sister", linked_user_id: "g-1" } }],
+    });
+    vi.mocked(createServiceSupabase).mockReturnValue(sb as never);
+    const fromTable = await loadOrRepairLoginProfile("user-1", "ada@example.com", {});
+    expect(fromTable).toMatchObject({ profile: { guarantor: { fullName: "Grace Guarantor", phone: "08099998888", relationship: "Sister", linkedUserId: "g-1" } } });
+
+    const sbFallback = scriptedDb({
+      profiles: [{ data: { ...sharedProfile, role: "repair_pro" } }],
+      motorist_profiles: [{ data: null }],
+      repair_pro_profiles: [{ data: { ...pro, guarantor: { fullName: "Fallback Guarantor", phone: "08011112222", relationship: "Brother" } } }],
+      repair_pro_guarantors: [{ data: null }],
+    });
+    vi.mocked(createServiceSupabase).mockReturnValue(sbFallback as never);
+    const fromJson = await loadOrRepairLoginProfile("user-1", "ada@example.com", {});
+    expect(fromJson).toMatchObject({ profile: { guarantor: { fullName: "Fallback Guarantor", phone: "08011112222", relationship: "Brother" } } });
+  });
+
   it("treats side read errors without data as missing roles rather than throwing", async () => {
-    const sb = scriptedDb({ profiles: [{ data: { ...sharedProfile, role: "repair_pro" } }], motorist_profiles: [{ data: null, error: { message: "unavailable" } }], repair_pro_profiles: [{ data: null, error: { message: "unavailable" } }] });
+    const sb = scriptedDb({ profiles: [{ data: { ...sharedProfile, role: "repair_pro" } }], motorist_profiles: [{ data: null, error: { message: "unavailable" } }], repair_pro_profiles: [{ data: null, error: { message: "unavailable" } }], repair_pro_guarantors: [{ data: null, error: { message: "unavailable" } }] });
     vi.mocked(createServiceSupabase).mockReturnValue(sb as never);
     expect(await loadOrRepairLoginProfile("user-1", "ada@example.com", {})).toMatchObject({ hasMotorist: false, hasPro: true, profile: { accountType: "professional", docsStatus: "approved", services: [] } });
   });

@@ -37,6 +37,8 @@ export function ProPersonalInfoCard({
     [userProfile.registeredAt],
   );
 
+  const g = userProfile.guarantor;
+
   return (
     <div className="space-y-4 pt-1">
       {/* Under Review Notice Banner */}
@@ -213,9 +215,29 @@ export function ProPersonalInfoCard({
         <p className="text-[10px] font-bold text-ona-muted uppercase tracking-wider">
           Guarantor
         </p>
-        <p className="mt-1 text-xs font-medium text-ona-ink">
-          {userProfile.guarantor?.fullName || "Not set"}
-        </p>
+        {g?.fullName || g?.phone ? (
+          <div className="mt-1 space-y-0.5">
+            <p className="text-xs font-semibold text-ona-ink">
+              {g.fullName || "Guarantor"}
+              {g.relationship ? (
+                <span className="font-normal text-ona-muted">
+                  {" · "}
+                  {g.relationship}
+                </span>
+              ) : null}
+            </p>
+            {g.phone ? (
+              <p className="text-[11px] text-ona-muted">{g.phone}</p>
+            ) : null}
+            {g.occupation || g.address ? (
+              <p className="text-[11px] text-ona-muted">
+                {[g.occupation, g.address].filter(Boolean).join(" · ")}
+              </p>
+            ) : null}
+          </div>
+        ) : (
+          <p className="mt-1 text-xs font-medium text-ona-ink">Not set</p>
+        )}
       </div>
 
       {/* Go Online / Go Offline Bottom Button */}

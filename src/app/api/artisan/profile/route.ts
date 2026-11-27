@@ -11,6 +11,10 @@ import {
   type ProPipelineStatus,
 } from "@/lib/server/modules/pros/pipeline";
 import { writePlatformAudit } from "@/lib/server/modules/platform-audit";
+import {
+  partialGuarantorInputSchema,
+  persistGuarantor,
+} from "@/lib/server/identity/guarantor";
 import { getUserFromRequest, requireUser } from "@/lib/server/auth-utils";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
@@ -27,7 +31,7 @@ const patchSchema = z.object({
   lat: z.number().optional().nullable(),
   lng: z.number().optional().nullable(),
   pipelineStatus: z.string().optional(),
-  guarantor: z.record(z.string(), z.unknown()).optional(),
+  guarantor: partialGuarantorInputSchema.optional(),
   tools: z.array(z.unknown()).optional(),
   portfolio: z.array(z.unknown()).optional(),
   govIdMeta: z.record(z.string(), z.unknown()).optional(),
@@ -163,7 +167,6 @@ export async function PATCH(req: Request) {
     patch.service_radius_km = clampProServiceRadiusKm(b.serviceRadiusKm);
   if (b.lat !== undefined) patch.lat = b.lat;
   if (b.lng !== undefined) patch.lng = b.lng;
-  if (b.guarantor !== undefined) patch.guarantor = b.guarantor;
   if (b.tools !== undefined) patch.tools = b.tools;
   if (b.portfolio !== undefined) patch.portfolio = b.portfolio;
   if (b.govIdMeta !== undefined) patch.gov_id_meta = b.govIdMeta;
@@ -196,6 +199,13 @@ export async function PATCH(req: Request) {
     .single();
 
   if (error) return apiFail(error.message, 500);
+
+  if (b.guarantor !== undefined) {
+    const gRes = await persistGuarantor(supabase, b.userId, b.guarantor, {
+      mergeExisting: true,
+    });
+    if (!gRes.ok) return apiFail(gRes.error, 500);
+  }
 
   const { data: refreshed } = await supabase
     .from("repair_pro_profiles")

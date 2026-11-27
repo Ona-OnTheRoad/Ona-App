@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { guarantorInputSchema } from "@/lib/server/identity/guarantor";
 
 /**
  * Public signup via service role.
@@ -78,15 +79,7 @@ export const bodySchema = z.object({
   /** Dual signup: keep the other role's side table */
   keepOtherRole: z.boolean().optional().default(true),
   /** Service Pro guarantor */
-  guarantor: z
-    .object({
-      fullName: z.string().min(2),
-      phone: z.string().min(7),
-      address: z.string().optional(),
-      occupation: z.string().optional(),
-      relationship: z.string().min(2),
-    })
-    .optional(),
+  guarantor: guarantorInputSchema.optional(),
   /** Certification docs review (pros) */
   docsStatus: z
     .enum(["none", "under_review", "approved", "rejected"])

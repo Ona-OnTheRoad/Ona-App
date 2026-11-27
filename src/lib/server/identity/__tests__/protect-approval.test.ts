@@ -119,4 +119,28 @@ describe("protect-approval", () => {
     expect(locked).toBe(false);
     expect(patch.identity_review_status).toBe("submitted");
   });
+
+  it("preserves guarantor field when T2 and account approval are locked", () => {
+    const guarantor = {
+      fullName: "Bola Guarantor",
+      phone: "08012345678",
+      relationship: "Uncle",
+    };
+    const { locked, patch } = protectProClientPatch(
+      {
+        status: "approved",
+        gov_id_review_status: "approved",
+        verified: true,
+        tier2_approved_at: "2026-01-01T00:00:00Z",
+      },
+      {
+        status: "pending",
+        pipeline_status: "pending_verification",
+        guarantor,
+      },
+    );
+    expect(locked).toBe(true);
+    expect(patch.status).toBe("approved");
+    expect(patch.guarantor).toEqual(guarantor);
+  });
 });

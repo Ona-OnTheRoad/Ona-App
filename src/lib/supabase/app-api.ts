@@ -324,6 +324,7 @@ export async function backendSignUp(input: {
       certificationFileName: input.certificationFileName,
       certificationFileDataUrl: input.certificationFileDataUrl,
       skillAnswers: input.skillAnswers as UserProfile["skillAnswers"],
+      guarantor: input.guarantor,
     },
   );
 
