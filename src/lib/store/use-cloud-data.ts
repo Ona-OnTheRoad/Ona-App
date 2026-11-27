@@ -7,6 +7,7 @@ import {
 } from "@/lib/supabase/app-api";
 import { useCloudJobs } from "./use-cloud-jobs";
 import type { SessionStateResult } from "./use-session-state";
+import { mergeServerThreads } from "@/lib/chat-merge";
 import type { MarketStateResult } from "./use-market-state";
 import type { ThemeAndProSheetResult } from "./use-theme-and-pro-sheet";
 import type { ApplySessionResult } from "./use-apply-session";
@@ -125,7 +126,9 @@ export function useCloudData(
     if (!isAppBackendOnline() || !backendUserId || !accountType) return;
     void backendFetchConversations(backendUserId, accountType).then(
       (threads) => {
-        if (threads.length > 0) setMessages(threads);
+        if (threads.length > 0) {
+          setMessages((prev) => mergeServerThreads(prev, threads));
+        }
       },
     );
   }, [backendUserId, accountType, setMessages]);

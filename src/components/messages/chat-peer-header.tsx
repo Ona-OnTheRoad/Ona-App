@@ -26,7 +26,9 @@ export function ChatPeerHeader({
           <p className="truncate text-[14px] font-semibold text-ona-ink">
             {title}
           </p>
-          <p className="truncate text-[12px] text-ona-muted">{subtitle}</p>
+          {subtitle ? (
+            <p className="truncate text-[12px] text-ona-muted">{subtitle}</p>
+          ) : null}
         </div>
       </div>
     </div>

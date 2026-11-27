@@ -1168,13 +1168,45 @@ export async function backendFetchConversations(
   }
 }
 
+/** Upload one recorded voice note; resolves to its storage key (or an error message). */
+export async function backendUploadVoice(input: {
+  conversationId: string;
+  /** The recording as a data URL (what the recorder produces). */
+  dataUrl: string;
+  mime: string;
+}): Promise<{ key: string; mime: string } | { error: string }> {
+  try {
+    const blob = await (await fetch(input.dataUrl)).blob();
+    const { authFetch } = await import("@/lib/api-auth-headers");
+    const qs = new URLSearchParams({ conversationId: input.conversationId });
+    const res = await authFetch(`/api/messages/voice?${qs.toString()}`, {
+      method: "POST",
+      // The route reads the audio type from Content-Type; this replaces the JSON default.
+      headers: { "Content-Type": (input.mime || blob.type || "audio/webm").split(";")[0] },
+      body: blob,
+    });
+    const json = (await res.json().catch(() => null)) as {
+      ok?: boolean;
+      data?: { key?: string; mime?: string };
+      error?: { message?: string };
+    } | null;
+    if (!json?.ok || !json.data?.key) {
+      return { error: json?.error?.message || "Voice note not uploaded" };
+    }
+    return { key: json.data.key, mime: json.data.mime || input.mime };
+  } catch {
+    return { error: "Network error uploading voice note" };
+  }
+}
+
 export async function backendSendMessage(input: {
   conversationId: string;
   /** Kept for callers; the route derives the sender from the auth session, not this field. */
   senderId: string;
-  body: string;
-  /** Display name for the other party's toast */
-  senderName?: string | null;
+  /** Text, or the caption when `voice` is set. */
+  body?: string;
+  /** A voice note already uploaded with backendUploadVoice. */
+  voice?: { key: string; durationSec?: number | null; mime: string } | null;
 }): Promise<string | null> {
   const { authFetch } = await import("@/lib/api-auth-headers");
   try {
@@ -1182,8 +1214,8 @@ export async function backendSendMessage(input: {
       method: "POST",
       body: JSON.stringify({
         conversationId: input.conversationId,
-        body: input.body,
-        senderName: input.senderName || undefined,
+        body: input.body || undefined,
+        voice: input.voice || undefined,
       }),
     });
     const json = (await res.json().catch(() => null)) as {

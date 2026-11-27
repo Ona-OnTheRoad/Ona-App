@@ -1,10 +1,12 @@
 import { useCallback, useMemo } from "react";
+import { mergeServerThreads, threadMatchesId } from "@/lib/chat-merge";
 import { playPersonTone } from "@/lib/sound-tone";
 import {
   backendEnsureConversation,
   backendFetchConversations,
   backendMarkMessagesRead,
   backendSendMessage,
+  backendUploadVoice,
   isAppBackendOnline,
 } from "@/lib/supabase/app-api";
 import type { ChatMessage, MessageThread, ServiceRequest } from "@/lib/types";
@@ -49,7 +51,9 @@ export function useChats(
               backendUserId,
               accountType,
             );
-            if (threads.length) setMessages(threads);
+            if (threads.length) {
+              setMessages((prev) => mergeServerThreads(prev, threads));
+            }
             return res.conversationId;
           }
         }
@@ -89,6 +93,103 @@ export function useChats(
     [ensureChatForRequestAsync],
   );
 
+  /** Update one message of a thread, or remove it when `patch` is null. */
+  const patchMessage = useCallback(
+    (threadId: string, msgId: string, patch: Partial<ChatMessage> | null) => {
+      setMessages((prev) =>
+        prev.map((t) =>
+          threadMatchesId(t, threadId)
+            ? {
+                ...t,
+                messages: patch
+                  ? t.messages.map((m) =>
+                      m.id === msgId ? { ...m, ...patch } : m,
+                    )
+                  : t.messages.filter((m) => m.id !== msgId),
+              }
+            : t,
+        ),
+      );
+    },
+    [setMessages],
+  );
+
+  /**
+   * Deliver one message already shown in the chat. Voice notes are uploaded to
+   * storage first, then sent as a small pointer. On any failure the message
+   * stays in the chat marked "failed" so it can be retried, never erased.
+   */
+  const deliverMessage = useCallback(
+    async (threadId: string, msg: ChatMessage) => {
+      if (!backendUserId || !accountType) return;
+      patchMessage(threadId, msg.id, { status: "sending" });
+      const fail = () => patchMessage(threadId, msg.id, { status: "failed" });
+
+      // Resolve real conversation UUID (never insert with chat- local id)
+      let conversationId = threadId;
+      if (conversationId.startsWith("chat-")) {
+        const requestId = conversationId.replace(/^chat-/, "");
+        const threads = await backendFetchConversations(
+          backendUserId,
+          accountType,
+        );
+        const hit = threads.find(
+          (th) => th.requestId === requestId || th.id === threadId,
+        );
+        if (!hit) {
+          console.warn("sendChatMessage: no cloud conversation for", requestId);
+          fail();
+          return;
+        }
+        conversationId = hit.id;
+        setMessages((prev) => mergeServerThreads(prev, threads));
+      }
+
+      let voice: { key: string; durationSec: number | null; mime: string } | null =
+        null;
+      if (msg.voiceUrl) {
+        const up = await backendUploadVoice({
+          conversationId,
+          dataUrl: msg.voiceUrl,
+          mime: msg.voiceMime || "audio/webm",
+        });
+        if ("error" in up) {
+          console.warn("sendChatMessage: voice upload failed", up.error);
+          fail();
+          return;
+        }
+        voice = {
+          key: up.key,
+          durationSec: msg.voiceDurationSec ?? null,
+          mime: up.mime,
+        };
+      }
+
+      const caption = msg.text && msg.text !== "Voice note" ? msg.text : "";
+      const err = await backendSendMessage({
+        conversationId,
+        senderId: backendUserId,
+        body: voice ? caption : msg.text,
+        voice,
+      });
+      if (err) {
+        console.warn("sendChatMessage failed", err);
+        fail();
+        return;
+      }
+      // Delivered: drop the local copy, then pull the server's version.
+      patchMessage(threadId, msg.id, null);
+      const threads = await backendFetchConversations(
+        backendUserId,
+        accountType,
+      );
+      if (threads.length) {
+        setMessages((prev) => mergeServerThreads(prev, threads));
+      }
+    },
+    [accountType, backendUserId, patchMessage, setMessages],
+  );
+
   const sendChatMessage = useCallback(
     (
       threadId: string,
@@ -108,6 +209,7 @@ export function useChats(
           ? `🎤 ${trimmed}`
           : "🎤 Voice note"
         : trimmed;
+      const online = isAppBackendOnline() && Boolean(backendUserId) && Boolean(accountType);
       const msg: ChatMessage = {
         id: `msg-${Date.now()}`,
         sender,
@@ -116,6 +218,7 @@ export function useChats(
         voiceUrl: voice?.url || null,
         voiceDurationSec: voice?.durationSec ?? null,
         voiceMime: voice?.mime ?? null,
+        status: online ? "sending" : undefined,
       };
 
       // Unique send chirp for this user
@@ -124,9 +227,7 @@ export function useChats(
       // Optimistic update on matching thread
       setMessages((prev) =>
         prev.map((t) =>
-          t.id === threadId ||
-          (t.requestId &&
-            (threadId === `chat-${t.requestId}` || threadId === t.requestId))
+          threadMatchesId(t, threadId)
             ? {
                 ...t,
                 lastMessage: preview,
@@ -137,57 +238,27 @@ export function useChats(
         ),
       );
 
-      if (!isAppBackendOnline() || !backendUserId || !accountType) return;
-
-      const body = voice?.url
-        ? JSON.stringify({
-            text: trimmed || "Voice note",
-            voiceUrl: voice.url,
-            voiceDurationSec: voice.durationSec ?? null,
-            voiceMime: voice.mime ?? null,
-          })
-        : trimmed;
-
-      void (async () => {
-        // Resolve real conversation UUID (never insert with chat- local id)
-        let conversationId = threadId;
-        if (conversationId.startsWith("chat-")) {
-          const requestId = conversationId.replace(/^chat-/, "");
-          const threads = await backendFetchConversations(
-            backendUserId,
-            accountType,
-          );
-          const hit = threads.find(
-            (th) => th.requestId === requestId || th.id === threadId,
-          );
-          if (hit) {
-            conversationId = hit.id;
-            setMessages(threads);
-          } else {
-            console.warn(
-              "sendChatMessage: no cloud conversation for",
-              requestId,
-            );
-            return;
-          }
-        }
-
-        const err = await backendSendMessage({
-          conversationId,
-          senderId: backendUserId,
-          body,
-          senderName: displayName || null,
-        });
-        if (err) console.warn("sendChatMessage failed", err);
-        // Pull latest so both devices stay in sync
-        const threads = await backendFetchConversations(
-          backendUserId,
-          accountType,
-        );
-        if (threads.length) setMessages(threads);
-      })();
+      if (online) void deliverMessage(threadId, msg);
     },
-    [accountType, backendUserId, displayName, setMessages],
+    [accountType, backendUserId, deliverMessage, displayName, setMessages],
+  );
+
+  /** Send a failed message again. */
+  const retryChatMessage = useCallback(
+    (threadId: string, msgId: string) => {
+      const msg = messages
+        .find((t) => threadMatchesId(t, threadId))
+        ?.messages.find((m) => m.id === msgId);
+      if (!msg || msg.status !== "failed") return;
+      void deliverMessage(threadId, msg);
+    },
+    [deliverMessage, messages],
+  );
+
+  /** Remove a failed message from the chat without sending it. */
+  const discardChatMessage = useCallback(
+    (threadId: string, msgId: string) => patchMessage(threadId, msgId, null),
+    [patchMessage],
   );
 
   // Inbound message tone + banner handled by InboundBanner (app-wide)
@@ -216,6 +287,8 @@ export function useChats(
     ensureChatForRequestAsync,
     ensureChatForRequest,
     sendChatMessage,
+    retryChatMessage,
+    discardChatMessage,
     markThreadRead,
     visibleMessageThreads,
   };

@@ -1,5 +1,6 @@
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { requireUser } from "@/lib/server/auth-utils";
+import { signVoiceKeys } from "@/lib/server/chat-voice";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import {
@@ -97,6 +98,20 @@ export async function GET(req: Request) {
       msgsByConv.set(m.conversation_id, arr);
     }
 
+    // Voice notes are stored privately; sign short-lived URLs for the ones in view.
+    const voiceKeys: string[] = [];
+    for (const m of (allMsgs as MessageRow[]) || []) {
+      const body = m.body || "";
+      if (!body.startsWith("{") || !body.includes("voiceKey")) continue;
+      try {
+        const key = (JSON.parse(body) as { voiceKey?: unknown }).voiceKey;
+        if (typeof key === "string" && key) voiceKeys.push(key);
+      } catch {
+        /* not a voice body */
+      }
+    }
+    const voiceUrls = await signVoiceKeys(sb, voiceKeys);
+
     const threads = convList.map((c) =>
       mapConversationToThread(
         c,
@@ -109,8 +124,10 @@ export async function GET(req: Request) {
               ? (jobById.get(c.request_id) as ProService | undefined)
               : undefined) || "mechanic",
           photo: byId.get(c.repair_pro_id)?.avatar_url || "",
+          motoristPhoto: byId.get(c.motorist_id)?.avatar_url || "",
         },
         userId,
+        voiceUrls,
       ),
     );
     return apiOk({ threads });

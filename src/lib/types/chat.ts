@@ -9,8 +9,16 @@ export interface ChatMessage {
   at: string;
   /** Optional voice note (data URL or remote URL) */
   voiceUrl?: string | null;
+  /** Storage key of the uploaded audio (server messages only). */
+  voiceKey?: string | null;
   voiceDurationSec?: number | null;
   voiceMime?: string | null;
+  /**
+   * Local delivery state. Messages from the server have none. A message the
+   * sender just wrote is "sending", and stays in the chat as "failed" (with
+   * retry) instead of disappearing if the send does not go through.
+   */
+  status?: "sending" | "failed";
 }
 
 /**
@@ -28,6 +36,9 @@ export interface MessageThread {
   lastMessage: string;
   time: string;
   unread: number;
+  /** Service pro's profile photo. */
   photo: string;
+  /** Customer's profile photo. */
+  motoristPhoto?: string;
   messages: ChatMessage[];
 }

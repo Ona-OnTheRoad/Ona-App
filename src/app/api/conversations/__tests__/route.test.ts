@@ -46,12 +46,21 @@ function makeSb(opts: {
   msgs?: { data: unknown[] | null };
   profiles?: { data: { id: string; full_name: string; avatar_url: string | null }[] | null };
   jobs?: { data: { id: string; service_type: string }[] | null };
+  signed?: { path: string; signedUrl: string }[];
 }) {
   const convs = opts.convs ?? { data: [], error: null };
   const msgs = opts.msgs ?? { data: [] };
   const profiles = opts.profiles ?? { data: [] };
   const jobs = opts.jobs ?? { data: [] };
   const sb = {
+    storage: {
+      from: vi.fn(() => ({
+        createSignedUrls: vi.fn(async () => ({
+          data: (opts.signed ?? []).map((r) => ({ ...r, error: null })),
+          error: null,
+        })),
+      })),
+    },
     from: vi.fn((table: string) => {
       if (table === "conversations") {
         return {
@@ -174,5 +183,90 @@ describe("GET /api/conversations", () => {
 
     expect(res.status).toBe(500);
     expect(json.error.message).toBe("db down");
+  });
+
+  it("gives each side the OTHER party's photo, for both the customer and the pro", async () => {
+    const conv = {
+      id: "conv-1",
+      motorist_id: "motorist-1",
+      repair_pro_id: "pro-1",
+      request_id: null,
+    };
+    const profiles = {
+      data: [
+        { id: "motorist-1", full_name: "Freddy Feyy", avatar_url: "customer.png" },
+        { id: "pro-1", full_name: "Jane Pro", avatar_url: "pro.png" },
+      ],
+    };
+
+    requireUserMock.mockResolvedValue(authOk("pro-1"));
+    makeSb({ convs: { data: [conv], error: null }, profiles });
+    const asPro = await (await GET(req("userId=pro-1&role=professional"))).json();
+    expect(asPro.data.threads[0]).toMatchObject({
+      motoristName: "Freddy Feyy",
+      motoristPhoto: "customer.png",
+      photo: "pro.png",
+    });
+
+    requireUserMock.mockResolvedValue(authOk("motorist-1"));
+    makeSb({ convs: { data: [conv], error: null }, profiles });
+    const asCustomer = await (
+      await GET(req("userId=motorist-1&role=motorist"))
+    ).json();
+    expect(asCustomer.data.threads[0]).toMatchObject({
+      technicianName: "Jane Pro",
+      photo: "pro.png",
+      motoristPhoto: "customer.png",
+    });
+  });
+
+  it("marks who sent each message from the conversation, and signs voice note URLs", async () => {
+    requireUserMock.mockResolvedValue(authOk("pro-1"));
+    makeSb({
+      convs: {
+        data: [
+          { id: "conv-1", motorist_id: "motorist-1", repair_pro_id: "pro-1", request_id: null },
+        ],
+        error: null,
+      },
+      msgs: {
+        data: [
+          {
+            id: "m2",
+            conversation_id: "conv-1",
+            sender_id: "motorist-1",
+            body: JSON.stringify({
+              text: "Voice note",
+              voiceKey: "conv-1/motorist-1/a.webm",
+              voiceDurationSec: 4,
+              voiceMime: "audio/webm",
+            }),
+            created_at: "2026-11-27T10:01:00.000Z",
+            read_at: null,
+          },
+          {
+            id: "m1",
+            conversation_id: "conv-1",
+            sender_id: "pro-1",
+            body: "On my way",
+            created_at: "2026-11-27T10:00:00.000Z",
+            read_at: null,
+          },
+        ],
+      },
+      signed: [
+        { path: "conv-1/motorist-1/a.webm", signedUrl: "https://signed.example/a" },
+      ],
+    });
+
+    const json = await (await GET(req("userId=pro-1&role=professional"))).json();
+    const [first, second] = json.data.threads[0].messages;
+    expect(first).toMatchObject({ sender: "professional", text: "On my way" });
+    expect(second).toMatchObject({
+      sender: "motorist",
+      voiceUrl: "https://signed.example/a",
+      voiceKey: "conv-1/motorist-1/a.webm",
+      voiceDurationSec: 4,
+    });
   });
 });

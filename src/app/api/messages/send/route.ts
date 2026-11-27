@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { requireUser } from "@/lib/server/auth-utils";
+import {
+  buildVoiceBody,
+  normalizeVoiceMime,
+  previewFromBody,
+  voiceKeyBelongsTo,
+} from "@/lib/server/chat-voice";
 import { insertNotification } from "@/lib/server/notifications";
 import { sendPushToUser } from "@/lib/server/push/webpush";
 import { serverLogger } from "@/lib/server/structured-logger";
@@ -10,24 +16,25 @@ import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const bodySchema = z.object({
-  conversationId: z.string().min(1),
-  body: z.string().min(1).max(4000),
-  senderName: z.string().optional(),
-});
-
-function previewFromBody(body: string): string {
-  try {
-    const parsed = JSON.parse(body) as { text?: string; voiceUrl?: string };
-    if (parsed && typeof parsed === "object") {
-      if (parsed.voiceUrl) return parsed.text ? `🎤 ${parsed.text}` : "🎤 Voice note";
-      if (parsed.text) return String(parsed.text);
-    }
-  } catch {
-    /* plain text body */
-  }
-  return body;
-}
+const bodySchema = z
+  .object({
+    conversationId: z.string().min(1),
+    /** Plain text, or the caption of a voice note. */
+    body: z.string().max(4000).optional(),
+    /** A voice note already uploaded through /api/messages/voice. */
+    voice: z
+      .object({
+        key: z.string().min(1).max(300),
+        durationSec: z.number().min(0).max(3600).nullish(),
+        mime: z.string().min(1).max(100),
+      })
+      .optional(),
+    // Any client-supplied display name is ignored (see the notification block):
+    // the sender's name always comes from their profile.
+  })
+  .refine((v) => Boolean(v.voice) || Boolean(v.body && v.body.length > 0), {
+    message: "Message is empty",
+  });
 
 /**
  * Send a chat message. Replaces the browser's direct messages insert +
@@ -51,7 +58,7 @@ export async function POST(req: Request) {
   }
   const parsed = bodySchema.safeParse(json);
   if (!parsed.success) return apiFail("Invalid request", 400);
-  const { conversationId, body, senderName } = parsed.data;
+  const { conversationId, body: rawBody, voice } = parsed.data;
   const senderId = auth.userId;
 
   const sb = createServiceSupabase();
@@ -68,6 +75,22 @@ export async function POST(req: Request) {
   const proId = String(conv.repair_pro_id || "");
   if (senderId !== motoristId && senderId !== proId) {
     return apiFail("Forbidden", 403, "forbidden");
+  }
+
+  let body = rawBody || "";
+  if (voice) {
+    const mime = normalizeVoiceMime(voice.mime);
+    if (!mime) return apiFail("Unsupported audio format", 400);
+    // Only the sender's own upload in this conversation can be attached.
+    if (!voiceKeyBelongsTo(voice.key, conversationId, senderId)) {
+      return apiFail("Invalid voice note", 400);
+    }
+    body = buildVoiceBody({
+      text: rawBody,
+      key: voice.key,
+      durationSec: voice.durationSec,
+      mime,
+    });
   }
 
   const nowIso = new Date().toISOString();
@@ -99,15 +122,15 @@ export async function POST(req: Request) {
   const recipientId = senderId === motoristId ? proId : motoristId;
   if (recipientId && recipientId !== senderId) {
     try {
-      let name = (senderName || "").trim();
-      if (!name) {
-        const { data: prof } = await sb
-          .from("profiles")
-          .select("full_name")
-          .eq("id", senderId)
-          .maybeSingle();
-        name = String(prof?.full_name || "New message").trim() || "New message";
-      }
+      // Always the sender's own profile name, never a client-supplied one, so a
+      // modified app cannot send a message that shows up under someone else's name.
+      const { data: prof } = await sb
+        .from("profiles")
+        .select("full_name")
+        .eq("id", senderId)
+        .maybeSingle();
+      const name =
+        String(prof?.full_name || "New message").trim() || "New message";
       const preview = previewFromBody(body);
       const title = name;
       const notifBody = String(preview || "New message").slice(0, 160);
