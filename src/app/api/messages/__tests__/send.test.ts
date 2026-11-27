@@ -267,4 +267,75 @@ describe("POST /api/messages/send", () => {
     const res = await POST(req({ conversationId: "conv-1" }));
     expect(res.status).toBe(400);
   });
+
+  it("ignores a client-supplied senderName and titles the alert with the profile name", async () => {
+    requireUserMock.mockResolvedValue(authOk("motorist-1"));
+    makeSb({});
+
+    const res = await POST(
+      req({ conversationId: "conv-1", body: "hello", senderName: "Admin Support" }),
+    );
+
+    expect(res.status).toBe(200);
+    expect(sendPushToUserMock).toHaveBeenCalledWith(
+      "pro-1",
+      expect.objectContaining({ title: "Sender" }),
+    );
+    expect(insertNotificationMock).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Sender" }),
+    );
+  });
+
+  it("stores an uploaded voice note as a small pointer and previews it as a voice note", async () => {
+    requireUserMock.mockResolvedValue(authOk("motorist-1"));
+    const sb = makeSb({});
+
+    const res = await POST(
+      req({
+        conversationId: "conv-1",
+        voice: {
+          key: "conv-1/motorist-1/abc.webm",
+          durationSec: 7,
+          mime: "audio/webm;codecs=opus",
+        },
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const messagesFrom = sb.from.mock.results.find(
+      (_r, i) => sb.from.mock.calls[i][0] === "messages",
+    );
+    const insertCall = (messagesFrom!.value as { insert: ReturnType<typeof vi.fn> }).insert;
+    const stored = insertCall.mock.calls[0][0] as { body: string };
+    expect(stored.body.length).toBeLessThan(300);
+    expect(JSON.parse(stored.body)).toEqual({
+      text: "Voice note",
+      voiceKey: "conv-1/motorist-1/abc.webm",
+      voiceDurationSec: 7,
+      voiceMime: "audio/webm",
+    });
+    expect(sendPushToUserMock).toHaveBeenCalledWith(
+      "pro-1",
+      expect.objectContaining({ body: "🎤 Voice note" }),
+    );
+  });
+
+  it("rejects a voice key that belongs to another sender or conversation", async () => {
+    requireUserMock.mockResolvedValue(authOk("motorist-1"));
+    makeSb({});
+
+    for (const key of [
+      "conv-1/pro-1/abc.webm",
+      "conv-2/motorist-1/abc.webm",
+      "conv-1/motorist-1/../pro-1/abc.webm",
+    ]) {
+      const res = await POST(
+        req({
+          conversationId: "conv-1",
+          voice: { key, durationSec: 3, mime: "audio/webm" },
+        }),
+      );
+      expect(res.status).toBe(400);
+    }
+  });
 });

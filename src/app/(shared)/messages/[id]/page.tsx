@@ -23,7 +23,6 @@ import {
   CONVERSATION_ENDED_MESSAGE,
   isReadOnlyChatUrl,
 } from "@/lib/chat-expired";
-import { PRO_SERVICE_LABELS } from "@/lib/services";
 import { useApp } from "@/lib/store";
 import {
   backendSubscribeMessages,
@@ -65,6 +64,8 @@ function ChatThreadInner({ params }: { params: Promise<{ id: string }> }) {
   const {
     visibleMessageThreads,
     sendChatMessage,
+    retryChatMessage,
+    discardChatMessage,
     refreshCloudChats,
     markThreadRead,
     theme,
@@ -166,9 +167,8 @@ function ChatThreadInner({ params }: { params: Promise<{ id: string }> }) {
   }
 
   const title = isPro ? thread.motoristName : thread.technicianName;
-  const subtitle = chatClosed
-    ? `${PRO_SERVICE_LABELS[thread.serviceType] ?? thread.serviceType} · read only`
-    : `${PRO_SERVICE_LABELS[thread.serviceType] ?? thread.serviceType} · job chat`;
+  /** The other person's photo: a pro sees the customer's, a customer sees the pro's. */
+  const peerPhoto = isPro ? thread.motoristPhoto : thread.photo;
 
   const send = () => {
     if (chatClosed) return;
@@ -237,8 +237,7 @@ function ChatThreadInner({ params }: { params: Promise<{ id: string }> }) {
       >
         <ChatPeerHeader
           title={title}
-          subtitle={subtitle}
-          photo={thread.photo}
+          photo={peerPhoto}
         />
 
         {chatClosed && (intentionalViewOnly || !expiredOpen) && (
@@ -258,6 +257,8 @@ function ChatThreadInner({ params }: { params: Promise<{ id: string }> }) {
               isPro={isPro}
               isLight={isLight}
               senderName={title}
+              onRetry={() => retryChatMessage(thread.id, msg.id)}
+              onDiscard={() => discardChatMessage(thread.id, msg.id)}
             />
           ))}
           {otherTyping && !chatClosed && (

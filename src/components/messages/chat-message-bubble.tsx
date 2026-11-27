@@ -15,12 +15,18 @@ export function ChatMessageBubble({
   isPro,
   isLight,
   senderName,
+  onRetry,
+  onDiscard,
 }: {
   msg: ChatMessage;
   isPro: boolean;
   isLight: boolean;
   /** Display name of the other party (shown on received bubbles). */
   senderName?: string;
+  /** Send a failed message again. */
+  onRetry?: () => void;
+  /** Remove a failed message from the chat. */
+  onDiscard?: () => void;
 }) {
   if (msg.sender === "system") {
     return (
@@ -65,6 +71,28 @@ export function ChatMessageBubble({
         )}
         {msg.voiceUrl && (!msg.text || msg.text === "Voice note") && (
           <span className="sr-only">Voice note</span>
+        )}
+        {msg.status === "sending" && (
+          <p className="text-[11px] text-ona-on-dark-muted">Sending…</p>
+        )}
+        {msg.status === "failed" && (
+          <div role="alert" className="flex items-center gap-3 text-[11px] font-semibold">
+            <span className="text-red-300">Not sent</span>
+            <button
+              type="button"
+              onClick={onRetry}
+              className="cursor-pointer border-0 bg-transparent p-0 text-[11px] font-bold text-white underline"
+            >
+              Tap to retry
+            </button>
+            <button
+              type="button"
+              onClick={onDiscard}
+              className="cursor-pointer border-0 bg-transparent p-0 text-[11px] font-semibold text-ona-on-dark-muted underline"
+            >
+              Discard
+            </button>
+          </div>
         )}
       </div>
     </div>
