@@ -505,7 +505,11 @@ export type MessageRow = {
 };
 
 /** Parse plain text or JSON voice payload from messages.body */
-function parseChatBody(m: MessageRow, conv: ConversationRow): ChatMessage {
+function parseChatBody(
+  m: MessageRow,
+  conv: ConversationRow,
+  voiceUrls?: ReadonlyMap<string, string>,
+): ChatMessage {
   const sender: ChatMessage["sender"] =
     m.sender_id === conv.motorist_id
       ? "motorist"
@@ -513,21 +517,30 @@ function parseChatBody(m: MessageRow, conv: ConversationRow): ChatMessage {
         ? "professional"
         : "system";
   const raw = m.body || "";
-  if (raw.startsWith("{") && raw.includes("voiceUrl")) {
+  if (raw.startsWith("{") && (raw.includes("voiceKey") || raw.includes("voiceUrl"))) {
     try {
       const parsed = JSON.parse(raw) as {
         text?: string;
+        /** Storage key of the uploaded audio (current format). */
+        voiceKey?: string;
+        /** Inline/remote URL (legacy format). */
         voiceUrl?: string;
         voiceDurationSec?: number | null;
         voiceMime?: string | null;
       };
-      if (parsed.voiceUrl) {
+      const url =
+        (parsed.voiceKey ? voiceUrls?.get(parsed.voiceKey) : undefined) ||
+        parsed.voiceUrl;
+      if (parsed.voiceKey || parsed.voiceUrl) {
         return {
           id: m.id,
           sender,
           text: (parsed.text || "Voice note").trim() || "Voice note",
           at: m.created_at,
-          voiceUrl: parsed.voiceUrl,
+          // A voice note whose audio could not be signed still shows as a voice
+          // note, just without a player, instead of turning into raw JSON text.
+          voiceUrl: url || null,
+          voiceKey: parsed.voiceKey ?? null,
           voiceDurationSec: parsed.voiceDurationSec ?? null,
           voiceMime: parsed.voiceMime ?? null,
         };
@@ -563,9 +576,13 @@ export function mapConversationToThread(
     motoristName: string;
     technicianName: string;
     serviceType: ProService;
+    /** Service pro's profile photo. */
     photo?: string;
+    /** Customer's profile photo. */
+    motoristPhoto?: string;
   },
   myUserId: string,
+  voiceUrls?: ReadonlyMap<string, string>,
 ): MessageThread {
   // Accept newest-first or oldest-first; normalize chronological for UI
   const sorted = [...msgs].sort(
@@ -574,7 +591,7 @@ export function mapConversationToThread(
   );
   const filtered = sorted.filter((m) => !isAutoChatOpenedBody(m.body));
   const last = filtered[filtered.length - 1];
-  const chatMsgs: ChatMessage[] = filtered.map((m) => parseChatBody(m, conv));
+  const chatMsgs: ChatMessage[] = filtered.map((m) => parseChatBody(m, conv, voiceUrls));
   const unread = filtered.filter(
     (m) => !m.read_at && m.sender_id !== myUserId,
   ).length;
@@ -601,6 +618,7 @@ export function mapConversationToThread(
       : "",
     unread,
     photo: names.photo || "",
+    motoristPhoto: names.motoristPhoto || "",
     messages: chatMsgs,
   };
 }

@@ -276,6 +276,10 @@ export interface AppState {
       mime?: string;
     } | null,
   ) => void;
+  /** Send a message that failed to deliver again. */
+  retryChatMessage: (threadId: string, msgId: string) => void;
+  /** Remove a failed message from the chat without sending it. */
+  discardChatMessage: (threadId: string, msgId: string) => void;
   /** Opened a chat clear unread badge + persist read_at on server */
   markThreadRead: (threadId: string) => void;
   retryLocation: () => void;
