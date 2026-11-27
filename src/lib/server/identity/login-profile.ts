@@ -1,5 +1,8 @@
 import "server-only";
-import { normalizeGuarantor } from "@/lib/server/identity/guarantor";
+import {
+  GUARANTOR_COLUMNS,
+  normalizeGuarantor,
+} from "@/lib/server/identity/guarantor";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { profileToUserProfile, resolvePrimaryAccountType } from "@/lib/supabase/mappers";
@@ -75,7 +78,7 @@ export async function loadOrRepairLoginProfile(
     p.role === "repair_pro" ? "professional" : "motorist";
 
   // Slim selects + bank (shared across Customer / Service Pro on one login)
-  const [motRes, proRes] = await Promise.all([
+  const [motRes, proRes, guarantorRes] = await Promise.all([
     admin
       .from("motorist_profiles")
       .select(
@@ -90,6 +93,15 @@ export async function loadOrRepairLoginProfile(
       )
       .eq("user_id", userId)
       .maybeSingle(),
+    accountType === "professional"
+      ? Promise.resolve(
+          admin
+            .from("repair_pro_guarantors")
+            .select(GUARANTOR_COLUMNS)
+            .eq("user_id", userId)
+            .maybeSingle(),
+        ).then((r) => r, () => ({ data: null, error: null }))
+      : Promise.resolve({ data: null, error: null }),
   ]);
 
   const mot = motRes.data as {
@@ -138,17 +150,7 @@ export async function loadOrRepairLoginProfile(
   const hasPro = Boolean(pr) || accountType === "professional";
 
   if (accountType === "professional") {
-    let guarantorRow: unknown = null;
-    try {
-      const { data: gData } = await admin
-        .from("repair_pro_guarantors")
-        .select("*")
-        .eq("user_id", userId)
-        .maybeSingle();
-      guarantorRow = gData ?? null;
-    } catch {
-      guarantorRow = null;
-    }
+    const guarantorRow = guarantorRes.data ?? null;
     const proExtra = pr as
       | (RepairProRow & {
           labour_prices?: UserProfile["servicePrices"];

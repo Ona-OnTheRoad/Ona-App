@@ -5,7 +5,7 @@ import { dbRoleToAccountType } from "@/lib/dual-role";
 import type { ProfileRow, RepairProRow } from "@/lib/supabase/types";
 import type { AccountType, ProService, UserProfile } from "@/lib/types";
 import { isProService } from "@/lib/services";
-import { normalizeGuarantor } from "./guarantor";
+import { GUARANTOR_COLUMNS, normalizeGuarantor } from "./guarantor";
 import { listUserRoles, type RoleType } from "./identity-sync";
 
 /** Internal projection: keep switch-specific selects, precedence and output fields. */
@@ -46,8 +46,8 @@ export async function loadSwitchedIdentityProfile(
     guarantor?: UserProfile["guarantor"];
   } = {};
 
-  // Load both side tables so bank can be merged either way on switch
-  const [{ data: pro }, { data: mot }] = await Promise.all([
+  // Load both side tables (plus guarantor for pro) in parallel
+  const [{ data: pro }, { data: mot }, guarantorRes] = await Promise.all([
     admin
       .from("repair_pro_profiles")
       .select("*")
@@ -58,6 +58,15 @@ export async function loadSwitchedIdentityProfile(
       .select("*")
       .eq("user_id", userId)
       .maybeSingle(),
+    accountType === "professional"
+      ? Promise.resolve(
+          admin
+            .from("repair_pro_guarantors")
+            .select(GUARANTOR_COLUMNS)
+            .eq("user_id", userId)
+            .maybeSingle(),
+        ).then((r) => r, () => ({ data: null, error: null }))
+      : Promise.resolve({ data: null, error: null }),
   ]);
   const pr = pro as RepairProRow | null;
   const motRow = mot as {
@@ -124,17 +133,7 @@ export async function loadSwitchedIdentityProfile(
   };
 
   if (accountType === "professional") {
-    let guarantorRow: unknown = null;
-    try {
-      const { data: gData } = await admin
-        .from("repair_pro_guarantors")
-        .select("*")
-        .eq("user_id", userId)
-        .maybeSingle();
-      guarantorRow = gData ?? null;
-    } catch {
-      guarantorRow = null;
-    }
+    const guarantorRow = guarantorRes.data ?? null;
     const ds = proBank?.docs_status;
     const proT2Approved =
       pr?.gov_id_review_status === "approved" ||

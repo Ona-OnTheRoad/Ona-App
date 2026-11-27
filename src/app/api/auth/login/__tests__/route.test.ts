@@ -81,7 +81,7 @@ describe("POST /api/auth/login characterization", () => {
   });
 
   it("repairs missing profile from metadata with the same upsert payload", async () => {
-    const sb = scriptedDb({ profiles: [{ data: null, error: { message: "read error" } }, { data: { ...sharedProfile, role: "repair_pro" } }, { data: { ...sharedProfile, role: "repair_pro" } }], motorist_profiles: [{ data: null }, { data: null }], repair_pro_profiles: [{ data: pro }, { data: pro }], repair_pro_guarantors: [{ data: null }] });
+    const sb = scriptedDb({ profiles: [{ data: null, error: { message: "read error" } }, { data: { ...sharedProfile, role: "repair_pro" } }, { data: { ...sharedProfile, role: "repair_pro" } }], motorist_profiles: [{ data: null }, { data: null }], repair_pro_profiles: [{ data: pro }, { data: pro }], repair_pro_guarantors: [{ data: null }, { data: null }] });
     mocks.service.mockReturnValue(sb);
     mocks.signIn.mockResolvedValue({ data: { user: { id: "user-1", user_metadata: { account_type: "professional", fullName: " Ada ", phone: " 123 " } }, session: { access_token: "access" } } });
     expect((await POST(request())).status).toBe(200);

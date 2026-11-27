@@ -21,6 +21,7 @@ type Params = {
   updateUserProfile?: (
     partial: Partial<Pick<UserProfile, "phoneVerified" | "guarantor">>,
   ) => void;
+  userProfile?: UserProfile | null;
 };
 
 const getAccessToken = async (): Promise<string | null> => {
@@ -70,6 +71,7 @@ export function useVerifyActions({
   setErr,
   setGatePopup,
   updateUserProfile,
+  userProfile,
 }: Params) {
   /** Government ID: type + number + photo → server queue for admin/care */
   const submitGovIdForReview = async () => {
@@ -190,6 +192,7 @@ export function useVerifyActions({
     }
     setBusy(true);
     setErr(null);
+    const existingG = userProfile?.guarantor;
     const gName = profile.guarantor?.fullName?.trim() || "";
     const gPhone = profile.guarantor?.phone?.trim() || "";
     const guarantorPayload =
@@ -197,7 +200,13 @@ export function useVerifyActions({
         ? {
             fullName: gName,
             phone: gPhone,
-            relationship: "Guarantor",
+            ...(existingG?.relationship
+              ? { relationship: existingG.relationship }
+              : {}),
+            ...(existingG?.address ? { address: existingG.address } : {}),
+            ...(existingG?.occupation
+              ? { occupation: existingG.occupation }
+              : {}),
           }
         : undefined;
     const apiErr = await postProVerify({
@@ -212,7 +221,14 @@ export function useVerifyActions({
       return;
     }
     if (guarantorPayload) {
-      updateUserProfile?.({ guarantor: guarantorPayload });
+      updateUserProfile?.({
+        guarantor: {
+          ...existingG,
+          fullName: gName,
+          phone: gPhone,
+          relationship: existingG?.relationship || "Guarantor",
+        },
+      });
     }
     const next: ArtisanVerificationProfile = {
       ...profile,

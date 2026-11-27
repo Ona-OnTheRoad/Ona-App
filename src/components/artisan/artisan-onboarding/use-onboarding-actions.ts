@@ -11,6 +11,7 @@ export function useOnboardingActions(
   updateUserProfile: (
     partial: Partial<Pick<UserProfile, "phoneVerified" | "guarantor">>,
   ) => void,
+  userProfile?: UserProfile | null,
 ) {
   const { step, setStep, profile, setErr } = state;
   const stepIndex = STEPS.findIndex((s) => s.id === step);
@@ -47,6 +48,7 @@ export function useOnboardingActions(
     setErr,
     setGatePopup: state.setGatePopup,
     updateUserProfile,
+    userProfile,
   });
 
   return { stepIndex, goNext, goBack, ...otpActions, ...verifyActions };

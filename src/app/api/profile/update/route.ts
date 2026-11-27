@@ -10,6 +10,10 @@ import { createClient } from "@supabase/supabase-js";
 import { isProService } from "@/lib/services";
 import { clampProServiceRadiusKm } from "@/lib/profile-system";
 import { refreshBankNameMatch } from "@/lib/server/identity/bank-name-match";
+import {
+  guarantorInputSchema,
+  persistGuarantor,
+} from "@/lib/server/identity/guarantor";
 import { isBankAccountTaken } from "@/lib/server/payments/bank-lookup";
 import { planBankNameColumns } from "@/lib/server/payments/bank-save";
 import type { ProService } from "@/lib/types";
@@ -90,15 +94,7 @@ const bodySchema = z.object({
   // faceLivenessVerified is intentionally not accepted: only the server's
   // provider check in /api/liveness/verify may set Tier 3 liveness.
   phoneVerified: z.boolean().optional(),
-  guarantor: z
-    .object({
-      fullName: z.string(),
-      phone: z.string(),
-      address: z.string().optional(),
-      occupation: z.string().optional(),
-      relationship: z.string(),
-    })
-    .optional(),
+  guarantor: guarantorInputSchema.optional(),
   gender: z.enum(["male", "female", "prefer_not_to_say"]).optional(),
   /** ISO YYYY-MM-DD */
   dateOfBirth: z
@@ -495,39 +491,9 @@ export async function POST(req: Request) {
 
   // Persist guarantor for Service Pro
   if (b.guarantor) {
-    try {
-      const { error: gErr } = await admin.from("repair_pro_guarantors").upsert(
-        {
-          user_id: userId,
-          full_name: b.guarantor.fullName,
-          phone: b.guarantor.phone,
-          address: b.guarantor.address || null,
-          occupation: b.guarantor.occupation || null,
-          relationship: b.guarantor.relationship,
-        },
-        { onConflict: "user_id" },
-      );
-      if (gErr) {
-        console.warn("profile guarantor upsert failed:", gErr.message);
-      }
-    } catch {
-      /* non-fatal */
-    }
-    try {
-      await admin
-        .from("repair_pro_profiles")
-        .update({
-          guarantor: {
-            fullName: b.guarantor.fullName,
-            phone: b.guarantor.phone,
-            address: b.guarantor.address || null,
-            occupation: b.guarantor.occupation || null,
-            relationship: b.guarantor.relationship,
-          },
-        })
-        .eq("user_id", userId);
-    } catch {
-      /* non-fatal */
+    const gRes = await persistGuarantor(admin, userId, b.guarantor);
+    if (!gRes.ok) {
+      return apiFail(gRes.error, 500);
     }
   }
 

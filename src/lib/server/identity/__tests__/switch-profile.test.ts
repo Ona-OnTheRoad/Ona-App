@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { scriptedDb, sharedProfile, motorist, pro } from "./scripted-db";
 vi.mock("@/lib/server/identity/identity-sync", () => ({ listUserRoles: vi.fn(async () => []) }));
 import { loadSwitchedIdentityProfile } from "../switch-profile";
+import { GUARANTOR_COLUMNS } from "../guarantor";
 import { listUserRoles } from "../identity-sync";
 import type { ProfileRow } from "@/lib/supabase/types";
 
@@ -14,7 +15,7 @@ describe("switched identity projection failure semantics", () => {
     const sb = scriptedDb({ motorist_profiles: [failed, failed], repair_pro_profiles: [failed, failed], repair_pro_guarantors: [failed] });
     const result = await loadSwitchedIdentityProfile(sb as never, "user-1", "repair_pro", profile);
     expect(result).toMatchObject({ hasMotorist: false, hasPro: false, primaryAccountType: "professional", userProfile: { services: ["mechanic"], govIdVerified: false, phoneVerified: false } });
-    expect(sb.calls.map(c => c.steps[0].args)).toEqual([["*"], ["*"], ["*"], ["user_id, created_at"], ["user_id, created_at"]]);
+    expect(sb.calls.map(c => c.steps[0].args)).toEqual([["*"], ["*"], [GUARANTOR_COLUMNS], ["user_id, created_at"], ["user_id, created_at"]]);
     expect(sb.calls.every(c => c.steps[1].args[1] === "user-1")).toBe(true);
   });
 

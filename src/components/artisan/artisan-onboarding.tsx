@@ -77,7 +77,7 @@ export function ArtisanOnboarding({
     submitSkillForReview,
     submitNinForReview,
     submitReview,
-  } = useOnboardingActions(state, updateUserProfile);
+  } = useOnboardingActions(state, updateUserProfile, userProfile);
   const progress = profile ? tierProgressPercent(profile.tiers) : 0;
 
   // Hooks must run before any early return (Rules of Hooks)

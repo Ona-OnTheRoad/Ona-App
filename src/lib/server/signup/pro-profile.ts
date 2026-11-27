@@ -1,5 +1,6 @@
 import "server-only";
 import { apiFail } from "@/lib/server/api-json";
+import { persistGuarantor } from "@/lib/server/identity/guarantor";
 import type { SignupContext, VerifiedFlags } from "@/lib/server/signup/context";
 import { last4, logSignupEvent } from "@/lib/server/signup/helpers";
 import { deriveProFields } from "@/lib/server/signup/pro-fields";
@@ -192,25 +193,22 @@ export async function writeProProfile(
 
   // Insert guarantor for Service Pro (compulsory)
   if (input.guarantor) {
-    try {
-      const { error: gErr } = await supabase
-        .from("repair_pro_guarantors")
-        .upsert(
-          {
-            user_id: userId,
-            full_name: input.guarantor.fullName,
-            phone: input.guarantor.phone,
-            address: input.guarantor.address || null,
-            occupation: input.guarantor.occupation || null,
-            relationship: input.guarantor.relationship,
-          },
-          { onConflict: "user_id" },
-        );
-      if (gErr) {
-        console.warn("signup guarantor upsert failed:", gErr.message);
-      }
-    } catch {
-      /* non-fatal - table may not exist yet */
+    const gRes = await persistGuarantor(supabase, userId, input.guarantor, {
+      skipJsonbWrite: true,
+    });
+    if (!gRes.ok) {
+      await logSignupEvent(supabase, {
+        ...eventBase,
+        success: false,
+        error_message: gRes.error,
+        user_id: userId,
+        meta: { stage: "repair_pro_guarantors" },
+      });
+      return apiFail(
+        `Service Pro guarantor failed: ${gRes.error}`,
+        500,
+        "pro_guarantor_error",
+      );
     }
   }
 
