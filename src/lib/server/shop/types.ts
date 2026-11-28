@@ -14,7 +14,9 @@ export type ShopOrderStatus =
   | "delivered"
   | "cancelled"
   | "refunded"
-  | "partially_refunded";
+  | "partially_refunded"
+  /** Paid, but the gateway refund has not completed yet (ops must retry). */
+  | "refund_pending";
 
 export type ShopPaymentStatus =
   "pending" | "processing" | "succeeded" | "failed" | "refunded" | "cancelled";
