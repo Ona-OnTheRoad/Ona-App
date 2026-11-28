@@ -15,7 +15,11 @@ function CallbackInner() {
   const router = useRouter();
   const { theme } = useApp();
   const isLight = theme === "light";
-  const [status, setStatus] = useState<"loading" | "ok" | "fail">("loading");
+  const [status, setStatus] = useState<"loading" | "ok" | "fail" | "pending">(
+    "loading",
+  );
+  const [attempt, setAttempt] = useState(0);
+  const providerStatus = (sp.get("status") || "").toLowerCase();
   const [orderId, setOrderId] = useState<string | null>(orderParam || null);
   const [message, setMessage] = useState("Confirming payment…");
 
@@ -26,21 +30,30 @@ function CallbackInner() {
       return;
     }
     let cancelled = false;
+    setStatus("loading");
+    setMessage("Confirming payment…");
     (async () => {
       try {
         const result = await shopVerifyPayment(ref);
         if (cancelled) return;
+        if (result.orderId) setOrderId(result.orderId);
         if (result.success) {
           setStatus("ok");
-          setOrderId(result.orderId);
           setMessage(
             result.alreadyPaid
               ? "Payment already confirmed."
               : "Payment successful. Order is confirmed.",
           );
+        } else if (result.pending) {
+          setStatus("pending");
+          setMessage(
+            providerStatus === "cancelled"
+              ? "Payment was cancelled. You have not been charged."
+              : "We have not received confirmation of your payment yet. If you were charged, it will update automatically.",
+          );
         } else {
           setStatus("fail");
-          setMessage("Payment was not successful.");
+          setMessage(result.message || "Payment was not successful.");
         }
       } catch (e) {
         if (cancelled) return;
@@ -51,7 +64,7 @@ function CallbackInner() {
     return () => {
       cancelled = true;
     };
-  }, [ref]);
+  }, [ref, attempt, providerStatus]);
 
   const bg = "ona2 bg-ona-bg";
   const muted = isLight ? "text-slate-600" : "text-white/55";
@@ -64,6 +77,8 @@ function CallbackInner() {
           <Loader2 className="h-10 w-10 animate-spin text-[#FF6B35]" />
         ) : status === "ok" ? (
           <CheckCircle2 className="h-12 w-12 text-emerald-500" />
+        ) : status === "pending" ? (
+          <Loader2 className="h-12 w-12 text-[#FF6B35]" />
         ) : (
           <XCircle className="h-12 w-12 text-red-500" />
         )}
@@ -72,7 +87,17 @@ function CallbackInner() {
           {ref ? `Ref ${ref.slice(0, 24)}…` : null}
         </p>
         <div className="mt-6 flex w-full max-w-xs flex-col gap-2">
-          {status === "ok" && orderId ? (
+          {status === "pending" ? (
+            <button
+              type="button"
+              onClick={() => setAttempt((n) => n + 1)}
+              className="h-11 rounded-xl border-0 bg-[#FF6B35] text-[13px] font-bold text-white"
+            >
+              Check again
+            </button>
+          ) : null}
+          {(status === "ok" || status === "pending" || status === "fail") &&
+          orderId ? (
             <button
               type="button"
               onClick={() => router.replace(`/shop/orders/${orderId}`)}

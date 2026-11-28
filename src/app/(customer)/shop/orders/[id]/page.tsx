@@ -7,7 +7,7 @@ import { onaEyebrowClass } from "@/components/ui/ona-field";
 import { OnaScreen } from "@/components/ui/ona-screen";
 import { orderStatusTone } from "@/components/shop/shared/order-status-tone";
 import { detectCurrency, formatMoney, fromMinorUnits } from "@/lib/pricing";
-import { shopGetOrder } from "@/lib/shop/client";
+import { shopCancelOrder, shopGetOrder } from "@/lib/shop/client";
 import { useApp } from "@/lib/store";
 
 type Delivery = {
@@ -45,6 +45,9 @@ export default function ShopOrderDetailPage() {
   const [payments, setPayments] = useState<Array<Record<string, unknown>>>([]);
   const [events, setEvents] = useState<OrderEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,7 +75,20 @@ export default function ShopOrderDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [id, ctx]);
+  }, [id, ctx, reloadKey]);
+
+  const cancelOrder = async () => {
+    setCancelling(true);
+    setActionError(null);
+    try {
+      await shopCancelOrder(id);
+      setReloadKey((k) => k + 1);
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Could not cancel");
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   const card = "rounded-ona-card border border-ona-border bg-ona-surface";
   const orderStatus = String(order?.status || "pending");
@@ -112,6 +128,11 @@ export default function ShopOrderDetailPage() {
               >
                 {orderStatus.replace(/_/g, " ")}
               </p>
+              {orderStatus === "refund_pending" ? (
+                <p className="mt-1 text-[11px] text-ona-muted">
+                  Your refund is being processed. You do not need to pay again.
+                </p>
+              ) : null}
               <p className="mt-2 text-[13px] text-ona-muted">
                 Total{" "}
                 <span className="font-semibold tabular-nums text-ona-brand-ink">
@@ -124,6 +145,24 @@ export default function ShopOrderDetailPage() {
                 ) : null}
               </p>
             </div>
+
+            {orderStatus === "pending_payment" ? (
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={() => void cancelOrder()}
+                  disabled={cancelling}
+                  className="h-10 w-full rounded-ona-card border border-ona-border bg-ona-surface text-[13px] font-semibold text-ona-danger disabled:opacity-60"
+                >
+                  {cancelling ? "Cancelling…" : "Cancel this order"}
+                </button>
+                {actionError ? (
+                  <p role="alert" className="mt-1 text-[12px] text-ona-danger">
+                    {actionError}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
 
             <p className={`${onaEyebrowClass} mb-1.5 mt-5`}>Items</p>
             <div className="flex flex-col gap-1.5">
@@ -187,7 +226,7 @@ export default function ShopOrderDetailPage() {
                 </p>
               ) : (
                 <p className="mt-1 text-ona-muted">
-                  Awaiting courier assignment (admin).
+                  Awaiting courier assignment.
                 </p>
               )}
             </div>
@@ -208,7 +247,7 @@ export default function ShopOrderDetailPage() {
                       </span>{" "}
                       · {formatPrice(Number(p.amount_minor))} ·{" "}
                       <span className="text-ona-muted">
-                        {String(p.reference)}
+                        {String(p.provider_ref ?? "")}
                       </span>
                       {p.refunded_at ? (
                         <span className="ml-1 text-[11px] font-semibold text-ona-danger">

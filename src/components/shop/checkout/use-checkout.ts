@@ -27,7 +27,9 @@ export function useCheckout() {
 
   const [addresses, setAddresses] = useState<SavedAddress[]>([]);
   const [addressId, setAddressId] = useState<string | null>(null);
-  const [zoneCode, setZoneCode] = useState<string>("default");
+  // null = the buyer has not picked a zone this session: the server then uses
+  // the zone saved on the address instead of forcing "default".
+  const [pickedZone, setPickedZone] = useState<string | null>(null);
   const [zones, setZones] = useState<Array<{ code: string; name: string }>>([]);
   const [estimate, setEstimate] = useState<
     DeliveryEstimateView["estimate"] | null
@@ -67,7 +69,7 @@ export function useCheckout() {
   const itemsCount = cart?.items.length ?? 0;
 
   const fetchEstimate = useCallback(
-    async (aid: string | null, zone: string, subtotal: number) => {
+    async (aid: string | null, zone: string | null, subtotal: number) => {
       if (!aid) {
         setEstimate(null);
         return;
@@ -92,9 +94,17 @@ export function useCheckout() {
 
   useEffect(() => {
     if (!addressId || !cart) return;
-    void fetchEstimate(addressId, zoneCode, subtotalMinor);
+    void fetchEstimate(addressId, pickedZone, subtotalMinor);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [addressId, zoneCode, cart, isAuthenticated]);
+  }, [addressId, pickedZone, cart, isAuthenticated]);
+
+  // Zone shown as selected: the buyer's pick, else what the server resolved.
+  const zoneCode = pickedZone ?? estimate?.zoneCode ?? "default";
+  const setZoneCode = setPickedZone;
+  const selectAddress = (id: string | null) => {
+    setPickedZone(null);
+    setAddressId(id);
+  };
 
   const selectedAddress = useMemo(
     () => addresses.find((a) => a.id === addressId) ?? null,
@@ -124,7 +134,7 @@ export function useCheckout() {
       setAddressId(created.id);
       setShowNewAddress(false);
       setNewAddressText("");
-      setZoneCode("default");
+      setPickedZone(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save address");
     }
@@ -145,7 +155,7 @@ export function useCheckout() {
       const data = await shopCheckout({
         accountContext: ctx,
         addressId,
-        zoneCode,
+        zoneCode: pickedZone,
         notes: undefined,
       });
       if (data.payment.authorizationUrl) {
@@ -161,7 +171,8 @@ export function useCheckout() {
         );
         return;
       }
-      setError("No payment URL returned. Check Flutterwave keys.");
+      console.error("[shop] checkout returned no payment URL", data.payment);
+      setError("We could not open the payment page. Please try again.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Checkout failed");
     } finally {
@@ -175,7 +186,7 @@ export function useCheckout() {
     paying,
     addresses,
     addressId,
-    setAddressId,
+    setAddressId: selectAddress,
     zoneCode,
     setZoneCode,
     zones,

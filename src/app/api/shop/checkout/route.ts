@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { createHash } from "node:crypto";
 import { apiFail, apiOk } from "@/lib/server/api-json";
 import { requireUser } from "@/lib/server/auth-utils";
 import { createServiceSupabase } from "@/lib/supabase/server";
@@ -8,7 +7,10 @@ import {
   getOrCreateCart,
   validateCartForCheckout,
 } from "@/lib/server/shop/cart";
-import { createOrderFromCart } from "@/lib/server/shop/orders";
+import {
+  buildCheckoutToken,
+  createOrderFromCart,
+} from "@/lib/server/shop/orders";
 import { createShopPaymentAndInit } from "@/lib/server/shop/payments";
 import { estimateDelivery } from "@/lib/server/shop/delivery";
 
@@ -53,15 +55,6 @@ export async function POST(req: NextRequest) {
       return apiFail("Delivery address not found", 404, "address_not_found");
     }
 
-    // Persist chosen zone on the address so future checkouts remember it.
-    if (parsed.data.zoneCode) {
-      await sb
-        .from("user_addresses")
-        .update({ delivery_zone_code: parsed.data.zoneCode })
-        .eq("id", addr.id)
-        .eq("user_id", auth.userId);
-    }
-
     const shipSnapshot = {
       id: addr.id,
       label: addr.label,
@@ -78,6 +71,17 @@ export async function POST(req: NextRequest) {
       subtotalMinor: cart.subtotalMinor,
     });
 
+    // Remember the zone only when the buyer explicitly picked one this time
+    // (never overwrite a saved zone with an implicit default).
+    if (parsed.data.zoneCode && delivery.zoneCode === parsed.data.zoneCode) {
+      const { error: zErr } = await sb
+        .from("user_addresses")
+        .update({ delivery_zone_code: delivery.zoneCode })
+        .eq("id", addr.id)
+        .eq("user_id", auth.userId);
+      if (zErr) console.warn("[shop] zone remember failed:", zErr.message);
+    }
+
     const shipToSnapshot = {
       ...shipSnapshot,
       deliveryZoneCode: delivery.zoneCode,
@@ -85,12 +89,20 @@ export async function POST(req: NextRequest) {
       deliveryServiceCode: delivery.serviceCode,
     };
 
-    // Idempotent checkout token: same cart + same items => same order.
-    const itemSig = cart.items.map((i) => `${i.variantId}:${i.qty}`).join("|");
-    const checkoutToken = `cart:${cart.id}:${createHash("sha256")
-      .update(itemSig)
-      .digest("hex")
-      .slice(0, 16)}`;
+    // Idempotent checkout token: same cart + items + prices + address + zone
+    // + fee => same payable order. Anything that changes the deal gets a new one.
+    const checkoutToken = buildCheckoutToken({
+      cartId: cart.id,
+      items: cart.items.map((i) => ({
+        variantId: i.variantId,
+        qty: i.qty,
+        unitPriceMinor: i.unitPriceMinor,
+      })),
+      addressId: String(addr.id),
+      zoneCode: delivery.zoneCode,
+      deliveryFeeMinor: delivery.deliveryFeeMinor,
+      subtotalMinor: cart.subtotalMinor,
+    });
 
     const order = await createOrderFromCart({
       userId: auth.userId,
@@ -149,7 +161,28 @@ export async function POST(req: NextRequest) {
       subtotalMinor: cart.subtotalMinor,
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Checkout failed";
-    return apiFail(msg, 500, "SHOP_CHECKOUT_ERROR");
+    return checkoutErrorResponse(e);
   }
+}
+
+/** Known, user-actionable failures get a 4xx; everything else is logged and generic. */
+function checkoutErrorResponse(e: unknown) {
+  const msg = e instanceof Error ? e.message : "";
+  if (msg === "Forbidden") return apiFail("Forbidden", 403, "forbidden");
+  if (
+    /out of stock|no price|Cart is empty|Only \d+ available|already completed/i.test(
+      msg,
+    )
+  ) {
+    return apiFail(msg, 409, "cart_invalid");
+  }
+  if (/^Order is |cannot pay|Invalid order total/i.test(msg)) {
+    return apiFail(msg, 409, "order_not_payable");
+  }
+  console.error("[shop/checkout] failed:", e);
+  return apiFail(
+    "We could not start your payment. Please try again.",
+    500,
+    "SHOP_CHECKOUT_ERROR",
+  );
 }

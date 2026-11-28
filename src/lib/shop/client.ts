@@ -104,7 +104,20 @@ export async function shopVerifyPayment(reference: string) {
     success: boolean;
     orderId: string | null;
     alreadyPaid?: boolean;
+    pending?: boolean;
+    refunded?: boolean;
+    refundPending?: boolean;
+    message?: string;
   }>(res);
+}
+
+export async function shopCancelOrder(orderId: string) {
+  const headers = await authHeaders();
+  const res = await authFetch(
+    `/api/shop/orders/${encodeURIComponent(orderId)}/cancel`,
+    { method: "POST", headers },
+  );
+  return parseJson<{ ok: boolean }>(res);
 }
 
 export async function shopListOrders(

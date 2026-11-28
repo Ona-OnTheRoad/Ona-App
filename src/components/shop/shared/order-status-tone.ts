@@ -1,8 +1,13 @@
 /** Token text colour for a shop order / delivery status string. */
 export function orderStatusTone(status: string): string {
+  if (status === "pending_payment") return "text-ona-brand-ink";
   if (status.includes("paid") || status.includes("delivered"))
     return "text-ona-success";
-  if (status.includes("refund") || status.includes("cancelled"))
+  if (
+    status.includes("refund") ||
+    status.includes("cancelled") ||
+    status === "failed"
+  )
     return "text-ona-danger";
   return "text-ona-brand-ink";
 }
