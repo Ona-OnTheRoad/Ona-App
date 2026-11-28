@@ -29,13 +29,19 @@ export async function enqueuePaymentWebhook(input: {
   return { id: String(data.id), status: String(data.status) };
 }
 
+type InboxStatus = "processed" | "retry" | "rejected" | "manual_review";
+
 async function finishInbox(id: string, result: ConfirmationResult, attempts: number) {
-  let status: "processed" | "retry" | "rejected" | "manual_review";
+  let status: InboxStatus;
   const code = ("code" in result ? result.code : undefined) || null;
   if (result.outcome === "confirmed" || result.outcome === "already_confirmed") status = "processed";
   else if (result.outcome === "pending" || result.code === "not_found" || result.code === "checkout_pending") status = "retry";
   else if (result.code === "manual_recovery" || result.code === "association_mismatch") status = "manual_review";
   else status = "rejected";
+  return persistInboxStatus(id, status, code, attempts);
+}
+
+async function persistInboxStatus(id: string, status: InboxStatus, code: string | null, attempts: number) {
   const { data, error } = await createServiceSupabase().rpc("finish_payment_webhook_inbox", {
     p_id: id, p_attempt: attempts, p_status: status, p_error_code: code, p_retry_seconds: retryDelay(attempts),
   });
@@ -43,7 +49,43 @@ async function finishInbox(id: string, result: ConfirmationResult, attempts: num
   return String(data || status);
 }
 
+/** Shop pay-now references (`shop_...`) are confirmed by the shop engine, not the job escrow flow. */
+export function isShopPaymentReference(ref: string): boolean {
+  return ref.startsWith("shop_");
+}
+
+async function processClaimedShopInbox(row: InboxRow) {
+  let status: InboxStatus;
+  let code: string | null = null;
+  try {
+    const { verifyShopPayment } = await import("@/lib/server/shop/payments");
+    const r = await verifyShopPayment({ reference: row.provider_ref });
+    if (r.success || r.refunded) status = "processed";
+    else if (r.refundPending) {
+      status = "manual_review";
+      code = "manual_recovery";
+    } else if (r.pending) {
+      status = "retry";
+      code = "checkout_pending";
+    } else {
+      status = "rejected";
+      code = "payment_failed";
+    }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "";
+    if (/amount mismatch/i.test(msg)) {
+      status = "manual_review";
+      code = "association_mismatch";
+    } else {
+      status = "retry";
+      code = /not found/i.test(msg) ? "not_found" : "worker_error";
+    }
+  }
+  return { status: await persistInboxStatus(row.id, status, code, row.attempts), result: undefined };
+}
+
 async function processClaimedInbox(row: InboxRow) {
+  if (isShopPaymentReference(row.provider_ref)) return processClaimedShopInbox(row);
   let result: ConfirmationResult;
   try {
     result = await confirmJobPayment({ reference: row.provider_ref, expectedProvider: row.provider });

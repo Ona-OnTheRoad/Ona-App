@@ -12,7 +12,7 @@ import {
 import type { AppCurrency } from "@/lib/pricing";
 import {
   markShopOrderPaid,
-  releaseInventoryForOrder,
+  refundCapturedPayment,
 } from "@/lib/server/shop/orders";
 
 export async function createShopPaymentAndInit(opts: {
@@ -44,24 +44,42 @@ export async function createShopPaymentAndInit(opts: {
   const amountMinor = Number(order.total_minor);
   if (amountMinor <= 0) throw new Error("Invalid order total");
 
-  // Idempotent: existing pending payment
-  if (opts.idempotencyKey) {
+  // Idempotent: reuse a still-usable pending payment for this order. A payment
+  // that already failed/cancelled (or has no checkout link) is never reused,
+  // and its idempotency key is retired so a fresh attempt can be created.
+  let idempotencyKey = opts.idempotencyKey;
+  if (idempotencyKey) {
     const { data: existing } = await sb
       .from("shop_payments")
       .select("*")
-      .eq("idempotency_key", opts.idempotencyKey)
+      .eq("idempotency_key", idempotencyKey)
       .maybeSingle();
-    if (existing?.provider_ref && existing.status === "pending") {
-      return {
-        paymentId: String(existing.id),
-        reference: String(existing.provider_ref),
-        authorizationUrl: String(
-          (existing.raw_init as { authorizationUrl?: string } | null)
-            ?.authorizationUrl || "",
-        ),
-        provider: String(existing.provider),
-        amountMinor: Number(existing.amount_minor),
-      };
+    if (existing) {
+      const url = String(
+        (existing.raw_init as { authorizationUrl?: string } | null)
+          ?.authorizationUrl || "",
+      );
+      const usable =
+        existing.provider_ref &&
+        existing.status === "pending" &&
+        (url || existing.provider === "mock");
+      if (usable) {
+        return {
+          paymentId: String(existing.id),
+          reference: String(existing.provider_ref),
+          authorizationUrl: url,
+          provider: String(existing.provider),
+          amountMinor: Number(existing.amount_minor),
+        };
+      }
+      if (existing.status === "pending") {
+        await sb
+          .from("shop_payments")
+          .update({ status: "cancelled", updated_at: new Date().toISOString() })
+          .eq("id", existing.id)
+          .eq("status", "pending");
+      }
+      idempotencyKey = `${idempotencyKey}:${Date.now().toString(36)}`;
     }
   }
 
@@ -107,7 +125,7 @@ export async function createShopPaymentAndInit(opts: {
       currency,
       status: "pending",
       raw_init: init,
-      idempotency_key: opts.idempotencyKey || null,
+      idempotency_key: idempotencyKey || null,
     })
     .select("id")
     .single();
@@ -130,14 +148,34 @@ export async function createShopPaymentAndInit(opts: {
   };
 }
 
-export async function verifyShopPayment(opts: {
-  reference: string;
-  userId?: string;
-}): Promise<{
+export type VerifyShopPaymentResult = {
   success: boolean;
   orderId: string | null;
   alreadyPaid?: boolean;
-}> {
+  /** The gateway has not confirmed or rejected the charge yet. Safe to retry. */
+  pending?: boolean;
+  /** Money was taken but the order could not be fulfilled; it was refunded. */
+  refunded?: boolean;
+  /** Money was taken, could not be fulfilled, and the refund needs ops action. */
+  refundPending?: boolean;
+  message?: string;
+};
+
+/**
+ * True only when the gateway says the charge definitively failed. A charge the
+ * customer has not finished (or that the gateway cannot find yet) is
+ * *pending*, never "failed", so a later successful payment is still accepted.
+ */
+export function isDefinitiveChargeFailure(raw: unknown): boolean {
+  const data = (raw as { data?: { status?: string } } | null)?.data;
+  const status = String(data?.status ?? "").toLowerCase();
+  return status === "failed" || status === "cancelled" || status === "reversed";
+}
+
+export async function verifyShopPayment(opts: {
+  reference: string;
+  userId?: string;
+}): Promise<VerifyShopPaymentResult> {
   const sb = createServiceSupabase();
   const { data: payment } = await sb
     .from("shop_payments")
@@ -148,13 +186,26 @@ export async function verifyShopPayment(opts: {
   if (opts.userId && payment.user_id !== opts.userId) {
     throw new Error("Forbidden");
   }
+  const orderId = String(payment.order_id);
 
-  if (payment.status === "succeeded") {
+  if (payment.status === "refunded") {
     return {
-      success: true,
-      orderId: String(payment.order_id),
-      alreadyPaid: true,
+      success: false,
+      orderId,
+      refunded: true,
+      message: "This payment was refunded.",
     };
+  }
+
+  // Already confirmed earlier: just make sure the order really finished
+  // (covers a crash between "payment succeeded" and "order paid").
+  if (payment.status === "succeeded") {
+    return finalizeCapturedPayment({
+      orderId,
+      paymentId: String(payment.id),
+      reference: opts.reference,
+      provider: String(payment.provider),
+    });
   }
 
   const verified = await verifyCharge(
@@ -163,15 +214,25 @@ export async function verifyShopPayment(opts: {
   );
 
   if (!verified.success) {
-    await sb
-      .from("shop_payments")
-      .update({
-        status: "failed",
-        raw_verify: verified.raw ?? verified,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", payment.id);
-    return { success: false, orderId: String(payment.order_id) };
+    if (isDefinitiveChargeFailure(verified.raw)) {
+      await sb
+        .from("shop_payments")
+        .update({
+          status: "failed",
+          raw_verify: verified.raw ?? verified,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", payment.id)
+        .eq("status", "pending");
+      return { success: false, orderId, message: "Payment was not successful." };
+    }
+    // Not finished / not found yet: leave the payment pending.
+    return {
+      success: false,
+      orderId,
+      pending: true,
+      message: "We have not received confirmation of this payment yet.",
+    };
   }
 
   // Amount check (tolerance 1 minor unit). Mock verify carries no real amount,
@@ -192,10 +253,14 @@ export async function verifyShopPayment(opts: {
         },
         updated_at: new Date().toISOString(),
       })
-      .eq("id", payment.id);
+      .eq("id", payment.id)
+      .eq("status", "pending");
     throw new Error("Payment amount mismatch");
   }
 
+  // Atomic claim: only the call that flips pending/failed -> succeeded records
+  // the provider payload. Everyone else falls through to the (idempotent,
+  // row-locked) finalize step, so concurrent confirmations are safe.
   await sb
     .from("shop_payments")
     .update({
@@ -204,53 +269,62 @@ export async function verifyShopPayment(opts: {
       raw_verify: verified.raw ?? verified,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", payment.id);
+    .eq("id", payment.id)
+    .neq("status", "succeeded")
+    .neq("status", "refunded");
 
-  // Reserve inventory atomically. If stock ran out between checkout and pay,
-  // the money was captured but we cannot fulfill mark order refunded and
-  // surface a clear failure so the buyer is never left "paid, no stock".
-  try {
-    await markShopOrderPaid({
-      orderId: String(payment.order_id),
-      paymentId: String(payment.id),
-      providerRef: opts.reference,
-    });
-  } catch (e) {
-    const orderId = String(payment.order_id);
-    await releaseInventoryForOrder(orderId).catch(() => 0);
-    await sb
-      .from("shop_orders")
-      .update({
-        status: "refunded",
-        refunded_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", orderId);
-    await sb
-      .from("shop_payments")
-      .update({
-        status: "refunded",
-        refunded_at: new Date().toISOString(),
-        raw_verify: {
-          ...((verified.raw as object) || {}),
-          refundReason: "stock_unavailable",
-        },
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", payment.id);
-    await sb.from("shop_order_events").insert({
-      order_id: orderId,
-      event_type: "refunded",
-      payload: {
-        reason: "stock_unavailable",
-        detail: e instanceof Error ? e.message : "Insufficient stock",
-      },
-      actor_id: null,
-    });
-    throw new Error(
-      "Payment received but the item went out of stock your order has been refunded.",
-    );
+  return finalizeCapturedPayment({
+    orderId,
+    paymentId: String(payment.id),
+    reference: opts.reference,
+    provider: String(payment.provider),
+  });
+}
+
+/**
+ * The money is captured. Finish the order (atomic, idempotent). If the order
+ * can no longer be fulfilled (stock ran out, or it was cancelled while the
+ * customer was paying), give the money back for real.
+ */
+async function finalizeCapturedPayment(opts: {
+  orderId: string;
+  paymentId: string;
+  reference: string;
+  provider: string;
+}): Promise<VerifyShopPaymentResult> {
+  const outcome = await markShopOrderPaid({
+    orderId: opts.orderId,
+    paymentId: opts.paymentId,
+  });
+
+  if (outcome === "paid") return { success: true, orderId: opts.orderId };
+  if (outcome === "already_paid") {
+    return { success: true, orderId: opts.orderId, alreadyPaid: true };
   }
+  if (outcome === "not_found") throw new Error("Order not found");
 
-  return { success: true, orderId: String(payment.order_id) };
+  const reason =
+    outcome === "insufficient_stock" ? "stock_unavailable" : "order_not_payable";
+  const refund = await refundCapturedPayment({
+    orderId: opts.orderId,
+    reason,
+  });
+  const why =
+    outcome === "insufficient_stock"
+      ? "an item went out of stock"
+      : "the order was cancelled before payment completed";
+  if (refund.refunded) {
+    return {
+      success: false,
+      orderId: opts.orderId,
+      refunded: true,
+      message: `Your payment was received but ${why}. It has been refunded to your original payment method.`,
+    };
+  }
+  return {
+    success: false,
+    orderId: opts.orderId,
+    refundPending: true,
+    message: `Your payment was received but ${why}. Your refund is being processed by our team - you do not need to pay again.`,
+  };
 }

@@ -2,15 +2,47 @@ import "server-only";
 /** Courier assignment / delivery status transitions for the Admin board. */
 
 import { createServiceSupabase } from "@/lib/supabase/server";
+import { notifyShopBuyer } from "@/lib/server/shop/shop-events";
 
-export type DeliveryStatus =
-  | "pending"
-  | "assigned"
-  | "picked_up"
-  | "in_transit"
-  | "delivered"
-  | "failed"
-  | "cancelled";
+import {
+  DELIVERY_TRANSITIONS,
+  isAllowedDeliveryTransition,
+  type DeliveryStatus,
+} from "@/lib/shop/delivery-transitions";
+
+export { DELIVERY_TRANSITIONS, isAllowedDeliveryTransition };
+export type { DeliveryStatus };
+
+/** Order states in which a delivery can still be progressed (money captured, not refunded). */
+const DELIVERABLE_ORDER_STATUSES = [
+  "paid",
+  "fulfilling",
+  "out_for_delivery",
+  "delivered",
+];
+
+const BUYER_COPY: Partial<Record<DeliveryStatus, { title: string; body: (n: string) => string }>> = {
+  assigned: {
+    title: "Courier assigned",
+    body: (n) => `A courier has been assigned to order ${n}.`,
+  },
+  picked_up: {
+    title: "Order picked up",
+    body: (n) => `Order ${n} has been picked up.`,
+  },
+  in_transit: {
+    title: "Order on its way",
+    body: (n) => `Order ${n} is out for delivery.`,
+  },
+  delivered: {
+    title: "Order delivered",
+    body: (n) => `Order ${n} has been delivered.`,
+  },
+  failed: {
+    title: "Delivery attempt failed",
+    body: (n) => `We could not deliver order ${n}. We will contact you.`,
+  },
+};
 
 export async function upsertDeliveryStatus(input: {
   orderId: string;
@@ -25,13 +57,31 @@ export async function upsertDeliveryStatus(input: {
   const sb = createServiceSupabase();
   const b = input;
 
+  const { data: order } = await sb
+    .from("shop_orders")
+    .select("id, user_id, status, order_number")
+    .eq("id", b.orderId)
+    .maybeSingle();
+  if (!order) throw new Error("Order not found");
+  if (!DELIVERABLE_ORDER_STATUSES.includes(String(order.status))) {
+    throw new Error(
+      `Order is ${order.status}; its delivery cannot be updated`,
+    );
+  }
+
   const { data: existing } = await sb
     .from("shop_deliveries")
     .select("*")
     .eq("order_id", b.orderId)
     .maybeSingle();
 
-  const nextStatus = b.status || existing?.status || "pending";
+  const prevStatus = (existing?.status || "pending") as DeliveryStatus;
+  const nextStatus = (b.status || prevStatus) as DeliveryStatus;
+  if (!isAllowedDeliveryTransition(prevStatus, nextStatus)) {
+    throw new Error(
+      `Delivery cannot go from ${prevStatus} to ${nextStatus}`,
+    );
+  }
   const prevEvents = Array.isArray(existing?.events)
     ? (existing.events as unknown[])
     : [];
@@ -84,33 +134,27 @@ export async function upsertDeliveryStatus(input: {
     delivery = data;
   }
 
-  // Mirror order status for terminal delivery states
-  if (nextStatus === "out_for_delivery" || nextStatus === "in_transit") {
+  // Mirror onto the order, but only while the order is still in a state that
+  // allows it (never resurrect a refunded / cancelled order).
+  const now = new Date().toISOString();
+  if (nextStatus === "in_transit") {
     await sb
       .from("shop_orders")
-      .update({
-        status: "out_for_delivery",
-        updated_at: new Date().toISOString(),
-      })
+      .update({ status: "out_for_delivery", updated_at: now })
       .eq("id", b.orderId)
       .in("status", ["paid", "fulfilling", "out_for_delivery"]);
   }
   if (nextStatus === "delivered") {
     await sb
       .from("shop_orders")
-      .update({
-        status: "delivered",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", b.orderId);
+      .update({ status: "delivered", updated_at: now })
+      .eq("id", b.orderId)
+      .in("status", ["paid", "fulfilling", "out_for_delivery"]);
   }
   if (nextStatus === "assigned" || nextStatus === "picked_up") {
     await sb
       .from("shop_orders")
-      .update({
-        status: "fulfilling",
-        updated_at: new Date().toISOString(),
-      })
+      .update({ status: "fulfilling", updated_at: now })
       .eq("id", b.orderId)
       .eq("status", "paid");
   }
@@ -133,6 +177,18 @@ export async function upsertDeliveryStatus(input: {
     entity_id: (delivery as { id?: string } | null)?.id || null,
     payload: { orderId: b.orderId, status: nextStatus },
   });
+
+  // Tell the buyer about meaningful progress (only when the status changed).
+  const copy = BUYER_COPY[nextStatus];
+  if (copy && nextStatus !== prevStatus) {
+    await notifyShopBuyer({
+      userId: String(order.user_id),
+      orderId: b.orderId,
+      title: copy.title,
+      body: copy.body(String(order.order_number)),
+      groupKey: `shop-delivery-${b.orderId}-${nextStatus}`,
+    });
+  }
 
   return delivery;
 }

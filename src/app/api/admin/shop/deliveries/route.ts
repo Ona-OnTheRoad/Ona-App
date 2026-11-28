@@ -52,6 +52,11 @@ export async function PATCH(req: Request) {
       return apiFail(e.message, e.status, "admin_auth");
     }
     const msg = e instanceof Error ? e.message : "Failed";
-    return apiFail(msg, 500);
+    if (msg === "Order not found") return apiFail(msg, 404, "not_found");
+    if (/cannot go from|cannot be updated/i.test(msg)) {
+      return apiFail(msg, 409, "invalid_transition");
+    }
+    console.error("[admin/shop/deliveries] failed:", e);
+    return apiFail("Delivery update failed", 500, "SHOP_DELIVERY_ERROR");
   }
 }

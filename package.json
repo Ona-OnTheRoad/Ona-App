@@ -52,6 +52,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.6.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/react": "^16.3.2",
     "@types/google.maps": "^3.65.2",
@@ -69,4 +70,3 @@
     "vitest": "^4.1.10"
   }
 }
-
