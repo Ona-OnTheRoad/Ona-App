@@ -3,12 +3,12 @@
  * The server's provider verdict is the only thing that sets Tier 3.
  */
 
-const MAX_WIDTH = 640;
+import { SELFIE_JPEG_QUALITY, SELFIE_MAX_WIDTH } from "./constants";
 
 /** JPEG data URL of the current video frame, or null if none is available. */
 export function captureSelfie(video: HTMLVideoElement | null): string | null {
   if (!video || !video.videoWidth || !video.videoHeight) return null;
-  const scale = Math.min(1, MAX_WIDTH / video.videoWidth);
+  const scale = Math.min(1, SELFIE_MAX_WIDTH / video.videoWidth);
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(video.videoWidth * scale);
   canvas.height = Math.round(video.videoHeight * scale);
@@ -16,7 +16,7 @@ export function captureSelfie(video: HTMLVideoElement | null): string | null {
   if (!ctx) return null;
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   try {
-    return canvas.toDataURL("image/jpeg", 0.85);
+    return canvas.toDataURL("image/jpeg", SELFIE_JPEG_QUALITY);
   } catch {
     return null;
   }

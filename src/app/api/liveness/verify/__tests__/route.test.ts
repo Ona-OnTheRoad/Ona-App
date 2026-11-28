@@ -112,17 +112,55 @@ describe("POST /api/liveness/verify: provider gate", () => {
     expect(audit).not.toContain(SELFIE.split(",")[1].slice(0, 40));
   });
 
-  it("returns 422 and writes no flags when the provider rejects the face", async () => {
+  it("returns 422 with NIN-mismatch copy and audits reason when the provider rejects the face", async () => {
     const sb = setup();
     mocks.face.mockResolvedValue({
-      ok: false, provider: "prembly", mode: "live", checkMode: "nin_face", message: "no match", code: "01",
+      ok: false,
+      provider: "prembly",
+      mode: "live",
+      checkMode: "nin_face",
+      message: "No Match",
+      code: "01",
+      reason: "match_failed",
+      confidence: 18,
     });
     const res = await post({ selfie: SELFIE });
     expect(res.status).toBe(422);
-    expect((await res.json()).error.code).toBe("liveness_failed");
+    const body = await res.json();
+    expect(body.error.code).toBe("liveness_failed");
+    expect(body.error.message).toMatch(/NIN photo/i);
     expect(flags(sb)).toEqual({ v: false, at: undefined, passed: undefined });
     expect(mocks.recompute).not.toHaveBeenCalled();
-    expect(mocks.audit).toHaveBeenCalledWith(expect.objectContaining({ action: "pro.liveness.failed" }));
+    expect(mocks.audit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "pro.liveness.failed",
+        newValue: expect.objectContaining({
+          code: "01",
+          reason: "match_failed",
+          confidence: 18,
+        }),
+      }),
+    );
+    const audit = JSON.stringify(mocks.audit.mock.calls);
+    expect(audit).not.toContain(NIN);
+    expect(audit).not.toContain(SELFIE.split(",")[1].slice(0, 40));
+  });
+
+  it("keeps the capture tip for capture_quality rejects", async () => {
+    setup();
+    mocks.face.mockResolvedValue({
+      ok: false,
+      provider: "prembly",
+      mode: "live",
+      checkMode: "nin_face",
+      message: "No face detected",
+      code: "422",
+      reason: "capture_quality",
+      confidence: null,
+    });
+    const res = await post({ selfie: SELFIE });
+    expect(res.status).toBe(422);
+    expect((await res.json()).error.message).toMatch(/good light/i);
   });
 
   it("fails closed with 503 when the provider is not configured", async () => {

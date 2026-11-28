@@ -22,8 +22,23 @@ import {
   isSuccessBody,
   premblyConfig,
 } from "@/lib/server/prembly-core";
+import {
+  classifyFaceFailure,
+  failMessage,
+  readConfidence,
+  readFaceData,
+  type FaceFailReason,
+} from "./face-fail";
 
 export type FaceCheckMode = "nin_face" | "liveness";
+export type { FaceFailReason };
+export {
+  classifyFaceFailure,
+  normalizeConfidence,
+  readConfidence,
+  readFaceData,
+  userMessageForFaceFail,
+} from "./face-fail";
 
 export type FaceCheckResult =
   | {
@@ -41,6 +56,8 @@ export type FaceCheckResult =
       checkMode: FaceCheckMode;
       message: string;
       code: string;
+      reason: FaceFailReason;
+      confidence: number | null;
     };
 
 const DEFAULT_PATHS: Record<FaceCheckMode, string> = {
@@ -60,20 +77,10 @@ function minConfidence(): number {
   return Number.isFinite(n) && n >= 0 && n <= 100 ? n : 80;
 }
 
-function readConfidence(json: Record<string, unknown>): number | null {
-  const face = json.face_data as Record<string, unknown> | undefined;
-  const data = json.data as Record<string, unknown> | undefined;
-  for (const v of [face?.confidence, json.confidence, data?.confidence]) {
-    const n = typeof v === "string" ? Number(v) : v;
-    if (typeof n === "number" && Number.isFinite(n)) return n;
-  }
-  return null;
-}
-
 /** Provider said yes: success body, no explicit face mismatch, confidence ok. */
 export function isFacePass(json: Record<string, unknown>): boolean {
   if (!isSuccessBody(json)) return false;
-  const face = json.face_data as Record<string, unknown> | undefined;
+  const face = readFaceData(json);
   if (face && (face.status === false || face.response_code === "01")) {
     return false;
   }
@@ -81,20 +88,20 @@ export function isFacePass(json: Record<string, unknown>): boolean {
   return confidence == null || confidence >= minConfidence();
 }
 
-function failMessage(json: Record<string, unknown>, status: number): string {
-  const face = json.face_data as Record<string, unknown> | undefined;
-  const msg =
-    (face?.message as string) ||
-    (json.detail as string) ||
-    (json.message as string) ||
-    "";
-  return msg || `Face verification failed (${status}).`;
-}
-
 /** The provider could not answer, as opposed to answering "no". */
 export function isFaceCheckOutage(result: FaceCheckResult): boolean {
   if (result.ok) return false;
   return isProviderOutage({ ...result, ok: false });
+}
+
+function failResult(
+  checkMode: FaceCheckMode,
+  partial: Omit<
+    Extract<FaceCheckResult, { ok: false }>,
+    "ok" | "checkMode"
+  >,
+): FaceCheckResult {
+  return { ok: false, checkMode, ...partial };
 }
 
 /** `imageBase64` is the bare base64 body (no data: prefix). */
@@ -105,27 +112,27 @@ export async function verifyFaceWithPrembly(input: {
   const checkMode = faceCheckMode();
   const nin = digitsOnly(input.nin || "");
   if (checkMode === "nin_face" && nin.length !== 11) {
-    return {
-      ok: false,
+    return failResult(checkMode, {
       provider: "local",
       mode: "sandbox_format",
-      checkMode,
       message: "A verified NIN is needed before face verification.",
       code: "NIN_REQUIRED",
-    };
+      reason: "nin_required",
+      confidence: null,
+    });
   }
 
   const { apiKey, appId, baseUrl, configured } = premblyConfig();
   if (!configured) {
     if (process.env.NODE_ENV === "production") {
-      return {
-        ok: false,
+      return failResult(checkMode, {
         provider: "local",
         mode: "sandbox_format",
-        checkMode,
         message: "Face verification is not available right now. Please try again later.",
         code: ID_LOOKUP_NOT_CONFIGURED,
-      };
+        reason: "not_configured",
+        confidence: null,
+      });
     }
     return {
       ok: true,
@@ -152,15 +159,22 @@ export async function verifyFaceWithPrembly(input: {
       signal: AbortSignal.timeout(20_000),
     });
     const json = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+    const confidence = readConfidence(json);
     if (!res.ok || !isFacePass(json)) {
-      return {
-        ok: false,
+      const reason = classifyFaceFailure({
+        json,
+        httpStatus: res.status,
+        confidence,
+        minConfidence: minConfidence(),
+      });
+      return failResult(checkMode, {
         provider: "prembly",
         mode: "live",
-        checkMode,
         message: failMessage(json, res.status),
         code: String(json.response_code ?? res.status),
-      };
+        reason,
+        confidence,
+      });
     }
     const verification = json.verification as Record<string, unknown> | undefined;
     return {
@@ -169,16 +183,16 @@ export async function verifyFaceWithPrembly(input: {
       mode: "live",
       checkMode,
       reference: String(verification?.reference ?? json.reference ?? ""),
-      confidence: readConfidence(json),
+      confidence,
     };
   } catch {
-    return {
-      ok: false,
+    return failResult(checkMode, {
       provider: "prembly",
       mode: "live",
-      checkMode,
       message: "Face verification network error.",
       code: "NETWORK",
-    };
+      reason: "network",
+      confidence: null,
+    });
   }
 }

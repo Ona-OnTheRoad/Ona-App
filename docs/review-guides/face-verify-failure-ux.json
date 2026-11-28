@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "face-verify-failure-ux",
+  "title": "Tier 3 face verify: honest failure UX, audit reason, capture quality",
+  "plan": "docs/review-guides/face-verify-failure-ux.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "R1",
+      "stage": "code",
+      "expectation": "isFacePass / readConfidence read face_data from top-level, data.face_data, or data.nin_data.face_data. Confidence values in (0,1] are treated as fractions and scaled to 0–100.",
+      "verification": "Unit tests in face-check.test.ts.",
+      "status": "pass",
+      "evidence": [
+        "code: face-check.test.ts reads nested data.face_data / nin_data.face_data and scales fractional confidence (0.91 → 91)."
+      ]
+    },
+    {
+      "id": "R2",
+      "stage": "code",
+      "expectation": "Provider rejection results include a safe reason class: match_failed | capture_quality | low_confidence | provider_reject (plus existing NIN_REQUIRED / NOT_CONFIGURED / NETWORK paths).",
+      "verification": "Unit tests classifying sample Prembly payloads and HTTP statuses.",
+      "status": "pass",
+      "evidence": [
+        "code: face-check.test.ts covers match_failed, capture_quality, low_confidence, nin_required, not_configured, network on verifyFaceWithPrembly / classifyFaceFailure."
+      ]
+    },
+    {
+      "id": "R3",
+      "stage": "code",
+      "expectation": "POST /api/liveness/verify on provider reject returns reason-specific user copy (NIN mismatch vs capture tip). Outage/not-configured paths stay 503. Audit pro.liveness.failed includes reason and confidence when present; never NIN or selfie bytes.",
+      "verification": "Route tests with mocked face-check failures.",
+      "status": "pass",
+      "evidence": [
+        "code: route.test.ts asserts NIN-mismatch copy + audit reason/confidence, capture tip for capture_quality, 503 for NOT_CONFIGURED/NETWORK; audit excludes NIN/selfie."
+      ]
+    },
+    {
+      "id": "R4",
+      "stage": "code",
+      "expectation": "Selfie capture targets at least ~1280px width and JPEG quality ≥ 0.9; camera boot/retry request a higher ideal resolution than 640×480.",
+      "verification": "Unit or source assertions on capture constants; boot/retry constraints.",
+      "status": "pass",
+      "evidence": [
+        "code: capture-quality.test.ts asserts SELFIE_MAX_WIDTH≥1280, JPEG≥0.9, CAMERA_VIDEO_CONSTRAINTS; boot/retry import CAMERA_VIDEO_CONSTRAINTS."
+      ]
+    },
+    {
+      "id": "H1",
+      "stage": "external",
+      "expectation": "A real Prembly nin_w_face call on the production/staging tenant succeeds or fails with a classified reason against a known-good selfie.",
+      "verification": "Hosted smoke with Prembly wallet + camera.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent review of Phase 1 diff.",
+      "Care UI for selfie / liveness_meta / failure class (tracked on liveness-server-authority)."
+    ],
+    "external": [
+      "Phase 0: diagnose a failing Pro via audit + Prembly when an id is available.",
+      "Confirm Prembly face endpoint/response on the tenant (open from liveness-server-authority).",
+      "Phone camera smoke after capture quality change.",
+      "Production migration 088 if still pending."
+    ]
+  }
+}

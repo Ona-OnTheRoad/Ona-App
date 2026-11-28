@@ -1,5 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { isFacePass, verifyFaceWithPrembly } from "../face-check";
+import {
+  classifyFaceFailure,
+  isFacePass,
+  normalizeConfidence,
+  readConfidence,
+  readFaceData,
+  userMessageForFaceFail,
+  verifyFaceWithPrembly,
+} from "../face-check";
 import { buildLivenessMeta, ninOnFile, parseSelfie } from "../evidence";
 import { encryptField } from "@/lib/server/modules/crypto-fields";
 
@@ -34,9 +42,49 @@ describe("verifyFaceWithPrembly", () => {
 
   it("rejects a face mismatch or low confidence even with a success envelope", async () => {
     reply(200, { status: true, face_data: { status: false, message: "Face does not match" } });
-    expect(await verifyFaceWithPrembly({ imageBase64: IMG, nin: NIN })).toMatchObject({ ok: false, message: "Face does not match" });
+    expect(await verifyFaceWithPrembly({ imageBase64: IMG, nin: NIN })).toMatchObject({
+      ok: false,
+      reason: "match_failed",
+      message: "Face does not match",
+    });
     reply(200, { status: true, face_data: { status: true, confidence: 40 } });
-    expect((await verifyFaceWithPrembly({ imageBase64: IMG, nin: NIN })).ok).toBe(false);
+    expect(await verifyFaceWithPrembly({ imageBase64: IMG, nin: NIN })).toMatchObject({
+      ok: false,
+      reason: "low_confidence",
+      confidence: 40,
+    });
+  });
+
+  it("reads nested data.face_data from the documented Prembly envelope", async () => {
+    reply(200, {
+      status: true,
+      response_code: "00",
+      data: {
+        status: true,
+        face_data: { status: true, confidence: 99.98, message: "Face Match" },
+      },
+    });
+    expect(await verifyFaceWithPrembly({ imageBase64: IMG, nin: NIN })).toMatchObject({
+      ok: true,
+      confidence: 99.98,
+    });
+  });
+
+  it("classifies nested face mismatch and capture errors", async () => {
+    reply(200, {
+      status: true,
+      data: { face_data: { status: false, message: "No Match", confidence: 12 } },
+    });
+    expect(await verifyFaceWithPrembly({ imageBase64: IMG, nin: NIN })).toMatchObject({
+      ok: false,
+      reason: "match_failed",
+      confidence: 12,
+    });
+    reply(422, { message: "No face detected in image" });
+    expect(await verifyFaceWithPrembly({ imageBase64: IMG, nin: NIN })).toMatchObject({
+      ok: false,
+      reason: "capture_quality",
+    });
   });
 
   it("uses the image-only liveness path in liveness mode and the path override", async () => {
@@ -53,20 +101,24 @@ describe("verifyFaceWithPrembly", () => {
 
   it("requires a NIN in nin_face mode without calling the provider", async () => {
     const r = await verifyFaceWithPrembly({ imageBase64: IMG, nin: null });
-    expect(r).toMatchObject({ ok: false, code: "NIN_REQUIRED" });
+    expect(r).toMatchObject({ ok: false, code: "NIN_REQUIRED", reason: "nin_required" });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("reports a network failure as an outage code", async () => {
     fetchMock.mockRejectedValueOnce(new Error("boom"));
-    expect(await verifyFaceWithPrembly({ imageBase64: IMG, nin: NIN })).toMatchObject({ ok: false, code: "NETWORK" });
+    expect(await verifyFaceWithPrembly({ imageBase64: IMG, nin: NIN })).toMatchObject({
+      ok: false,
+      code: "NETWORK",
+      reason: "network",
+    });
   });
 
   it("fails closed in production without a key", async () => {
     vi.stubEnv("PREMBLY_API_KEY", "");
     vi.stubEnv("NODE_ENV", "production");
     const r = await verifyFaceWithPrembly({ imageBase64: IMG, nin: NIN });
-    expect(r).toMatchObject({ ok: false, code: "NOT_CONFIGURED" });
+    expect(r).toMatchObject({ ok: false, code: "NOT_CONFIGURED", reason: "not_configured" });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -79,10 +131,69 @@ describe("verifyFaceWithPrembly", () => {
   });
 });
 
-describe("isFacePass", () => {
-  it("needs a success body", () => {
+describe("face payload helpers", () => {
+  it("reads face_data from nested Prembly shapes", () => {
+    expect(readFaceData({ face_data: { status: true } })?.status).toBe(true);
+    expect(
+      readFaceData({ data: { face_data: { message: "Face Match" } } })?.message,
+    ).toBe("Face Match");
+    expect(
+      readFaceData({
+        data: { nin_data: { face_data: { confidence: 88 } } },
+      })?.confidence,
+    ).toBe(88);
+  });
+
+  it("normalises fractional confidence to 0–100", () => {
+    expect(normalizeConfidence(0.95)).toBe(95);
+    expect(normalizeConfidence(95)).toBe(95);
+    expect(normalizeConfidence("40")).toBe(40);
+    expect(normalizeConfidence(-1)).toBeNull();
+  });
+
+  it("isFacePass needs a success body and nested face ok", () => {
     expect(isFacePass({ status: false })).toBe(false);
     expect(isFacePass({ response_code: "00" })).toBe(true);
+    expect(
+      isFacePass({
+        status: true,
+        data: { face_data: { status: false, message: "No Match" } },
+      }),
+    ).toBe(false);
+    expect(readConfidence({ data: { face_data: { confidence: 0.91 } } })).toBe(91);
+  });
+
+  it("classifyFaceFailure maps match, capture and low confidence", () => {
+    expect(
+      classifyFaceFailure({
+        json: { status: true, face_data: { status: false, message: "No Match" } },
+        httpStatus: 200,
+        confidence: 10,
+        minConfidence: 80,
+      }),
+    ).toBe("match_failed");
+    expect(
+      classifyFaceFailure({
+        json: { message: "No face detected" },
+        httpStatus: 422,
+        confidence: null,
+        minConfidence: 80,
+      }),
+    ).toBe("capture_quality");
+    expect(
+      classifyFaceFailure({
+        json: { status: true, face_data: { status: true, confidence: 40 } },
+        httpStatus: 200,
+        confidence: 40,
+        minConfidence: 80,
+      }),
+    ).toBe("low_confidence");
+  });
+
+  it("userMessageForFaceFail is honest for NIN mismatch", () => {
+    expect(userMessageForFaceFail("match_failed")).toMatch(/NIN photo/i);
+    expect(userMessageForFaceFail("capture_quality")).toMatch(/good light/i);
+    expect(userMessageForFaceFail("low_confidence")).toMatch(/Hold still/i);
   });
 });
 
