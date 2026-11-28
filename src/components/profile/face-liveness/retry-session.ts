@@ -1,6 +1,6 @@
 import type { RefObject } from "react";
 import { formatRemaining, getLivenessLock } from "@/lib/liveness/lockout";
-import { MODEL_URL, WASM_CDN } from "./constants";
+import { CAMERA_VIDEO_CONSTRAINTS, MODEL_URL, WASM_CDN } from "./constants";
 import type { FaceLandmarkerInstance, LivenessPhase } from "./types";
 
 type RetryDeps = {
@@ -52,11 +52,7 @@ export function retryLivenessSession({
       setFeedback("Restarting…");
       if (!streamRef.current) {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "user",
-            width: { ideal: 640 },
-            height: { ideal: 480 },
-          },
+          video: CAMERA_VIDEO_CONSTRAINTS,
           audio: false,
         });
         streamRef.current = stream;

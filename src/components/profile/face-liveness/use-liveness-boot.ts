@@ -1,7 +1,7 @@
 import { useEffect, type RefObject } from "react";
 import { formatRemaining, getLivenessLock } from "@/lib/liveness/lockout";
 import { livenessLog } from "@/lib/liveness/logger";
-import { MODEL_URL, WASM_CDN } from "./constants";
+import { CAMERA_VIDEO_CONSTRAINTS, MODEL_URL, WASM_CDN } from "./constants";
 import type { FaceLandmarkerInstance, LivenessPhase } from "./types";
 
 type BootDeps = {
@@ -85,12 +85,7 @@ export function useLivenessBoot({
         setPhase("boot");
         setFeedback("Starting camera…");
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "user",
-            width: { ideal: 640 },
-            height: { ideal: 480 },
-            frameRate: { ideal: 24, max: 30 },
-          },
+          video: CAMERA_VIDEO_CONSTRAINTS,
           audio: false,
         });
         if (cancelled) {

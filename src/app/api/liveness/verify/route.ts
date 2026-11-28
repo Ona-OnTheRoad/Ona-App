@@ -18,6 +18,7 @@ import { ID_LOOKUP_NOT_CONFIGURED } from "@/lib/server/prembly-core";
 import {
   faceCheckMode,
   isFaceCheckOutage,
+  userMessageForFaceFail,
   verifyFaceWithPrembly,
 } from "@/lib/server/identity/liveness/face-check";
 import {
@@ -98,7 +99,12 @@ export async function POST(req: Request) {
       action: "pro.liveness.failed",
       targetType: "repair_pro_profiles",
       targetId: userId,
-      newValue: { ...attempt, code: result.code },
+      newValue: {
+        ...attempt,
+        code: result.code,
+        reason: result.reason,
+        confidence: result.confidence,
+      },
     }).catch(() => undefined);
     if (result.code === ID_LOOKUP_NOT_CONFIGURED) {
       return apiFail(result.message, 503, "liveness_unavailable");
@@ -107,7 +113,7 @@ export async function POST(req: Request) {
       return apiFail("Face verification is busy. Please try again shortly.", 503, "liveness_unavailable");
     }
     return apiFail(
-      "We could not verify your face. Use good light, face the camera and try again.",
+      userMessageForFaceFail(result.reason),
       422,
       "liveness_failed",
     );
