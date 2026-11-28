@@ -277,3 +277,15 @@ Code: route tests for the three forge paths (each fails on the old code), provid
 Approved scope: [review guide](review-guides/face-verify-failure-ux.md). PM report: Pros saw a generic “use good light” tip after Prembly rejections (Attempt N of 6) even in good light. Phase 1 (no Pro id available for ops diagnosis): classify Prembly failures (`match_failed` / `capture_quality` / `low_confidence` / …), return honest user copy, audit `reason` + `confidence` without NIN/image, harden nested `face_data` parsing, raise camera/selfie capture toward 1280px / JPEG 0.92.
 
 Code: face-check + face-fail unit tests; verify route tests for mismatch vs capture copy and audit fields; capture-quality constants test. Independent review pending. External: Phase 0 diagnosis when a Pro id is available; live Prembly + phone camera smoke; production 088 if still pending.
+
+## Admin shop catalog create UI (2026-11-28)
+
+Approved scope: [review guide](review-guides/admin-shop-catalog.md). `/admin/shop` was a placeholder after the Products Hub was removed; `POST /api/admin/shop/products` still existed. Restored a Catalog tab with list, filters, + New product form, and edit drawer (meta/price/stock/image) on existing APIs. Orders tab keeps a placeholder. Nav/guide copy updated.
+
+Code: Vitest for products GET/POST (auth, validation, create) and create-form readiness (12 tests green). Independent review pending. External: live admin create with shop migrations + categories seeded; confirm product appears in buyer shop when `active`.
+
+## Admin shop hub restore — catalog + orders + couriers (2026-11-28)
+
+Approved scope: [review guide](review-guides/admin-shop-hub.md). Completes the hub: Orders console (list/search/filters, refund-attention, detail drawer cancel/refund/delivery) ported from `origin/dev` APIs + UI; courier registry restored with datalist suggestions; Catalog tab retained. Added `admin-orders`, delivery transitions, `shop-events` notify helper; refund gated with `escrow_refund`; refundable statuses expanded.
+
+Code: 10 vitest files / 60 tests green covering products, orders list/detail actions, deliveries (incl. 409), couriers, admin-orders, admin-deliveries, delivery-transitions, create-form. Independent review pending. External: live create product + update delivery + add courier on configured Supabase.

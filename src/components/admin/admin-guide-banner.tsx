@@ -30,9 +30,9 @@ export const GUIDES: Record<string, GuideEntry> = {
     use: "Start on the Payments tab. Find a payment and click it to see details. From there you can release money to the pro (after the job is done), refund the customer (if the job wasn't done), or retry a failed payout. Sensitive actions need a temporary access code. Always write a note explaining why.",
   },
   shop: {
-    what: "This page manages vehicle parts orders, fulfillment tracking, and courier delivery logs.",
-    how: "Parts requests and orders appear here. You can monitor shipment status, verify inventory availability, coordinate dispatch delivery, and review audit logs.",
-    use: "Review pending parts orders, confirm fulfillment with suppliers, and track in-transit delivery to repair shops.",
+    what: "This page manages the parts catalog, shop orders, refunds, delivery tracking, and courier providers.",
+    how: "Catalog lists and creates products. Orders lists paid/unpaid orders with a detail drawer for cancel, refund, and delivery updates. Courier providers feed name suggestions on delivery.",
+    use: "Catalog: + New product, then edit a row for price/stock/image. Orders: open a row to update courier/delivery or refund. Add couriers under the registry so names autocomplete.",
   },
   deletion: {
     what: "This page shows account deletion and data erasure requests under NDPR and data protection regulations.",

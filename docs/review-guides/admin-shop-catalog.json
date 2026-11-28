@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "id": "admin-shop-catalog",
+  "title": "Admin shop catalog create UI",
+  "plan": "docs/review-guides/admin-shop-catalog.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "catalog-tab-visible",
+      "stage": "code",
+      "expectation": "/admin/shop shows a Catalog tab with product list (or empty state) and a New product control; no longer only the API placeholder.",
+      "affectedAreas": [
+        "src/app/admin/shop/page.tsx",
+        "src/components/admin/shop/"
+      ],
+      "verification": "Source inspection; optional manual open of /admin/shop.",
+      "status": "pass",
+      "evidence": [
+        "CatalogPanel + ShopTabs wired from src/app/admin/shop/page.tsx; default tab catalog."
+      ]
+    },
+    {
+      "id": "create-posts-existing-api",
+      "stage": "code",
+      "expectation": "Create form POSTs to /api/admin/shop/products with name, tradeKey, categoryId, sku, priceMajor (and optional fields); disables submit until required fields are present.",
+      "affectedAreas": [
+        "src/components/admin/shop/product-create-form.tsx",
+        "src/components/admin/shop/use-shop-catalog.ts",
+        "src/components/admin/shop/shop-catalog-writes.ts"
+      ],
+      "verification": "Source inspection + create-form helper unit test + API route POST tests.",
+      "status": "pass",
+      "evidence": [
+        "can-submit-create-product.test.ts + product-create-form.test.tsx; postCreateProduct body in shop-catalog-writes.ts"
+      ]
+    },
+    {
+      "id": "api-create-gated",
+      "stage": "code",
+      "expectation": "POST /api/admin/shop/products still requires shop_catalog, validates required body fields, and calls adminCreateProduct.",
+      "affectedAreas": ["src/app/api/admin/shop/products/route.ts"],
+      "verification": "Vitest route tests for happy path, validation 400s, and auth failure.",
+      "status": "pass",
+      "evidence": [
+        "src/app/api/admin/shop/products/__tests__/route.test.ts — 7 cases including 201 create and 400/401/403/503"
+      ]
+    },
+    {
+      "id": "edit-price-stock",
+      "stage": "code",
+      "expectation": "Selecting a product opens an edit drawer that can save meta, price, and stock via existing product routes.",
+      "affectedAreas": [
+        "src/components/admin/shop/product-edit-drawer.tsx",
+        "src/components/admin/shop/use-shop-catalog.ts"
+      ],
+      "verification": "Source inspection of fetch paths.",
+      "status": "pass",
+      "evidence": [
+        "saveAll uses patchProductMeta + postProductPrice + postProductStock"
+      ]
+    },
+    {
+      "id": "nav-and-guide",
+      "stage": "code",
+      "expectation": "Nav and shop guide mention catalog, not only orders/delivery.",
+      "affectedAreas": [
+        "src/components/admin/admin-shell/nav-groups.ts",
+        "src/components/admin/admin-guide-banner.tsx"
+      ],
+      "verification": "Source inspection.",
+      "status": "pass",
+      "evidence": [
+        "Nav label Shop catalog & orders; guide describes + New product"
+      ]
+    },
+    {
+      "id": "suite-green",
+      "stage": "code",
+      "expectation": "New product route and create-form tests pass.",
+      "affectedAreas": [],
+      "verification": "vitest run on the new test files.",
+      "status": "pass",
+      "evidence": [
+        "vitest run: 3 files / 12 tests passed (2026-11-28)"
+      ]
+    },
+    {
+      "id": "live-admin-create",
+      "stage": "live",
+      "expectation": "Signed-in admin with shop_catalog creates a product from Catalog tab; it appears in the list and on the buyer shop when status is active.",
+      "affectedAreas": [],
+      "verification": "Manual check on localhost or hosted admin with shop migrations applied.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent review against a commit (set reviewedCommit)."
+    ],
+    "external": [
+      "Live admin create against configured Supabase with categories seeded; confirm buyer shop visibility for active products."
+    ]
+  }
+}
