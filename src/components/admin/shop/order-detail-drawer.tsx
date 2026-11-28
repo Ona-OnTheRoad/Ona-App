@@ -14,7 +14,8 @@ import {
   label,
   money,
   type AdminShopOrderDetail,
-} from "./types";
+  type CourierProvider,
+} from "./order-types";
 
 const input =
   "w-full rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#18171c] px-3 py-2 text-sm text-gray-900 dark:text-white";
@@ -28,6 +29,7 @@ type Props = {
   detail: AdminShopOrderDetail | null;
   loading: boolean;
   busy: boolean;
+  couriers?: CourierProvider[];
   onClose: () => void;
   onOrderAction: (a: "cancel" | "refund", reason?: string) => Promise<void>;
   onSaveDelivery: (v: {
@@ -44,6 +46,7 @@ export function OrderDetailDrawer({
   detail,
   loading,
   busy,
+  couriers = [],
   onClose,
   onOrderAction,
   onSaveDelivery,
@@ -175,7 +178,27 @@ export function OrderDetailDrawer({
               <p className={section}>Delivery · {label(d.status)}</p>
               {canDeliver ? (
                 <div className="mt-1 space-y-2">
-                  <input className={input} placeholder="Courier name" value={courierName} onChange={(e) => setCourierName(e.target.value)} />
+                  <input
+                    className={input}
+                    placeholder="Courier name"
+                    list="shop-courier-providers"
+                    value={courierName}
+                    onChange={(e) => {
+                      const name = e.target.value;
+                      setCourierName(name);
+                      const hit = couriers.find(
+                        (c) => c.active && c.name === name && c.phone,
+                      );
+                      if (hit?.phone) setCourierPhone(hit.phone);
+                    }}
+                  />
+                  <datalist id="shop-courier-providers">
+                    {couriers
+                      .filter((c) => c.active)
+                      .map((c) => (
+                        <option key={c.id} value={c.name} />
+                      ))}
+                  </datalist>
                   <input className={input} placeholder="Courier phone" value={courierPhone} onChange={(e) => setCourierPhone(e.target.value)} />
                   <input className={input} placeholder="Tracking code" value={trackingCode} onChange={(e) => setTrackingCode(e.target.value)} />
                   <input className={input} placeholder="Note (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} />

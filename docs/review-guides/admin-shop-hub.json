@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "id": "admin-shop-hub",
+  "title": "Admin shop hub restore (catalog + orders + couriers)",
+  "plan": "docs/review-guides/admin-shop-hub.md",
+  "reviewedCommit": null,
+  "requirements": [
+    {
+      "id": "catalog-still-works",
+      "stage": "code",
+      "expectation": "Catalog tab still lists products and can create via POST /api/admin/shop/products.",
+      "affectedAreas": ["src/components/admin/shop/", "src/app/admin/shop/page.tsx"],
+      "verification": "Existing catalog vitest files still pass; source inspection of Catalog tab.",
+      "status": "pass",
+      "evidence": [
+        "page.tsx keeps CatalogPanel; products route + create-form tests still green"
+      ]
+    },
+    {
+      "id": "orders-console",
+      "stage": "code",
+      "expectation": "Orders tab lists orders with search/status filter, needsAttention banner, and detail drawer for cancel/refund/delivery.",
+      "affectedAreas": ["src/components/admin/shop/orders-panel.tsx", "order-detail-drawer.tsx", "use-shop-orders-console.ts"],
+      "verification": "Source inspection + order API route tests.",
+      "status": "pass",
+      "evidence": [
+        "OrdersPanel replaces placeholder; OrderDetailDrawer wired for cancel/refund/delivery"
+      ]
+    },
+    {
+      "id": "order-apis",
+      "stage": "code",
+      "expectation": "GET list returns buyer/delivery/needsAttention; GET detail works; PATCH cancel/refund gates refund with escrow_refund; deliveries enforce transitions.",
+      "affectedAreas": ["src/app/api/admin/shop/orders/", "src/lib/server/shop/admin-orders.ts", "admin-deliveries.ts"],
+      "verification": "Vitest for admin-orders, order routes, admin-deliveries, delivery-transitions.",
+      "status": "pass",
+      "evidence": [
+        "admin-orders.test.ts; orders route tests; orders/[id] escrow_refund tests; delivery-transitions + admin-deliveries"
+      ]
+    },
+    {
+      "id": "courier-registry",
+      "stage": "code",
+      "expectation": "Orders tab shows courier registry; active providers suggest in delivery courier name field.",
+      "affectedAreas": ["src/components/admin/shop/courier-registry.tsx", "order-detail-drawer.tsx"],
+      "verification": "Source inspection + existing couriers route tests.",
+      "status": "pass",
+      "evidence": [
+        "CourierRegistry on OrdersPanel; datalist shop-courier-providers in OrderDetailDrawer; couriers route tests green"
+      ]
+    },
+    {
+      "id": "suite-green",
+      "stage": "code",
+      "expectation": "Touched shop admin tests pass.",
+      "affectedAreas": [],
+      "verification": "vitest on shop admin/order/delivery/catalog tests.",
+      "status": "pass",
+      "evidence": [
+        "vitest: 10 files / 60 tests passed (2026-11-28)"
+      ]
+    },
+    {
+      "id": "live-hub",
+      "stage": "live",
+      "expectation": "Admin can create a product, update a delivery, and add a courier on a configured environment.",
+      "affectedAreas": [],
+      "verification": "Manual check on localhost or hosted admin.",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "remainingWork": {
+    "code": [
+      "Independent review; set reviewedCommit."
+    ],
+    "external": [
+      "Live hub smoke: create product, update delivery, add courier on configured Supabase."
+    ]
+  }
+}

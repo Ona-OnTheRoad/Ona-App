@@ -1,13 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useAdminGate } from "@/components/admin/use-admin-gate";
+import type { useAdminGate } from "@/components/admin/use-admin-gate";
 import { toastError, toastSuccess } from "@/lib/toast";
-import type { AdminShopOrderDetail, AdminShopOrderRow } from "./types";
+import type {
+  AdminShopOrderDetail,
+  AdminShopOrderRow,
+  CourierProvider,
+} from "./order-types";
 
-export function useShopOrdersConsole() {
-  const gate = useAdminGate();
-  const { ready, api } = gate;
+type AdminApi = ReturnType<typeof useAdminGate>["api"];
+
+export function useShopOrdersConsole(
+  api: AdminApi,
+  ready: boolean,
+  active: boolean,
+) {
   const [status, setStatus] = useState("");
   const [q, setQ] = useState("");
   const [orders, setOrders] = useState<AdminShopOrderRow[]>([]);
@@ -17,6 +25,7 @@ export function useShopOrdersConsole() {
   const [detail, setDetail] = useState<AdminShopOrderDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [couriers, setCouriers] = useState<CourierProvider[]>([]);
 
   const loadList = useCallback(async () => {
     const params = new URLSearchParams();
@@ -31,27 +40,36 @@ export function useShopOrdersConsole() {
       return;
     }
     setOrders(res.data.orders);
-    setNeedsAttention(res.data.needsAttention);
+    setNeedsAttention(res.data.needsAttention ?? 0);
   }, [api, status, q]);
 
+  const loadCouriers = useCallback(async () => {
+    const res = await api<{ providers: CourierProvider[] }>(
+      "/api/admin/shop/couriers",
+    );
+    if (res.ok) setCouriers(res.data.providers ?? []);
+  }, [api]);
+
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || !active) return;
     let cancelled = false;
     setLoading(true);
     const t = setTimeout(async () => {
-      await loadList();
+      await Promise.all([loadList(), loadCouriers()]);
       if (!cancelled) setLoading(false);
     }, q ? 250 : 0);
     return () => {
       cancelled = true;
       clearTimeout(t);
     };
-  }, [ready, loadList, q]);
+  }, [ready, active, loadList, loadCouriers, q]);
 
   const loadDetail = useCallback(
     async (id: string) => {
       setDetailLoading(true);
-      const res = await api<AdminShopOrderDetail>(`/api/admin/shop/orders/${id}`);
+      const res = await api<AdminShopOrderDetail>(
+        `/api/admin/shop/orders/${id}`,
+      );
       setDetailLoading(false);
       if (!res.ok) {
         toastError(res.message);
@@ -67,13 +85,18 @@ export function useShopOrdersConsole() {
     setDetail(null);
     void loadDetail(id);
   };
+
   const close = () => {
     setSelectedId(null);
     setDetail(null);
   };
 
   const refresh = async () => {
-    await Promise.all([loadList(), selectedId ? loadDetail(selectedId) : null]);
+    await Promise.all([
+      loadList(),
+      loadCouriers(),
+      selectedId ? loadDetail(selectedId) : null,
+    ]);
   };
 
   const orderAction = async (action: "cancel" | "refund", reason?: string) => {
@@ -118,7 +141,6 @@ export function useShopOrdersConsole() {
   };
 
   return {
-    ...gate,
     status,
     setStatus,
     q,
@@ -130,6 +152,8 @@ export function useShopOrdersConsole() {
     detail,
     detailLoading,
     busy,
+    couriers,
+    loadCouriers,
     open,
     close,
     orderAction,

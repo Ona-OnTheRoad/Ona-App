@@ -86,4 +86,31 @@ describe("PATCH /api/admin/shop/deliveries", () => {
     expect(res.status).toBe(503);
     expect(requireAdminMock).not.toHaveBeenCalled();
   });
+
+  it("returns 409 for an illegal delivery transition", async () => {
+    requireAdminMock.mockResolvedValue({
+      session: { userId: "admin-1", email: "admin@ona.app" },
+    } as never);
+    upsertDeliveryStatusMock.mockRejectedValue(
+      new Error("Delivery cannot go from pending to delivered"),
+    );
+
+    const res = await PATCH(
+      req({
+        orderId: "00000000-0000-4000-8000-000000000001",
+        status: "delivered",
+      }),
+    );
+    expect(res.status).toBe(409);
+  });
+
+  it("returns 404 when the order is missing", async () => {
+    requireAdminMock.mockResolvedValue({ session: { userId: "admin-1" } } as never);
+    upsertDeliveryStatusMock.mockRejectedValue(new Error("Order not found"));
+
+    const res = await PATCH(
+      req({ orderId: "00000000-0000-4000-8000-000000000001" }),
+    );
+    expect(res.status).toBe(404);
+  });
 });

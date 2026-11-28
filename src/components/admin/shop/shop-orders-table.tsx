@@ -1,7 +1,7 @@
 "use client";
 
 import { fmtDate, StatusBadge } from "@/components/admin/admin-ui/admin-ui-parts";
-import { label, money, type AdminShopOrderRow } from "./types";
+import { label, money, type AdminShopOrderRow } from "./order-types";
 
 function badgeStatus(s: string): string {
   if (["paid", "delivered", "fulfilling", "out_for_delivery"].includes(s)) return "approved";

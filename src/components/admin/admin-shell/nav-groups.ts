@@ -25,7 +25,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Payment Control Center",
         icon: "CreditCard",
       },
-      { href: "/admin/shop", label: "Shop orders & delivery", icon: "Package" },
+      { href: "/admin/shop", label: "Shop catalog & orders", icon: "Package" },
       { href: "/admin/security", label: "Security", icon: "ShieldCheck" },
       { href: "/admin/deletion-requests", label: "Deletion requests", icon: "UserX" },
       { href: "/admin/credit-control", label: "Credit Control", icon: "Coins" },
